@@ -128,6 +128,26 @@ white walls; walk into one to come out of the other. Anyone can use anyone's por
 Buttons open doors while someone (or a box) stands on them. Push boxes, even through
 portals. Everyone has to reach the gold exit. Hold A+B to reset a room.
 
+**Party Mix** (5 short rounds in a row). One pad plays five random rounds out of seven, with
+a running scoreboard. Before each round a card explains it and everyone taps jump when ready.
+Each round gives placement points (4, 3, 2, then 1 for everyone else, ties share the higher
+number). Nobody is ever knocked out of a round.
+
+- **Count the Critters**: grumbles run past; count only the color on the sign, then dial in
+  your guess with the stick. Closest wins.
+- **Statue Stop**: walk toward the owl while it looks away and freeze when it turns. Moving
+  while it watches only hops you back a few steps.
+- **Musical Cushions**: dance while the music plays; when it stops, cushions pop up at new spots
+  (one fewer than players). Five songs, a point per cushion.
+- **Fruit Catch**: catch falling fruit in the basket on your head (golden fruit is worth 3);
+  rotten apples slow you down for a moment.
+- **Copy Dance**: watch the teacher's arrow dance, then repeat it with the stick. Four dances,
+  3 to 6 moves long.
+- **Tug of War**: two auto-split teams mash jump to pull the rope; the losing team slides into
+  the paint pool. Team pull is averaged, so uneven teams are fair. Solo play adds a Tug Bot.
+- **Bean Tower**: take turns dropping a sliding block onto the tower. Overhangs are trimmed off,
+  a perfect drop snaps into place and widens the block a little, and a miss only costs the turn.
+
 ## Learning games (LÆRING)
 
 Two educational games in Norwegian (bokmål), marked with a green **LÆRING** badge on the
@@ -165,13 +185,18 @@ src/
     ui.js            HTML overlay: banners, chips, labels, results, wipe
     i18n.js          English / Norwegian text, t('key')
     scene.js         base scene (camera fitting, game-time timers, disposal)
-    teams.js         two-team picker and helper-bot balancing (Mega Ball, Ice Hockey)
+    teams.js         two-team picker and helper-bot balancing (Mega Ball, Ice Hockey, Tug of War colors)
     minigame.js      shared intro -> countdown -> results -> back flow
   scenes/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
+    party.js         Party Mix flow: how-to cards, countdown, scoreboard
+    party/           one file per round (count, statue, cushions, fruit, dance, tug, tower)
 ```
+
+To add a Party Mix round: subclass `Round` from `scenes/party/common.js` (set `done` when it
+ends, return a higher-is-better `score(p)`), and add it to `ROUNDS` in `scenes/party.js`.
 
 To add a game: subclass `MiniGame`, register it in `GAMES` in `main.js`, and add a pad in
 `PADS` in `scenes/hub.js` and an icon in `scenes/hub-icons.js`.

@@ -113,6 +113,22 @@ const ICONS = {
       g.add(mesh(box('gateFlag', 0.4, 0.28, 0.03, 0.01), toon(c), x + (x < 0 ? 0.2 : -0.2), 0.75, 0.35));
     });
   },
+  party(g) {
+    g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
+    g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));
+    g.add(mesh(box('ribbonX', 0.22, 1.32, 1.36, 0.04), toon(COLORS.gold), 0, -0.04, 0));
+    g.add(mesh(box('ribbonZ', 1.36, 1.32, 0.22, 0.04), toon(COLORS.gold), 0, -0.04, 0));
+    for (const s of [-1, 1]) {
+      const loop = mesh(sharedGeo('icon-bow', () => new THREE.TorusGeometry(0.22, 0.07, 8, 16)), toon(COLORS.gold), s * 0.22, 0.68, 0);
+      loop.rotation.set(0, Math.PI / 2, s * 0.6);
+      g.add(loop);
+    }
+    [[0xff5d73, -0.75, 0.9, 0.2], [0x4cc9f0, 0.8, 0.75, -0.1], [0x3ddc97, 0.5, 1.15, 0.3], [0xffc93c, -0.45, 1.25, -0.2]].forEach(([c, x, y, z], i) => {
+      const bit = mesh(box('confetti', 0.16, 0.16, 0.05, 0.02), toon(c), x, y, z);
+      bit.rotation.set(i, i * 0.7, i * 1.3);
+      g.add(bit);
+    });
+  },
   spelling(g) {
     const cube = mesh(box('abc', 1.2, 1.2, 1.2, 0.14), toon(0xff9fd0));
     const faces = [['A', 0, 0, 0.61, 0], ['B', 0.61, 0, 0, Math.PI / 2], ['C', -0.61, 0, 0, -Math.PI / 2], ['Æ', 0, 0, -0.61, Math.PI]];

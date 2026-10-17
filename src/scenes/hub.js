@@ -33,6 +33,7 @@ const PADS = [
   { key: 'slalom', color: 0x6aa8ff, css: '#3d84e8' },
   { key: 'archers', color: 0xffc93c, css: '#e0a100' },
   { key: 'bubble', color: 0xff7eb6, css: '#ff4f9a' },
+  { key: 'party', color: 0xb5179e, css: '#b5179e' },
 ].map((p, i, all) => {
   const a = (i / all.length) * Math.PI * 2;
   return { ...p, angle: a, x: Math.sin(a) * RING_R, z: -Math.cos(a) * RING_R };

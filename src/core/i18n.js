@@ -22,7 +22,7 @@ const en = {
 
   'game.bubble': 'Bubble Buddies', 'game.platformer': 'Sky Hop', 'game.paint': 'Paint Party',
   'game.archers': 'Balloon Archers', 'game.brawl': 'Bonk Brawl', 'game.kart': 'Kart Party',
-  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball', 'game.slalom': 'Snow Slalom', 'game.hockey': 'Ice Hockey',
+  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball', 'game.slalom': 'Snow Slalom', 'game.hockey': 'Ice Hockey', 'game.party': 'Party Mix',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
   'hub.title': 'Couch Party Island',
@@ -123,6 +123,25 @@ const en = {
 
   'hockey.intro': 'Skate to the puck to grab it · B: shoot (hold for power) · A: dash to steal',
   'hockey.goalie': 'Goalie Bot', 'hockey.shots': '{n} shots', 'hockey.steals': '{n} steals',
+
+  'party.round': 'Round {n} of {total}', 'party.ready': 'everyone taps jump when ready',
+  'party.points': '{n} points', 'party.next': 'tap jump for the next round', 'party.final': 'tap jump for the final scores',
+  'party.sub': '{n} rounds of party games', 'party.total': 'total points', 'party.wins': '{n} round wins',
+  'count.title': 'Count the Critters', 'count.hint': 'Grumbles will run past. Count only the {c} ones! Then pick your number with the stick and tap jump.',
+  'count.c.0': 'purple', 'count.c.1': 'orange', 'count.c.2': 'green',
+  'count.watch': 'Count the {c} grumbles!', 'count.ask': 'How many? Stick up/down, jump to lock in',
+  'count.answer': 'There were {n}!', 'count.guessed': 'guessed {g}',
+  'statue.title': 'Statue Stop', 'statue.hint': 'Walk to the owl while it looks away. When it turns around, freeze! Anyone who moves hops back a bit.',
+  'statue.go': 'GO!', 'statue.freeze': 'FREEZE!', 'statue.made': 'made it!', 'statue.left': '{n} m left',
+  'cushions.title': 'Musical Cushions', 'cushions.hint': 'Dance around while the music plays. When it stops, cushions pop up: jump onto one before they are all taken!',
+  'cushions.dance': 'Dance!', 'cushions.grab': 'Grab a cushion!', 'cushions.round': 'Song {n} of {total}', 'cushions.n': '{n} cushions',
+  'fruit.title': 'Fruit Catch', 'fruit.hint': 'Catch the falling fruit in the basket on your head. Golden fruit is worth 3. Rotten apples make you slow, so dodge them! A jumps.',
+  'fruit.n': '{n} points of fruit',
+  'dance.title': 'Copy Dance', 'dance.hint': 'Watch the teacher dance, then copy the moves with the stick: up, down, left, right. The dances get longer!',
+  'dance.watch': 'Watch!', 'dance.go': 'Your turn!', 'dance.level': 'Dance {n} of {total}', 'dance.n': '{n} moves',
+  'tug.title': 'Tug of War', 'tug.hint': 'Tap jump as fast as you can to pull the rope. Pull the other team into the paint pool!',
+  'tower.title': 'Bean Tower', 'tower.hint': 'Take turns: tap jump to drop your sliding block onto the tower. Neat drops keep the tower wide, perfect drops make it grow back!',
+  'tower.turn': "{name}'s turn", 'tower.perfect': 'Perfect!', 'tower.height': 'Tower: {n} blocks', 'tower.n': '{n} blocks',
 };
 
 const no = {
@@ -146,7 +165,7 @@ const no = {
 
   'game.bubble': 'Boblevenner', 'game.platformer': 'Skyhopp', 'game.paint': 'Malefest',
   'game.archers': 'Ballongskyttere', 'game.brawl': 'Dunkekamp', 'game.kart': 'Gokartfest',
-  'game.portal': 'Portalvenner', 'game.football': 'Megaball', 'game.slalom': 'Snøslalåm', 'game.hockey': 'Ishockey',
+  'game.portal': 'Portalvenner', 'game.football': 'Megaball', 'game.slalom': 'Snøslalåm', 'game.hockey': 'Ishockey', 'game.party': 'Festmiks',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
   'hub.title': 'Sofafest-øya',
@@ -247,6 +266,25 @@ const no = {
 
   'hockey.intro': 'Skøyt til pucken for å ta den · B: skudd (hold for kraft) · A: spurt for å stjele',
   'hockey.goalie': 'Målvaktbot', 'hockey.shots': '{n} skudd', 'hockey.steals': '{n} taklinger',
+
+  'party.round': 'Runde {n} av {total}', 'party.ready': 'alle trykker hopp når de er klare',
+  'party.points': '{n} poeng', 'party.next': 'trykk hopp for neste runde', 'party.final': 'trykk hopp for sluttresultatet',
+  'party.sub': '{n} runder med festleker', 'party.total': 'totalpoeng', 'party.wins': '{n} rundeseire',
+  'count.title': 'Tell krypene', 'count.hint': 'Krypene løper forbi. Tell bare de {c}! Velg tallet ditt med pinnen og trykk hopp.',
+  'count.c.0': 'lilla', 'count.c.1': 'oransje', 'count.c.2': 'grønne',
+  'count.watch': 'Tell de {c} krypene!', 'count.ask': 'Hvor mange? Pinne opp/ned, hopp for å låse',
+  'count.answer': 'Det var {n}!', 'count.guessed': 'gjettet {g}',
+  'statue.title': 'Frys!', 'statue.hint': 'Gå mot ugla når den ser bort. Når den snur seg: stå helt stille! Den som rører seg, hopper litt tilbake.',
+  'statue.go': 'GÅ!', 'statue.freeze': 'FRYS!', 'statue.made': 'kom fram!', 'statue.left': '{n} m igjen',
+  'cushions.title': 'Puteleken', 'cushions.hint': 'Dans rundt mens musikken spiller. Når den stopper, dukker det opp puter: hopp på en før alle er tatt!',
+  'cushions.dance': 'Dans!', 'cushions.grab': 'Ta en pute!', 'cushions.round': 'Sang {n} av {total}', 'cushions.n': '{n} puter',
+  'fruit.title': 'Fruktfangst', 'fruit.hint': 'Fang frukten i kurven på hodet. Gullfrukt gir 3 poeng. Råtne epler gjør deg treg, så unngå dem! A hopper.',
+  'fruit.n': '{n} fruktpoeng',
+  'dance.title': 'Hermedans', 'dance.hint': 'Se på læreren som danser, og herm etter med pinnen: opp, ned, venstre, høyre. Dansene blir lengre og lengre!',
+  'dance.watch': 'Se nøye!', 'dance.go': 'Din tur!', 'dance.level': 'Dans {n} av {total}', 'dance.n': '{n} trinn',
+  'tug.title': 'Tautrekking', 'tug.hint': 'Trykk hopp så fort du kan for å dra i tauet. Dra det andre laget uti malingsdammen!',
+  'tower.title': 'Bønnetårnet', 'tower.hint': 'Bytt på: trykk hopp for å slippe klossen din på tårnet. Pene slipp holder tårnet bredt, perfekte slipp gjør det bredere igjen!',
+  'tower.turn': '{name} sin tur', 'tower.perfect': 'Perfekt!', 'tower.height': 'Tårn: {n} klosser', 'tower.n': '{n} klosser',
 };
 
 const DICTS = { en, no };
