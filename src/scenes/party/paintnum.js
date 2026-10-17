@@ -156,7 +156,9 @@ export class PaintNumRound extends Round {
         g.add(tile);
         let label = null;
         if (num) {
-          label = new THREE.Mesh(numGeo, glyphMaterial(String(num), { fg: css(this.design.colors[num - 1]) }));
+          const col = new THREE.Color(this.design.colors[num - 1]);
+          const dark = col.r * 0.3 + col.g * 0.59 + col.b * 0.11 < 0.3;
+          label = new THREE.Mesh(numGeo, glyphMaterial(String(num), { fg: css(this.design.colors[num - 1]), stroke: dark ? '#ffffff' : '#2b2340' }));
           label.rotation.x = -Math.PI / 2;
           label.position.set(x, 0.24, z);
           g.add(label);
