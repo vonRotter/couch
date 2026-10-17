@@ -129,9 +129,9 @@ export class FollowRound extends Round {
   }
 
   frame() {
-    const d = this.party.fitDistance(R * 2 + 3, R * 2 * 0.78 + 3);
-    this.camera.position.set(0, d * 0.84, d * 0.56);
-    this.camera.lookAt(0, 0, 0.4);
+    const d = this.party.fitDistance(R * 2 + 3, R * 2 * 0.86 + 4);
+    this.camera.position.set(0, d * 0.82, d * 0.6);
+    this.camera.lookAt(0, 0, 0.9);
   }
 
   start() {
@@ -158,11 +158,11 @@ export class FollowRound extends Round {
   }
 
   dropDot(e) {
-    const mesh = new THREE.Mesh(sharedGeo('followDot', () => new THREE.CircleGeometry(0.34, 18)), basic(e.color, { transparent: true, opacity: 0.85 }));
+    const mesh = new THREE.Mesh(sharedGeo('followDot', () => new THREE.CircleGeometry(0.4, 18)), basic(e.color, { transparent: true, opacity: 0.85 }));
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(e.x, 0.03, e.z);
     this.group.add(mesh);
-    const glow = new THREE.Mesh(sharedGeo('followGlow', () => new THREE.CircleGeometry(0.16, 12)), basic(COLORS.white, { transparent: true, opacity: 0.8 }));
+    const glow = new THREE.Mesh(sharedGeo('followGlow', () => new THREE.CircleGeometry(0.2, 12)), basic(COLORS.white, { transparent: true, opacity: 0.8 }));
     glow.position.z = 0.01;
     mesh.add(glow);
     this.trail.push({ x: e.x, z: e.z, age: 0, mesh });
@@ -266,7 +266,7 @@ export class FollowRound extends Round {
           e.sparkT -= dt;
           if (e.sparkT <= 0) {
             e.sparkT = 0.5;
-            this.party.confetti.burst(new THREE.Vector3(e.x, 0.6, e.z), 0, { count: 4, speed: 2.5, colors: [L.color, COLORS.gold], life: 0.5, size: 0.7 });
+            this.party.confetti.burst(new THREE.Vector3(e.x, 0.6, e.z), 0, { count: 4, speed: 2.5, colors: [L.color, COLORS.gold], life: 0.5, size: 0.13 });
           }
         }
       }
