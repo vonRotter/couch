@@ -536,9 +536,9 @@ export class SpotRound extends Round {
       let dist = Math.hypot(d.x - e.x, d.z - e.z);
       if (d.pts) {
         const near = Math.min(...d.pts.map((q) => Math.hypot(q.x - e.x, q.z - e.z)));
-        if (near < d.pr + 0.35) dist = Math.min(dist, 0);
+        if (near < d.pr * 0.6 + 0.18) dist = Math.min(dist, 0);
       }
-      if (dist < d.r + 0.35 && dist < bd) { best = d; bd = dist; }
+      if (dist < (d.pts ? d.r * 0.8 : d.r * 0.6 + 0.18) && dist < bd) { best = d; bd = dist; }
     }
     if (!best) {
       // Gentle miss: the ring freezes for a moment.

@@ -185,6 +185,32 @@ const ICONS = {
     flag.rotation.z = -Math.PI / 2;
     g.add(flag);
   },
+  learnmix(g) {
+    // A clock at "halv fire" with a krone coin.
+    const rim = mesh(cyl('lmClock', 0.85, 0.85, 0.22, 32), toon(0x8ac926));
+    rim.rotation.x = Math.PI / 2;
+    g.add(rim);
+    const face = mesh(cyl('lmClockFace', 0.7, 0.7, 0.24, 32), toon(COLORS.white), 0, 0, 0.01);
+    face.rotation.x = Math.PI / 2;
+    g.add(face);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const tick = mesh(box(i % 3 ? 'lmTick' : 'lmTickBig', 0.05, i % 3 ? 0.08 : 0.16, 0.04, 0.01), toon(COLORS.ink), Math.sin(a) * 0.58, Math.cos(a) * 0.58, 0.14);
+      tick.rotation.z = -a;
+      g.add(tick);
+    }
+    const ha = (3.5 / 12) * Math.PI * 2;
+    const hour = mesh(box('lmHour', 0.09, 0.36, 0.05, 0.02), toon(COLORS.ink), Math.sin(ha) * 0.18, Math.cos(ha) * 0.18, 0.16);
+    hour.rotation.z = -ha;
+    const minute = mesh(box('lmMin', 0.06, 0.52, 0.05, 0.02), toon(COLORS.ink), 0, -0.26, 0.17);
+    g.add(hour, minute, mesh(sph(0.07), toon(COLORS.ink), 0, 0, 0.19));
+    const coin = mesh(cyl('lmCoin', 0.42, 0.42, 0.12, 24), toon(COLORS.gold), 0.72, -0.62, 0.35);
+    coin.rotation.x = Math.PI / 2;
+    g.add(coin);
+    const kr = new THREE.Mesh(sharedGeo('icon-lmCoinFace', () => new THREE.PlaneGeometry(0.62, 0.62)), glyphMaterial('kr'));
+    kr.position.set(0.72, -0.62, 0.42);
+    g.add(kr);
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

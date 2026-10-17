@@ -11,13 +11,13 @@ addStrings({
     'follow.title': 'Follow the Leader',
     'follow.hint': 'The one with the crown leads and leaves a glowing trail. Walk on the trail to score! When you lead, keep moving: you score for everyone on your trail.',
     'follow.leads': '{name} leads!', 'follow.you': 'Follow the trail!', 'follow.move': 'Keep moving!',
-    'follow.grumble': 'Grumble', 'follow.n': '{n} points',
+    'follow.grumble': 'Grumble', 'follow.n': '{n} pts',
   },
   no: {
     'follow.title': 'Følg lederen',
     'follow.hint': 'Den med kronen leder og lager et lysende spor. Gå på sporet for å få poeng! Når du leder, må du holde deg i bevegelse: du får poeng for alle på sporet ditt.',
     'follow.leads': '{name} leder!', 'follow.you': 'Følg sporet!', 'follow.move': 'Fortsett å gå!',
-    'follow.grumble': 'Grumle', 'follow.n': '{n} poeng',
+    'follow.grumble': 'Grumling', 'follow.n': '{n} poeng',
   },
 });
 
@@ -307,7 +307,7 @@ export class FollowRound extends Round {
 
   hud() {
     const L = this.leader;
-    const who = L ? `<div class="pill" style="color:${L.css}"><b>${t('follow.leads', { name: L.bot ? t('follow.grumble') : L.name })}</b></div>` : '';
+    const who = L ? `<div class="pill" style="box-shadow: inset 0 0 0 4px ${L.css}, 0 4px 0 rgba(43, 35, 64, 0.18)"><b>${t('follow.leads', { name: L.bot ? t('follow.grumble') : L.name })}</b></div>` : '';
     const left = this.phase === 'idle' ? this.order.length * (this.turnLen + HANDOFF) : this.phase === 'over' ? 0
       : (this.order.length - this.turn - 1) * (this.turnLen + HANDOFF) + Math.max(0, this.phaseT) + (this.phase === 'handoff' ? this.turnLen : 0);
     return `${who}${clock(left)}`;

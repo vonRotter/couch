@@ -183,7 +183,7 @@ export class KlokkaRound extends FieldRound {
 
   howto() {
     return `<div style="display:flex;gap:18px;justify-content:center;align-items:center;margin:8px 0">
-      ${clockSVG(3, 30, '#9b5de5', '96px')}<div class="edu-word">= halv fire</div></div>`;
+      <div style="width:96px">${clockSVG(3, 30, '#9b5de5', '96px')}</div><div class="edu-word">= halv fire</div></div>`;
   }
 
   decorate() {

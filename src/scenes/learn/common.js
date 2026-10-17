@@ -399,7 +399,11 @@ export class FieldRound extends Round {
     this.updateTiles(dt);
     if (playing && !this.done) {
       this.ensureT -= dt;
-      if (this.ensureT <= 0) { this.ensureT = 0.3; this.ensure(); }
+      if (this.ensureT <= 0) {
+        this.ensureT = 0.3;
+        this.ensure();
+        if (this.tiles.length < this.tileCount) this.spawnTile(); // gentle top-up
+      }
       this.timeLeft -= dt;
       if (this.timeLeft <= 0) { this.timeLeft = 0; this.done = true; }
     }

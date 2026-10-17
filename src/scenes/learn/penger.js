@@ -54,7 +54,7 @@ const COIN = {
 };
 
 const ITEMS = ['is', 'eple', 'ball', 'bamse', 'bil', 'bok'];
-const ITEM_NAME = { is: 'Is', eple: 'Eple', ball: 'Ball', bamse: 'Bamse', bil: 'Lekebil', bok: 'Bok' };
+const ITEM_NAME = { is: 'Is', eple: 'Eple', ball: 'Ball', bamse: 'Bamse', bil: 'Bil', bok: 'Bok' };
 
 /** Small toy models built from primitives (about 1 unit tall). */
 export function makeItem(kind) {
@@ -250,9 +250,10 @@ export class PengerRound extends FieldRound {
 
   card(e) {
     const task = e.task;
-    const paid = task.paid.length > 1 ? `${task.paid.join(' + ')} = ${task.sum} kr` : `${task.sum} kr`;
+    // Show the sum as coins while it is short (5 + 1 + 1 = 7 kr), then just the total.
+    const paid = task.paid.length > 1 && task.paid.length <= 3 ? `${task.paid.join(' + ')} = ${task.sum} kr` : `${task.sum} kr`;
     return `<div class="edu-card-head">${esc(t('penger.card', { name: e.p.name, n: e.score }))}</div>
-      <div class="edu-word math">${esc(ITEM_NAME[task.item])} ${task.price} kr</div>
+      <div class="edu-word math" style="font-size:clamp(18px, 2vw, 34px)">${esc(ITEM_NAME[task.item])} ${task.price} kr</div>
       <div class="edu-clue" style="font-weight:700;max-width:none;white-space:nowrap">${e.doneT > 0 ? esc(t('penger.bought')) : `${esc(t('penger.paidSum', { sum: paid }))}`}</div>`;
   }
 

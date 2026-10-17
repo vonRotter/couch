@@ -856,6 +856,11 @@ export class GolfScene extends MiniGame {
       const diff = e.strokes - H.par;
       this.showPop(e, diff >= 2 ? t('golf.term.more', { n: diff }) : t(`golf.term.${Math.max(-3, diff)}`), cupW);
     }
+    this.startHurry(e);
+  }
+
+  /** Once the first ball is in, everyone else gets HURRY_T seconds. */
+  startHurry(e) {
     if (this.hurry < 0 && this.ents.some((o) => o !== e && o.ball.state !== 'in' && o.ball.state !== 'sink')) {
       this.hurry = HURRY_T;
     }
@@ -875,6 +880,7 @@ export class GolfScene extends MiniGame {
     e.charging = false;
     this.game.audio.play('pop');
     this.showPop(e, t('golf.pickup'), H.origin.clone().add(new THREE.Vector3(H.cup[0], H.cupH + 0.6, H.cup[1])));
+    if (this.hurry === -1) this.startHurry(e);
   }
 
   fellOff(e) {

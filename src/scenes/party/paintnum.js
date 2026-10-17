@@ -11,7 +11,7 @@ addStrings({
     'paintnum.title': 'Paint by Numbers',
     'paintnum.hint': 'Walk into a paint pot to fill your brush. Then stand on squares with the same number and hold A to paint. Finish the picture together for a bonus!',
     'paintnum.left': 'Painted {n} / {total}', 'paintnum.done': 'Picture done!', 'paintnum.bonus': 'Bonus for everyone!',
-    'paintnum.n': '{n} squares',
+    'paintnum.n': '{n} painted',
     'paintnum.heart': 'a heart', 'paintnum.fish': 'a fish', 'paintnum.house': 'a house', 'paintnum.flower': 'a flower', 'paintnum.mushroom': 'a mushroom', 'paintnum.boat': 'a boat',
     'paintnum.what': 'It was {what}!',
   },
@@ -19,7 +19,7 @@ addStrings({
     'paintnum.title': 'Mal etter tall',
     'paintnum.hint': 'Gå inn i en malingsbøtte for å fylle penselen. Stå på ruter med samme tall og hold inne A for å male. Gjør ferdig bildet sammen for bonus!',
     'paintnum.left': 'Malt {n} / {total}', 'paintnum.done': 'Bildet er ferdig!', 'paintnum.bonus': 'Bonus til alle!',
-    'paintnum.n': '{n} ruter',
+    'paintnum.n': '{n} malt',
     'paintnum.heart': 'et hjerte', 'paintnum.fish': 'en fisk', 'paintnum.house': 'et hus', 'paintnum.flower': 'en blomst', 'paintnum.mushroom': 'en sopp', 'paintnum.boat': 'en båt',
     'paintnum.what': 'Det ble {what}!',
   },
@@ -223,7 +223,7 @@ export class PaintNumRound extends Round {
 
   frame() {
     const w = BOUND_X * 2 + 1.5;
-    const d = this.party.fitDistance(w, (BOUND_Z1 - BOUND_Z0) * 0.9 + 3);
+    const d = this.party.fitDistance(w * 1.08, (BOUND_Z1 - BOUND_Z0) * 0.9 + 3);
     this.camera.position.set(0, d * 0.86, d * 0.52 + 0.6);
     this.camera.lookAt(0, 0, 0.6);
   }

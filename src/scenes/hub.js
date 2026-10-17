@@ -29,6 +29,7 @@ const PADS = [
   { key: 'kart', color: 0x3ddc97, css: '#16b874' },
   { key: 'math', color: 0xff9f1c, css: '#e07f00', edu: true },
   { key: 'spelling', color: 0x2ec4b6, css: '#139e91', edu: true },
+  { key: 'learnmix', color: 0x8ac926, css: '#6aa312', edu: true },
   { key: 'portal', color: 0x9b5de5, css: '#8a45e0' },
   { key: 'slalom', color: 0x6aa8ff, css: '#3d84e8' },
   { key: 'archers', color: 0xffc93c, css: '#e0a100' },
