@@ -285,3 +285,10 @@ html, body {
 .party-arrows .on { color: var(--pink); }
 .tug-bar { display: inline-block; width: clamp(80px, 12vw, 200px); height: 14px; border-radius: 999px; background: #1aa7d8; overflow: hidden; vertical-align: middle; margin: 0 6px; }
 .tug-bar span { display: block; height: 100%; background: #e0a100; transition: width 0.1s; }
+
+/* Space race */
+.space-tank { position: absolute; right: 12px; top: 12px; width: clamp(80px, 10vw, 160px); height: 16px; border-radius: 999px; background: #fff; border: 3px solid var(--c); overflow: hidden; }
+.space-tank span { display: block; height: 100%; background: #7dffcf; }
+.space-tank.locked span { background: #ff9fb0; }
+.space-tank.flash { box-shadow: 0 0 14px #7dffcf; }
+.space-gate { position: absolute; right: 12px; top: 40px; background: #fff; border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: clamp(11px, 1vw, 16px); }

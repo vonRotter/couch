@@ -22,7 +22,7 @@ const en = {
 
   'game.bubble': 'Bubble Buddies', 'game.platformer': 'Sky Hop', 'game.paint': 'Paint Party',
   'game.archers': 'Balloon Archers', 'game.brawl': 'Bonk Brawl', 'game.kart': 'Kart Party',
-  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball', 'game.slalom': 'Snow Slalom', 'game.hockey': 'Ice Hockey', 'game.party': 'Party Mix',
+  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball', 'game.slalom': 'Snow Slalom', 'game.hockey': 'Ice Hockey', 'game.party': 'Party Mix', 'game.space': 'Space Race', 'game.runner': 'Rooftop Rush',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
   'hub.title': 'Couch Party Island',
@@ -124,6 +124,11 @@ const en = {
   'hockey.intro': 'Skate to the puck to grab it · B: shoot (hold for power) · A: dash to steal',
   'hockey.goalie': 'Goalie Bot', 'hockey.shots': '{n} shots', 'hockey.steals': '{n} steals',
 
+  'runner.intro': 'Race over the rooftops! A: jump (also off walls) · B: slide on the ground, dash in the air, or grab a balloon hook and swing',
+  'runner.sign.run': 'Run!', 'runner.sign.slide': 'B: slide', 'runner.sign.wall': 'Jump wall to wall', 'runner.sign.hook': 'B: grab the balloon', 'runner.sign.dash': 'B in the air: dash',
+  'runner.finished': '{name} finished {ord}!', 'runner.solo': 'What a run!', 'runner.sub': 'Rooftop speedrun', 'runner.left': '{n} m to go',
+  'space.intro': 'Fly through the rings! Stick steers · hold A: boost · hold B: slide (keep your speed while the nose turns)',
+  'space.gate': 'Ring {a}/{b}', 'space.solo': 'What a flight!', 'space.sub': '{n} laps · {g} rings', 'space.gates': '{n} rings',
   'party.round': 'Round {n} of {total}', 'party.ready': 'everyone taps jump when ready',
   'party.points': '{n} points', 'party.next': 'tap jump for the next round', 'party.final': 'tap jump for the final scores',
   'party.sub': '{n} rounds of party games', 'party.total': 'total points', 'party.wins': '{n} round wins',
@@ -165,7 +170,7 @@ const no = {
 
   'game.bubble': 'Boblevenner', 'game.platformer': 'Skyhopp', 'game.paint': 'Malefest',
   'game.archers': 'Ballongskyttere', 'game.brawl': 'Dunkekamp', 'game.kart': 'Gokartfest',
-  'game.portal': 'Portalvenner', 'game.football': 'Megaball', 'game.slalom': 'Snøslalåm', 'game.hockey': 'Ishockey', 'game.party': 'Festmiks',
+  'game.portal': 'Portalvenner', 'game.football': 'Megaball', 'game.slalom': 'Snøslalåm', 'game.hockey': 'Ishockey', 'game.party': 'Festmiks', 'game.space': 'Romkappløp', 'game.runner': 'Takløpet',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
   'hub.title': 'Sofafest-øya',
@@ -267,6 +272,11 @@ const no = {
   'hockey.intro': 'Skøyt til pucken for å ta den · B: skudd (hold for kraft) · A: spurt for å stjele',
   'hockey.goalie': 'Målvaktbot', 'hockey.shots': '{n} skudd', 'hockey.steals': '{n} taklinger',
 
+  'runner.intro': 'Løp over takene! A: hopp (også fra vegger) · B: skli på bakken, spurt i lufta, eller ta tak i en ballongkrok og sving',
+  'runner.sign.run': 'Løp!', 'runner.sign.slide': 'B: skli', 'runner.sign.wall': 'Hopp fra vegg til vegg', 'runner.sign.hook': 'B: ta tak i ballongen', 'runner.sign.dash': 'B i lufta: spurt',
+  'runner.finished': '{name} kom på {ord} plass!', 'runner.solo': 'For et løp!', 'runner.sub': 'Speedrun over takene', 'runner.left': '{n} m igjen',
+  'space.intro': 'Fly gjennom ringene! Pinnen styrer · hold A: turbo · hold B: skli (behold farten mens nesen svinger)',
+  'space.gate': 'Ring {a}/{b}', 'space.solo': 'For en tur!', 'space.sub': '{n} runder · {g} ringer', 'space.gates': '{n} ringer',
   'party.round': 'Runde {n} av {total}', 'party.ready': 'alle trykker hopp når de er klare',
   'party.points': '{n} poeng', 'party.next': 'trykk hopp for neste runde', 'party.final': 'trykk hopp for sluttresultatet',
   'party.sub': '{n} runder med festleker', 'party.total': 'totalpoeng', 'party.wins': '{n} rundeseire',

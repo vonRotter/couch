@@ -23,6 +23,8 @@ import { FootballScene } from './scenes/football.js';
 import { SlalomScene } from './scenes/slalom.js';
 import { HockeyScene } from './scenes/hockey.js';
 import { PartyScene } from './scenes/party.js';
+import { SpaceScene } from './scenes/space.js';
+import { RunnerScene } from './scenes/runner.js';
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -36,6 +38,8 @@ export const GAMES = {
   slalom: { Scene: SlalomScene },
   hockey: { Scene: HockeyScene },
   party: { Scene: PartyScene },
+  space: { Scene: SpaceScene },
+  runner: { Scene: RunnerScene },
   spelling: { Scene: SpellingScene, edu: true },
   math: { Scene: MathScene, edu: true },
 };

@@ -113,6 +113,41 @@ const ICONS = {
       g.add(mesh(box('gateFlag', 0.4, 0.28, 0.03, 0.01), toon(c), x + (x < 0 ? 0.2 : -0.2), 0.75, 0.35));
     });
   },
+  space(g) {
+    const rocket = new THREE.Group();
+    rocket.add(mesh(sharedGeo('icon-rkBody', () => new THREE.CapsuleGeometry(0.4, 0.9, 6, 14)), toon(0x6a4fd8)));
+    rocket.add(mesh(sharedGeo('icon-rkNose', () => new THREE.ConeGeometry(0.34, 0.55, 14)), toon(COLORS.white), 0, 0.95, 0));
+    rocket.add(mesh(sharedGeo('icon-rkWin', () => new THREE.SphereGeometry(0.17, 12, 10)), toon(0xbfe9ff), 0, 0.25, 0.33));
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const fin = mesh(box('rkFin', 0.06, 0.45, 0.4, 0.02), toon(0xff5d73), Math.sin(a) * 0.42, -0.55, Math.cos(a) * 0.42);
+      fin.rotation.y = a;
+      rocket.add(fin);
+    }
+    const flame = mesh(sharedGeo('icon-rkFlame', () => new THREE.ConeGeometry(0.25, 0.6, 10)), basic(0xffc93c), 0, -1.05, 0);
+    flame.rotation.x = Math.PI;
+    rocket.add(flame);
+    rocket.rotation.z = -0.5;
+    g.add(rocket);
+    const ring = mesh(sharedGeo('icon-spRing', () => new THREE.TorusGeometry(1.0, 0.07, 8, 32)), toon(COLORS.gold));
+    ring.rotation.x = 1.2;
+    g.add(ring);
+  },
+  runner(g) {
+    // A stopwatch with a lightning bolt.
+    const body = mesh(cyl('watch', 0.8, 0.8, 0.3, 28), toon(0xff7a5c));
+    body.rotation.x = Math.PI / 2;
+    g.add(body);
+    const face = mesh(cyl('watchFace', 0.64, 0.64, 0.32, 28), toon(COLORS.white), 0, 0, 0.02);
+    face.rotation.x = Math.PI / 2;
+    g.add(face);
+    g.add(mesh(cyl('watchKnob', 0.12, 0.12, 0.25, 10), toon(0xff7a5c), 0, 0.95, 0));
+    const hand = mesh(box('watchHand', 0.07, 0.5, 0.05, 0.02), toon(COLORS.ink), 0.12, 0.18, 0.2);
+    hand.rotation.z = -0.6;
+    g.add(hand);
+    g.add(mesh(sph(0.07), toon(COLORS.ink), 0, 0, 0.2));
+    [[-0.95, 0.2], [-1.15, -0.15], [-0.95, -0.5]].forEach(([x, y]) => g.add(mesh(box('speedLine', 0.45, 0.07, 0.07, 0.03), toon(0x4cc9f0), x, y, 0)));
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

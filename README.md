@@ -128,6 +128,27 @@ white walls; walk into one to come out of the other. Anyone can use anyone's por
 Buttons open doors while someone (or a box) stands on them. Push boxes, even through
 portals. Everyone has to reach the gold exit. Hold A+B to reset a room.
 
+**Space Race** (split-screen 3D, 3 laps through 14 rings). Every rocket has its pilot bean in a
+glass dome. The flight model borrows the feel of Tachyon-style arcade flight: turn rates ease in
+and out with a little inertia, the velocity chases the nose, and holding **B** slides, which keeps
+your momentum while the nose swings freely (handy for lining up the next ring). Hold **A** to boost
+from a tank that refills on its own; flying through a ring, or a mint boost ring, tops it up.
+Pitch is limited and the ship never rolls upside down, so nobody gets lost. A small arrow
+(only on your own screen) points to your next ring. Asteroids bounce you off gently, and if you
+drift too far from the course you float back to the last ring in a bubble. Players further back
+get slightly more top speed.
+
+**Rooftop Rush** (side-scrolling speedrun race, shared camera). Race over the rooftops to the
+flag. **A** jumps, and also kicks off walls (wall jump). **B** on the ground slides (so does stick
+down while running), which keeps your speed and gets you under billboards. **B** in the air near a
+balloon hook grabs it: hold B to swing, let go (or press A) to fly off. Otherwise **B** in the air is
+a dash. Signs name each move the first time it is needed: slide tunnel, wall-jump chimney, hook
+gap, dash gap, then a spring to a high road or a slide through the low road, and a final hook and
+chimney. Speed pads push you to 18 m/s. The camera follows the leader; anyone who falls or drops
+off the left edge floats forward in a bubble to just behind the leader (it takes at least 1.5 s),
+so nobody gets stuck. After the first finisher, the others have 12 seconds, and the race ends
+after 150 seconds regardless.
+
 **Party Mix** (5 short rounds in a row). One pad plays five random rounds out of seven, with
 a running scoreboard. Before each round a card explains it and everyone taps jump when ready.
 Each round gives placement points (4, 3, 2, then 1 for everyone else, ties share the higher
@@ -190,6 +211,7 @@ src/
   scenes/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
+    space.js  runner.js
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
     party.js         Party Mix flow: how-to cards, countdown, scoreboard
     party/           one file per round (count, statue, cushions, fruit, dance, tug, tower)

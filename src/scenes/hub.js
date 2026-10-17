@@ -34,6 +34,8 @@ const PADS = [
   { key: 'archers', color: 0xffc93c, css: '#e0a100' },
   { key: 'bubble', color: 0xff7eb6, css: '#ff4f9a' },
   { key: 'party', color: 0xb5179e, css: '#b5179e' },
+  { key: 'space', color: 0x6a4fd8, css: '#5a3fd0' },
+  { key: 'runner', color: 0xff7a5c, css: '#f2593a' },
 ].map((p, i, all) => {
   const a = (i / all.length) * Math.PI * 2;
   return { ...p, angle: a, x: Math.sin(a) * RING_R, z: -Math.cos(a) * RING_R };
