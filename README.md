@@ -99,6 +99,12 @@ stick, and everyone taps jump when ready. B kicks the ball when you are close (o
 is a dash), A jumps so you can head it. If the teams are uneven, the smaller side gets a helper
 keeper. 2.5 minutes; a draw goes to "next goal wins".
 
+**Snow Slalom** (race, shared camera). Everyone skis down the same slope at once. Steer
+between the red and blue gates: each gate you pass is a point, and finishing earns a bonus
+(1st place most). Missing a gate only costs that point. Stick up to tuck (faster), stick down
+to brake, A to jump (ramps launch you), B to push off for a short boost. Snowmen bump you
+aside. Anyone who falls far behind floats back to the pack in a bubble.
+
 **Portal Pals** (co-op puzzle, 4 rooms). Top-down rooms. A and B shoot your two portals onto
 white walls; walk into one to come out of the other. Anyone can use anyone's portals.
 Buttons open doors while someone (or a box) stands on them. Push boxes, even through
@@ -144,7 +150,7 @@ src/
     minigame.js      shared intro -> countdown -> results -> back flow
   scenes/
     hub.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
-    archers.js  brawl.js  kart.js  portal.js  football.js
+    archers.js  brawl.js  kart.js  portal.js  football.js  slalom.js
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
 ```
 

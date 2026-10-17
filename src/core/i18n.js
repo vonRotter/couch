@@ -22,7 +22,7 @@ const en = {
 
   'game.bubble': 'Bubble Buddies', 'game.platformer': 'Sky Hop', 'game.paint': 'Paint Party',
   'game.archers': 'Balloon Archers', 'game.brawl': 'Bonk Brawl', 'game.kart': 'Kart Party',
-  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball',
+  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball', 'game.slalom': 'Snow Slalom',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
   'hub.title': 'Couch Party Island',
@@ -109,6 +109,11 @@ const en = {
   'ball.winTitle': '{team} wins!', 'ball.draw': "It's a draw!", 'ball.sub': '{a} - {b}',
   'ball.goals': '{n} goals', 'ball.touches': '{n} kicks', 'ball.keeper': 'Keeper Bot',
   'ball.overtime': 'Next goal wins!',
+
+  'slalom.intro': 'Steer through the gates · A: jump · B: push off · stick up: tuck, down: brake',
+  'slalom.toGo': '{n} m to go', 'slalom.finished': '{name} is in the finish!', 'slalom.closes': 'Finish closes in',
+  'slalom.title': '{name} wins the slalom!', 'slalom.solo': 'What a run!', 'slalom.sub': '{n} gates on the course',
+  'slalom.points': '{n} points', 'slalom.detail': '{place} · {g} gates', 'slalom.dnf': 'not finished', 'slalom.gates': 'gates',
 };
 
 const no = {
@@ -132,7 +137,7 @@ const no = {
 
   'game.bubble': 'Boblevenner', 'game.platformer': 'Skyhopp', 'game.paint': 'Malefest',
   'game.archers': 'Ballongskyttere', 'game.brawl': 'Dunkekamp', 'game.kart': 'Gokartfest',
-  'game.portal': 'Portalvenner', 'game.football': 'Megaball',
+  'game.portal': 'Portalvenner', 'game.football': 'Megaball', 'game.slalom': 'Snøslalåm',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
   'hub.title': 'Sofafest-øya',
@@ -219,6 +224,11 @@ const no = {
   'ball.winTitle': '{team} vinner!', 'ball.draw': 'Uavgjort!', 'ball.sub': '{a} - {b}',
   'ball.goals': '{n} mål', 'ball.touches': '{n} spark', 'ball.keeper': 'Keeperbot',
   'ball.overtime': 'Neste mål vinner!',
+
+  'slalom.intro': 'Styr gjennom portene · A: hopp · B: stavtak · pinne opp: fart, ned: brems',
+  'slalom.toGo': '{n} m igjen', 'slalom.finished': '{name} er i mål!', 'slalom.closes': 'Målet stenger om',
+  'slalom.title': '{name} vinner slalåmen!', 'slalom.solo': 'For et renn!', 'slalom.sub': '{n} porter i løypa',
+  'slalom.points': '{n} poeng', 'slalom.detail': '{place} · {g} porter', 'slalom.dnf': 'ikke i mål', 'slalom.gates': 'porter',
 };
 
 const DICTS = { en, no };

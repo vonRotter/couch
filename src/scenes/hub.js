@@ -27,6 +27,7 @@ const PADS = [
   { key: 'spelling', x: -6, z: -12.5, color: 0x2ec4b6, css: '#139e91', edu: true },
   { key: 'math', x: 6, z: -12.5, color: 0xff9f1c, css: '#e07f00', edu: true },
   { key: 'football', x: 17.5, z: -3.5, color: 0x58b947, css: '#3f9a32' },
+  { key: 'slalom', x: -17.5, z: -3.5, color: 0x6aa8ff, css: '#3d84e8' },
 ];
 const LANG_FLAG = { x: 5.5, z: 6.5 };
 const SWAP_PADS = [{ x: -1.6, z: 9.2 }, { x: 1.6, z: 9.2 }];
@@ -39,8 +40,8 @@ const PAD_R = 2.6;
 
 // Where stars can appear. y is the star's height.
 const STAR_SPOTS = [
-  [0, 14.5, 3.7], [-9, 7, 5.6], [-16.5, -5, 2.2], [0, 6, 2.4],
-  [-4, 3, 0.8], [5, -2, 0.8], [13.5, 8, 0.8], [-17, 9, 0.8],
+  [0, 14.5, 3.7], [-9, 7, 5.6], [-18.5, 7.5, 2.2], [0, 6, 2.4],
+  [-4, 3, 0.8], [5, -2, 0.8], [13.5, 8, 0.8], [-11, 17, 0.8],
   [5, 17, 0.8], [-5, 17, 0.8], [12, -13.5, 0.8], [-3, -8, 2.2],
 ]
 
@@ -376,6 +377,27 @@ export class HubScene extends BaseScene {
     this.langLabelPos = new THREE.Vector3(LANG_FLAG.x, 3.4, LANG_FLAG.z);
   }
 
+  buildSlalomLandmark() {
+    const sl = PADS.find((p) => p.key === 'slalom');
+    const g = new THREE.Group();
+    g.position.set(sl.x - 1.6, 0, sl.z - 4.3);
+    const hill = new THREE.Mesh(sharedGeo('slHill', () => new THREE.ConeGeometry(2.4, 3.6, 9)), toon(0xa7b4d6));
+    hill.position.y = 1.8;
+    const cap = new THREE.Mesh(sharedGeo('slCap', () => new THREE.ConeGeometry(1.3, 1.9, 9)), toon(COLORS.white));
+    cap.position.y = 2.75;
+    hill.castShadow = true;
+    g.add(hill, cap);
+    [[-1.1, 1.3, 0xff5d73], [0.9, 0.7, 0x4c9bf0], [-0.4, 0.2, 0xff5d73]].forEach(([x, y, c]) => {
+      const pole = new THREE.Mesh(sharedGeo('slPole', () => new THREE.CylinderGeometry(0.05, 0.05, 1.1, 6)), toon(c));
+      pole.position.set(x, y + 0.55, 1.9 - y * 0.6);
+      const flag = new THREE.Mesh(sharedGeo('slFlag', () => new THREE.BoxGeometry(0.45, 0.3, 0.03)), toon(c));
+      flag.position.set(x + 0.22, y + 0.95, 1.9 - y * 0.6);
+      g.add(pole, flag);
+    });
+    this.scene.add(g);
+    this.obstacles.push({ x: g.position.x, z: g.position.z, r: 2.2 });
+  }
+
   touchPot(e, index) {
     if (e.potCd > 0 || e.p.colorIndex === index) return;
     e.potCd = 1;
@@ -479,6 +501,7 @@ export class HubScene extends BaseScene {
     const pad = (k) => PADS.find((p) => p.key === k);
     this.buildEduLandmarks();
     this.buildSocial();
+    this.buildSlalomLandmark();
 
     // Archery target with balloons.
     const ar = pad('archers');
@@ -616,9 +639,9 @@ export class HubScene extends BaseScene {
     // Big standable rock.
     const bigRock = makeRock(rand, 1.6);
     bigRock.scale.set(1.8, 1.2, 1.8);
-    bigRock.position.set(-16.5, 0, -5);
+    bigRock.position.set(-18.5, 0, 7.5);
     s.add(bigRock);
-    this.obstacles.push({ x: -16.5, z: -5, r: 1.7, top: 1.1 });
+    this.obstacles.push({ x: -18.5, z: 7.5, r: 1.7, top: 1.1 });
 
     // Bouncy mushrooms.
     this.mushrooms = [];
