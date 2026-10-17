@@ -148,6 +148,14 @@ const ICONS = {
     g.add(mesh(sph(0.07), toon(COLORS.ink), 0, 0, 0.2));
     [[-0.95, 0.2], [-1.15, -0.15], [-0.95, -0.5]].forEach(([x, y]) => g.add(mesh(box('speedLine', 0.45, 0.07, 0.07, 0.03), toon(0x4cc9f0), x, y, 0)));
   },
+  cook(g) {
+    g.add(mesh(cyl('cookPot', 0.62, 0.52, 0.7), toon(0xb9c3d6), 0, -0.2, 0));
+    g.add(mesh(cyl('cookSoup', 0.56, 0.56, 0.08), toon(0xff6a3d), 0, 0.12, 0));
+    for (const s of [-1, 1]) g.add(mesh(box('cookHandle', 0.25, 0.1, 0.2, 0.04), toon(COLORS.ink), s * 0.72, 0, 0));
+    g.add(mesh(sph(0.22), toon(0xff4f4f), 0.25, 0.3, 0.15));
+    g.add(mesh(sph(0.16), toon(0x6cc94a), -0.25, 0.28, -0.1));
+    for (let i = 0; i < 3; i++) g.add(mesh(sph(0.12 + i * 0.03), toon(COLORS.white), -0.1 + i * 0.12, 0.55 + i * 0.28, 0));
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

@@ -23,9 +23,10 @@ addStrings({
 });
 
 // Spot the Difference: two little dioramas side by side; mark what changed on the right one.
-const BW = 8; // board width (x)
-const BD = 6; // board depth (z)
-const GAP = 1.8;
+const BW = 7.4; // board width (x)
+const BD = 6.4; // board depth (z)
+const GAP = 1.4;
+const PROP_SCALE = 1.3;
 const CX = BW / 2 + GAP / 2; // board centers at ±CX
 const PICS = 2;
 const PIC_TIME = 22;
@@ -289,14 +290,14 @@ const THEMES = [
 ];
 
 // 5 x 4 slot grid on a board; jittered so it never looks like a grid.
-const COLS = 5, ROWS = 4;
-const slotPos = (s) => ({ x: -BW / 2 + 0.8 + (s % COLS) * ((BW - 1.6) / (COLS - 1)), z: -BD / 2 + 0.75 + Math.floor(s / COLS) * ((BD - 1.5) / (ROWS - 1)) });
+const COLS = 4, ROWS = 4;
+const slotPos = (s) => ({ x: -BW / 2 + 0.95 + (s % COLS) * ((BW - 1.9) / (COLS - 1)), z: -BD / 2 + 0.85 + Math.floor(s / COLS) * ((BD - 1.7) / (ROWS - 1)) });
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 
 /** Builds one picture spec (left) plus its changed copy (right) and the list of differences. */
 function makePuzzle(theme) {
   const free = shuffle([...Array(COLS * ROWS).keys()]);
-  const used = free.splice(0, 13 + Math.floor(Math.random() * 3));
+  const used = free.splice(0, 10 + Math.floor(Math.random() * 2));
   const items = used.map((slot) => {
     const row = Math.floor(slot / COLS);
     let kind = pick(theme.props);
@@ -323,7 +324,7 @@ function makePuzzle(theme) {
       const kind = pick(kinds);
       const p = slotPos(slot);
       right.push({ kind, slot, x: p.x, z: p.z, color: pick(PROPS[kind].colors), scale: 1, seed: Math.floor(Math.random() * 1e6) });
-      diffs.push({ type, x: p.x, z: p.z, r: PROPS[kind].r + 0.1 });
+      diffs.push({ type, x: p.x, z: p.z, r: PROPS[kind].r * PROP_SCALE + 0.1 });
       continue;
     }
     const cands = shuffle(right.map((_, i) => i).filter((i) => i < items.length && !touched.has(i) && farFromDiffs(items[i].x, items[i].z)));
@@ -335,7 +336,7 @@ function makePuzzle(theme) {
         if (prop.colors.length < 2) continue;
         it.color = pick(prop.colors.filter((c) => c !== it.color));
       } else if (type === 'size') {
-        it.scale = prop.tall ? 0.55 : Math.random() < 0.6 ? 1.6 : 0.55;
+        it.scale = prop.tall ? 0.55 : Math.random() < 0.6 ? 1.45 : 0.55;
       } else if (type === 'missing') {
         it.gone = true;
       } else if (type === 'moved') {
@@ -352,12 +353,12 @@ function makePuzzle(theme) {
         free.splice(free.indexOf(s), 1);
         const from = { x: it.x, z: it.z };
         it.x = p.x; it.z = p.z;
-        diffs.push({ type, x: (from.x + p.x) / 2, z: (from.z + p.z) / 2, r: Math.hypot(p.x - from.x, p.z - from.z) / 2 + prop.r * 0.8, pts: [from, { x: p.x, z: p.z }], pr: prop.r });
+        diffs.push({ type, x: (from.x + p.x) / 2, z: (from.z + p.z) / 2, r: Math.hypot(p.x - from.x, p.z - from.z) / 2 + prop.r * PROP_SCALE * 0.8, pts: [from, { x: p.x, z: p.z }], pr: prop.r * PROP_SCALE });
         touched.add(i);
         done = true;
         break;
       }
-      diffs.push({ type, x: it.x, z: it.z, r: prop.r * (type === 'size' && it.scale > 1 ? 1.3 : 1) + 0.05 });
+      diffs.push({ type, x: it.x, z: it.z, r: prop.r * PROP_SCALE * (type === 'size' && it.scale > 1 ? 1.3 : 1) + 0.05 });
       touched.add(i);
       done = true;
       break;
@@ -386,8 +387,9 @@ export class SpotRound extends Round {
     this.phaseT = 0;
     this.t = 0;
     this.themes = shuffle([...THEMES.keys()]);
-    this.ringGeo = new THREE.TorusGeometry(CURSOR_R, 0.08, 8, 32);
+    this.ringGeo = new THREE.TorusGeometry(CURSOR_R, 0.06, 8, 32);
     this.dotGeo = new THREE.CircleGeometry(0.09, 12);
+    this.tickGeo = new THREE.PlaneGeometry(0.07, 0.26);
     this.ents = this.players.map((p, i) => {
       const n = this.players.length;
       const mk = (opacity) => new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity, depthTest: false });
@@ -412,8 +414,15 @@ export class SpotRound extends Round {
     const dot = new THREE.Mesh(this.dotGeo, mat);
     dot.rotation.x = -Math.PI / 2;
     g.add(ring, dot);
-    g.renderOrder = 20;
-    ring.renderOrder = dot.renderOrder = 20;
+    // Crosshair ticks so the cursor never looks like a found-circle.
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2;
+      const tick = new THREE.Mesh(this.tickGeo, mat);
+      tick.rotation.set(-Math.PI / 2, 0, a);
+      tick.position.set(Math.sin(a) * (CURSOR_R + 0.12), 0, Math.cos(a) * (CURSOR_R + 0.12));
+      g.add(tick);
+    }
+    g.children.forEach((c) => { c.renderOrder = 20; });
     g.position.y = CURSOR_Y;
     return g;
   }
@@ -441,7 +450,7 @@ export class SpotRound extends Round {
     this.right.position.x = CX;
     for (const side of [this.left, this.right]) {
       const frame = new THREE.Mesh(new RoundedBoxGeometry(BW + 0.7, 0.4, BD + 0.7, 3, 0.15), toon(side === this.right ? 0xff7eb6 : 0x4cc9f0));
-      frame.position.y = -0.2;
+      frame.position.y = -0.26;
       frame.receiveShadow = true;
       side.add(frame);
       g.add(side);
@@ -460,10 +469,10 @@ export class SpotRound extends Round {
   }
 
   frame() {
-    const w = BW * 2 + GAP + 2.4;
-    const d = this.party.fitDistance(w + 0.6, BD + 6.5);
-    this.camera.position.set(0, d * 0.88, d * 0.5);
-    this.camera.lookAt(0, -0.6, 0.35);
+    const w = BW * 2 + GAP + 1.4;
+    const d = this.party.fitDistance(w * 1.16, BD + 3.4);
+    this.camera.position.set(0, d * 0.8, d * 0.6);
+    this.camera.lookAt(0, 0, 0.2);
   }
 
   /** Clears the old dioramas and builds a fresh puzzle. */
@@ -486,7 +495,7 @@ export class SpotRound extends Round {
   makeDiorama(theme, items) {
     const g = new THREE.Group();
     const top = new THREE.Mesh(sharedGeo(`spot-top`, () => new RoundedBoxGeometry(BW, 0.3, BD, 2, 0.1)), toon(theme.ground));
-    top.position.y = -0.15;
+    top.position.y = -0.13;
     top.receiveShadow = true;
     g.add(top);
     const props = new THREE.Group();
@@ -495,7 +504,7 @@ export class SpotRound extends Round {
       const wrap = new THREE.Group();
       wrap.add(o);
       wrap.position.set(it.x, 0, it.z);
-      wrap.scale.setScalar(it.scale);
+      wrap.scale.setScalar(it.scale * PROP_SCALE);
       props.add(wrap);
     }
     g.add(props);
@@ -506,7 +515,7 @@ export class SpotRound extends Round {
   /** Circle drawn over the picture (always visible on top of props). */
   ring(d, side, color, blink = false) {
     const mat = new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false });
-    const mesh = new THREE.Mesh(new THREE.TorusGeometry(d.r, 0.09, 8, 40), mat);
+    const mesh = new THREE.Mesh(new THREE.TorusGeometry(d.r, 0.14, 8, 40), mat);
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(side.position.x + d.x, 0.3, d.z);
     mesh.renderOrder = 15;
@@ -634,6 +643,7 @@ export class SpotRound extends Round {
   dispose() {
     this.ringGeo.dispose();
     this.dotGeo.dispose();
+    this.tickGeo.dispose();
     for (const e of this.ents) { e.matOff.dispose(); e.matOn.dispose(); }
     super.dispose();
   }

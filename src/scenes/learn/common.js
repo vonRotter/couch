@@ -36,7 +36,8 @@ export function textTexture(lines, { w = 512, h = 256, fg = '#2b2340', stroke = 
   const font = (px) => `700 ${px}px Fredoka, "Trebuchet MS", sans-serif`;
   const weight = rows.reduce((s, [, r]) => s + r, 0);
   // Base size from the height, then shrink until the widest line fits.
-  let base = (h * 0.86) / (weight * 1.08);
+  // Leave headroom for Å rings and descenders.
+  let base = (h * 0.74) / (weight * 1.08);
   for (const [text, r] of rows) {
     g.font = font(base * r);
     const tw = g.measureText(text).width + base * r * 0.16;
@@ -212,7 +213,8 @@ export class FieldRound extends Round {
   freeSpot(w, d) {
     let best = null, bestScore = -Infinity;
     for (let tries = 0; tries < 40; tries++) {
-      const x = (Math.random() - 0.5) * (HW * 2 - w - 0.8), z = (Math.random() - 0.5) * (HD * 2 - d - 1.2);
+      // The bottom strip stays free: the player cards cover it.
+      const x = (Math.random() - 0.5) * (HW * 2 - w - 0.8), z = -HD + d / 2 + 0.6 + Math.random() * (HD * 2 - d - 2.6);
       // Gap to the nearest tile edge (boxes) and to players.
       let gap = Infinity;
       for (const t of this.tiles) {
@@ -287,7 +289,8 @@ export class FieldRound extends Round {
     this.party.confetti.burst(new THREE.Vector3(tile.x, 1, tile.z), 0, { count: 26, speed: 6, colors: [e.p.color, COLORS.gold, COLORS.white] });
     e.ch.squash(1.35);
     this.removeTile(tile);
-    this.later(0.6, () => { if (!this.done) this.spawnTile(); });
+    this.ensure(); // someone else may have needed the same answer
+    this.later(0.6, () => { if (!this.done && this.tiles.length < this.tileCount) this.spawnTile(); });
   }
 
   onWrong(e, tile) {

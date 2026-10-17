@@ -13,8 +13,8 @@ addStrings({
     'game.snowball': 'Snowball Fort',
     'snowball.intro': "B: tap to throw at the other team's targets · hold B to scoop snow · A: build a snow wall (3 snow)",
     'snowball.bot': 'Snow Bot',
-    'snowball.hits': '{n} hits',
-    'snowball.walls': '{n} walls',
+    'snowball.hits': '{n} hits', 'snowball.hit1': '1 hit',
+    'snowball.walls': '{n} walls', 'snowball.wall1': '1 wall',
     'snowball.throws': '{n} throws',
     'snowball.need': 'Hold B for snow!',
   },
@@ -22,8 +22,8 @@ addStrings({
     'game.snowball': 'Snøballfestningen',
     'snowball.intro': 'B: trykk for å kaste på det andre lagets blinker · hold B for å samle snø · A: bygg en snømur (3 snø)',
     'snowball.bot': 'Snøbot',
-    'snowball.hits': '{n} treff',
-    'snowball.walls': '{n} murer',
+    'snowball.hits': '{n} treff', 'snowball.hit1': '1 treff',
+    'snowball.walls': '{n} murer', 'snowball.wall1': '1 mur',
     'snowball.throws': '{n} kast',
     'snowball.need': 'Hold B for snø!',
   },
@@ -40,7 +40,7 @@ const MATCH_TIME = 150;
 const MAX_SNOW = 6;
 const START_SNOW = 3;
 const WALL_COST = 3;
-const TAP_TIME = 0.22; // shorter B presses throw, longer ones scoop
+const TAP_TIME = 0.25; // shorter B presses throw, longer ones scoop
 const THROW_CD = 0.35;
 const G = 14; // snowball gravity
 const BALL_R = 0.17;
@@ -49,8 +49,8 @@ const AIM_CONE = THREE.MathUtils.degToRad(40);
 const THROW_RANGE = 13; // landing distance when no target is in the aim cone
 const TARGET_RESPAWN = 5;
 const TARGET_R = 0.62; // hit radius around a target's center
-const WL = 0.95, WT = 0.28; // wall half length and half thickness
-const ROW_H = 0.42; // one row of snow bricks
+const WL = 1.1, WT = 0.28; // wall half length and half thickness
+const ROW_H = 0.5; // one row of snow bricks
 const WALL_HP = 6; // hits per wall (two per brick row)
 const WALL_DECAY = 14; // seconds per hp lost on its own
 const WALL_SPRAY = 0.6; // walls also stop balls a little above their top (fluffy snow)
@@ -347,6 +347,14 @@ export class SnowballScene extends MiniGame {
       shovel.position.set(0.4, 0.3, -0.5);
       shovel.rotation.set(0.3, 0, -0.4);
       pile.add(shovel);
+      // A little pyramid of ready snowballs says "snow here".
+      [[0, 0], [0.34, 0], [0.17, 0.28], [0.17, 0.1, 1]].forEach(([x, z, up]) => {
+        const b = new THREE.Mesh(sharedGeo('sbBall', () => new THREE.SphereGeometry(BALL_R, 12, 9)), toon(COLORS.white));
+        b.position.set(-1.0 + x, BALL_R + (up ? 0.26 : 0), 0.9 + z);
+        b.scale.setScalar(1.15);
+        b.castShadow = true;
+        pile.add(b);
+      });
       pile.position.set(px, 0, pz);
       s.add(pile);
       this.piles.push({ x: px, z: pz, group: pile });
@@ -532,14 +540,14 @@ export class SnowballScene extends MiniGame {
 
   makeWall(team, x, z, angle, owner) {
     const g = new THREE.Group();
-    const brick = sharedGeo('sbWallBrick', () => new RoundedBoxGeometry(0.62, ROW_H - 0.02, WT * 2, 2, 0.08));
+    const brick = sharedGeo('sbWallBrick', () => new RoundedBoxGeometry(0.72, ROW_H - 0.02, WT * 2, 2, 0.08));
     const rows = [];
     for (let r = 0; r < 3; r++) {
       const row = new THREE.Group();
       row.position.y = r * ROW_H + ROW_H / 2;
       for (let i = -1; i <= 1; i++) {
         const m = new THREE.Mesh(brick, toon((i + r) % 2 ? 0xffffff : 0xe6f2ff));
-        m.position.x = i * 0.63 + (r % 2 ? 0.08 : -0.04);
+        m.position.x = i * 0.73 + (r % 2 ? 0.06 : -0.03);
         m.castShadow = m.receiveShadow = true;
         row.add(m);
       }
@@ -554,7 +562,7 @@ export class SnowballScene extends MiniGame {
     flag.rotation.z = Math.PI / 2;
     flag.position.set(0.2, 0.5, 0);
     pennant.add(stick, flag);
-    pennant.position.x = 0.7;
+    pennant.position.x = 0.8;
     g.add(pennant);
 
     g.position.set(x, 0, z);
@@ -603,8 +611,8 @@ export class SnowballScene extends MiniGame {
       return false;
     }
     const s = sideOf(e.team);
-    const x = s * clamp(s * (e.x + e.dirX * 1.25), 0.9, HX - 0.7);
-    const z = clamp(e.z + e.dirZ * 1.25, -HZ + 0.6, HZ - 0.6);
+    const x = s * clamp(s * (e.x + e.dirX * 1.1), 0.9, HX - 0.7);
+    const z = clamp(e.z + e.dirZ * 1.1, -HZ + 0.6, HZ - 0.6);
     this.makeWall(e.team, x, z, Math.atan2(e.dirX, e.dirZ), e);
     e.snow -= WALL_COST;
     e.walls++;
@@ -787,11 +795,13 @@ export class SnowballScene extends MiniGame {
         // B: a short tap throws on release; holding it scoops snow.
         if (d.b) e.bHold += dt;
         else if (e.bWas) {
-          if (e.bHold <= TAP_TIME) {
+          // A long press that scooped nothing (hands already full) still throws.
+          if (e.bHold <= TAP_TIME || !e.gained) {
             if (e.snow >= 1) this.throwBall(e, this.aimFor(e));
             else if (e.throwCd <= 0) { this.floater(t('snowball.need'), new THREE.Vector3(e.x, 2.3, e.z), e.css, 1.0); e.throwCd = 0.6; }
           }
           e.bHold = 0;
+          e.gained = false;
         }
         e.bWas = !!d.b;
         scoop = d.b && e.bHold > TAP_TIME;
@@ -804,6 +814,7 @@ export class SnowballScene extends MiniGame {
         const onPile = Math.hypot(e.x - pile.x, e.z - pile.z) < PILE_R;
         const before = Math.floor(e.snow);
         e.snow = Math.min(MAX_SNOW, e.snow + dt * (onPile ? 3 : 1.4));
+        e.gained = true;
         e.scoopT -= dt;
         if (e.scoopT <= 0) {
           e.scoopT = 0.18;
@@ -1000,8 +1011,8 @@ export class SnowballScene extends MiniGame {
       title: winner < 0 ? t('ball.draw') : t('ball.winTitle', { team: t(`ball.team.${winner}`) }),
       subtitle: `${t('ball.team.0')} ${t('ball.sub', { a, b })} ${t('ball.team.1')}`,
       rows: ranked.map((e) => ({
-        css: e.css, name: e.name, value: t('snowball.hits', { n: e.hits }),
-        detail: `${t(`ball.team.${e.team}`)} · ${t('snowball.walls', { n: e.walls })} · ${t('snowball.throws', { n: e.throws })}`,
+        css: e.css, name: e.name, value: e.hits === 1 ? t('snowball.hit1') : t('snowball.hits', { n: e.hits }),
+        detail: `${t(`ball.team.${e.team}`)} · ${e.walls === 1 ? t('snowball.wall1') : t('snowball.walls', { n: e.walls })} · ${t('snowball.throws', { n: e.throws })}`,
         crown: e.team === winner,
       })),
       stars: 2,

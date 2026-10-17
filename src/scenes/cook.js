@@ -110,6 +110,8 @@ const CUSTOMER_COLORS = [0x7b6cf6, 0xff8fc8, 0x4cc9f0, 0xffb347, 0x3ddc97, 0xb08
 const CUSTOMER_CSS = ['#7b6cf6', '#ff8fc8', '#4cc9f0', '#ffb347', '#3ddc97', '#b08bff'];
 
 const clamp = THREE.MathUtils.clamp;
+/** Pale version of a color for counter tops. */
+const tint = (hex) => new THREE.Color(hex).lerp(new THREE.Color(0xffffff), 0.72).getHex();
 
 // ---------- shared geometry helpers ----------
 const sph = (r, w = 14, h = 10) => sharedGeo(`ck-sph${r}|${w}`, () => new THREE.SphereGeometry(r, w, h));
@@ -229,8 +231,9 @@ export class CookScene extends MiniGame {
     this.cookTime = this.solo ? 5 : 7;
     this.orderTimeScale = this.solo ? 1.25 : 1;
     this.orderCap = [2, 3, 3, 3, 4, 4][n - 1] || 4;
-    const scale = [1, 1.4, 1.8, 2.1, 2.4, 2.7][n - 1] || 2.7;
-    this.thresholds = [25, 70, 125].map((v) => Math.round((v * scale) / 5) * 5);
+    const scale = [1, 1.4, 1.7, 2, 2.2, 2.4][n - 1] || 2.4;
+    this.spawnGap = [9, 7, 6, 5, 4.5, 4][n - 1] || 4; // seconds between new orders while below the cap
+    this.thresholds = [25, 70, 135].map((v) => Math.round((v * scale) / 5) * 5);
 
     this.timeLeft = ROUND_TIME;
     this.coins = 0;
@@ -331,7 +334,7 @@ export class CookScene extends MiniGame {
     }
     // Low side walls.
     for (const sd of [-1, 1]) {
-      s.add(mesh(new RoundedBoxGeometry(0.4, 1.0, kd + 0.8, 2, 0.12), toon(0xfff3dc), sd * (kw / 2 + 0.2), 0.5, 0));
+      s.add(mesh(new RoundedBoxGeometry(0.4, 0.55, kd + 0.8, 2, 0.12), toon(0xfff3dc), sd * (kw / 2 + 0.2), 0.27, 0));
     }
 
     this.grid = [];
@@ -357,16 +360,21 @@ export class CookScene extends MiniGame {
     const zMin = Math.min(...hz) - CELL / 2, zMax = Math.max(...hz) + CELL / 2;
     const stripes = Math.round((zMax - zMin) / 0.4);
     for (let i = 0; i < stripes; i++) {
-      const st = mesh(new THREE.BoxGeometry(1.1, 0.08, (zMax - zMin) / stripes), toon(i % 2 ? COLORS.white : 0xff5d73), hx + 0.35, 2.0, zMin + (i + 0.5) * ((zMax - zMin) / stripes));
+      const st = mesh(new THREE.BoxGeometry(0.85, 0.08, (zMax - zMin) / stripes), toon(i % 2 ? COLORS.white : 0xff5d73), hx + 0.3, 1.85, zMin + (i + 0.5) * ((zMax - zMin) / stripes));
       st.rotation.z = -0.35;
       this.scene.add(st);
     }
-    for (const z of [zMin + 0.08, zMax - 0.08]) this.scene.add(mesh(cyl('post', 0.06, 0.06, 2.0, 8), toon(COLORS.white), hx + 0.75, 1.0, z));
+    for (const z of [zMin + 0.08, zMax - 0.08]) this.scene.add(mesh(cyl('post', 0.06, 0.06, 1.8, 8), toon(COLORS.white), hx + 0.68, 0.9, z));
     this.hatchZ = (zMin + zMax) / 2;
+    // Wooden deck outside the hatch where the customers queue.
+    const deck = mesh(new RoundedBoxGeometry(3.6, 0.3, zMax - zMin + 4.2, 2, 0.1), toon(0xd9a066), kw / 2 + 2.2, -0.15, this.hatchZ + 1.4);
+    deck.receiveShadow = true;
+    this.scene.add(deck);
+    for (let i = 1; i < 6; i++) this.scene.add(mesh(new THREE.BoxGeometry(0.04, 0.02, zMax - zMin + 4), toon(0xb87a48), kw / 2 + 0.4 + i * 0.6, 0.005, this.hatchZ + 1.4));
   }
 
   /** Counter body + top slab in the given colors. */
-  counter(st, body, top = COLORS.icing) {
+  counter(st, body, top = tint(body)) {
     const g = new THREE.Group();
     const b = mesh(rbox('body', CELL - 0.08, H - 0.1, CELL - 0.08, 0.08), toon(body), 0, (H - 0.1) / 2, 0);
     b.receiveShadow = true;
@@ -567,7 +575,7 @@ export class CookScene extends MiniGame {
   give(e, item) {
     e.held = item;
     item.mesh.position.set(0, 0, 0);
-    item.mesh.scale.setScalar(0.9);
+    item.mesh.scale.setScalar(1.1);
     e.carry.add(item.mesh);
     e.ch.squash(1.15);
   }
@@ -771,11 +779,11 @@ export class CookScene extends MiniGame {
 
     // A customer walks up to the hatch window.
     const g = makeGrumble(CUSTOMER_COLORS[colorIndex]);
-    g.scale.setScalar(1.1);
-    const x0 = this.hatches[0].x + 6;
-    g.position.set(x0, -0.4, this.hatchZ + 3);
+    g.scale.setScalar(1.3);
+    const x0 = this.hatches[0].x + 3;
+    g.position.set(x0, 0, this.hatchZ + 4.5);
     this.scene.add(g);
-    this.customers.push({ g, order: o, state: 'come', t: 0, x: x0, z: this.hatchZ + 3 });
+    this.customers.push({ g, order: o, state: 'come', t: 0, x: x0, z: this.hatchZ + 4.5 });
   }
 
   updateOrders(dt) {
@@ -795,14 +803,14 @@ export class CookScene extends MiniGame {
       this.spawnT -= dt;
       if (this.spawnT <= 0) {
         this.spawnOrder();
-        this.spawnT = this.solo ? 9 : 7;
+        this.spawnT = this.spawnGap;
       }
     }
   }
 
   updateCustomers(dt) {
     const waiting = this.customers.filter((c) => c.state === 'come' || c.state === 'wait');
-    const baseX = this.hatches[0].x + 1.45;
+    const baseX = this.hatches[0].x + 2.1;
     for (const cu of this.customers) {
       cu.t += dt;
       const g = cu.g;
@@ -813,7 +821,7 @@ export class CookScene extends MiniGame {
         const step = Math.min(d, dt * 4);
         if (d > 0.01) { cu.x += (dx / d) * step; cu.z += (dz / d) * step; }
         const moving = d > 0.05;
-        g.position.set(cu.x, -0.4 + (moving ? Math.abs(Math.sin(cu.t * 12)) * 0.15 : 0), cu.z);
+        g.position.set(cu.x, (moving ? Math.abs(Math.sin(cu.t * 12)) * 0.15 : 0), cu.z);
         g.rotation.y = moving ? Math.atan2(dx, dz) : -Math.PI / 2;
         // Gets a little wobbly when the order is nearly out of time.
         const urgent = cu.order.time / cu.order.total < 0.25;
@@ -821,14 +829,14 @@ export class CookScene extends MiniGame {
       } else if (cu.state === 'happy') {
         // Hop, spin and skip away.
         cu.x += dt * 3; cu.z += dt * 4;
-        g.position.set(cu.x, -0.4 + Math.abs(Math.sin(cu.t * 9)) * 0.7, cu.z);
+        g.position.set(cu.x, Math.abs(Math.sin(cu.t * 9)) * 0.7, cu.z);
         g.rotation.y += dt * 10;
         if (cu.t > 2.5) cu.gone = true;
       } else {
         cu.x += dt * 1.6; cu.z += dt * 0.6;
-        g.position.set(cu.x, -0.4, cu.z);
+        g.position.set(cu.x, 0, cu.z);
         g.rotation.y = Math.atan2(1.6, 0.6);
-        g.scale.setScalar(Math.max(0.01, 1.1 - Math.max(0, cu.t - 2) * 0.8));
+        g.scale.setScalar(Math.max(0.01, 1.3 - Math.max(0, cu.t - 2) * 0.9));
         if (cu.t > 3.3) cu.gone = true;
       }
     }
@@ -874,8 +882,8 @@ export class CookScene extends MiniGame {
           this.refresh(it);
           audio.play('pop');
           this.puffs.burst(new THREE.Vector3(st.x, st.surf + 0.2, st.z), ING[it.kind].color, { count: 8, size: 0.16, speed: 3, up: 3, life: 0.5 });
+          // Everyone chopping this board when it finishes gets the credit.
           for (const o of this.ents) if (o.target === st && o.chopping) o.chopped++;
-          if (!this.ents.some((o) => o !== e && o.target === st && o.chopping)) e.chopped += 0; // credited above
         }
         e.fx = st.x - e.x; e.fz = st.z - e.z;
         const fl = Math.hypot(e.fx, e.fz) || 1;

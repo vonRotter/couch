@@ -202,9 +202,14 @@ const PROP_BUILDERS = {
   },
 };
 
+const PROP_SCALE = 1.2;
+
 function makeProp(type) {
   const g = new THREE.Group();
-  PROP_BUILDERS[PROP_KEYS[type]](g);
+  const inner = new THREE.Group(); // scaled inside, so boing squash can use g.scale freely
+  inner.scale.setScalar(PROP_SCALE);
+  PROP_BUILDERS[PROP_KEYS[type]](inner);
+  g.add(inner);
   return g;
 }
 
@@ -321,6 +326,7 @@ export class HideSeekScene extends MiniGame {
     g.add(lens);
     g.position.set(0.42, 0.75, 0.42);
     g.rotation.set(-0.5, 0, -0.3);
+    g.scale.setScalar(1.4);
     return g;
   }
 
@@ -746,7 +752,7 @@ export class HideSeekScene extends MiniGame {
         const stats = this.solo ? t('hideseek.statSeek', { n: e.finds })
           : `${t('hideseek.statSeek', { n: e.finds })} · ${t('hideseek.statHide', { s: Math.floor(e.hidTime) })}`;
         return {
-          css: e.css, name: e.name, value: t('hideseek.pts', { n: e.total }),
+          css: e.css, name: e.name, value: String(e.total),
           detail: `${t(`hideseek.place.${place}`)} · ${stats}`, crown: e.total === top,
         };
       }),
@@ -965,6 +971,7 @@ export class HideSeekScene extends MiniGame {
   boingDecoy(d, sk) {
     d.boing = 1;
     sk.stun = STUN;
+    sk.vx = sk.vz = 0; // stop on the spot
     sk.body.squash(0.7);
     this.game.audio.play('boing');
     this.puffs.burst(new THREE.Vector3(d.x, 0.7, d.z), COLORS.white, { count: 6, size: 0.25, life: 0.4 });
@@ -1075,6 +1082,8 @@ export class HideSeekScene extends MiniGame {
         html = e.disguise >= 0 ? `${esc(e.name)}<small>${esc(t(`hideseek.prop.${PROP_KEYS[e.disguise]}`))}</small>` : esc(e.name);
       } else if (e.role === 'hider' && ph === 'reveal' && !e.found && e.disguise < 0) {
         html = `${esc(e.name)}<small>${esc(t('hideseek.safe'))}</small>`;
+      } else if (e.found && e.reveal >= 0) {
+        html = esc(e.name);
       } else if (e.role === 'out' && e.seat && ph !== 'scores') {
         html = esc(e.name);
       }

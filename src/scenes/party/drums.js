@@ -64,7 +64,7 @@ export class DrumsRound extends Round {
   constructor(party) {
     super(party);
     const n = this.players.length;
-    this.laneW = THREE.MathUtils.clamp(14 / n, 2.6, 4);
+    this.laneW = THREE.MathUtils.clamp(14 / n, 2.6, 5);
     this.width = this.laneW * n;
     this.chart = makeChart();
     this.songT = -1;
@@ -204,9 +204,10 @@ export class DrumsRound extends Round {
   }
 
   frame() {
-    const d = this.party.fitDistance(Math.max(this.width + 3, 13), TOP_Y + 2.6);
-    this.camera.position.set(0, 6.6, d + 2);
-    this.camera.lookAt(0, 6.3, 0);
+    // Leave room under the drums for the player bar at the bottom of the screen.
+    const d = this.party.fitDistance(Math.max(this.width + 3, 13), TOP_Y + 4.6);
+    this.camera.position.set(0, 5.8, d + 2);
+    this.camera.lookAt(0, 5.3, 0);
   }
 
   start() {

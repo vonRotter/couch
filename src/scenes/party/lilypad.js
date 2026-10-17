@@ -180,7 +180,8 @@ export class LilyPadRound extends Round {
     }
     // Pond plants off to the sides and scenery on the banks.
     const rand = seeded(23);
-    for (let i = 0; i < 26; i++) {
+    // Reeds hug the bank edges outside the hopping area.
+    for (let i = 0; i < 24; i++) {
       const side = i % 2 ? 1 : -1;
       const reed = new THREE.Group();
       const stalk = new THREE.Mesh(sharedGeo('lpReed', () => new THREE.CylinderGeometry(0.03, 0.04, 1.4, 5)), toon(COLORS.grassDark));
@@ -189,7 +190,8 @@ export class LilyPadRound extends Round {
       head.position.y = 1.35;
       reed.add(stalk, head);
       reed.rotation.z = (rand() - 0.5) * 0.3;
-      reed.position.set(side * (HALF + 1.6 + rand() * 2.5), 0, farEdge + rand() * (nearEdge - farEdge));
+      const near = i % 4 < 2;
+      reed.position.set(side * (HALF + 1.4 + rand() * 6), 0, near ? nearEdge + 0.1 + rand() * 0.3 : farEdge - 0.1 - rand() * 0.3);
       g.add(reed);
     }
     for (let i = 0; i < 14; i++) {
@@ -212,7 +214,7 @@ export class LilyPadRound extends Round {
     for (let i = 0; i < 6; i++) {
       const rk = makeRock(rand, 0.4 + rand() * 0.3);
       const side = i % 2 ? 1 : -1;
-      rk.position.set(side * (HALF + 1.2 + rand() * 3), 0, (rand() - 0.5) * 6);
+      rk.position.set(side * (HALF + 2 + rand() * 5), BANK_Y, nearEdge + 0.8 + rand() * 2);
       g.add(rk);
     }
 
@@ -263,9 +265,9 @@ export class LilyPadRound extends Round {
   }
 
   frame() {
-    const d = this.party.fitDistance(HALF * 2 + 2.5, ROWS * CELL * 0.95 + 2.5);
-    this.camera.position.set(0, d * 0.88, d * 0.5 + 0.6);
-    this.camera.lookAt(0, 0, 0.4);
+    const d = this.party.fitDistance(HALF * 2 + 3, ROWS * CELL + 4.5);
+    this.camera.position.set(0, d * 0.8, d * 0.6 + 1.2);
+    this.camera.lookAt(0, 0, 0.9);
   }
 
   /** Sink cycle of a pale pad at a given pond time: up, wobbling warning, then under. */
