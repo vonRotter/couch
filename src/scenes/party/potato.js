@@ -10,13 +10,13 @@ addStrings({
     'potato.title': 'Hot Potato Picnic',
     'potato.hint': 'A ticking cream pie is going round! Bump into someone (or press A next to them) to hand it over. A on its own is a little dash. Whoever holds it when it goes SPLAT gets creamed, and everyone else scores.',
     'potato.pie': 'Pie {n} of {total}', 'potato.pass': 'Pass the pie!', 'potato.splat': 'SPLAT!',
-    'potato.detail': '{n} points · {s} splats',
+    'potato.detail': '{n} points · creamed {s}×',
   },
   no: {
     'potato.title': 'Varm potet-piknik',
     'potato.hint': 'En tikkende kremkake går på rundgang! Dult borti noen (eller trykk A ved siden av dem) for å gi den videre. A alene er et lite byks. Den som holder kaken når den sier SPLAT, får krem i fjeset, og alle andre får poeng.',
     'potato.pie': 'Kake {n} av {total}', 'potato.pass': 'Send kaka videre!', 'potato.splat': 'SPLAT!',
-    'potato.detail': '{n} poeng · {s} splat',
+    'potato.detail': '{n} poeng · fikk krem {s}×',
   },
 });
 

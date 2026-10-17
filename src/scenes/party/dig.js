@@ -278,13 +278,13 @@ export class DigRound extends Round {
       wedge.castShadow = true;
       umbrella.add(wedge);
     }
-    umbrella.position.set(HW + 3.2, 0, HD + 1.5);
+    umbrella.position.set(HW + 3.4, 0, -1.2);
     umbrella.rotation.z = -0.15;
     g.add(umbrella);
     const towel = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 2.4), toon(0x4cc9f0));
     towel.rotation.x = -Math.PI / 2;
     towel.rotation.z = 0.3;
-    towel.position.set(HW + 2.4, 0.02, HD + 2.5);
+    towel.position.set(HW + 3.2, 0.02, 0.6);
     g.add(towel);
     const castle = new THREE.Group();
     const keep = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, 0.9, 10), toon(0xf0d48f));
@@ -303,7 +303,7 @@ export class DigRound extends Round {
     const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 4), toon(COLORS.white));
     stick.position.set(0, 1.3, 0);
     castle.add(flag, stick);
-    castle.position.set(-HW - 3.2, 0, HD + 1.2);
+    castle.position.set(-HW - 3.4, 0, -1.6);
     g.add(castle);
     for (let i = 0; i < 14; i++) {
       const shell = new THREE.Mesh(sharedGeo('shell', () => new THREE.SphereGeometry(0.16, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2)), toon([0xff9fd0, COLORS.white, 0xffb347][i % 3]));

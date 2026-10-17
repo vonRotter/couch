@@ -9,13 +9,13 @@ addStrings({
     'drums.title': 'Rhythm Drums',
     'drums.hint': 'Notes slide down your lane. Tap A for A notes and B for B notes just as they reach the line. Hit both for double notes! Keep a streak for bonus points.',
     'drums.perfect': 'Perfect!', 'drums.good': 'Good', 'drums.miss': 'Miss',
-    'drums.streak': '{n} in a row', 'drums.n': '{n} hits · best streak {s}',
+    'drums.streak': '{n} in a row', 'drums.n': '{n} hits · streak {s}',
   },
   no: {
     'drums.title': 'Rytmetrommer',
     'drums.hint': 'Notene glir ned i banen din. Trykk A for A-noter og B for B-noter akkurat når de når streken. Trykk begge for doble noter! Hold rekka for bonuspoeng.',
     'drums.perfect': 'Perfekt!', 'drums.good': 'Bra', 'drums.miss': 'Bom',
-    'drums.streak': '{n} på rad', 'drums.n': '{n} treff · beste rekke {s}',
+    'drums.streak': '{n} på rad', 'drums.n': '{n} treff · rekke {s}',
   },
 });
 

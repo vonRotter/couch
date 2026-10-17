@@ -230,9 +230,8 @@ export class PengerRound extends FieldRound {
       speak(`${ITEM_NAME[task.item]}, ${task.price} kroner`);
       this.party.confetti.burst(new THREE.Vector3(e.x, 2, e.z), 0, { count: 30, speed: 6, colors: [e.p.color, COLORS.gold, COLORS.white] });
       e.ch.squash(1.4);
-    } else {
-      this.ensure();
     }
+    this.ensure();
   }
 
   onWrong(e, tile) {

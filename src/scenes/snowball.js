@@ -15,7 +15,7 @@ addStrings({
     'snowball.bot': 'Snow Bot',
     'snowball.hits': '{n} hits', 'snowball.hit1': '1 hit',
     'snowball.walls': '{n} walls', 'snowball.wall1': '1 wall',
-    'snowball.throws': '{n} throws',
+    'snowball.throws': '{n} throws', 'snowball.throw1': '1 throw',
     'snowball.need': 'Hold B for snow!',
   },
   no: {
@@ -24,7 +24,7 @@ addStrings({
     'snowball.bot': 'Snøbot',
     'snowball.hits': '{n} treff', 'snowball.hit1': '1 treff',
     'snowball.walls': '{n} murer', 'snowball.wall1': '1 mur',
-    'snowball.throws': '{n} kast',
+    'snowball.throws': '{n} kast', 'snowball.throw1': '1 kast',
     'snowball.need': 'Hold B for snø!',
   },
 });
@@ -1012,7 +1012,7 @@ export class SnowballScene extends MiniGame {
       subtitle: `${t('ball.team.0')} ${t('ball.sub', { a, b })} ${t('ball.team.1')}`,
       rows: ranked.map((e) => ({
         css: e.css, name: e.name, value: e.hits === 1 ? t('snowball.hit1') : t('snowball.hits', { n: e.hits }),
-        detail: `${t(`ball.team.${e.team}`)} · ${e.walls === 1 ? t('snowball.wall1') : t('snowball.walls', { n: e.walls })} · ${t('snowball.throws', { n: e.throws })}`,
+        detail: `${t(`ball.team.${e.team}`)} · ${e.walls === 1 ? t('snowball.wall1') : t('snowball.walls', { n: e.walls })} · ${e.throws === 1 ? t('snowball.throw1') : t('snowball.throws', { n: e.throws })}`,
         crown: e.team === winner,
       })),
       stars: 2,

@@ -26,6 +26,8 @@ import { PartyScene } from './scenes/party.js';
 import { SpaceScene } from './scenes/space.js';
 import { RunnerScene } from './scenes/runner.js';
 import { CookScene } from './scenes/cook.js';
+import { HideSeekScene } from './scenes/hideseek.js';
+import { SnowballScene } from './scenes/snowball.js';
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -42,6 +44,8 @@ export const GAMES = {
   space: { Scene: SpaceScene },
   runner: { Scene: RunnerScene },
   cook: { Scene: CookScene },
+  hideseek: { Scene: HideSeekScene },
+  snowball: { Scene: SnowballScene },
   spelling: { Scene: SpellingScene, edu: true },
   math: { Scene: MathScene, edu: true },
 };

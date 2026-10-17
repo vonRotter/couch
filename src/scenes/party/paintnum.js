@@ -150,7 +150,7 @@ export class PaintNumRound extends Round {
       [...row].forEach((ch, c) => {
         const num = ch === '.' ? 0 : Number(ch);
         const x = -HALF_W + CELL / 2 + c * CELL, z = -HALF_D + CELL / 2 + r * CELL;
-        const tile = new THREE.Mesh(tileGeo, toon(num ? 0xfff7e6 : 0xf3e7cf));
+        const tile = new THREE.Mesh(tileGeo, toon(num ? 0xfff7e6 : 0xecd7ae));
         tile.position.set(x, 0.17, z);
         tile.receiveShadow = true;
         g.add(tile);

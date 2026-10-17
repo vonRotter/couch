@@ -309,7 +309,7 @@ export class HideSeekScene extends MiniGame {
       role: 'hider', disguise: -1, propYaw: 0,
       found: false, reveal: -1, revealFrom: null, seat: null,
       giggle: 0, stun: 0, checkCd: 0, poke: 0, cheer: Math.random() * 6,
-      total: 0, roundPts: 0, roundStat: '', finds: 0, hidTime: 0, survived: 0,
+      total: 0, roundPts: 0, roundStat: '', finds: 0, hidTime: 0, survived: 0, seekPts: 0, hidePts: 0, hideRounds: 0, seekRounds: 0,
       bot_target: null,
     };
   }
@@ -692,10 +692,14 @@ export class HideSeekScene extends MiniGame {
     const sk = this.seeker;
     const hiders = this.ents.filter((e) => e !== sk);
     sk.roundPts = this.foundCount * FIND_PTS;
+    sk.seekPts += sk.roundPts;
+    sk.seekRounds++;
     sk.finds += this.foundCount;
     sk.roundStat = t('hideseek.foundN', { n: this.foundCount });
     for (const e of hiders) {
       e.roundPts = Math.floor(e.survived / SURVIVE_EVERY) + (e.found ? 0 : SAFE_BONUS);
+      e.hidePts += e.roundPts;
+      e.hideRounds++;
       e.hidTime += e.survived;
       e.roundStat = e.found ? t('hideseek.hidS', { s: Math.floor(e.survived) }) : t('hideseek.safe');
     }
@@ -737,7 +741,18 @@ export class HideSeekScene extends MiniGame {
   end() {
     this.removeOverlay();
     this.aimRing.visible = false;
-    const humans = this.ents.filter((e) => !e.bot).sort((a, b) => b.total - a.total);
+    // With 5-6 players some never get to seek (rounds are capped). Even it out: count everyone's
+    // hiding as the same number of rounds, and give non-seekers the average seeker score.
+    const humansAll = this.ents.filter((e) => !e.bot);
+    if (humansAll.some((e) => e.seekRounds === 0)) {
+      const seekers = humansAll.filter((e) => e.seekRounds > 0);
+      const avgSeek = seekers.length ? seekers.reduce((s, e) => s + e.seekPts, 0) / seekers.length : 0;
+      for (const e of humansAll) {
+        const hide = e.hideRounds ? (e.hidePts * (this.roundsTotal - 1)) / e.hideRounds : 0;
+        e.total = Math.round(hide + (e.seekRounds ? e.seekPts : avgSeek));
+      }
+    }
+    const humans = humansAll.sort((a, b) => b.total - a.total);
     const top = humans[0].total;
     const leaders = humans.filter((e) => e.total === top);
     // Everybody pops out of hiding for the party.

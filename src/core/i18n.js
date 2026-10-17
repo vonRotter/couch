@@ -109,7 +109,7 @@ const en = {
 
   'ball.intro': 'B: kick (or dash) · A: jump to head the ball · score in the other goal!',
   'ball.teams': 'Pick a team · stick left/right · everyone taps jump to start',
-  'ball.left': 'Left team', 'ball.right': 'Right team', 'ball.helper': '+ helper keeper',
+  'ball.left': 'Left team', 'ball.right': 'Right team', 'ball.helper': '+ helper bot',
   'ball.team.0': 'Team Sun', 'ball.team.1': 'Team Sea',
   'ball.goal': 'GOAL!', 'ball.scored': '{name} scored for {team}!',
   'ball.winTitle': '{team} wins!', 'ball.draw': "It's a draw!", 'ball.sub': '{a} - {b}',
@@ -257,7 +257,7 @@ const no = {
 
   'ball.intro': 'B: spark (eller spurt) · A: hopp for å heade · scor i det andre målet!',
   'ball.teams': 'Velg lag · pinnen venstre/høyre · alle trykker hopp for å starte',
-  'ball.left': 'Venstre lag', 'ball.right': 'Høyre lag', 'ball.helper': '+ hjelpekeeper',
+  'ball.left': 'Venstre lag', 'ball.right': 'Høyre lag', 'ball.helper': '+ hjelpebot',
   'ball.team.0': 'Lag Sol', 'ball.team.1': 'Lag Hav',
   'ball.goal': 'MÅL!', 'ball.scored': '{name} scoret for {team}!',
   'ball.winTitle': '{team} vinner!', 'ball.draw': 'Uavgjort!', 'ball.sub': '{a} - {b}',

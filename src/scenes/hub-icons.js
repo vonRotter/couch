@@ -156,6 +156,35 @@ const ICONS = {
     g.add(mesh(sph(0.16), toon(0x6cc94a), -0.25, 0.28, -0.1));
     for (let i = 0; i < 3; i++) g.add(mesh(sph(0.12 + i * 0.03), toon(COLORS.white), -0.1 + i * 0.12, 0.55 + i * 0.28, 0));
   },
+  hideseek(g) {
+    // A garden gnome with a magnifying glass.
+    g.add(mesh(cyl('hsBoots', 0.36, 0.36, 0.12), toon(0x6b4a32), 0, -0.75, 0));
+    g.add(mesh(cyl('hsCoat', 0.3, 0.42, 0.6), toon(0x3a86ff), 0, -0.4, 0));
+    g.add(mesh(sph(0.26), toon(0xffd2b0), 0, 0.02, 0));
+    const beard = mesh(sharedGeo('icon-hsBeard', () => new THREE.ConeGeometry(0.26, 0.45, 14)), toon(COLORS.white), 0, -0.15, 0.13);
+    beard.rotation.x = Math.PI;
+    g.add(beard);
+    g.add(mesh(sph(0.08), toon(COLORS.blush), 0, 0.0, 0.26));
+    g.add(mesh(sharedGeo('icon-hsHat', () => new THREE.ConeGeometry(0.28, 0.7, 14)), toon(0xff4d5e), 0, 0.5, 0));
+    const glass = new THREE.Group();
+    glass.add(mesh(cyl('hsHandle', 0.06, 0.07, 0.6, 8), toon(COLORS.trunk), 0, -0.45, 0));
+    glass.add(mesh(sharedGeo('icon-hsRing', () => new THREE.TorusGeometry(0.3, 0.07, 8, 24)), toon(COLORS.gold)));
+    const lens = mesh(cyl('hsLens', 0.27, 0.27, 0.04, 20), toon(0xbfe9ff, { transparent: true, opacity: 0.55 }));
+    lens.rotation.x = Math.PI / 2;
+    glass.add(lens);
+    glass.position.set(0.6, 0.1, 0.4);
+    glass.rotation.z = -0.5;
+    g.add(glass);
+  },
+  snowball(g) {
+    g.add(mesh(sharedGeo('icon-sbMound', () => new THREE.SphereGeometry(0.85, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2)), toon(COLORS.white), 0, -0.75, 0));
+    [[-0.38, -0.55], [0.38, -0.55], [0, -0.17]].forEach(([x, y]) => g.add(mesh(box('sbBrick', 0.72, 0.36, 0.42, 0.08), toon(0xe6f2ff), x, y, 0.35)));
+    g.add(mesh(sph(0.42), toon(COLORS.white), 0.15, 0.45, 0.2));
+    g.add(mesh(cyl('sbPole', 0.04, 0.04, 1.2, 6), toon(COLORS.ink), -0.6, 0.35, -0.2));
+    const flag = mesh(sharedGeo('icon-sbFlag', () => new THREE.ConeGeometry(0.22, 0.5, 3)), toon(0x4cc9f0), -0.37, 0.75, -0.2);
+    flag.rotation.z = -Math.PI / 2;
+    g.add(flag);
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));
