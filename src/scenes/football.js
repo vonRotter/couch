@@ -6,7 +6,7 @@ import { makeGrumble } from '../core/critters.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, seeded, soccerBallTexture } from '../core/world.js';
 import { t } from '../core/i18n.js';
-import { esc } from '../core/ui.js';
+import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 
 // Mega Ball: beans and a giant ball, two teams, Rocket League spirit.
 const HX = 18, HZ = 11; // pitch half size
@@ -17,8 +17,6 @@ const SPEED = 7.5;
 const DASH = 15;
 const MATCH_TIME = 150;
 const OVERTIME = 60;
-const TEAM_COLORS = [0xffc93c, 0x4cc9f0];
-const TEAM_CSS = ['#e0a100', '#1aa7d8'];
 
 export class FootballScene extends MiniGame {
   constructor(game, opts) {
@@ -73,61 +71,30 @@ export class FootballScene extends MiniGame {
   // ---------- team picker ----------
 
   openTeamPicker() {
-    this.pickerEl = this.game.ui.panel('', 'panel picker');
-    this.pick = new Map(this.ents.map((e) => [e, { ready: false }]));
-    this.renderPicker();
+    this.picker = new TeamPicker(this, {
+      title: () => t('game.football'),
+      ents: this.ents,
+      setTeam: (e, team) => this.setTeam(e, team),
+      onChange: () => this.kickoffPositions(),
+      onDone: () => {
+        this.picker = null;
+        this.addKeepers();
+        this.kickoffPositions();
+        this.intro(t('game.football'), t('ball.intro'));
+      },
+    });
     this.kickoffPositions();
   }
 
-  renderPicker() {
-    const col = (team) => this.ents.filter((e) => e.team === team).map((e) => {
-      const st = this.pick.get(e);
-      return `<div class="ball-pick ${st.ready ? 'done' : ''}" style="--c:${e.css}">${esc(e.name)}${st.ready ? ' ✓' : ''}</div>`;
-    }).join('');
-    const sizes = [0, 1].map((tm) => this.ents.filter((e) => e.team === tm).length);
-    const helper = (team) => (sizes[team] < sizes[1 - team] || (sizes[team] === 0 && this.ents.length === 1) ? `<div class="ball-helper">${t('ball.helper')}</div>` : '');
-    this.pickerEl.innerHTML = `<div class="results-title">${t('game.football')}</div>
-      <div class="results-sub">${t('ball.teams')}</div>
-      <div class="ball-teams">
-        <div class="ball-team" style="--c:${TEAM_CSS[0]}"><div class="ball-team-name">${t('ball.team.0')}</div>${col(0)}${helper(0)}</div>
-        <div class="ball-team" style="--c:${TEAM_CSS[1]}"><div class="ball-team-name">${t('ball.team.1')}</div>${col(1)}${helper(1)}</div>
-      </div>`;
-  }
-
   onLanguage() {
-    if (this.state === 'teams') this.renderPicker();
-  }
-
-  updatePicker() {
-    let changed = false;
-    for (const e of this.ents) {
-      const d = this.input(e.p);
-      const st = this.pick.get(e);
-      if (!d) continue;
-      const dir = d.stepX;
-      if (!st.ready && dir) {
-        const team = dir < 0 ? 0 : 1;
-        if (team !== e.team) { this.setTeam(e, team); this.game.audio.play('select'); changed = true; }
-      }
-      if (d.aPressed) { st.ready = !st.ready; this.game.audio.play(st.ready ? 'join' : 'select'); changed = true; }
-    }
-    if (changed) { this.renderPicker(); this.kickoffPositions(); }
-    if ([...this.pick.values()].every((s) => s.ready)) {
-      this.pickerEl.remove();
-      this.addKeepers();
-      this.kickoffPositions();
-      this.intro(t('game.football'), t('ball.intro'));
-    }
+    this.picker?.render();
   }
 
   /** The smaller team gets helper keepers so sides feel even. */
   addKeepers() {
-    const sizes = [0, 1].map((tm) => this.ents.filter((e) => e.team === tm).length);
-    for (const team of [0, 1]) {
-      let need = Math.min(2, sizes[1 - team] - sizes[team]);
-      if (this.ents.length === 1 && sizes[team] === 0) need = 1;
+    helpersNeeded(this.ents).forEach((need, team) => {
       for (let i = 0; i < need; i++) this.ents.push(this.makePlayer(null, team));
-    }
+    });
   }
 
   // ---------- pitch ----------
@@ -492,7 +459,7 @@ export class FootballScene extends MiniGame {
 
   update(dt) {
     if (this.state === 'teams') {
-      this.updatePicker();
+      this.picker?.update();
       for (const e of this.ents) { e.ch.update(dt, {}); e.ring.position.set(e.x, 0.03, e.z); }
       this.updateBall(dt);
       return;

@@ -34,7 +34,7 @@ Each game shows its own controls before it starts.
 | Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . / Numpad Enter |
 
 - Press A on any device to join (up to 6 players).
-- On the island: tap B to change hat, hold B to leave.
+- On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
 - In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). On the island `Esc` shows help. `M` toggles sound.
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
 - `G` shows or hides the learning games, or jump on the green book button.
@@ -51,10 +51,20 @@ presses when many keys are held at once (ghosting).
 
 ## The games
 
-**Island hub.** Walk around, kick the beach ball, bounce on mushrooms, climb the stumps
-and hunt for stars. Stars (from the island and from finishing games) unlock hats:
-party hat, flower, bunny ears, propeller cap, top hat and crown. A game starts when at
-least half the players stand on its pad.
+**Island hub.** The game pads sit in a ring along the shore, each with a floating 3D icon
+of its game. A game starts when at least half the players stand on its pad. The middle of
+the island is a playground:
+
+- four throwable balls, a basketball hoop (baskets are counted and saved) and a bowling lane
+  with six pins (knock them all down within 3 seconds for a strike);
+- a trampoline, a bouncy mushroom, a stump staircase and two swings (walk onto a seat to
+  ride, A to let go and fly);
+- a kickable beach ball and stars to hunt.
+
+The settings corner south of the plaza has the paint pots, the color swap pads, the hat
+stand, the learning-games button and the language flag. Stars (from the island and from
+finishing games) unlock hats: party hat, flower, bunny ears, propeller cap, top hat and
+crown. Walk into the hat stand to try on the next unlocked hat.
 
 **Bubble Buddies** (co-op arena, Bubble Bobble style). Blow bubbles (B) to trap the
 grumbles, then pop the bubbles for fruit. Jump on empty bubbles to bounce higher. Popping
@@ -99,6 +109,14 @@ stick, and everyone taps jump when ready. B kicks the ball when you are close (o
 is a dash), A jumps so you can head it. If the teams are uneven, the smaller side gets a helper
 keeper. 2.5 minutes; a draw goes to "next goal wins".
 
+**Ice Hockey** (team hockey on a rounded rink). Same team picker as Mega Ball. Skate into
+the puck and it sticks to your stick. Hold B to wind up and let go to shoot; shots aimed
+roughly at the goal get a little help. A dashes, and dashing into the puck carrier steals
+the puck (a fresh carrier is safe for half a second). Without the puck, B pokes it away from
+someone close by. The puck bounces off the boards, and you can skate behind the goals. An
+uneven or solo team gets a Goalie Bot that saves about half the hard shots. 2.5 minutes with
+golden-goal overtime.
+
 **Snow Slalom** (race, shared camera). Everyone skis down the same slope at once. Steer
 between the red and blue gates: each gate you pass is a point, and finishing earns a bonus
 (1st place most). Missing a gate only costs that point. Stick up to tuck (faster), stick down
@@ -113,7 +131,7 @@ portals. Everyone has to reach the gold exit. Hold A+B to reset a room.
 ## Learning games (LÆRING)
 
 Two educational games in Norwegian (bokmål), marked with a green **LÆRING** badge on the
-island. Jump on the green book button near the plaza (or press `L`) to show or hide them;
+island. Jump on the green book button in the settings corner (or press `G`) to show or hide them;
 the choice is saved. Before each round every player picks their own level (Lett, Middels,
 Vanskelig), so younger and older kids can play together. Mistakes never cost anything.
 
@@ -147,15 +165,16 @@ src/
     ui.js            HTML overlay: banners, chips, labels, results, wipe
     i18n.js          English / Norwegian text, t('key')
     scene.js         base scene (camera fitting, game-time timers, disposal)
+    teams.js         two-team picker and helper-bot balancing (Mega Ball, Ice Hockey)
     minigame.js      shared intro -> countdown -> results -> back flow
   scenes/
-    hub.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
-    archers.js  brawl.js  kart.js  portal.js  football.js  slalom.js
+    hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
+    archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
 ```
 
 To add a game: subclass `MiniGame`, register it in `GAMES` in `main.js`, and add a pad in
-`PADS` in `scenes/hub.js`.
+`PADS` in `scenes/hub.js` and an icon in `scenes/hub-icons.js`.
 
 `window.game.simulate(seconds)` advances the game in fixed steps without rendering.
 It exists for automated tests.

@@ -22,7 +22,7 @@ const en = {
 
   'game.bubble': 'Bubble Buddies', 'game.platformer': 'Sky Hop', 'game.paint': 'Paint Party',
   'game.archers': 'Balloon Archers', 'game.brawl': 'Bonk Brawl', 'game.kart': 'Kart Party',
-  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball', 'game.slalom': 'Snow Slalom',
+  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball', 'game.slalom': 'Snow Slalom', 'game.hockey': 'Ice Hockey',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
   'hub.title': 'Couch Party Island',
@@ -34,7 +34,10 @@ const en = {
   'hub.padReady': '{on}/{need} ready',
   'hub.padNeed': '{need} needed',
   'hub.joined': '{name} joined!',
-  'hub.newHat': 'New hat: {hat}! Tap B to wear it',
+  'hub.newHat': 'New hat: {hat}! Find it on the hat stand',
+  'hub.hatStand': 'Hats', 'hub.hatHint': 'walk into it',
+  'hub.basket': 'Basket! {n} in total', 'hub.baskets': 'Baskets: {n}',
+  'hub.strike': 'STRIKE!', 'hub.pins': '{n} pins!',
   'hub.eduOn': 'Learning games: ON',
   'hub.eduOff': 'Learning games: OFF',
   'hub.on': 'ON', 'hub.off': 'OFF',
@@ -50,7 +53,8 @@ const en = {
   'help.title': 'How to play',
   'help.1': 'Press your jump button to join. Up to 6 players: 4 gamepads + keyboards.',
   'help.2': 'Walk onto a game pad. When half the group stands on it, the game starts.',
-  'help.3': 'Collect stars on the island to unlock hats. Tap B to change hat. Hold B to leave.',
+  'help.3': 'Collect stars on the island to unlock hats. Walk into the hat stand to try them on. Hold B to leave.',
+  'help.7': 'Toys: tap B next to a ball to pick it up, hold B and let go to throw. Shoot hoops, knock down pins, bounce on the trampoline and the mushroom, or ride the swings.',
   'help.4': 'Walk into a paint pot to change color. To trade colors, stand on the two swap pads and both tap B.',
   'help.5': 'Jump on the book button (or press G) to show or hide the learning games. Jump on the flag (or press N) to change language.',
   'help.6': 'In a game, Esc (or Start on a gamepad) opens the menu: resume, retry or end the game. M toggles sound.',
@@ -116,6 +120,9 @@ const en = {
   'slalom.toGo': '{n} m to go', 'slalom.finished': '{name} is in the finish!', 'slalom.closes': 'Finish closes in',
   'slalom.title': '{name} wins the slalom!', 'slalom.solo': 'What a run!', 'slalom.sub': '{n} gates on the course',
   'slalom.points': '{n} points', 'slalom.detail': '{place} · {g} gates', 'slalom.dnf': 'not finished', 'slalom.gates': 'gates',
+
+  'hockey.intro': 'Skate to the puck to grab it · B: shoot (hold for power) · A: dash to steal',
+  'hockey.goalie': 'Goalie Bot', 'hockey.shots': '{n} shots', 'hockey.steals': '{n} steals',
 };
 
 const no = {
@@ -139,7 +146,7 @@ const no = {
 
   'game.bubble': 'Boblevenner', 'game.platformer': 'Skyhopp', 'game.paint': 'Malefest',
   'game.archers': 'Ballongskyttere', 'game.brawl': 'Dunkekamp', 'game.kart': 'Gokartfest',
-  'game.portal': 'Portalvenner', 'game.football': 'Megaball', 'game.slalom': 'Snøslalåm',
+  'game.portal': 'Portalvenner', 'game.football': 'Megaball', 'game.slalom': 'Snøslalåm', 'game.hockey': 'Ishockey',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
   'hub.title': 'Sofafest-øya',
@@ -151,7 +158,10 @@ const no = {
   'hub.padReady': '{on}/{need} klare',
   'hub.padNeed': '{need} trengs',
   'hub.joined': '{name} er med!',
-  'hub.newHat': 'Ny hatt: {hat}! Trykk B for å ta den på',
+  'hub.newHat': 'Ny hatt: {hat}! Finn den på hattestativet',
+  'hub.hatStand': 'Hatter', 'hub.hatHint': 'gå inn i det',
+  'hub.basket': 'Kurv! {n} totalt', 'hub.baskets': 'Kurver: {n}',
+  'hub.strike': 'STRIKE!', 'hub.pins': '{n} kjegler!',
   'hub.eduOn': 'Læringsspill: PÅ',
   'hub.eduOff': 'Læringsspill: AV',
   'hub.on': 'PÅ', 'hub.off': 'AV',
@@ -167,7 +177,8 @@ const no = {
   'help.title': 'Slik spiller du',
   'help.1': 'Trykk på hoppknappen for å bli med. Opptil 6 spillere: 4 spillkontroller + tastatur.',
   'help.2': 'Gå inn på en spillplattform. Når halve gruppen står der, starter spillet.',
-  'help.3': 'Samle stjerner på øya for å låse opp hatter. Trykk B for å bytte hatt. Hold B for å gå ut.',
+  'help.3': 'Samle stjerner på øya for å låse opp hatter. Gå inn i hattestativet for å prøve dem. Hold B for å gå ut.',
+  'help.7': 'Leker: trykk B ved en ball for å plukke den opp, hold B og slipp for å kaste. Kast på kurven, velt kjeglene, hopp på trampolinen og soppen, eller ta en tur på husken.',
   'help.4': 'Gå inn i en malingsbøtte for å bytte farge. For å bytte farge med noen: stå på de to bytteplatene og trykk B begge to.',
   'help.5': 'Hopp på bokknappen (eller trykk G) for å vise eller skjule læringsspillene. Hopp på flagget (eller trykk N) for å bytte språk.',
   'help.6': 'I et spill åpner Esc (eller Start på spillkontrollen) menyen: fortsett, prøv igjen eller avslutt. M slår lyden av og på.',
@@ -233,6 +244,9 @@ const no = {
   'slalom.toGo': '{n} m igjen', 'slalom.finished': '{name} er i mål!', 'slalom.closes': 'Målet stenger om',
   'slalom.title': '{name} vinner slalåmen!', 'slalom.solo': 'For et renn!', 'slalom.sub': '{n} porter i løypa',
   'slalom.points': '{n} poeng', 'slalom.detail': '{place} · {g} porter', 'slalom.dnf': 'ikke i mål', 'slalom.gates': 'porter',
+
+  'hockey.intro': 'Skøyt til pucken for å ta den · B: skudd (hold for kraft) · A: spurt for å stjele',
+  'hockey.goalie': 'Målvaktbot', 'hockey.shots': '{n} skudd', 'hockey.steals': '{n} taklinger',
 };
 
 const DICTS = { en, no };

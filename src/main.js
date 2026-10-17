@@ -21,6 +21,7 @@ import { SpellingScene } from './scenes/spelling.js';
 import { MathScene } from './scenes/math.js';
 import { FootballScene } from './scenes/football.js';
 import { SlalomScene } from './scenes/slalom.js';
+import { HockeyScene } from './scenes/hockey.js';
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -32,6 +33,7 @@ export const GAMES = {
   portal: { Scene: PortalScene },
   football: { Scene: FootballScene },
   slalom: { Scene: SlalomScene },
+  hockey: { Scene: HockeyScene },
   spelling: { Scene: SpellingScene, edu: true },
   math: { Scene: MathScene, edu: true },
 };
