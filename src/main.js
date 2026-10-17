@@ -16,6 +16,8 @@ import { ArchersScene } from './scenes/archers.js';
 import { BrawlScene } from './scenes/brawl.js';
 import { KartScene } from './scenes/kart.js';
 import { PortalScene } from './scenes/portal.js';
+import { SpellingScene } from './scenes/spelling.js';
+import { MathScene } from './scenes/math.js';
 
 export const GAMES = {
   bubble: { title: 'Bubble Buddies', blurb: 'Trap the grumbles in bubbles!', Scene: BubbleScene },
@@ -25,6 +27,8 @@ export const GAMES = {
   brawl: { title: 'Bonk Brawl', blurb: 'Bonk friends off the island!', Scene: BrawlScene },
   kart: { title: 'Kart Party', blurb: 'Race three laps!', Scene: KartScene },
   portal: { title: 'Portal Pals', blurb: 'Portal everyone to the exit!', Scene: PortalScene },
+  spelling: { title: 'Bokstavballonger', blurb: 'Stav ordene!', Scene: SpellingScene, edu: true },
+  math: { title: 'Mattejakt', blurb: 'Finn riktig svar!', Scene: MathScene, edu: true },
 };
 
 class Game {

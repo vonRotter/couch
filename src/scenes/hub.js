@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BaseScene } from '../core/scene.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
@@ -6,6 +7,7 @@ import { addLights, skyTexture, makeTree, makeCloud, makeFlower, makeRock, makeB
 import { KEYBOARD_SCHEMES } from '../core/input.js';
 import { HATS } from '../core/roster.js';
 import { esc } from '../core/ui.js';
+import { glyphMaterial } from '../core/edu.js';
 
 const ISLAND_R = 22;
 const PR = 0.42; // player radius
@@ -21,7 +23,10 @@ const PADS = [
   { key: 'brawl', title: 'Bonk Brawl', x: 15, z: 3, color: 0xff5d73, css: '#f0364f' },
   { key: 'kart', title: 'Kart Party', x: -9, z: 12, color: 0x3ddc97, css: '#16b874' },
   { key: 'portal', title: 'Portal Pals', x: 9, z: 12, color: 0x9b5de5, css: '#8a45e0' },
+  { key: 'spelling', title: 'Bokstavballonger', x: -6, z: -12.5, color: 0x2ec4b6, css: '#139e91', edu: true },
+  { key: 'math', title: 'Mattejakt', x: 6, z: -12.5, color: 0xff9f1c, css: '#e07f00', edu: true },
 ];
+const EDU_SWITCH = { x: -5.5, z: 6.5 };
 const PAD_R = 2.6;
 
 // Where stars can appear. y is the star's height.
@@ -47,6 +52,8 @@ export class HubScene extends BaseScene {
     this.camPos = new THREE.Vector3(0, 18, 22);
     this.launching = false;
     this.helpEl = null;
+    this.eduOn = game.roster.progress.edu !== false;
+    this.switchCd = 0;
 
     this.buildIsland();
     this.buildPads();
@@ -225,9 +232,64 @@ export class HubScene extends BaseScene {
     }
   }
 
+  buildEduLandmarks() {
+    const s = this.scene;
+    const blockGeo = sharedGeo('eduBlock', () => new RoundedBoxGeometry(1.3, 1.3, 1.3, 2, 0.14));
+    const faceGeo = sharedGeo('eduFace', () => new THREE.PlaneGeometry(1.15, 1.15));
+    const stack = (pad, glyphs, colors) => {
+      pad.extras = [];
+      glyphs.forEach((ch, i) => {
+        const b = new THREE.Mesh(blockGeo, toon(colors[i % colors.length]));
+        const row = i < 3 ? 0 : 1;
+        const col = row === 0 ? i - 1 : i - 3.5;
+        b.position.set(pad.x + col * 1.4, 0.65 + row * 1.3, pad.z - 3.6);
+        b.rotation.y = (i % 2 ? 0.12 : -0.12);
+        b.castShadow = true;
+        const face = new THREE.Mesh(faceGeo, glyphMaterial(ch));
+        face.position.z = 0.66;
+        b.add(face);
+        s.add(b);
+        pad.extras.push(b);
+      });
+      this.obstacles.push({ x: pad.x, z: pad.z - 3.6, r: 2.1, top: 2.6, eduPad: pad });
+    };
+    stack(PADS.find((p) => p.key === 'spelling'), ['A', 'B', 'C', 'Æ', 'Ø'], [0xff9fd0, 0x8fd8ff, 0xffe47a, 0x9ff0c8, 0xc9a8ff]);
+    stack(PADS.find((p) => p.key === 'math'), ['1', '+', '2', '=', '3'], [0xffe47a, 0x9ff0c8, 0xff9fd0, 0x8fd8ff, 0xffc08a]);
+
+    // The learning switch: jump on the big button to show or hide the learning games.
+    const g = new THREE.Group();
+    g.position.set(EDU_SWITCH.x, 0, EDU_SWITCH.z);
+    const base = new THREE.Mesh(sharedGeo('swBase', () => new THREE.CylinderGeometry(1.0, 1.15, 0.5, 24)), toon(COLORS.icing));
+    base.position.y = 0.25;
+    base.castShadow = base.receiveShadow = true;
+    const cap = new THREE.Mesh(sharedGeo('swCap', () => new THREE.CylinderGeometry(0.75, 0.8, 0.3, 24)), toon(0x3ddc97));
+    cap.position.y = 0.62;
+    cap.castShadow = true;
+    const book = new THREE.Mesh(sharedGeo('swBook', () => new RoundedBoxGeometry(0.9, 0.12, 0.65, 2, 0.04)), toon(COLORS.white));
+    book.position.y = 0.82;
+    g.add(base, cap, book);
+    s.add(g);
+    this.eduCap = cap;
+    this.eduSwitch = { x: EDU_SWITCH.x, z: EDU_SWITCH.z, r: 0.9, top: 0.8, toggle: true };
+    this.obstacles.push(this.eduSwitch);
+    this.eduLabel = this.game.ui.label('label');
+    this.eduLabelPos = new THREE.Vector3(EDU_SWITCH.x, 2.2, EDU_SWITCH.z);
+  }
+
+  toggleEdu() {
+    const roster = this.game.roster;
+    this.eduOn = !this.eduOn;
+    roster.progress.edu = this.eduOn;
+    roster.save();
+    this.game.audio.play(this.eduOn ? 'join' : 'leave');
+    this.game.ui.toast(this.eduOn ? 'Læringsspill: PÅ' : 'Læringsspill: AV');
+    this.confetti.burst(new THREE.Vector3(EDU_SWITCH.x, 1.2, EDU_SWITCH.z), 0, { count: 18, speed: 5, colors: [0x3ddc97, 0xffc93c, 0xffffff] });
+  }
+
   buildNewLandmarks() {
     const s = this.scene;
     const pad = (k) => PADS.find((p) => p.key === k);
+    this.buildEduLandmarks();
 
     // Archery target with balloons.
     const ar = pad('archers');
@@ -526,6 +588,7 @@ export class HubScene extends BaseScene {
     e.x += e.vx * dt;
     e.z += e.vz * dt;
     for (const o of this.obstacles) {
+      if (o.eduPad && !this.eduOn) continue;
       const dx = e.x - o.x, dz = e.z - o.z;
       const d = Math.hypot(dx, dz);
       const min = o.r + PR;
@@ -545,7 +608,7 @@ export class HubScene extends BaseScene {
     e.y += e.vy * dt;
     let floor = 0, floorObj = null;
     for (const o of this.obstacles) {
-      if (o.top === undefined) continue;
+      if (o.top === undefined || (o.eduPad && !this.eduOn)) continue;
       if (Math.hypot(e.x - o.x, e.z - o.z) < o.r + PR * 0.3 && prevY >= o.top - 0.35 && o.top > floor) {
         floor = o.top;
         floorObj = o;
@@ -562,6 +625,7 @@ export class HubScene extends BaseScene {
         audio.play('boing');
       } else {
         if (!wasGrounded && e.vy < -4) { e.ch.squash(0.7); audio.play('land'); }
+        if (!wasGrounded && floorObj?.toggle && this.switchCd <= 0) { this.toggleEdu(); this.switchCd = 0.6; }
         e.vy = 0;
         e.grounded = true;
       }
@@ -681,13 +745,21 @@ export class HubScene extends BaseScene {
       for (const e of this.entities.values()) {
         if (Math.hypot(e.x - pad.x, e.z - pad.z) < PAD_R && e.y < 2) on++;
       }
+      const hidden = pad.edu && !this.eduOn;
+      pad.group.visible = !hidden;
+      for (const m of pad.extras || []) m.visible = !hidden;
+      if (hidden) {
+        pad.progress = 0;
+        pad.label.style.display = 'none';
+        continue;
+      }
       const ready = n > 0 && on >= need;
       pad.progress = THREE.MathUtils.clamp(pad.progress + (ready ? dt / 1.8 : -dt * 1.5), 0, 1);
       const k = Math.max(0.001, pad.progress);
       pad.fill.scale.set(k, 1, k);
       pad.group.position.y = Math.sin(this.time * 2 + pad.x) * 0.03;
       const sub = n === 0 ? 'Join to play!' : on > 0 ? `${on}/${need} ready` : `${need} needed`;
-      pad.label.innerHTML = `${esc(pad.title)}<small>${sub}</small>`;
+      pad.label.innerHTML = `${pad.edu ? '<span class="edu-badge small">LÆRING</span>' : ''}${esc(pad.title)}<small>${sub}</small>`;
       this.game.ui.place(pad.label, pad.labelPos, this.camera);
       if (pad.progress >= 1 && !this.launching) {
         this.launching = true;
@@ -776,14 +848,26 @@ export class HubScene extends BaseScene {
           <li>Press your jump button to join. Up to 6 players: 4 gamepads + keyboards.</li>
           <li>Walk onto a game pad. When half the group stands on it, the game starts.</li>
           <li>Collect stars on the island to unlock hats. Tap B to change hat.</li>
+          <li>Jump on the green book button (or press L) to show or hide the learning games (LÆRING).</li>
           <li>Hold B for a second to leave.</li>
           <li>In a game, Esc returns to the island. M toggles sound.</li>
         </ul>
       </div>`);
   }
 
+  updateEduSwitch(dt) {
+    this.switchCd -= dt;
+    if (this.game.input.pressed.has('KeyL')) this.toggleEdu();
+    this.eduCap.material = toon(this.eduOn ? 0x3ddc97 : 0xbdb8cf);
+    const html = `<span class="edu-badge small">LÆRING</span>${this.eduOn ? 'PÅ' : 'AV'}<small>hopp på knappen</small>`;
+    if (this.eduLabel.innerHTML !== html) this.eduLabel.innerHTML = html;
+    this.eduLabel.style.color = this.eduOn ? '#16b874' : '#9a94b2';
+    this.game.ui.place(this.eduLabel, this.eduLabelPos, this.camera);
+  }
+
   update(dt) {
     this.handleJoins();
+    this.updateEduSwitch(dt);
     this.refreshTitle();
     for (const e of [...this.entities.values()]) this.updatePlayer(e, dt);
     this.separatePlayers();

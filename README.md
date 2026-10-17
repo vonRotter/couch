@@ -15,7 +15,9 @@ npm run build    # static site in dist/
 ### Deploy to GitHub Pages
 
 `.github/workflows/pages.yml` builds and deploys on every push to `main`.
-Enable it once under **Settings → Pages → Source: GitHub Actions**.
+Enable it once under **Settings → Pages → Source: GitHub Actions**. The `github-pages`
+environment only accepts deploys from allowed branches, so `main` must be the default
+branch (Settings → General) or be listed under Settings → Environments → github-pages.
 The Vite `base` is relative, so the site works from any sub-path.
 
 ## Controls
@@ -89,6 +91,25 @@ white walls; walk into one to come out of the other. Anyone can use anyone's por
 Buttons open doors while someone (or a box) stands on them. Push boxes, even through
 portals. Everyone has to reach the gold exit. Hold A+B to reset a room.
 
+## Learning games (LÆRING)
+
+Two educational games in Norwegian (bokmål), marked with a green **LÆRING** badge on the
+island. Jump on the green book button near the plaza (or press `L`) to show or hide them;
+the choice is saved. Before each round every player picks their own level (Lett, Middels,
+Vanskelig), so younger and older kids can play together. Mistakes never cost anything.
+
+**Bokstavballonger** (spelling). Letter balloons float up. Each player has their own word
+with blanks and a clue at the bottom of the screen; touch the balloon with the next missing
+letter. Lett: 3-letter words, one blank. Middels: 4-5 letters, two blanks. Vanskelig: longer
+words, only the first letter shown. The letter you need always floats by. Finished words are
+read aloud if the device has a Norwegian voice.
+
+**Mattejakt** (math). Number coins lie on a field. Each player's problem floats above their
+head; run to the coin with the answer. Lett: adding within 10. Middels: adding and
+subtracting within 20. Vanskelig: times tables and adding/subtracting within 100. Every
+player's answer is always somewhere on the field. Word lists live in
+`src/scenes/edu-words.js`.
+
 ## Code layout
 
 ```
@@ -110,6 +131,7 @@ src/
   scenes/
     hub.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js
+    spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
 ```
 
 To add a game: subclass `MiniGame`, register it in `GAMES` in `main.js`, and add a pad in
