@@ -179,3 +179,47 @@ html, body {
 @keyframes card-in { from { transform: translateY(40px) scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes blink { 50% { opacity: 0.45; } }
 @keyframes toast { 0% { transform: translateY(10px) scale(.6); opacity: 0; } 15% { transform: none; opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(-20px); opacity: 0; } }
+
+.level-row { display: flex; gap: clamp(10px, 1.4vw, 22px); justify-content: center; flex-wrap: wrap; margin: 22px 0 14px; }
+.level-card {
+  width: clamp(130px, 14vw, 210px); height: clamp(110px, 12vw, 170px);
+  border-radius: 26px; border: 6px solid #fff;
+  box-shadow: 0 6px 0 rgba(43, 35, 64, 0.18);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.level-card.selected { border-color: var(--pink); transform: scale(1.08) translateY(-6px); }
+.level-card.locked { filter: grayscale(0.75) brightness(0.9); }
+.level-num { font-size: clamp(36px, 4vw, 64px); font-weight: 700; color: #fff; paint-order: stroke fill; -webkit-text-stroke: 0.12em var(--ink); line-height: 1; }
+.level-name { font-weight: 700; font-size: clamp(12px, 1.1vw, 18px); background: #fff; border-radius: 999px; padding: 3px 12px; }
+
+/* Kart split-screen HUD: one box per viewport. */
+.kart-hud {
+  position: absolute; left: 0; top: 0;
+  border: 3px solid #fff; box-sizing: border-box;
+  pointer-events: none; overflow: hidden;
+}
+.kart-place {
+  position: absolute; left: 12px; bottom: 8px;
+  font-size: clamp(30px, 4vw, 72px); font-weight: 700; color: var(--c);
+  paint-order: stroke fill; -webkit-text-stroke: 0.14em #fff; line-height: 1;
+}
+.kart-lap {
+  position: absolute; left: 12px; top: 10px;
+  background: #fff; border-radius: 999px; padding: 3px 14px; font-weight: 700;
+  font-size: clamp(12px, 1.2vw, 20px); border: 3px solid var(--c);
+}
+.kart-item {
+  position: absolute; right: 12px; top: 10px;
+  min-width: clamp(56px, 6vw, 96px); height: clamp(40px, 4.4vw, 66px);
+  border-radius: 16px; background: #fff; border: 4px solid var(--ic, #ddd);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: clamp(12px, 1.2vw, 20px); padding: 0 8px;
+}
+.kart-item.empty { opacity: 0.45; }
+.kart-item.rolling { animation: blink 0.25s infinite; font-size: clamp(20px, 2vw, 34px); }
+.kart-done {
+  position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%);
+  font-size: clamp(22px, 3vw, 54px); font-weight: 700; color: var(--c);
+  paint-order: stroke fill; -webkit-text-stroke: 0.14em #fff; white-space: nowrap;
+}

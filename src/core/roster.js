@@ -28,11 +28,12 @@ export class Roster {
     this.players = [];
     const saved = load();
     this.stars = saved.stars || 0;
+    this.progress = saved.progress || {};
   }
 
   save() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ stars: this.stars }));
+      localStorage.setItem(STORE_KEY, JSON.stringify({ stars: this.stars, progress: this.progress }));
     } catch {
       /* storage unavailable: progress only lasts this session */
     }

@@ -20,7 +20,7 @@ export class MiniGame extends BaseScene {
     this.onStart?.();
   }
 
-  finish({ title, subtitle, rows, stars = 2 }) {
+  finish({ title, subtitle, rows, stars = 2, action = 'press jump to continue' }) {
     if (this.state === 'results') return;
     this.state = 'results';
     this.resultsDelay = 1.6;
@@ -32,7 +32,7 @@ export class MiniGame extends BaseScene {
       title,
       subtitle,
       rows,
-      footer: `<span class="star-icon"></span> +${stars} stars for the island · <span class="blink">press jump to continue</span>`,
+      footer: `<span class="star-icon"></span> +${stars} stars for the island · <span class="blink">${action}</span>`,
     });
     this.celebrate();
   }

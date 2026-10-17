@@ -12,11 +12,19 @@ import { HubScene } from './scenes/hub.js';
 import { BubbleScene } from './scenes/bubble.js';
 import { PlatformerScene } from './scenes/platformer.js';
 import { PaintScene } from './scenes/paint.js';
+import { ArchersScene } from './scenes/archers.js';
+import { BrawlScene } from './scenes/brawl.js';
+import { KartScene } from './scenes/kart.js';
+import { PortalScene } from './scenes/portal.js';
 
 export const GAMES = {
   bubble: { title: 'Bubble Buddies', blurb: 'Trap the grumbles in bubbles!', Scene: BubbleScene },
   platformer: { title: 'Sky Hop', blurb: 'Hop to the flag together!', Scene: PlatformerScene },
   paint: { title: 'Paint Party', blurb: 'Paint the most floor!', Scene: PaintScene },
+  archers: { title: 'Balloon Archers', blurb: 'Pop everyone else\'s balloon!', Scene: ArchersScene },
+  brawl: { title: 'Bonk Brawl', blurb: 'Bonk friends off the island!', Scene: BrawlScene },
+  kart: { title: 'Kart Party', blurb: 'Race three laps!', Scene: KartScene },
+  portal: { title: 'Portal Pals', blurb: 'Portal everyone to the exit!', Scene: PortalScene },
 };
 
 class Game {
@@ -82,7 +90,9 @@ class Game {
     const dt = Math.min((now - this.last) / 1000, 1 / 30);
     this.last = now;
     this.tick(dt);
-    if (this.current) this.renderer.render(this.current.scene, this.current.camera);
+    if (!this.current) return;
+    if (this.current.render) this.current.render(this.renderer);
+    else this.renderer.render(this.current.scene, this.current.camera);
   }
 
   tick(dt) {

@@ -21,6 +21,7 @@ The Vite `base` is relative, so the site works from any sub-path.
 ## Controls
 
 Every player has a stick and two buttons: **A** (jump/action) and **B** (secondary).
+Each game shows its own controls before it starts.
 
 | Device | Move | A | B |
 | --- | --- | --- | --- |
@@ -53,14 +54,40 @@ a bubble for a moment. Mash buttons to escape, or a friend can touch you to free
 The gap in the floor wraps you to the top. 3 waves; if a wave drags on, the last grumbles
 fall asleep.
 
-**Sky Hop** (co-op platformer). Run to the flag with double jump, springy mushrooms,
-moving platforms and clouds you can jump up through (down + A drops through). Stand on
-friends' heads. If you fall or get left behind, you float back to the group in a bubble.
-Bump into a grumble and you are only pushed back; stomp it for gems. Once someone
-reaches the flag, everyone else has 12 seconds.
+**Sky Hop** (co-op platformer, 4 levels). Sunny Meadow, Candy Clouds, Autumn Woods and
+Sunset Castle, picked from a level select (finish one to unlock the next). Double jump,
+springy mushrooms, moving platforms, lifts, crumbling blocks and clouds you can jump up
+through (down + A drops through). Stand on friends' heads. If you fall or get left behind,
+you float back to the group in a bubble. Bump into a grumble and you are only pushed back;
+stomp it for gems. Once someone reaches the flag, everyone else has 12 seconds. After a
+level: A for the next level, B for the island.
 
 **Paint Party** (free-for-all, 60 seconds). Walk to paint the floor. A dashes (and shoves),
 B lobs a paint bomb. Grab the golden paint can for a Mega Brush. Most floor wins.
+
+**Balloon Archers** (free-for-all, TowerFall style, 90 seconds). Aim with the stick, B shoots a
+suction-cup arrow. Pop other players' balloons or jump on their heads. Arrows stick in walls,
+so walk over them to pick them up; your quiver also refills to 3 on its own. Popped players
+float in a bubble for 2 seconds and respawn. The arena wraps around at the edges. Playing
+alone gives you floating balloon targets.
+
+**Bonk Brawl** (free-for-all, Smash style). Tap B to punch, up+B for an uppercut, down+B to
+spin, hold B to charge a big punch. Damage % makes you fly further. Everyone has 3 lives;
+fall off the island and you lose one. You get 3 jumps and holding A while falling floats
+you down slowly. Players who are out become bubble ghosts that can still give small pushes.
+Playing alone adds a Bonk Bot.
+
+**Kart Party** (split-screen racing, 3 laps). Each player gets their own chase camera
+(up to a 3x2 grid). The kart drives forward on its own: steer with the stick, stick down to
+brake, A to hop, and hold A while steering to drift for a mini boost. Drive through rainbow
+boxes for items (B): Zoom boost, Banana, or a Bubble that floats a rival for a moment.
+Players further back get more boosts and a little extra speed, and the track edges steer
+you back on course.
+
+**Portal Pals** (co-op puzzle, 4 rooms). Top-down rooms. A and B shoot your two portals onto
+white walls; walk into one to come out of the other. Anyone can use anyone's portals.
+Buttons open doors while someone (or a box) stands on them. Push boxes, even through
+portals. Everyone has to reach the gold exit. Hold A+B to reset a room.
 
 ## Code layout
 
@@ -81,7 +108,8 @@ src/
     scene.js         base scene (camera fitting, game-time timers, disposal)
     minigame.js      shared intro -> countdown -> results -> back flow
   scenes/
-    hub.js  bubble.js  platformer.js  paint.js
+    hub.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
+    archers.js  brawl.js  kart.js  portal.js
 ```
 
 To add a game: subclass `MiniGame`, register it in `GAMES` in `main.js`, and add a pad in

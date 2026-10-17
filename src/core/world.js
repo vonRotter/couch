@@ -44,13 +44,14 @@ export function skyTexture(top = '#7fd3ff', bottom = '#fff1d6') {
 const ico = (r, d = 0) => sharedGeo(`ico${r}|${d}`, () => faceted(new THREE.IcosahedronGeometry(r, d)));
 const sph = (r) => sharedGeo(`wsph${r}`, () => new THREE.SphereGeometry(r, 16, 12));
 
-export function makeTree(rand = Math.random, scale = 1) {
+export function makeTree(rand = Math.random, scale = 1, leafColors = null) {
   const g = new THREE.Group();
   const trunk = new THREE.Mesh(sharedGeo('trunk', () => new THREE.CylinderGeometry(0.22, 0.32, 1.6, 8)), toon(COLORS.trunk));
   trunk.position.y = 0.8;
   trunk.castShadow = true;
   g.add(trunk);
-  const leaf = rand() < 0.5 ? COLORS.leaf : COLORS.leafLight;
+  const leafs = leafColors || [COLORS.leaf, COLORS.leafLight];
+  const leaf = leafs[Math.floor(rand() * leafs.length)];
   const blobs = [[0, 2.1, 0, 1.1], [0.55, 1.75, 0.2, 0.75], [-0.5, 1.8, -0.15, 0.8], [0.05, 2.75, 0.05, 0.7]];
   for (const [x, y, z, r] of blobs) {
     const b = new THREE.Mesh(ico(1, 1), toon(leaf, { flat: true }));

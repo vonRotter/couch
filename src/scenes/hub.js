@@ -17,15 +17,19 @@ const PADS = [
   { key: 'bubble', title: 'Bubble Buddies', x: -11, z: -7, color: 0xff7eb6, css: '#ff4f9a' },
   { key: 'platformer', title: 'Sky Hop', x: 0, z: -13, color: 0x4cc9f0, css: '#1aa7d8' },
   { key: 'paint', title: 'Paint Party', x: 11, z: -7, color: 0xff8c42, css: '#f26b1d' },
+  { key: 'archers', title: 'Balloon Archers', x: -15, z: 3, color: 0xffc93c, css: '#e0a100' },
+  { key: 'brawl', title: 'Bonk Brawl', x: 15, z: 3, color: 0xff5d73, css: '#f0364f' },
+  { key: 'kart', title: 'Kart Party', x: -9, z: 12, color: 0x3ddc97, css: '#16b874' },
+  { key: 'portal', title: 'Portal Pals', x: 9, z: 12, color: 0x9b5de5, css: '#8a45e0' },
 ];
 const PAD_R = 2.6;
 
 // Where stars can appear. y is the star's height.
 const STAR_SPOTS = [
-  [11, 6.5, 3.7], [-9, 7, 5.6], [-14, -1, 2.2], [0, 6, 2.4],
-  [-4, 3, 0.8], [5, -2, 0.8], [15, 4, 0.8], [-16, 6, 0.8],
-  [0, 16, 0.8], [-7, 14, 0.8], [7, 13.5, 0.8], [-3, -8, 2.2],
-];
+  [0, 14.5, 3.7], [-9, 7, 5.6], [-16.5, -5, 2.2], [0, 6, 2.4],
+  [-4, 3, 0.8], [5, -2, 0.8], [17, -3, 0.8], [-17, 9, 0.8],
+  [5, 17, 0.8], [-5, 17, 0.8], [12, -13.5, 0.8], [-3, -8, 2.2],
+]
 
 export class HubScene extends BaseScene {
   constructor(game, { fromGame = null } = {}) {
@@ -147,6 +151,7 @@ export class HubScene extends BaseScene {
     }
 
     // Landmarks behind each pad.
+    this.buildNewLandmarks();
     const [bub, sky, paint] = PADS;
     // Candy hut with floating bubbles.
     const hut = new THREE.Group();
@@ -220,13 +225,132 @@ export class HubScene extends BaseScene {
     }
   }
 
+  buildNewLandmarks() {
+    const s = this.scene;
+    const pad = (k) => PADS.find((p) => p.key === k);
+
+    // Archery target with balloons.
+    const ar = pad('archers');
+    const target = new THREE.Group();
+    target.position.set(ar.x - 4.2, 0, ar.z);
+    target.rotation.y = Math.PI / 2;
+    const rings = [[1.5, 0xff5d73], [1.15, 0xffffff], [0.8, 0x4cc9f0], [0.45, 0xffc93c]];
+    rings.forEach(([r, c], i) => {
+      const d = new THREE.Mesh(sharedGeo(`tgt${r}`, () => new THREE.CylinderGeometry(r, r, 0.2, 28)), toon(c));
+      d.rotation.x = Math.PI / 2;
+      d.position.set(0, 2.4, 0.05 + i * 0.04);
+      d.castShadow = i === 0;
+      target.add(d);
+    });
+    for (const sx of [-0.9, 0.9]) {
+      const leg = new THREE.Mesh(sharedGeo('tgtLeg', () => new THREE.CylinderGeometry(0.12, 0.12, 2.4, 8)), toon(COLORS.trunk));
+      leg.position.set(sx, 1.0, -0.3);
+      leg.rotation.x = 0.15;
+      target.add(leg);
+    }
+    s.add(target);
+    this.obstacles.push({ x: target.position.x, z: target.position.z, r: 1.2 });
+    this.hubBalloons = [];
+    PLAYER_COLORS.forEach((c, i) => {
+      const b = new THREE.Mesh(sharedGeo('hubBalloon', () => new THREE.SphereGeometry(0.45, 16, 12)), toon(c.hex));
+      b.scale.y = 1.2;
+      b.userData = { x: ar.x - 3 + (i % 3) * 0.9, z: ar.z - 2.6 + Math.floor(i / 3) * 0.8, phase: i };
+      s.add(b);
+      this.hubBalloons.push(b);
+    });
+
+    // Giant boxing glove on a spring.
+    const br = pad('brawl');
+    const glove = new THREE.Group();
+    glove.position.set(br.x + 4.2, 0, br.z);
+    const springGeo = sharedGeo('gloveSpring', () => new THREE.TorusGeometry(0.4, 0.08, 6, 16));
+    for (let i = 0; i < 6; i++) {
+      const ring = new THREE.Mesh(springGeo, toon(COLORS.rock));
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 0.3 + i * 0.32;
+      glove.add(ring);
+    }
+    const fist = new THREE.Mesh(sharedGeo('fist', () => new THREE.SphereGeometry(1, 18, 14)), toon(0xff3b5c));
+    fist.scale.set(1.1, 0.95, 1.25);
+    fist.position.y = 3;
+    const thumb = new THREE.Mesh(sharedGeo('thumb', () => new THREE.SphereGeometry(0.4, 12, 10)), toon(0xff3b5c));
+    thumb.position.set(-0.85, 2.9, 0.5);
+    const cuff = new THREE.Mesh(sharedGeo('cuff', () => new THREE.CylinderGeometry(0.6, 0.7, 0.6, 16)), toon(COLORS.white));
+    cuff.position.y = 2.1;
+    fist.castShadow = true;
+    glove.add(fist, thumb, cuff);
+    glove.rotation.y = -Math.PI / 2;
+    s.add(glove);
+    this.glove = glove;
+    this.obstacles.push({ x: glove.position.x, z: glove.position.z, r: 0.9 });
+
+    // Checkered arch and tire stacks.
+    const kt = pad('kart');
+    const arch = new THREE.Group();
+    arch.position.set(kt.x - 2.8, 0, kt.z + 3.6);
+    arch.rotation.y = -0.6;
+    for (const sx of [-2.2, 2.2]) {
+      const post = new THREE.Mesh(sharedGeo('archPost', () => new THREE.CylinderGeometry(0.22, 0.22, 3.2, 10)), toon(COLORS.white));
+      post.position.set(sx, 1.6, 0);
+      post.castShadow = true;
+      arch.add(post);
+      this.obstacles.push({ x: arch.position.x + Math.cos(-0.6) * sx, z: arch.position.z - Math.sin(-0.6) * sx, r: 0.3 });
+    }
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 16;
+    const g = c.getContext('2d');
+    for (let i = 0; i < 16; i++) for (let j = 0; j < 4; j++) {
+      g.fillStyle = (i + j) % 2 ? '#2b2340' : '#ffffff';
+      g.fillRect(i * 4, j * 4, 4, 4);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.magFilter = THREE.NearestFilter;
+    const banner = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.7, 0.15), new THREE.MeshToonMaterial({ map: tex }));
+    banner.position.y = 3.2;
+    arch.add(banner);
+    s.add(arch);
+    for (const [dx, dz] of [[2.5, 3.5], [-4.5, 0.5]]) {
+      const stack = new THREE.Group();
+      stack.position.set(kt.x + dx, 0, kt.z + dz);
+      for (let i = 0; i < 3; i++) {
+        const tire = new THREE.Mesh(sharedGeo('tire', () => new THREE.TorusGeometry(0.42, 0.2, 8, 16)), toon(i % 2 ? COLORS.ink : 0xff5d73));
+        tire.rotation.x = Math.PI / 2;
+        tire.position.y = 0.2 + i * 0.38;
+        tire.castShadow = true;
+        stack.add(tire);
+      }
+      s.add(stack);
+      this.obstacles.push({ x: stack.position.x, z: stack.position.z, r: 0.6, top: 1.15 });
+    }
+
+    // Two standing portal rings.
+    const pt = pad('portal');
+    this.portalRings = [];
+    [[-1.6, 0x4cc9f0], [1.6, 0xff8c42]].forEach(([dx, col]) => {
+      const ringG = new THREE.Group();
+      ringG.position.set(pt.x + 2.8 + dx, 0, pt.z + 3.4);
+      ringG.rotation.y = 0.5;
+      const ring = new THREE.Mesh(sharedGeo('portalRing', () => new THREE.TorusGeometry(1, 0.18, 10, 32)), toon(col, { emissive: col === 0x4cc9f0 ? 0x0a3550 : 0x502a0a }));
+      ring.scale.y = 1.4;
+      ring.position.y = 1.6;
+      const fill = new THREE.Mesh(sharedGeo('portalFill', () => new THREE.CircleGeometry(0.95, 32)), basic(col, { transparent: true, opacity: 0.45 }));
+      fill.scale.y = 1.4;
+      fill.position.y = 1.6;
+      ringG.add(ring, fill);
+      s.add(ringG);
+      this.portalRings.push(fill);
+      this.obstacles.push({ x: ringG.position.x, z: ringG.position.z, r: 0.5 });
+    });
+  }
+
   buildProps() {
     const s = this.scene;
     const rand = seeded(42);
 
     // Stump staircase to a high star.
     const stumpGeo = sharedGeo('stump', () => new THREE.CylinderGeometry(1, 1.1, 1, 16));
-    [[7, 6, 0.9, 0.9], [9, 8.2, 1.8, 0.9], [11, 6.5, 2.7, 1.0]].forEach(([x, z, top, r]) => {
+    [[0, 11, 0.9, 0.9], [2.2, 12.8, 1.8, 0.9], [0, 14.5, 2.7, 1.0]].forEach(([x, z, top, r]) => {
       const m = new THREE.Mesh(stumpGeo, toon(COLORS.trunk));
       m.scale.set(r, top, r);
       m.position.set(x, top / 2, z);
@@ -241,9 +365,9 @@ export class HubScene extends BaseScene {
     // Big standable rock.
     const bigRock = makeRock(rand, 1.6);
     bigRock.scale.set(1.8, 1.2, 1.8);
-    bigRock.position.set(-14, 0, -1);
+    bigRock.position.set(-16.5, 0, -5);
     s.add(bigRock);
-    this.obstacles.push({ x: -14, z: -1, r: 1.7, top: 1.1 });
+    this.obstacles.push({ x: -16.5, z: -5, r: 1.7, top: 1.1 });
 
     // Bouncy mushrooms.
     this.mushrooms = [];
@@ -614,6 +738,12 @@ export class HubScene extends BaseScene {
       b.scale.setScalar(Math.min(1, u.t * 8) * (1 - Math.max(0, u.t - 0.9) * 10));
     }
     this.skyBlocks.position.y = Math.sin(t * 1.2) * 0.25;
+    for (const b of this.hubBalloons) {
+      const u = b.userData;
+      b.position.set(u.x + Math.sin(t + u.phase) * 0.15, 3.2 + Math.sin(t * 1.6 + u.phase) * 0.3, u.z);
+    }
+    this.glove.rotation.z = Math.sin(t * 2.2) * 0.06;
+    for (const f of this.portalRings) f.material.opacity = 0.35 + Math.sin(t * 3) * 0.12;
     this.skyFlag.scale.y = 1 + Math.sin(t * 6) * 0.08;
     for (const m of this.mushrooms) {
       m.squish = Math.max(0, m.squish - dt * 4);
