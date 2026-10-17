@@ -1,0 +1,98 @@
+# Couch Party Island
+
+Couch co-op party games for 1–6 players on one screen, built with three.js.
+Players roam a little island, collect stars to unlock hats, and walk onto a game
+pad together to start a game. Everything is forgiving: nobody is ever knocked out.
+
+## Run it
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # static site in dist/
+```
+
+### Deploy to GitHub Pages
+
+`.github/workflows/pages.yml` builds and deploys on every push to `main`.
+Enable it once under **Settings → Pages → Source: GitHub Actions**.
+The Vite `base` is relative, so the site works from any sub-path.
+
+## Controls
+
+Every player has a stick and two buttons: **A** (jump/action) and **B** (secondary).
+
+| Device | Move | A | B |
+| --- | --- | --- | --- |
+| Gamepad 1–4 | Left stick / D-pad | A | B / X |
+| Keyboard 1 | W A S D | Space | Left Shift / E |
+| Keyboard 2 | Arrow keys | Enter | Right Shift / Right Ctrl |
+| Keyboard 3 | I J K L | U | O |
+| Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . / Numpad Enter |
+
+- Press A on any device to join (up to 6 players).
+- On the island: tap B to change hat, hold B to leave.
+- `Esc` returns to the island from a game (on the island it shows help). `M` toggles sound.
+
+Chromium-based browsers report at most 4 gamepads, so 5–6 players need at least one
+keyboard scheme. Two keyboard players fit comfortably on one keyboard. The schemes use
+different keys, so a second USB keyboard spreads players out. Some keyboards drop key
+presses when many keys are held at once (ghosting).
+
+## The games
+
+**Island hub.** Walk around, kick the beach ball, bounce on mushrooms, climb the stumps
+and hunt for stars. Stars (from the island and from finishing games) unlock hats:
+party hat, flower, bunny ears, propeller cap, top hat and crown. A game starts when at
+least half the players stand on its pad.
+
+**Bubble Buddies** (co-op arena, Bubble Bobble style). Blow bubbles (B) to trap the
+grumbles, then pop the bubbles for fruit. Jump on empty bubbles to bounce higher. Popping
+trapped bubbles near each other sets off a chain. If a grumble touches you, you float in
+a bubble for a moment. Mash buttons to escape, or a friend can touch you to free you.
+The gap in the floor wraps you to the top. 3 waves; if a wave drags on, the last grumbles
+fall asleep.
+
+**Sky Hop** (co-op platformer). Run to the flag with double jump, springy mushrooms,
+moving platforms and clouds you can jump up through (down + A drops through). Stand on
+friends' heads. If you fall or get left behind, you float back to the group in a bubble.
+Bump into a grumble and you are only pushed back; stomp it for gems. Once someone
+reaches the flag, everyone else has 12 seconds.
+
+**Paint Party** (free-for-all, 60 seconds). Walk to paint the floor. A dashes (and shoves),
+B lobs a paint bomb. Grab the golden paint can for a Mega Brush. Most floor wins.
+
+## Code layout
+
+```
+src/
+  main.js            renderer, game loop, scene switching
+  core/
+    input.js         keyboard schemes + gamepads -> one controller shape
+    roster.js        joined players, colors, hats, saved star count
+    character.js     the shared bean buddy (squash/stretch, blink, hats)
+    palette.js       colors, cached toon materials and geometry
+    world.js         lights, sky, trees, clouds, flowers, stars, gems
+    critters.js      grumbles (the harmless "enemies")
+    physics2d.js     side-view AABB physics + forgiving platformer controller
+    particles.js     instanced confetti and puffs
+    audio.js         synthesized sound effects and music loops
+    ui.js            HTML overlay: banners, chips, labels, results, wipe
+    scene.js         base scene (camera fitting, game-time timers, disposal)
+    minigame.js      shared intro -> countdown -> results -> back flow
+  scenes/
+    hub.js  bubble.js  platformer.js  paint.js
+```
+
+To add a game: subclass `MiniGame`, register it in `GAMES` in `main.js`, and add a pad in
+`PADS` in `scenes/hub.js`.
+
+`window.game.simulate(seconds)` advances the game in fixed steps without rendering.
+It exists for automated tests.
+
+## Assets and licenses
+
+- All 3D art is built in code from three.js primitives, so every game shares one look.
+- All sound and music is synthesized at runtime with the Web Audio API.
+- Font: [Fredoka](https://github.com/hafontia/Fredoka-One) via `@fontsource/fredoka`, SIL Open Font License 1.1.
+- [three.js](https://threejs.org), MIT License.

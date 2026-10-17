@@ -1,0 +1,680 @@
+import * as THREE from 'three';
+import { BaseScene } from '../core/scene.js';
+import { Character } from '../core/character.js';
+import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
+import { addLights, skyTexture, makeTree, makeCloud, makeFlower, makeRock, makeBush, makeStar, makeMushroom, seeded } from '../core/world.js';
+import { KEYBOARD_SCHEMES } from '../core/input.js';
+import { HATS } from '../core/roster.js';
+import { esc } from '../core/ui.js';
+
+const ISLAND_R = 22;
+const PR = 0.42; // player radius
+const SPEED = 7;
+const GRAVITY = 32;
+const JUMP = 11.5;
+
+const PADS = [
+  { key: 'bubble', title: 'Bubble Buddies', x: -11, z: -7, color: 0xff7eb6, css: '#ff4f9a' },
+  { key: 'platformer', title: 'Sky Hop', x: 0, z: -13, color: 0x4cc9f0, css: '#1aa7d8' },
+  { key: 'paint', title: 'Paint Party', x: 11, z: -7, color: 0xff8c42, css: '#f26b1d' },
+];
+const PAD_R = 2.6;
+
+// Where stars can appear. y is the star's height.
+const STAR_SPOTS = [
+  [11, 6.5, 3.7], [-9, 7, 5.6], [-14, -1, 2.2], [0, 6, 2.4],
+  [-4, 3, 0.8], [5, -2, 0.8], [15, 4, 0.8], [-16, 6, 0.8],
+  [0, 16, 0.8], [-7, 14, 0.8], [7, 13.5, 0.8], [-3, -8, 2.2],
+];
+
+export class HubScene extends BaseScene {
+  constructor(game, { fromGame = null } = {}) {
+    super(game);
+    this.key = null;
+    this.camera.fov = 45;
+    this.camera.updateProjectionMatrix();
+    this.scene.background = skyTexture('#6fd0ff', '#d9f6ff');
+    this.scene.fog = new THREE.Fog(0xbfeeff, 70, 140);
+    addLights(this.scene, { size: 30 });
+
+    this.obstacles = [];
+    this.entities = new Map();
+    this.camTarget = new THREE.Vector3(0, 0, 2);
+    this.camPos = new THREE.Vector3(0, 18, 22);
+    this.launching = false;
+    this.helpEl = null;
+
+    this.buildIsland();
+    this.buildPads();
+    this.buildProps();
+    this.buildStars();
+    this.buildBall();
+
+    for (const [i, p] of this.players.entries()) {
+      const pad = PADS.find((d) => d.key === fromGame);
+      const a = (i / Math.max(1, this.players.length)) * Math.PI * 2;
+      const base = pad ? new THREE.Vector3(pad.x * 0.7, 0, pad.z * 0.7 + 2.5) : new THREE.Vector3(0, 0, 2);
+      this.spawn(p, base.x + Math.cos(a) * 1.4, base.z + Math.sin(a) * 1.4);
+    }
+
+    this.titleEl = null;
+    this.refreshTitle();
+    game.audio.playMusic('hub');
+  }
+
+  // ---------- building ----------
+
+  buildIsland() {
+    const s = this.scene;
+    const water = new THREE.Mesh(new THREE.CircleGeometry(160, 48), toon(COLORS.water));
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = -0.7;
+    water.receiveShadow = true;
+    s.add(water);
+
+    const sand = new THREE.Mesh(new THREE.CylinderGeometry(ISLAND_R + 1.8, ISLAND_R + 2.6, 1.2, 64), toon(COLORS.sand));
+    sand.position.y = -0.75;
+    sand.receiveShadow = true;
+    s.add(sand);
+
+    const grass = new THREE.Mesh(new THREE.CylinderGeometry(ISLAND_R, ISLAND_R + 0.6, 1, 64), toon(COLORS.grass));
+    grass.position.y = -0.5;
+    grass.receiveShadow = true;
+    s.add(grass);
+
+    const cliff = new THREE.Mesh(new THREE.CylinderGeometry(ISLAND_R + 2.4, ISLAND_R - 4, 4, 64), toon(COLORS.dirt));
+    cliff.position.y = -3.3;
+    s.add(cliff);
+
+    this.foam = new THREE.Mesh(new THREE.TorusGeometry(ISLAND_R + 2.7, 0.25, 6, 80), toon(COLORS.white));
+    this.foam.rotation.x = Math.PI / 2;
+    this.foam.position.y = -0.62;
+    s.add(this.foam);
+
+    // Sparkles on the water.
+    this.sparkles = [];
+    const rand = seeded(9);
+    for (let i = 0; i < 40; i++) {
+      const m = new THREE.Mesh(sharedGeo('sparkle', () => new THREE.CircleGeometry(0.35, 6)), basic(0xffffff, { transparent: true, opacity: 0.7 }));
+      m.rotation.x = -Math.PI / 2;
+      const a = rand() * Math.PI * 2, r = ISLAND_R + 5 + rand() * 30;
+      m.position.set(Math.cos(a) * r, -0.66, Math.sin(a) * r);
+      m.userData.phase = rand() * 6;
+      s.add(m);
+      this.sparkles.push(m);
+    }
+
+    // Stepping-stone paths from the plaza to each pad.
+    const stoneGeo = sharedGeo('stone', () => new THREE.CylinderGeometry(0.55, 0.6, 0.12, 10));
+    for (const pad of PADS) {
+      const n = 6;
+      for (let i = 1; i < n; i++) {
+        const t = i / n;
+        const st = new THREE.Mesh(stoneGeo, toon(COLORS.sand));
+        st.position.set(pad.x * t + Math.sin(i * 1.7) * 0.4, 0.02, pad.z * t + 1.5 * (1 - t));
+        st.receiveShadow = true;
+        s.add(st);
+      }
+    }
+    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.3, 0.1, 32), toon(COLORS.sand));
+    plaza.position.set(0, 0.01, 2);
+    plaza.receiveShadow = true;
+    s.add(plaza);
+  }
+
+  buildPads() {
+    const s = this.scene;
+    for (const pad of PADS) {
+      const g = new THREE.Group();
+      g.position.set(pad.x, 0, pad.z);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(PAD_R, PAD_R + 0.2, 0.25, 40), toon(COLORS.icing));
+      base.position.y = 0.12;
+      base.receiveShadow = true;
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(PAD_R, 0.18, 8, 48), toon(pad.color));
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 0.26;
+      const fill = new THREE.Mesh(new THREE.CylinderGeometry(PAD_R - 0.1, PAD_R - 0.1, 0.05, 40), toon(pad.color));
+      fill.position.y = 0.27;
+      fill.scale.set(0.001, 1, 0.001);
+      g.add(base, rim, fill);
+      s.add(g);
+      pad.group = g;
+      pad.fill = fill;
+      pad.progress = 0;
+      pad.label = this.game.ui.label('label');
+      pad.label.style.color = pad.css;
+      pad.labelPos = new THREE.Vector3(pad.x, 3.4, pad.z);
+    }
+
+    // Landmarks behind each pad.
+    const [bub, sky, paint] = PADS;
+    // Candy hut with floating bubbles.
+    const hut = new THREE.Group();
+    hut.position.set(bub.x - 3.8, 0, bub.z - 4);
+    const wall = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 2.4, 20), toon(COLORS.candyPink));
+    wall.position.y = 1.2;
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(2.2, 1.8, 20), toon(COLORS.candyBlue));
+    roof.position.y = 3.3;
+    wall.castShadow = roof.castShadow = true;
+    hut.add(wall, roof);
+    s.add(hut);
+    this.obstacles.push({ x: hut.position.x, z: hut.position.z, r: 1.9 });
+    this.hubBubbles = [];
+    for (let i = 0; i < 6; i++) {
+      const b = new THREE.Mesh(sharedGeo('hubBubble', () => new THREE.SphereGeometry(0.5, 20, 14)), toon(0xbfe9ff, { transparent: true, opacity: 0.55 }));
+      b.userData = { t: i / 6, x: hut.position.x + (Math.random() - 0.5) * 3, z: hut.position.z + (Math.random() - 0.5) * 3 };
+      s.add(b);
+      this.hubBubbles.push(b);
+    }
+
+    // Floating sky blocks with a flag.
+    const blocks = new THREE.Group();
+    blocks.position.set(sky.x, 0, sky.z - 4.2);
+    const blockGeo = sharedGeo('hubBlock', () => new THREE.BoxGeometry(1.4, 1.4, 1.4));
+    [[-2.2, 1.2], [0, 2.4], [2.2, 3.6]].forEach(([x, y]) => {
+      const b = new THREE.Mesh(blockGeo, toon(COLORS.dirt));
+      b.position.set(x, y, 0);
+      const top = new THREE.Mesh(sharedGeo('hubBlockTop', () => new THREE.BoxGeometry(1.5, 0.4, 1.5)), toon(COLORS.grass));
+      top.position.set(x, y + 0.75, 0);
+      b.castShadow = top.castShadow = true;
+      blocks.add(b, top);
+    });
+    const pole = new THREE.Mesh(sharedGeo('pole', () => new THREE.CylinderGeometry(0.07, 0.07, 2.6, 8)), toon(COLORS.white));
+    pole.position.set(2.2, 5.6, 0);
+    const flag = new THREE.Mesh(sharedGeo('flagTri', () => new THREE.ConeGeometry(0.5, 1.1, 3)), toon(0xff5d73));
+    flag.rotation.z = -Math.PI / 2;
+    flag.position.set(2.75, 6.4, 0);
+    this.skyFlag = flag;
+    blocks.add(pole, flag);
+    s.add(blocks);
+    this.skyBlocks = blocks;
+
+    // Giant paint buckets and splats.
+    const buckets = new THREE.Group();
+    buckets.position.set(paint.x + 3.8, 0, paint.z - 4);
+    [[0, 0, 0xff5d73, 1.2], [1.9, 1.1, 0x4cc9f0, 0.9], [-1.4, 1.5, 0xffc93c, 0.8]].forEach(([x, z, c, sc]) => {
+      const b = new THREE.Mesh(sharedGeo('bucket', () => new THREE.CylinderGeometry(0.9, 0.75, 1.5, 20)), toon(COLORS.icing));
+      b.position.set(x, 0.75 * sc, z);
+      b.scale.setScalar(sc);
+      const p = new THREE.Mesh(sharedGeo('bucketPaint', () => new THREE.CylinderGeometry(0.86, 0.86, 0.1, 20)), toon(c));
+      p.position.set(x, 1.5 * sc + 0.01, z);
+      p.scale.set(sc, 1, sc);
+      const drip = new THREE.Mesh(sharedGeo('drip', () => new THREE.SphereGeometry(0.25, 10, 8)), toon(c));
+      drip.position.set(x + 0.8 * sc, 1.2 * sc, z + 0.2);
+      drip.scale.set(0.6, 1.4, 0.6);
+      b.castShadow = true;
+      buckets.add(b, p, drip);
+      this.obstacles.push({ x: buckets.position.x + x, z: buckets.position.z + z, r: 0.95 * sc });
+    });
+    s.add(buckets);
+    const splatGeo = sharedGeo('splat', () => new THREE.CircleGeometry(1, 12));
+    const rand = seeded(4);
+    for (let i = 0; i < 9; i++) {
+      const c = PLAYER_COLORS[i % 6].hex;
+      const sp = new THREE.Mesh(splatGeo, toon(c));
+      sp.rotation.x = -Math.PI / 2;
+      sp.position.set(paint.x + (rand() - 0.5) * 9, 0.02 + i * 0.002, paint.z + (rand() - 0.3) * 7);
+      sp.scale.setScalar(0.4 + rand() * 0.6);
+      sp.receiveShadow = true;
+      s.add(sp);
+    }
+  }
+
+  buildProps() {
+    const s = this.scene;
+    const rand = seeded(42);
+
+    // Stump staircase to a high star.
+    const stumpGeo = sharedGeo('stump', () => new THREE.CylinderGeometry(1, 1.1, 1, 16));
+    [[7, 6, 0.9, 0.9], [9, 8.2, 1.8, 0.9], [11, 6.5, 2.7, 1.0]].forEach(([x, z, top, r]) => {
+      const m = new THREE.Mesh(stumpGeo, toon(COLORS.trunk));
+      m.scale.set(r, top, r);
+      m.position.set(x, top / 2, z);
+      m.castShadow = m.receiveShadow = true;
+      const lid = new THREE.Mesh(sharedGeo('stumpLid', () => new THREE.CylinderGeometry(0.92, 0.92, 0.06, 16)), toon(COLORS.sand));
+      lid.scale.set(r, 1, r);
+      lid.position.set(x, top + 0.03, z);
+      s.add(m, lid);
+      this.obstacles.push({ x, z, r, top });
+    });
+
+    // Big standable rock.
+    const bigRock = makeRock(rand, 1.6);
+    bigRock.scale.set(1.8, 1.2, 1.8);
+    bigRock.position.set(-14, 0, -1);
+    s.add(bigRock);
+    this.obstacles.push({ x: -14, z: -1, r: 1.7, top: 1.1 });
+
+    // Bouncy mushrooms.
+    this.mushrooms = [];
+    [[-9, 7, 0xff5d73], [-3, -8, 0x9b5de5]].forEach(([x, z, c]) => {
+      const m = makeMushroom(c);
+      m.position.set(x, 0, z);
+      s.add(m);
+      const o = { x, z, r: 0.9, top: 1.15, bounce: x === -3 ? 13 : 17.5, mesh: m, squish: 0 };
+      this.obstacles.push(o);
+      this.mushrooms.push(o);
+    });
+
+    // Tree ring and scattered nature, kept clear of pads and stars.
+    const clear = (x, z, d) =>
+      PADS.every((p) => Math.hypot(p.x - x, p.z - z) > PAD_R + d + 2.5) &&
+      STAR_SPOTS.every(([sx, sz]) => Math.hypot(sx - x, sz - z) > d + 1.6) &&
+      this.obstacles.every((o) => Math.hypot(o.x - x, o.z - z) > o.r + d + 1) &&
+      Math.hypot(x, z - 2) > 5;
+    let placed = 0;
+    for (let i = 0; i < 300 && placed < 26; i++) {
+      const a = rand() * Math.PI * 2;
+      const r = 13 + rand() * 7.5;
+      const x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (!clear(x, z, 1.2)) continue;
+      const t = makeTree(rand, 0.9 + rand() * 0.5);
+      t.position.set(x, 0, z);
+      s.add(t);
+      this.obstacles.push({ x, z, r: 0.5 });
+      placed++;
+    }
+    for (let i = 0; i < 14; i++) {
+      const a = rand() * Math.PI * 2, r = 6 + rand() * 14;
+      const x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (!clear(x, z, 0.6)) continue;
+      const b = rand() < 0.5 ? makeBush(rand, 0.9) : makeRock(rand, 0.5);
+      b.position.set(x, b.isMesh ? 0.15 : 0, z);
+      s.add(b);
+    }
+    for (let i = 0; i < 90; i++) {
+      const a = rand() * Math.PI * 2, r = 3 + rand() * 18;
+      const f = makeFlower(rand);
+      f.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+      s.add(f);
+    }
+
+    this.clouds = [];
+    for (let i = 0; i < 9; i++) {
+      const c = makeCloud(rand, 1.4 + rand() * 1.4);
+      c.position.set((rand() - 0.5) * 90, 14 + rand() * 10, -30 + (rand() - 0.5) * 50);
+      c.userData.speed = 0.4 + rand() * 0.6;
+      s.add(c);
+      this.clouds.push(c);
+    }
+  }
+
+  buildStars() {
+    this.stars = STAR_SPOTS.map(([x, z, y]) => {
+      const m = makeStar();
+      m.position.set(x, y, z);
+      m.visible = false;
+      this.scene.add(m);
+      return { x, y, z, mesh: m, active: false, timer: 0 };
+    });
+    const order = [...this.stars.keys()].sort(() => Math.random() - 0.5);
+    order.slice(0, 7).forEach((i) => { this.stars[i].active = true; this.stars[i].mesh.visible = true; });
+    this.stars.forEach((s) => { if (!s.active) s.timer = 4 + Math.random() * 10; });
+  }
+
+  buildBall() {
+    const tex = (() => {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 128;
+      const g = c.getContext('2d');
+      const cols = ['#ff5d73', '#ffffff', '#ffc93c', '#ffffff', '#4cc9f0', '#ffffff'];
+      cols.forEach((col, i) => { g.fillStyle = col; g.fillRect((i * 256) / 6, 0, 256 / 6 + 1, 128); });
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    })();
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.75, 24, 16), new THREE.MeshToonMaterial({ map: tex }));
+    mesh.castShadow = true;
+    this.scene.add(mesh);
+    this.ball = { x: 3.5, z: 6, vx: 0, vz: 0, r: 0.75, mesh };
+  }
+
+  // ---------- players ----------
+
+  spawn(p, x, z) {
+    const ch = new Character(p.color, { hat: p.hat });
+    ch.group.position.set(x, 0, z);
+    this.scene.add(ch.group);
+    const tag = this.game.ui.label('label player-tag');
+    tag.style.color = p.css;
+    tag.textContent = p.deviceLabel;
+    const e = { p, ch, x, y: 0, z, vx: 0, vy: 0, vz: 0, grounded: true, bHold: 0, prevB: false, tag, tagPos: new THREE.Vector3() };
+    this.entities.set(p, e);
+    this.puffs.burst(new THREE.Vector3(x, 0.6, z), 0xffffff, { count: 14, speed: 4, size: 0.4 });
+    return e;
+  }
+
+  despawn(e) {
+    this.puffs.burst(new THREE.Vector3(e.x, 0.6, e.z), 0xffffff, { count: 14, speed: 4, size: 0.4 });
+    this.scene.remove(e.ch.group);
+    e.tag.remove();
+    this.entities.delete(e.p);
+    this.game.roster.leave(e.p);
+    this.game.audio.play('leave');
+  }
+
+  handleJoins() {
+    const roster = this.game.roster;
+    for (const d of this.game.input.joinRequests()) {
+      if (roster.has(d.id)) continue;
+      const p = roster.join(d);
+      if (!p) continue;
+      const a = Math.random() * Math.PI * 2;
+      this.spawn(p, Math.cos(a) * 1.5, 2 + Math.sin(a) * 1.5);
+      this.game.audio.play('join');
+      this.game.ui.toast(`${p.name} joined!`);
+    }
+    if (this.game.input.escPressed) this.toggleHelp();
+  }
+
+  updatePlayer(e, dt) {
+    const inp = this.input(e.p);
+    if (!inp) return;
+    const audio = this.game.audio;
+
+    // Tap B: next hat. Hold B: leave.
+    if (inp.b) {
+      e.bHold += dt;
+      if (e.bHold > 1.3) { this.despawn(e); this.refreshTitle(); return; }
+    } else {
+      if (e.prevB && e.bHold < 0.35) {
+        const h = this.game.roster.cycleHat(e.p);
+        e.ch.setHat(h);
+        e.ch.squash(1.25);
+        audio.play('select');
+      }
+      e.bHold = 0;
+    }
+    e.prevB = inp.b;
+    e.ch.group.scale.setScalar(1 - Math.min(0.4, Math.max(0, e.bHold - 0.35) * 0.4));
+
+    const tx = inp.x * SPEED, tz = -inp.y * SPEED;
+    const acc = (e.grounded ? 50 : 26) * dt;
+    e.vx += THREE.MathUtils.clamp(tx - e.vx, -acc, acc);
+    e.vz += THREE.MathUtils.clamp(tz - e.vz, -acc, acc);
+    if (inp.aPressed && e.grounded) {
+      e.vy = JUMP;
+      e.grounded = false;
+      e.ch.squash(1.3);
+      audio.play('jump');
+    }
+
+    e.x += e.vx * dt;
+    e.z += e.vz * dt;
+    for (const o of this.obstacles) {
+      const dx = e.x - o.x, dz = e.z - o.z;
+      const d = Math.hypot(dx, dz);
+      const min = o.r + PR;
+      if (d < min && (o.top === undefined || e.y < o.top - 0.3)) {
+        const nx = d > 1e-4 ? dx / d : 1, nz = d > 1e-4 ? dz / d : 0;
+        e.x = o.x + nx * min;
+        e.z = o.z + nz * min;
+        const vn = e.vx * nx + e.vz * nz;
+        if (vn < 0) { e.vx -= vn * nx; e.vz -= vn * nz; }
+      }
+    }
+    const rr = Math.hypot(e.x, e.z);
+    if (rr > ISLAND_R - 0.6) { e.x *= (ISLAND_R - 0.6) / rr; e.z *= (ISLAND_R - 0.6) / rr; }
+
+    e.vy -= GRAVITY * dt;
+    const prevY = e.y;
+    e.y += e.vy * dt;
+    let floor = 0, floorObj = null;
+    for (const o of this.obstacles) {
+      if (o.top === undefined) continue;
+      if (Math.hypot(e.x - o.x, e.z - o.z) < o.r + PR * 0.3 && prevY >= o.top - 0.35 && o.top > floor) {
+        floor = o.top;
+        floorObj = o;
+      }
+    }
+    const wasGrounded = e.grounded;
+    if (e.y <= floor) {
+      e.y = floor;
+      if (floorObj?.bounce && e.vy < 0) {
+        e.vy = floorObj.bounce;
+        floorObj.squish = 1;
+        e.ch.squash(1.4);
+        e.grounded = false;
+        audio.play('boing');
+      } else {
+        if (!wasGrounded && e.vy < -4) { e.ch.squash(0.7); audio.play('land'); }
+        e.vy = 0;
+        e.grounded = true;
+      }
+    } else {
+      e.grounded = false;
+    }
+
+    const sp = Math.hypot(e.vx, e.vz);
+    e.ch.face(e.vx, e.vz);
+    e.ch.group.position.set(e.x, e.y, e.z);
+    e.ch.update(dt, { moving: Math.min(1, sp / SPEED), grounded: e.grounded, vy: e.vy });
+  }
+
+  separatePlayers() {
+    const list = [...this.entities.values()];
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const a = list[i], b = list[j];
+        if (Math.abs(a.y - b.y) > 1) continue;
+        const dx = b.x - a.x, dz = b.z - a.z;
+        const d = Math.hypot(dx, dz);
+        if (d < PR * 2 && d > 1e-4) {
+          const push = (PR * 2 - d) / 2;
+          a.x -= (dx / d) * push; a.z -= (dz / d) * push;
+          b.x += (dx / d) * push; b.z += (dz / d) * push;
+        }
+      }
+    }
+  }
+
+  updateBall(dt) {
+    const b = this.ball;
+    for (const e of this.entities.values()) {
+      const dx = b.x - e.x, dz = b.z - e.z;
+      const d = Math.hypot(dx, dz);
+      if (d < b.r + PR && e.y < 1.2 && d > 1e-4) {
+        const nx = dx / d, nz = dz / d;
+        b.x = e.x + nx * (b.r + PR);
+        b.z = e.z + nz * (b.r + PR);
+        const kick = Math.max(3, (e.vx * nx + e.vz * nz) * 1.4 + 2);
+        b.vx = nx * kick + e.vx * 0.3;
+        b.vz = nz * kick + e.vz * 0.3;
+        if (kick > 6) this.game.audio.play('bump');
+      }
+    }
+    b.x += b.vx * dt;
+    b.z += b.vz * dt;
+    const f = Math.max(0, 1 - 0.9 * dt);
+    b.vx *= f; b.vz *= f;
+    for (const o of this.obstacles) {
+      const dx = b.x - o.x, dz = b.z - o.z;
+      const d = Math.hypot(dx, dz);
+      if (d < o.r + b.r && d > 1e-4) {
+        const nx = dx / d, nz = dz / d;
+        b.x = o.x + nx * (o.r + b.r);
+        b.z = o.z + nz * (o.r + b.r);
+        const vn = b.vx * nx + b.vz * nz;
+        if (vn < 0) { b.vx -= 1.8 * vn * nx; b.vz -= 1.8 * vn * nz; }
+      }
+    }
+    const rr = Math.hypot(b.x, b.z);
+    if (rr > ISLAND_R - b.r) {
+      const nx = b.x / rr, nz = b.z / rr;
+      b.x = nx * (ISLAND_R - b.r); b.z = nz * (ISLAND_R - b.r);
+      const vn = b.vx * nx + b.vz * nz;
+      if (vn > 0) { b.vx -= 1.8 * vn * nx; b.vz -= 1.8 * vn * nz; }
+    }
+    const sp = Math.hypot(b.vx, b.vz);
+    b.mesh.position.set(b.x, b.r, b.z);
+    if (sp > 0.01) {
+      const axis = new THREE.Vector3(b.vz, 0, -b.vx).normalize();
+      b.mesh.rotateOnWorldAxis(axis, (sp * dt) / b.r);
+    }
+  }
+
+  updateStars(dt) {
+    const roster = this.game.roster;
+    for (const s of this.stars) {
+      if (!s.active) {
+        s.timer -= dt;
+        if (s.timer <= 0) {
+          s.active = true;
+          s.mesh.visible = true;
+          s.mesh.scale.setScalar(0.01);
+        }
+        continue;
+      }
+      s.mesh.rotation.y += dt * 2.5;
+      s.mesh.position.y = s.y + Math.sin(this.time * 3 + s.x) * 0.15;
+      s.mesh.scale.lerp(new THREE.Vector3(1, 1, 1), Math.min(1, dt * 6));
+      for (const e of this.entities.values()) {
+        if (Math.hypot(e.x - s.x, e.z - s.z) < 0.95 && Math.abs(e.y + 0.6 - s.y) < 1.1) {
+          s.active = false;
+          s.mesh.visible = false;
+          s.timer = 12 + Math.random() * 10;
+          const before = roster.unlockedHats().length;
+          roster.addStars(1);
+          this.game.audio.play('star');
+          this.confetti.burst(s.mesh.position, 0, { count: 26, speed: 6, colors: PLAYER_COLORS.map((c) => c.hex).concat(COLORS.gold) });
+          e.ch.squash(1.3);
+          if (roster.unlockedHats().length > before) {
+            const hat = HATS[roster.unlockedHats().at(-1)];
+            this.game.ui.toast(`New hat: ${hat.name}! Tap B to wear it`, 2600);
+            this.game.audio.play('fanfare');
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  updatePads(dt) {
+    const n = this.entities.size;
+    const need = Math.max(1, Math.ceil(n / 2));
+    for (const pad of PADS) {
+      let on = 0;
+      for (const e of this.entities.values()) {
+        if (Math.hypot(e.x - pad.x, e.z - pad.z) < PAD_R && e.y < 2) on++;
+      }
+      const ready = n > 0 && on >= need;
+      pad.progress = THREE.MathUtils.clamp(pad.progress + (ready ? dt / 1.8 : -dt * 1.5), 0, 1);
+      const k = Math.max(0.001, pad.progress);
+      pad.fill.scale.set(k, 1, k);
+      pad.group.position.y = Math.sin(this.time * 2 + pad.x) * 0.03;
+      const sub = n === 0 ? 'Join to play!' : on > 0 ? `${on}/${need} ready` : `${need} needed`;
+      pad.label.innerHTML = `${esc(pad.title)}<small>${sub}</small>`;
+      this.game.ui.place(pad.label, pad.labelPos, this.camera);
+      if (pad.progress >= 1 && !this.launching) {
+        this.launching = true;
+        this.game.startGame(pad.key);
+      }
+    }
+  }
+
+  updateCamera(dt) {
+    const list = [...this.entities.values()];
+    const target = new THREE.Vector3(0, 0, 0);
+    let spread = 0;
+    if (list.length) {
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (const e of list) {
+        minX = Math.min(minX, e.x); maxX = Math.max(maxX, e.x);
+        minZ = Math.min(minZ, e.z); maxZ = Math.max(maxZ, e.z);
+      }
+      target.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
+      spread = Math.max(maxX - minX, (maxZ - minZ) * 1.4);
+    } else {
+      target.set(Math.sin(this.time * 0.1) * 4, 0, -2);
+      spread = 18;
+    }
+    const zoom = THREE.MathUtils.clamp(0.75 + spread / 22, 0.75, 1.7);
+    const k = Math.min(1, dt * 3);
+    this.camTarget.lerp(target, k);
+    this.camPos.lerp(new THREE.Vector3(this.camTarget.x, 13 * zoom, this.camTarget.z + 13 * zoom), k);
+    this.camera.position.copy(this.camPos);
+    this.camera.lookAt(this.camTarget.x, 0.6, this.camTarget.z);
+  }
+
+  animateWorld(dt) {
+    const t = this.time;
+    this.foam.scale.setScalar(1 + Math.sin(t * 1.3) * 0.008);
+    for (const s of this.sparkles) {
+      const v = (Math.sin(t * 2 + s.userData.phase) + 1) / 2;
+      s.scale.setScalar(0.3 + v * 0.8);
+    }
+    for (const c of this.clouds) {
+      c.position.x += c.userData.speed * dt;
+      if (c.position.x > 50) c.position.x = -50;
+    }
+    for (const b of this.hubBubbles) {
+      const u = b.userData;
+      u.t = (u.t + dt * 0.18) % 1;
+      b.position.set(u.x + Math.sin(u.t * 9) * 0.4, 1 + u.t * 7, u.z);
+      b.scale.setScalar(Math.min(1, u.t * 8) * (1 - Math.max(0, u.t - 0.9) * 10));
+    }
+    this.skyBlocks.position.y = Math.sin(t * 1.2) * 0.25;
+    this.skyFlag.scale.y = 1 + Math.sin(t * 6) * 0.08;
+    for (const m of this.mushrooms) {
+      m.squish = Math.max(0, m.squish - dt * 4);
+      const s = 1 - Math.sin(m.squish * Math.PI) * 0.3;
+      m.mesh.scale.set(1 + (1 - s) * 0.6, s, 1 + (1 - s) * 0.6);
+    }
+  }
+
+  refreshTitle() {
+    const has = this.players.length > 0;
+    if (!has && !this.titleEl) {
+      const keys = KEYBOARD_SCHEMES.map((s) => `<div class="join-key"><b>${s.aLabel}</b>${s.hint}</div>`).join('');
+      this.titleEl = this.game.ui.panel(`
+        <div class="title-logo">Couch Party Island</div>
+        <div class="title-sub blink">Press your jump button to join (up to 6 players)</div>
+        <div class="join-grid">${keys}<div class="join-key"><b>A</b>Gamepad</div></div>
+        <div class="title-sub" style="font-size:0.9em;margin:16px 0 0">M: sound on/off · Esc: help</div>`);
+    } else if (has && this.titleEl) {
+      this.titleEl.remove();
+      this.titleEl = null;
+    }
+  }
+
+  toggleHelp() {
+    if (this.helpEl) { this.helpEl.remove(); this.helpEl = null; return; }
+    this.helpEl = this.game.ui.panel(`
+      <div class="help-panel">
+        <h2>How to play</h2>
+        <ul>
+          <li>Press your jump button to join. Up to 6 players: 4 gamepads + keyboards.</li>
+          <li>Walk onto a game pad. When half the group stands on it, the game starts.</li>
+          <li>Collect stars on the island to unlock hats. Tap B to change hat.</li>
+          <li>Hold B for a second to leave.</li>
+          <li>In a game, Esc returns to the island. M toggles sound.</li>
+        </ul>
+      </div>`);
+  }
+
+  update(dt) {
+    this.handleJoins();
+    this.refreshTitle();
+    for (const e of [...this.entities.values()]) this.updatePlayer(e, dt);
+    this.separatePlayers();
+    this.updateBall(dt);
+    this.updateStars(dt);
+    this.updatePads(dt);
+    this.animateWorld(dt);
+    this.updateCamera(dt);
+    for (const e of this.entities.values()) {
+      e.tagPos.set(e.x, e.y + 2, e.z);
+      this.game.ui.place(e.tag, e.tagPos, this.camera);
+    }
+
+    const goal = this.game.roster.nextHatGoal();
+    const hint = this.players.length ? '<div class="pill" style="font-size:clamp(12px,1.1vw,18px)">Stand on a pad together to play · join anytime</div>' : '';
+    this.game.ui.setCorner(`${hint}<div class="pill"><span class="star-icon"></span><b>${this.game.roster.stars}</b>${goal ? `<span style="opacity:.7">next hat at ${goal.stars}</span>` : ''}</div>`);
+    this.game.ui.bar(this.players, (p) => esc(p.deviceLabel));
+  }
+
+  idle(dt) {
+    this.animateWorld(dt);
+    for (const e of this.entities.values()) e.ch.update(dt, {});
+  }
+}
