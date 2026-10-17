@@ -314,3 +314,12 @@ export function t(key, vars) {
   if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
   return s;
 }
+
+/**
+ * Lets a game module bring its own text: call once at module top level.
+ * addStrings({ en: { 'golf.title': 'Bean Golf' }, no: { 'golf.title': 'Bønnegolf' } })
+ */
+export function addStrings({ en: e = {}, no: n = {} }) {
+  Object.assign(en, e);
+  Object.assign(no, n);
+}

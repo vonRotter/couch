@@ -11,8 +11,8 @@ import { esc } from '../core/ui.js';
 import { glyphMaterial } from '../core/edu.js';
 import { makeGameIcon } from './hub-icons.js';
 
-const ISLAND_R = 34;
-const RING_R = 27;
+const ISLAND_R = 41;
+const RING_R = 34;
 const PAD_R = 2.6;
 const PR = 0.42; // player radius
 const SPEED = 7.5;
@@ -61,6 +61,7 @@ const STAR_SPOTS = [
   [14, -9, 3.7], [-14, -3, 5.6], [-9.5, 2.5, 7.0], [0, -6, 2.4],
   [0, -15, 0.8], [11, 10, 0.8], [-12, 10, 0.8], [17, 4, 0.8],
   [-17, -10, 0.8], [5, -17, 0.8], [-6, -17, 0.8], [17, -15, 0.8],
+  [25, 6, 0.8], [-25, 4, 0.8], [21, -24, 0.8], [-20, -24, 0.8],
 ];
 
 export class HubScene extends BaseScene {
@@ -72,7 +73,7 @@ export class HubScene extends BaseScene {
     this.camera.updateProjectionMatrix();
     this.scene.background = skyTexture('#6fd0ff', '#d9f6ff');
     this.scene.fog = new THREE.Fog(0xbfeeff, 90, 190);
-    this.lights = addLights(this.scene, { size: 42 });
+    this.lights = addLights(this.scene, { size: 50 });
 
     this.obstacles = [];
     this.entities = new Map();
@@ -472,9 +473,9 @@ export class HubScene extends BaseScene {
       this.obstacles.every((o) => Math.hypot(o.x - x, o.z - z) > o.r + d + 1.2) &&
       !nearPath(x, z, d + 1.2) && Math.hypot(x - CORNER.x, z - CORNER.z) > 9.5;
     let placed = 0;
-    for (let i = 0; i < 900 && placed < 34; i++) {
+    for (let i = 0; i < 1200 && placed < 44; i++) {
       const a = rand() * Math.PI * 2;
-      const r = rand() < 0.3 ? 18 + rand() * 5 : 29.5 + rand() * 3.5;
+      const r = rand() < 0.3 ? 18 + rand() * 6 : RING_R + 2.5 + rand() * 3.5;
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
       if (!clear(x, z, 1.2)) continue;
       const tree = makeTree(rand, 1 + rand() * 0.6);
@@ -484,7 +485,7 @@ export class HubScene extends BaseScene {
       placed++;
     }
     for (let i = 0; i < 24; i++) {
-      const a = rand() * Math.PI * 2, r = 15 + rand() * 18;
+      const a = rand() * Math.PI * 2, r = 15 + rand() * 24;
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
       if (!clear(x, z, 0.6)) continue;
       const b = rand() < 0.6 ? makeBush(rand, 1) : makeRock(rand, 0.55);
@@ -492,7 +493,7 @@ export class HubScene extends BaseScene {
       s.add(b);
     }
     for (let i = 0; i < 90; i++) {
-      const a = rand() * Math.PI * 2, r = 4 + rand() * 29;
+      const a = rand() * Math.PI * 2, r = 4 + rand() * 35;
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
       if (Math.hypot(x - CORNER.x, z - CORNER.z) < 8) continue;
       const f = makeFlower(rand);
@@ -1234,9 +1235,9 @@ export class HubScene extends BaseScene {
       spread = Math.max(maxX - minX, (maxZ - minZ) * 1.4);
     } else {
       target.set(Math.sin(this.time * 0.1) * 5, 0, -2);
-      spread = 30;
+      spread = 40;
     }
-    const zoom = THREE.MathUtils.clamp(0.8 + spread / 22, 0.8, 2.3);
+    const zoom = THREE.MathUtils.clamp(0.8 + spread / 22, 0.8, 2.7);
     const k = Math.min(1, dt * 3);
     this.camTarget.lerp(target, k);
     this.camPos.lerp(new THREE.Vector3(this.camTarget.x, 13 * zoom, this.camTarget.z + 13 * zoom), k);
