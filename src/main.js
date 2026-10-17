@@ -8,6 +8,7 @@ import { Input } from './core/input.js';
 import { Roster } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
+import { t, setLang, getLang } from './core/i18n.js';
 import { HubScene } from './scenes/hub.js';
 import { BubbleScene } from './scenes/bubble.js';
 import { PlatformerScene } from './scenes/platformer.js';
@@ -18,17 +19,19 @@ import { KartScene } from './scenes/kart.js';
 import { PortalScene } from './scenes/portal.js';
 import { SpellingScene } from './scenes/spelling.js';
 import { MathScene } from './scenes/math.js';
+import { FootballScene } from './scenes/football.js';
 
 export const GAMES = {
-  bubble: { title: 'Bubble Buddies', blurb: 'Trap the grumbles in bubbles!', Scene: BubbleScene },
-  platformer: { title: 'Sky Hop', blurb: 'Hop to the flag together!', Scene: PlatformerScene },
-  paint: { title: 'Paint Party', blurb: 'Paint the most floor!', Scene: PaintScene },
-  archers: { title: 'Balloon Archers', blurb: 'Pop everyone else\'s balloon!', Scene: ArchersScene },
-  brawl: { title: 'Bonk Brawl', blurb: 'Bonk friends off the island!', Scene: BrawlScene },
-  kart: { title: 'Kart Party', blurb: 'Race three laps!', Scene: KartScene },
-  portal: { title: 'Portal Pals', blurb: 'Portal everyone to the exit!', Scene: PortalScene },
-  spelling: { title: 'Bokstavballonger', blurb: 'Stav ordene!', Scene: SpellingScene, edu: true },
-  math: { title: 'Mattejakt', blurb: 'Finn riktig svar!', Scene: MathScene, edu: true },
+  bubble: { Scene: BubbleScene },
+  platformer: { Scene: PlatformerScene },
+  paint: { Scene: PaintScene },
+  archers: { Scene: ArchersScene },
+  brawl: { Scene: BrawlScene },
+  kart: { Scene: KartScene },
+  portal: { Scene: PortalScene },
+  football: { Scene: FootballScene },
+  spelling: { Scene: SpellingScene, edu: true },
+  math: { Scene: MathScene, edu: true },
 };
 
 class Game {
@@ -42,6 +45,7 @@ class Game {
 
     this.input = new Input();
     this.roster = new Roster();
+    setLang(this.roster.progress.lang || 'en');
     this.audio = new AudioEngine();
     this.ui = new UI(document.getElementById('ui'));
     this.input.onActivity = () => this.audio.ensure();
@@ -82,6 +86,14 @@ class Game {
     else this.transition(make);
   }
 
+  toggleLanguage() {
+    setLang(getLang() === 'en' ? 'no' : 'en');
+    this.roster.progress.lang = getLang();
+    this.roster.save();
+    this.ui.toast(t('lang.switched'));
+    this.current?.onLanguage?.();
+  }
+
   startGame(key) {
     const def = GAMES[key];
     if (!def || this.roster.players.length === 0) return;
@@ -101,7 +113,8 @@ class Game {
 
   tick(dt) {
     this.input.update();
-    if (this.input.mutePressed) this.ui.toast(this.audio.toggleMute() ? 'Sound off' : 'Sound on');
+    if (this.input.mutePressed) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
+    if (this.input.pressed.has('KeyN')) this.toggleLanguage();
     if (this.input.escPressed && !this.switching && !(this.current instanceof HubScene)) {
       this.goHub(this.current?.key ?? null);
     }

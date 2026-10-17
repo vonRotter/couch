@@ -3,9 +3,10 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { BaseScene } from '../core/scene.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
-import { addLights, skyTexture, makeTree, makeCloud, makeFlower, makeRock, makeBush, makeStar, makeMushroom, seeded } from '../core/world.js';
+import { addLights, skyTexture, makeTree, makeCloud, makeFlower, makeRock, makeBush, makeStar, makeMushroom, seeded, soccerBallTexture } from '../core/world.js';
 import { KEYBOARD_SCHEMES } from '../core/input.js';
-import { HATS } from '../core/roster.js';
+import { hatName } from '../core/roster.js';
+import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { glyphMaterial } from '../core/edu.js';
 
@@ -16,23 +17,30 @@ const GRAVITY = 32;
 const JUMP = 11.5;
 
 const PADS = [
-  { key: 'bubble', title: 'Bubble Buddies', x: -11, z: -7, color: 0xff7eb6, css: '#ff4f9a' },
-  { key: 'platformer', title: 'Sky Hop', x: 0, z: -13, color: 0x4cc9f0, css: '#1aa7d8' },
-  { key: 'paint', title: 'Paint Party', x: 11, z: -7, color: 0xff8c42, css: '#f26b1d' },
-  { key: 'archers', title: 'Balloon Archers', x: -15, z: 3, color: 0xffc93c, css: '#e0a100' },
-  { key: 'brawl', title: 'Bonk Brawl', x: 15, z: 3, color: 0xff5d73, css: '#f0364f' },
-  { key: 'kart', title: 'Kart Party', x: -9, z: 12, color: 0x3ddc97, css: '#16b874' },
-  { key: 'portal', title: 'Portal Pals', x: 9, z: 12, color: 0x9b5de5, css: '#8a45e0' },
-  { key: 'spelling', title: 'Bokstavballonger', x: -6, z: -12.5, color: 0x2ec4b6, css: '#139e91', edu: true },
-  { key: 'math', title: 'Mattejakt', x: 6, z: -12.5, color: 0xff9f1c, css: '#e07f00', edu: true },
+  { key: 'bubble', x: -11, z: -7, color: 0xff7eb6, css: '#ff4f9a' },
+  { key: 'platformer', x: 0, z: -13, color: 0x4cc9f0, css: '#1aa7d8' },
+  { key: 'paint', x: 11, z: -7, color: 0xff8c42, css: '#f26b1d' },
+  { key: 'archers', x: -15, z: 3, color: 0xffc93c, css: '#e0a100' },
+  { key: 'brawl', x: 15, z: 3, color: 0xff5d73, css: '#f0364f' },
+  { key: 'kart', x: -9, z: 12, color: 0x3ddc97, css: '#16b874' },
+  { key: 'portal', x: 9, z: 12, color: 0x9b5de5, css: '#8a45e0' },
+  { key: 'spelling', x: -6, z: -12.5, color: 0x2ec4b6, css: '#139e91', edu: true },
+  { key: 'math', x: 6, z: -12.5, color: 0xff9f1c, css: '#e07f00', edu: true },
+  { key: 'football', x: 17.5, z: -3.5, color: 0x58b947, css: '#3f9a32' },
 ];
+const LANG_FLAG = { x: 5.5, z: 6.5 };
+const SWAP_PADS = [{ x: -1.6, z: 9.2 }, { x: 1.6, z: 9.2 }];
+const POT_SPOTS = [30, 54, 78, 102, 126, 150].map((deg) => {
+  const a = THREE.MathUtils.degToRad(deg);
+  return { x: Math.cos(a) * 5, z: 2 + Math.sin(a) * 5 };
+});
 const EDU_SWITCH = { x: -5.5, z: 6.5 };
 const PAD_R = 2.6;
 
 // Where stars can appear. y is the star's height.
 const STAR_SPOTS = [
   [0, 14.5, 3.7], [-9, 7, 5.6], [-16.5, -5, 2.2], [0, 6, 2.4],
-  [-4, 3, 0.8], [5, -2, 0.8], [17, -3, 0.8], [-17, 9, 0.8],
+  [-4, 3, 0.8], [5, -2, 0.8], [13.5, 8, 0.8], [-17, 9, 0.8],
   [5, 17, 0.8], [-5, 17, 0.8], [12, -13.5, 0.8], [-3, -8, 2.2],
 ]
 
@@ -276,13 +284,193 @@ export class HubScene extends BaseScene {
     this.eduLabelPos = new THREE.Vector3(EDU_SWITCH.x, 2.2, EDU_SWITCH.z);
   }
 
+  buildSocial() {
+    const s = this.scene;
+    // Football: a goal and a giant ball next to the pad.
+    const fb = PADS.find((p) => p.key === 'football');
+    const goal = new THREE.Group();
+    goal.position.set(fb.x + 1.4, 0, fb.z - 4.2);
+    goal.rotation.y = -0.35;
+    const postGeo = sharedGeo('goalPost', () => new THREE.CylinderGeometry(0.12, 0.12, 2.4, 10));
+    for (const sx of [-1.9, 1.9]) {
+      const post = new THREE.Mesh(postGeo, toon(COLORS.white));
+      post.position.set(sx, 1.2, 0);
+      post.castShadow = true;
+      goal.add(post);
+      this.obstacles.push({ x: goal.position.x + Math.cos(-0.35) * sx, z: goal.position.z - Math.sin(-0.35) * sx, r: 0.25 });
+    }
+    const bar = new THREE.Mesh(sharedGeo('goalBar', () => new THREE.CylinderGeometry(0.12, 0.12, 4, 10)), toon(COLORS.white));
+    bar.rotation.z = Math.PI / 2;
+    bar.position.y = 2.4;
+    const net = new THREE.Mesh(sharedGeo('goalNet', () => new THREE.BoxGeometry(3.8, 2.3, 1.2)), toon(0xffffff, { transparent: true, opacity: 0.35 }));
+    net.position.set(0, 1.15, -0.7);
+    goal.add(bar, net);
+    s.add(goal);
+    const bigBall = new THREE.Mesh(new THREE.SphereGeometry(1.1, 24, 16), new THREE.MeshToonMaterial({ map: soccerBallTexture(), gradientMap: toon(0xffffff).gradientMap }));
+    bigBall.position.set(fb.x - 3.6, 1.1, fb.z - 2.2);
+    bigBall.castShadow = true;
+    s.add(bigBall);
+    this.obstacles.push({ x: bigBall.position.x, z: bigBall.position.z, r: 1.1, top: 2.1 });
+
+    // Paint pots: walk into one to take that color.
+    this.pots = POT_SPOTS.map((sp, i) => {
+      const g = new THREE.Group();
+      g.position.set(sp.x, 0, sp.z);
+      const pot = new THREE.Mesh(sharedGeo('hubPot', () => new THREE.CylinderGeometry(0.5, 0.42, 0.7, 18)), toon(COLORS.icing));
+      pot.position.y = 0.35;
+      pot.castShadow = true;
+      const paint = new THREE.Mesh(sharedGeo('hubPotPaint', () => new THREE.CylinderGeometry(0.46, 0.46, 0.08, 18)), toon(PLAYER_COLORS[i].hex));
+      paint.position.y = 0.71;
+      const drip = new THREE.Mesh(sharedGeo('hubPotDrip', () => new THREE.SphereGeometry(0.12, 8, 6)), toon(PLAYER_COLORS[i].hex));
+      drip.position.set(0.45, 0.5, 0.15);
+      drip.scale.set(0.7, 1.5, 0.7);
+      g.add(pot, paint, drip);
+      s.add(g);
+      const o = { x: sp.x, z: sp.z, r: 0.55, top: 0.75, pot: i };
+      this.obstacles.push(o);
+      const label = this.game.ui.label('label player-tag');
+      label.style.color = PLAYER_COLORS[i].css;
+      return { index: i, group: g, label, labelPos: new THREE.Vector3(sp.x, 1.5, sp.z), flash: 0 };
+    });
+
+    // Swap pads: one player on each, both tap B to trade colors.
+    this.swapPads = SWAP_PADS.map((sp) => {
+      const disc = new THREE.Mesh(sharedGeo('swapPad', () => new THREE.CylinderGeometry(0.95, 1.0, 0.14, 28)), toon(COLORS.icing));
+      disc.position.set(sp.x, 0.07, sp.z);
+      disc.receiveShadow = true;
+      s.add(disc);
+      return { ...sp, disc, who: null };
+    });
+    const arrows = new THREE.Group();
+    arrows.position.set(0, 0.16, SWAP_PADS[0].z);
+    for (const dir of [-1, 1]) {
+      const head = new THREE.Mesh(sharedGeo('swapArrow', () => new THREE.ConeGeometry(0.18, 0.4, 3)), toon(0xffc93c));
+      head.rotation.set(-Math.PI / 2, 0, dir * Math.PI / 2);
+      head.position.set(dir * 0.35, 0, dir * 0.18);
+      arrows.add(head);
+    }
+    s.add(arrows);
+    this.swapLabel = this.game.ui.label('label');
+    this.swapLabelPos = new THREE.Vector3(0, 1.6, SWAP_PADS[0].z);
+    this.swapCd = 0;
+
+    // Language flag: jump on its button to switch English / Norwegian.
+    const fl = new THREE.Group();
+    fl.position.set(LANG_FLAG.x, 0, LANG_FLAG.z);
+    const base = new THREE.Mesh(sharedGeo('swBase', () => new THREE.CylinderGeometry(1.0, 1.15, 0.5, 24)), toon(COLORS.icing));
+    base.position.y = 0.25;
+    base.castShadow = base.receiveShadow = true;
+    const cap = new THREE.Mesh(sharedGeo('swCap', () => new THREE.CylinderGeometry(0.75, 0.8, 0.3, 24)), toon(0x4cc9f0));
+    cap.position.y = 0.62;
+    const pole = new THREE.Mesh(sharedGeo('langPole', () => new THREE.CylinderGeometry(0.06, 0.06, 2.2, 8)), toon(COLORS.white));
+    pole.position.set(0.55, 1.8, 0);
+    this.langFlag = new THREE.Mesh(sharedGeo('langFlag', () => new THREE.PlaneGeometry(1.2, 0.8)), glyphMaterial('EN', { disc: null }));
+    this.langFlag.position.set(1.18, 2.5, 0);
+    const cloth = new THREE.Mesh(sharedGeo('langCloth', () => new THREE.PlaneGeometry(1.25, 0.85)), toon(0x4cc9f0));
+    cloth.position.set(1.18, 2.5, -0.01);
+    this.langCloth = cloth;
+    fl.add(base, cap, pole, cloth, this.langFlag);
+    s.add(fl);
+    this.obstacles.push({ x: LANG_FLAG.x, z: LANG_FLAG.z, r: 0.9, top: 0.8, lang: true });
+    this.langLabel = this.game.ui.label('label');
+    this.langLabelPos = new THREE.Vector3(LANG_FLAG.x, 3.4, LANG_FLAG.z);
+  }
+
+  touchPot(e, index) {
+    if (e.potCd > 0 || e.p.colorIndex === index) return;
+    e.potCd = 1;
+    const roster = this.game.roster;
+    if (roster.setColor(e.p, index)) {
+      this.recolor(e);
+      this.game.audio.play('join');
+      this.game.ui.toast(t('hub.newColor', { name: e.p.name }));
+      this.confetti.burst(new THREE.Vector3(e.x, 1, e.z), e.p.color, { count: 16, speed: 5 });
+    } else {
+      this.pots[index].flash = 1.5;
+      this.game.audio.play('bump');
+    }
+  }
+
+  /** Rebuild a player's character after a color change. */
+  recolor(e) {
+    const pos = e.ch.group.position.clone();
+    const yaw = e.ch.yaw;
+    this.scene.remove(e.ch.group);
+    e.ch = new Character(e.p.color, { hat: e.p.hat });
+    e.ch.group.position.copy(pos);
+    e.ch.yaw = e.ch.targetYaw = yaw;
+    e.ch.squash(1.3);
+    this.scene.add(e.ch.group);
+  }
+
+  onSwapPad(e) {
+    return this.swapPads.find((sp) => Math.hypot(e.x - sp.x, e.z - sp.z) < 1.0 && e.y < 0.6) || null;
+  }
+
+  updateSocial(dt) {
+    this.swapCd -= dt;
+    for (const e of this.entities.values()) e.potCd = (e.potCd || 0) - dt;
+    // Pot labels show up when someone is close.
+    const nearest = new Set();
+    for (const e of this.entities.values()) {
+      let best = null, bestD = 2.2;
+      for (const pot of this.pots) {
+        const d = Math.hypot(e.x - pot.group.position.x, e.z - pot.group.position.z);
+        if (d < bestD) { bestD = d; best = pot; }
+      }
+      if (best) nearest.add(best);
+    }
+    for (const pot of this.pots) {
+      pot.flash -= dt;
+      const near = nearest.has(pot);
+      const owner = this.game.roster.colorOwner(pot.index);
+      pot.label.style.display = near || pot.flash > 0 ? '' : 'none';
+      const text = owner ? `${t(`color.${pot.index}`)} · ${t('hub.taken')}` : t(`color.${pot.index}`);
+      if (pot.label.textContent !== text) pot.label.textContent = text;
+      if (near || pot.flash > 0) this.game.ui.place(pot.label, pot.labelPos, this.camera);
+      pot.group.scale.setScalar(pot.flash > 0 ? 1 + Math.sin(pot.flash * 20) * 0.06 : 1);
+    }
+    // Swap pads.
+    for (const sp of this.swapPads) {
+      const who = [...this.entities.values()].find((e) => Math.hypot(e.x - sp.x, e.z - sp.z) < 1.0 && e.y < 0.6) || null;
+      if (sp.who && sp.who !== who) sp.who.swapReady = false;
+      sp.who = who;
+      sp.disc.material = toon(who ? (who.swapReady ? 0x3ddc97 : who.p.color) : COLORS.icing);
+    }
+    const [a, b] = this.swapPads.map((sp) => sp.who);
+    const both = a && b && a !== b;
+    if (both && a.swapReady && b.swapReady && this.swapCd <= 0) {
+      this.swapCd = 1.5;
+      this.game.roster.swapColors(a.p, b.p);
+      a.swapReady = b.swapReady = false;
+      this.recolor(a);
+      this.recolor(b);
+      this.game.audio.play('fanfare');
+      this.game.ui.toast(t('hub.swapped', { a: a.p.name, b: b.p.name }), 2200);
+      this.confetti.burst(new THREE.Vector3(0, 1.2, SWAP_PADS[0].z), 0, { count: 30, speed: 6, colors: [a.p.color, b.p.color, COLORS.white] });
+    }
+    const swapHtml = `${t('hub.swapTitle')}<small>${both ? t('hub.swapReady') : t('hub.swapHint')}</small>`;
+    if (this.swapLabel.innerHTML !== swapHtml) this.swapLabel.innerHTML = swapHtml;
+    this.swapLabel.style.color = both ? '#16b874' : '#8a45e0';
+    this.game.ui.place(this.swapLabel, this.swapLabelPos, this.camera);
+    // Language flag.
+    const no = t('lang.name') === 'Norsk';
+    this.langFlag.material = glyphMaterial(no ? 'NO' : 'EN');
+    this.langCloth.material = toon(no ? 0xff5d73 : 0x4cc9f0);
+    this.langFlag.rotation.y = this.langCloth.rotation.y = Math.sin(this.time * 2) * 0.15;
+    const langHtml = `${t('hub.langSign')}<small>${t('hub.jumpFlag')}</small>`;
+    if (this.langLabel.innerHTML !== langHtml) this.langLabel.innerHTML = langHtml;
+    this.langLabel.style.color = no ? '#f0364f' : '#1aa7d8';
+    this.game.ui.place(this.langLabel, this.langLabelPos, this.camera);
+  }
+
   toggleEdu() {
     const roster = this.game.roster;
     this.eduOn = !this.eduOn;
     roster.progress.edu = this.eduOn;
     roster.save();
     this.game.audio.play(this.eduOn ? 'join' : 'leave');
-    this.game.ui.toast(this.eduOn ? 'Læringsspill: PÅ' : 'Læringsspill: AV');
+    this.game.ui.toast(this.eduOn ? t('hub.eduOn') : t('hub.eduOff'));
     this.confetti.burst(new THREE.Vector3(EDU_SWITCH.x, 1.2, EDU_SWITCH.z), 0, { count: 18, speed: 5, colors: [0x3ddc97, 0xffc93c, 0xffffff] });
   }
 
@@ -290,6 +478,7 @@ export class HubScene extends BaseScene {
     const s = this.scene;
     const pad = (k) => PADS.find((p) => p.key === k);
     this.buildEduLandmarks();
+    this.buildSocial();
 
     // Archery target with balloons.
     const ar = pad('archers');
@@ -512,7 +701,7 @@ export class HubScene extends BaseScene {
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.75, 24, 16), new THREE.MeshToonMaterial({ map: tex }));
     mesh.castShadow = true;
     this.scene.add(mesh);
-    this.ball = { x: 3.5, z: 6, vx: 0, vz: 0, r: 0.75, mesh };
+    this.ball = { x: 5, z: 10, vx: 0, vz: 0, r: 0.75, mesh };
   }
 
   // ---------- players ----------
@@ -548,7 +737,7 @@ export class HubScene extends BaseScene {
       const a = Math.random() * Math.PI * 2;
       this.spawn(p, Math.cos(a) * 1.5, 2 + Math.sin(a) * 1.5);
       this.game.audio.play('join');
-      this.game.ui.toast(`${p.name} joined!`);
+      this.game.ui.toast(t('hub.joined', { name: p.name }));
     }
     if (this.game.input.escPressed) this.toggleHelp();
   }
@@ -563,7 +752,10 @@ export class HubScene extends BaseScene {
       e.bHold += dt;
       if (e.bHold > 1.3) { this.despawn(e); this.refreshTitle(); return; }
     } else {
-      if (e.prevB && e.bHold < 0.35) {
+      if (e.prevB && e.bHold < 0.35 && this.onSwapPad(e)) {
+        e.swapReady = !e.swapReady;
+        audio.play(e.swapReady ? 'join' : 'select');
+      } else if (e.prevB && e.bHold < 0.35) {
         const h = this.game.roster.cycleHat(e.p);
         e.ch.setHat(h);
         e.ch.squash(1.25);
@@ -598,6 +790,7 @@ export class HubScene extends BaseScene {
         e.z = o.z + nz * min;
         const vn = e.vx * nx + e.vz * nz;
         if (vn < 0) { e.vx -= vn * nx; e.vz -= vn * nz; }
+        if (o.pot !== undefined) this.touchPot(e, o.pot);
       }
     }
     const rr = Math.hypot(e.x, e.z);
@@ -626,6 +819,8 @@ export class HubScene extends BaseScene {
       } else {
         if (!wasGrounded && e.vy < -4) { e.ch.squash(0.7); audio.play('land'); }
         if (!wasGrounded && floorObj?.toggle && this.switchCd <= 0) { this.toggleEdu(); this.switchCd = 0.6; }
+        if (!wasGrounded && floorObj?.lang && this.switchCd <= 0) { this.game.toggleLanguage(); this.switchCd = 0.6; }
+        if (!wasGrounded && floorObj?.pot !== undefined) this.touchPot(e, floorObj.pot);
         e.vy = 0;
         e.grounded = true;
       }
@@ -727,8 +922,7 @@ export class HubScene extends BaseScene {
           this.confetti.burst(s.mesh.position, 0, { count: 26, speed: 6, colors: PLAYER_COLORS.map((c) => c.hex).concat(COLORS.gold) });
           e.ch.squash(1.3);
           if (roster.unlockedHats().length > before) {
-            const hat = HATS[roster.unlockedHats().at(-1)];
-            this.game.ui.toast(`New hat: ${hat.name}! Tap B to wear it`, 2600);
+            this.game.ui.toast(t('hub.newHat', { hat: hatName(roster.unlockedHats().at(-1)) }), 2600);
             this.game.audio.play('fanfare');
           }
           break;
@@ -758,8 +952,9 @@ export class HubScene extends BaseScene {
       const k = Math.max(0.001, pad.progress);
       pad.fill.scale.set(k, 1, k);
       pad.group.position.y = Math.sin(this.time * 2 + pad.x) * 0.03;
-      const sub = n === 0 ? 'Join to play!' : on > 0 ? `${on}/${need} ready` : `${need} needed`;
-      pad.label.innerHTML = `${pad.edu ? '<span class="edu-badge small">LÆRING</span>' : ''}${esc(pad.title)}<small>${sub}</small>`;
+      const sub = n === 0 ? t('hub.padJoin') : on > 0 ? t('hub.padReady', { on, need }) : t('hub.padNeed', { need });
+      const html = `${pad.edu ? `<span class="edu-badge small">${t('badge.edu')}</span>` : ''}${esc(t(`game.${pad.key}`))}<small>${esc(sub)}</small>`;
+      if (pad.label.innerHTML !== html) pad.label.innerHTML = html;
       this.game.ui.place(pad.label, pad.labelPos, this.camera);
       if (pad.progress >= 1 && !this.launching) {
         this.launching = true;
@@ -827,39 +1022,38 @@ export class HubScene extends BaseScene {
   refreshTitle() {
     const has = this.players.length > 0;
     if (!has && !this.titleEl) {
-      const keys = KEYBOARD_SCHEMES.map((s) => `<div class="join-key"><b>${s.aLabel}</b>${s.hint}</div>`).join('');
+      const keys = KEYBOARD_SCHEMES.map((s) => `<div class="join-key"><b>${t(`akey.${s.id}`)}</b>${t(`hint.${s.id}`)}</div>`).join('');
       this.titleEl = this.game.ui.panel(`
-        <div class="title-logo">Couch Party Island</div>
-        <div class="title-sub blink">Press your jump button to join (up to 6 players)</div>
-        <div class="join-grid">${keys}<div class="join-key"><b>A</b>Gamepad</div></div>
-        <div class="title-sub" style="font-size:0.9em;margin:16px 0 0">M: sound on/off · Esc: help</div>`);
+        <div class="title-logo">${t('hub.title')}</div>
+        <div class="title-sub blink">${t('hub.join')}</div>
+        <div class="join-grid">${keys}<div class="join-key"><b>A</b>${t('gamepad')}</div></div>
+        <div class="title-sub" style="font-size:0.9em;margin:16px 0 0">${t('hub.keys')}</div>`);
     } else if (has && this.titleEl) {
       this.titleEl.remove();
       this.titleEl = null;
     }
   }
 
+  onLanguage() {
+    if (this.titleEl) { this.titleEl.remove(); this.titleEl = null; }
+    this.refreshTitle();
+    if (this.helpEl) { this.toggleHelp(); this.toggleHelp(); }
+  }
+
   toggleHelp() {
     if (this.helpEl) { this.helpEl.remove(); this.helpEl = null; return; }
     this.helpEl = this.game.ui.panel(`
       <div class="help-panel">
-        <h2>How to play</h2>
-        <ul>
-          <li>Press your jump button to join. Up to 6 players: 4 gamepads + keyboards.</li>
-          <li>Walk onto a game pad. When half the group stands on it, the game starts.</li>
-          <li>Collect stars on the island to unlock hats. Tap B to change hat.</li>
-          <li>Jump on the green book button (or press L) to show or hide the learning games (LÆRING).</li>
-          <li>Hold B for a second to leave.</li>
-          <li>In a game, Esc returns to the island. M toggles sound.</li>
-        </ul>
+        <h2>${t('help.title')}</h2>
+        <ul>${[1, 2, 3, 4, 5, 6].map((i) => `<li>${t(`help.${i}`)}</li>`).join('')}</ul>
       </div>`);
   }
 
   updateEduSwitch(dt) {
     this.switchCd -= dt;
-    if (this.game.input.pressed.has('KeyL')) this.toggleEdu();
+    if (this.game.input.pressed.has('KeyG')) this.toggleEdu();
     this.eduCap.material = toon(this.eduOn ? 0x3ddc97 : 0xbdb8cf);
-    const html = `<span class="edu-badge small">LÆRING</span>${this.eduOn ? 'PÅ' : 'AV'}<small>hopp på knappen</small>`;
+    const html = `<span class="edu-badge small">${t('badge.edu')}</span>${this.eduOn ? t('hub.on') : t('hub.off')}<small>${t('hub.jumpButton')}</small>`;
     if (this.eduLabel.innerHTML !== html) this.eduLabel.innerHTML = html;
     this.eduLabel.style.color = this.eduOn ? '#16b874' : '#9a94b2';
     this.game.ui.place(this.eduLabel, this.eduLabelPos, this.camera);
@@ -868,6 +1062,7 @@ export class HubScene extends BaseScene {
   update(dt) {
     this.handleJoins();
     this.updateEduSwitch(dt);
+    this.updateSocial(dt);
     this.refreshTitle();
     for (const e of [...this.entities.values()]) this.updatePlayer(e, dt);
     this.separatePlayers();
@@ -877,13 +1072,15 @@ export class HubScene extends BaseScene {
     this.animateWorld(dt);
     this.updateCamera(dt);
     for (const e of this.entities.values()) {
+      if (e.tag.textContent !== e.p.deviceLabel) e.tag.textContent = e.p.deviceLabel;
+      if (e.tag.style.color !== e.p.css) e.tag.style.color = e.p.css;
       e.tagPos.set(e.x, e.y + 2, e.z);
       this.game.ui.place(e.tag, e.tagPos, this.camera);
     }
 
     const goal = this.game.roster.nextHatGoal();
-    const hint = this.players.length ? '<div class="pill" style="font-size:clamp(12px,1.1vw,18px)">Stand on a pad together to play · join anytime</div>' : '';
-    this.game.ui.setCorner(`${hint}<div class="pill"><span class="star-icon"></span><b>${this.game.roster.stars}</b>${goal ? `<span style="opacity:.7">next hat at ${goal.stars}</span>` : ''}</div>`);
+    const hint = this.players.length ? `<div class="pill" style="font-size:clamp(12px,1.1vw,18px)">${t('hub.hint')}</div>` : '';
+    this.game.ui.setCorner(`${hint}<div class="pill"><span class="star-icon"></span><b>${this.game.roster.stars}</b>${goal ? `<span style="opacity:.7">${t('hub.nextHat', { n: goal.stars })}</span>` : ''}</div>`);
     this.game.ui.bar(this.players, (p) => esc(p.deviceLabel));
   }
 

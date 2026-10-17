@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeBush, seeded } from '../core/world.js';
@@ -15,11 +16,11 @@ const CONTROL = [[0, -40], [35, -38], [55, -20], [50, 5], [30, 15], [25, 35], [4
 const MAX_SPEED = 23;
 const FINISH_WAIT = 15;
 const ITEMS = {
-  boost: { name: 'Zoom', css: '#ffc93c' },
-  banana: { name: 'Banana', css: '#ffe14d' },
-  bubble: { name: 'Bubble', css: '#4cc9f0' },
+  boost: { css: '#ffc93c' },
+  banana: { css: '#ffe14d' },
+  bubble: { css: '#4cc9f0' },
 };
-const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
+const ord = (i) => t(`ord.${i}`);
 
 export class KartScene extends MiniGame {
   constructor(game, opts) {
@@ -44,7 +45,7 @@ export class KartScene extends MiniGame {
     for (const k of this.karts) this.snapCamera(k);
 
     game.audio.playMusic('platformer');
-    this.intro('Kart Party', 'Steer with the stick · A: hop & drift · B: use item · 3 laps');
+    this.intro(t('game.kart'), t('kart.intro'));
   }
 
   // ---------- track ----------
@@ -397,7 +398,7 @@ export class KartScene extends MiniGame {
         k.halfway = false;
         k.lap++;
         if (k.lap > LAPS && !k.finished) this.finishKart(k);
-        else if (k.lap === LAPS && k.p) this.game.ui.toast(`${k.p.name}: final lap!`);
+        else if (k.lap === LAPS && k.p) this.game.ui.toast(t('kart.final', { name: k.p.name }));
       }
     }
     if (prevIdx < N * 0.15 && k.idx > N * 0.85 && !k.finished) {
@@ -459,7 +460,7 @@ export class KartScene extends MiniGame {
     this.confetti.burst(new THREE.Vector3(k.x, 2, k.z), 0, { count: 40, speed: 8, colors: PLAYER_COLORS.map((c) => c.hex) });
     if (this.finishOrder.length === 1) {
       this.finishTimer = FINISH_WAIT;
-      if (this.karts.length > 1) this.game.ui.toast(`${k.p.name} wins the race!`, 2400);
+      if (this.karts.length > 1) this.game.ui.toast(t('kart.winsRace', { name: k.p.name }), 2400);
     }
     if (this.karts.every((x) => x.finished)) this.later(1.5, () => this.end());
   }
@@ -607,9 +608,9 @@ export class KartScene extends MiniGame {
     this.karts.forEach((k, i) => {
       const c = cells[i];
       const lap = Math.min(LAPS, Math.max(1, k.lap));
-      const item = k.rollT > 0 ? '<div class="kart-item rolling">?</div>' : k.item ? `<div class="kart-item" style="--ic:${ITEMS[k.item].css}">${ITEMS[k.item].name}</div>` : '<div class="kart-item empty"></div>';
-      const status = k.finished ? `<div class="kart-done">Finished ${ORD[this.finishOrder.indexOf(k)]}!</div>` : '';
-      const html = `<div class="kart-place">${ORD[k.place]}</div><div class="kart-lap">${esc(k.p.name)} · Lap ${lap}/${LAPS}</div>${item}${status}`;
+      const item = k.rollT > 0 ? '<div class="kart-item rolling">?</div>' : k.item ? `<div class="kart-item" style="--ic:${ITEMS[k.item].css}">${t(`kart.item.${k.item}`)}</div>` : '<div class="kart-item empty"></div>';
+      const status = k.finished ? `<div class="kart-done">${t('kart.finished', { ord: ord(this.finishOrder.indexOf(k)) })}</div>` : '';
+      const html = `<div class="kart-place">${ord(k.place)}</div><div class="kart-lap">${esc(k.p.name)} · ${t('kart.lap', { a: lap, b: LAPS })}</div>${item}${status}`;
       if (html !== k.hudCache) { k.hud.innerHTML = html; k.hudCache = html; }
       k.hud.style.transform = `translate(${c.x}px, ${c.y}px)`;
       k.hud.style.width = `${c.w}px`;
@@ -623,11 +624,11 @@ export class KartScene extends MiniGame {
     const ranked = [...this.karts].sort((a, b) => a.place - b.place);
     for (const k of this.karts) k.hud.style.display = 'none';
     this.finish({
-      title: this.karts.length === 1 ? 'Race complete!' : `${ranked[0].p.name} wins the race!`,
-      subtitle: `${LAPS} laps around Party Park`,
+      title: this.karts.length === 1 ? t('kart.solo') : t('kart.winsRace', { name: ranked[0].p.name }),
+      subtitle: t('kart.sub', { n: LAPS }),
       rows: ranked.map((k, i) => ({
-        css: k.p.css, name: k.p.name, value: ORD[i],
-        detail: k.finished ? `${k.finishTime.toFixed(1)} s` : `lap ${Math.max(1, Math.min(LAPS, k.lap))}`, crown: i === 0,
+        css: k.p.css, name: k.p.name, value: ord(i),
+        detail: k.finished ? `${k.finishTime.toFixed(1)} s` : t('kart.lapShort', { n: Math.max(1, Math.min(LAPS, k.lap)) }), crown: i === 0,
       })),
       stars: 2,
     });
@@ -644,7 +645,7 @@ export class KartScene extends MiniGame {
       this.finishTimer -= dt;
       if (this.finishTimer <= 0) this.end();
     }
-    const timer = this.finishTimer !== null && this.state === 'play' && this.karts.length > 1 ? `<div class="pill">Finish closes in <b>${Math.ceil(this.finishTimer)}</b></div>` : '';
+    const timer = this.finishTimer !== null && this.state === 'play' && this.karts.length > 1 ? `<div class="pill">${t('kart.closes')} <b>${Math.ceil(this.finishTimer)}</b></div>` : '';
     this.game.ui.setTop(timer);
   }
 

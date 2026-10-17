@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
@@ -75,10 +76,18 @@ export class PlatformerScene extends MiniGame {
   }
 
   startIntro() {
-    this.intro(`Sky Hop ${this.levelIndex + 1}: ${this.level.name}`, 'Reach the flag together · fall and you float back in a bubble');
+    this.intro(`${t('game.platformer')} ${this.levelIndex + 1}: ${this.levelName()}`, t('sky.intro'));
+  }
+
+  levelName(i = this.levelIndex) {
+    return t(`level.${i}`);
   }
 
   // ---------- level picker ----------
+
+  onLanguage() {
+    if (this.state === 'select') this.renderPicker();
+  }
 
   openPicker() {
     this.state = 'select';
@@ -92,12 +101,12 @@ export class PlatformerScene extends MiniGame {
       const locked = i > this.unlocked;
       const [top, bottom] = lv.theme.sky;
       return `<div class="level-card ${i === this.selection ? 'selected' : ''} ${locked ? 'locked' : ''}" style="background:linear-gradient(${top}, ${bottom})">
-        <div class="level-num">${i + 1}</div><div class="level-name">${locked ? 'Locked' : esc(lv.name)}</div></div>`;
+        <div class="level-num">${i + 1}</div><div class="level-name">${locked ? t('sky.locked') : esc(this.levelName(i))}</div></div>`;
     }).join('');
-    this.pickerEl.innerHTML = `<div class="results-title">Sky Hop</div>
-      <div class="results-sub">Pick a level · stick left/right · jump to start</div>
+    this.pickerEl.innerHTML = `<div class="results-title">${t('game.platformer')}</div>
+      <div class="results-sub">${t('sky.pick')}</div>
       <div class="level-row">${cards}</div>
-      <div class="results-footer">Finish a level to unlock the next one</div>`;
+      <div class="results-footer">${t('sky.unlock')}</div>`;
   }
 
   updatePicker() {
@@ -478,7 +487,7 @@ export class PlatformerScene extends MiniGame {
       this.firstFinisher = ent;
       this.flag.cloth.material = toon(ent.p.color);
       this.finishTimer = FINISH_TIME;
-      if (this.ents.length > 1) this.game.ui.banner(`${ent.p.name} made it!`, 'Everyone to the flag!', 1600);
+      if (this.ents.length > 1) this.game.ui.banner(t('sky.madeIt', { name: ent.p.name }), t('sky.everyone'), 1600);
     }
     if (this.ents.every((e) => e.state === 'done')) this.end();
   }
@@ -631,15 +640,15 @@ export class PlatformerScene extends MiniGame {
     }
     this.hasNext = finished > 0 && this.levelIndex + 1 < SKYHOP_LEVELS.length;
     this.finish({
-      title: finished === this.ents.length ? 'Everybody made it!' : 'You made it!',
-      subtitle: `${this.level.name} · team gems: ${this.teamGems} / ${this.totalGems}`,
+      title: finished === this.ents.length ? t('sky.allMade') : t('sky.youMade'),
+      subtitle: t('sky.sub', { level: this.levelName(), a: this.teamGems, b: this.totalGems }),
       rows: ranked.map((e, i) => ({
-        css: e.p.css, name: e.p.name, value: `${e.gems} gems`,
-        detail: e.place === 1 ? 'First to the flag!' : `${e.stomps} stomps`,
+        css: e.p.css, name: e.p.name, value: t('sky.gems', { n: e.gems }),
+        detail: e.place === 1 ? t('sky.first') : t('sky.stomps', { n: e.stomps }),
         crown: i === 0 && e.gems > 0,
       })),
       stars: 3,
-      action: this.hasNext ? 'A: next level · B: back to the island' : 'press jump to continue',
+      action: this.hasNext ? t('sky.next') : t('footer.continue'),
     });
   }
 
@@ -683,8 +692,8 @@ export class PlatformerScene extends MiniGame {
       if (this.finishTimer <= 0) this.end();
     }
     if (this.state !== 'intro' && this.state !== 'results') {
-      const timer = this.finishTimer !== null && this.ents.length > 1 ? `<div class="pill">Flag closes in <b class="big-num" style="font-size:1.3em">${Math.ceil(this.finishTimer)}</b></div>` : '';
-      this.game.ui.setTop(`<div class="pill hud-title">${esc(this.level.name)}</div><div class="pill">Gems <b>${this.teamGems}</b> / ${this.totalGems}</div>${timer}`);
+      const timer = this.finishTimer !== null && this.ents.length > 1 ? `<div class="pill">${t('sky.flagCloses')} <b class="big-num" style="font-size:1.3em">${Math.ceil(this.finishTimer)}</b></div>` : '';
+      this.game.ui.setTop(`<div class="pill hud-title">${esc(this.levelName())}</div><div class="pill">${t('sky.hudGems')} <b>${this.teamGems}</b> / ${this.totalGems}</div>${timer}`);
     }
     this.game.ui.bar(this.players, (p) => this.ents.find((e) => e.p === p)?.gems ?? 0);
   }

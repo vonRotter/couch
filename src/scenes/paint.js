@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, makeFlower, seeded } from '../core/world.js';
@@ -63,7 +64,7 @@ export class PaintScene extends MiniGame {
 
     this.frame();
     game.audio.playMusic('paint');
-    this.intro('Paint Party', 'Walk to paint · A: dash · B: throw a paint bomb');
+    this.intro(t('game.paint'), t('paint.intro'));
   }
 
   frame() {
@@ -365,7 +366,7 @@ export class PaintScene extends MiniGame {
         this.pickup = null;
         this.pickupTimer = 9 + Math.random() * 4;
         this.game.audio.play('star');
-        this.game.ui.toast(`${e.p.name} got the Mega Brush!`);
+        this.game.ui.toast(t('paint.mega', { name: e.p.name }));
         this.confetti.burst(new THREE.Vector3(e.x, 1, e.z), e.p.color, { count: 20, speed: 6 });
         break;
       }
@@ -380,11 +381,11 @@ export class PaintScene extends MiniGame {
     for (const e of this.ents) e.ring.visible = false;
     this.confettiOrigin = new THREE.Vector3(winner.x, 2, winner.z);
     this.finish({
-      title: this.ents.length === 1 ? 'What a masterpiece!' : tie ? "It's a tie!" : `${winner.p.name} wins!`,
-      subtitle: `The floor is ${Math.round((this.ents.reduce((s, e) => s + e.count, 0) / this.paintable) * 100)}% painted`,
+      title: this.ents.length === 1 ? t('paint.solo') : tie ? t('tie') : t('win', { name: winner.p.name }),
+      subtitle: t('paint.sub', { n: Math.round((this.ents.reduce((s, e) => s + e.count, 0) / this.paintable) * 100) }),
       rows: ranked.map((e, i) => ({
         css: e.p.css, name: e.p.name, value: `${pct(e)}%`,
-        detail: i === 0 ? 'Top painter' : '', crown: i === 0 || e.count === winner.count,
+        detail: i === 0 ? t('paint.top') : '', crown: i === 0 || e.count === winner.count,
       })),
       stars: 2,
     });
@@ -405,7 +406,7 @@ export class PaintScene extends MiniGame {
       this.timeLeft -= dt;
       const sec = Math.ceil(this.timeLeft);
       if (sec <= 5 && sec !== this.lastBeep && sec > 0) { this.lastBeep = sec; this.game.audio.play('beep'); }
-      if (sec === 10 && !this.hurry) { this.hurry = true; this.game.ui.toast('10 seconds left!'); }
+      if (sec === 10 && !this.hurry) { this.hurry = true; this.game.ui.toast(t('paint.ten')); }
       if (this.timeLeft <= 0) {
         this.timeLeft = 0;
         this.game.audio.play('go');

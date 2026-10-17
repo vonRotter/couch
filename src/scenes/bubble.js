@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
@@ -115,7 +116,7 @@ export class BubbleScene extends MiniGame {
 
     this.frame();
     game.audio.playMusic('bubble');
-    this.intro('Bubble Buddies', 'B: blow bubbles · pop trapped grumbles for fruit').then(() => {});
+    this.intro(t('game.bubble'), t('bubble.intro')).then(() => {});
   }
 
   onStart() {
@@ -207,7 +208,7 @@ export class BubbleScene extends MiniGame {
     this.sleepyWave = false;
     this.spawnQueue = 3 + this.players.length + (this.wave - 1) * 2;
     this.spawnTimer = 0.5;
-    this.game.ui.banner(`Wave ${this.wave}`, this.wave === WAVES ? 'Last one!' : '', 1300);
+    this.game.ui.banner(t('bubble.wave', { n: this.wave }), this.wave === WAVES ? t('bubble.last') : '', 1300);
   }
 
   spawnEnemy() {
@@ -261,7 +262,7 @@ export class BubbleScene extends MiniGame {
           this.popBubble(other, popper, chain + 1);
         }
       }
-      if (chain === 1) this.game.ui.toast('Chain pop!');
+      if (chain === 1) this.game.ui.toast(t('bubble.chain'));
     } else if (popper) {
       this.addScore(popper, 10);
     }
@@ -477,7 +478,7 @@ export class BubbleScene extends MiniGame {
     if (this.state === 'play') this.waveTime += dt;
     if (this.waveTime > 45 && this.spawnQueue === 0 && !this.sleepyWave) {
       this.sleepyWave = true;
-      this.game.ui.toast('The grumbles got sleepy...');
+      this.game.ui.toast(t('bubble.sleepy'));
     }
     for (const e of this.enemies) {
       if (e.state !== 'walk') continue;
@@ -519,10 +520,10 @@ export class BubbleScene extends MiniGame {
       this.waveDone = true;
       this.game.audio.play('star');
       if (this.wave >= WAVES) {
-        this.game.ui.banner('All clear!', 'Grab the fruit!', 1800);
+        this.game.ui.banner(t('bubble.allClear'), t('bubble.grab'), 1800);
         this.later(3.2, () => this.end());
       } else {
-        this.game.ui.banner('Wave cleared!', '', 1500);
+        this.game.ui.banner(t('bubble.cleared'), '', 1500);
         this.later(3, () => this.state === 'play' && this.nextWave());
       }
     }
@@ -559,11 +560,11 @@ export class BubbleScene extends MiniGame {
   end() {
     const ranked = [...this.ents].sort((a, b) => b.score - a.score);
     this.finish({
-      title: 'Hooray, all waves cleared!',
-      subtitle: `Team score: ${this.teamScore}`,
+      title: t('bubble.title'),
+      subtitle: t('bubble.sub', { n: this.teamScore }),
       rows: ranked.map((e, i) => ({
         css: e.p.css, name: e.p.name, value: e.score,
-        detail: `${e.fruits} fruit · ${e.rescues} rescues`, crown: i === 0 && e.score > 0,
+        detail: t('bubble.detail', { f: e.fruits, r: e.rescues }), crown: i === 0 && e.score > 0,
       })),
       stars: 3,
     });
@@ -576,7 +577,7 @@ export class BubbleScene extends MiniGame {
     this.updateEnemies(dt);
     this.updateFruits(dt);
     if (this.state !== 'intro') {
-      this.game.ui.setTop(`<div class="pill hud-title">Wave ${Math.max(1, this.wave)}/${WAVES}</div><div class="pill">Team <b>${this.teamScore}</b></div>`);
+      this.game.ui.setTop(`<div class="pill hud-title">${t('bubble.hudWave', { n: Math.max(1, this.wave), m: WAVES })}</div><div class="pill">${t('team')} <b>${this.teamScore}</b></div>`);
     }
     this.game.ui.bar(this.players, (p) => this.ents.find((e) => e.p === p)?.score ?? 0);
   }

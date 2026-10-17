@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { t } from './i18n.js';
 
 const _v = new THREE.Vector3();
 
@@ -66,7 +67,7 @@ export class UI {
       await this.banner(n, '', 600);
     }
     audio.play('go');
-    this.banner('GO!', '', 700);
+    this.banner(t('go'), '', 700);
   }
 
   /** Bottom chips, one per player. fmt(p) returns the value text. */

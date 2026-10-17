@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
@@ -11,8 +12,6 @@ import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
 // a-d  button    A-D  door opened by the matching button(s)
 const ROOMS = [
   {
-    name: 'Hello, portals!',
-    hint: 'A and B shoot your two portals. Put one across the gap and one near you.',
     map: [
       '#################',
       '#.....     .....W',
@@ -26,8 +25,6 @@ const ROOMS = [
     ],
   },
   {
-    name: 'Hold the door',
-    hint: 'Stand on the button to open the door. The last one out can use portals!',
     map: [
       '###################',
       '#.......#.........#',
@@ -40,8 +37,6 @@ const ROOMS = [
     ],
   },
   {
-    name: 'Special delivery',
-    hint: 'Push the box into a portal so it lands on the button.',
     map: [
       '##################',
       '#.....    .......#',
@@ -55,8 +50,6 @@ const ROOMS = [
     ],
   },
   {
-    name: 'Team effort',
-    hint: 'Box on the button, portal over the gap, then help each other out.',
     map: [
       '###############W####',
       '#......#..   ......#',
@@ -107,7 +100,7 @@ export class PortalScene extends MiniGame {
 
     this.loadRoom(0);
     game.audio.playMusic('hub');
-    this.intro('Portal Pals', 'Get everyone to the exit · A and B shoot your two portals');
+    this.intro(t('game.portal'), t('portal.intro'));
   }
 
   buildSky() {
@@ -626,7 +619,7 @@ export class PortalScene extends MiniGame {
     if (this.resetHold > 1.3) {
       this.resetHold = 0;
       this.game.audio.play('whoosh');
-      this.game.ui.toast('Room reset');
+      this.game.ui.toast(t('portal.reset'));
       this.loadRoom(this.roomIndex);
     }
   }
@@ -635,11 +628,11 @@ export class PortalScene extends MiniGame {
     this.roomDone = true;
     this.game.audio.play('fanfare');
     if (this.roomIndex + 1 < ROOMS.length) {
-      this.game.ui.banner('Room cleared!', ROOMS[this.roomIndex + 1].name, 1800);
+      this.game.ui.banner(t('portal.cleared'), t(`room.${this.roomIndex + 1}.name`), 1800);
       this.later(2.2, () => {
         this.game.ui.wipe(() => {
           this.loadRoom(this.roomIndex + 1);
-          this.game.ui.toast(this.room.hint, 4000);
+          this.game.ui.toast(t(`room.${this.roomIndex}.hint`), 4000);
         });
       });
     } else {
@@ -650,15 +643,15 @@ export class PortalScene extends MiniGame {
   end() {
     const ranked = [...this.ents].sort((a, b) => b.placed - a.placed);
     this.finish({
-      title: 'All rooms cleared!',
-      subtitle: 'Thinking with portals, together',
-      rows: ranked.map((e) => ({ css: e.p.css, name: e.p.name, value: `${e.placed}`, detail: `portals · ${e.pushes} box pushes` })),
+      title: t('portal.title'),
+      subtitle: t('portal.sub'),
+      rows: ranked.map((e) => ({ css: e.p.css, name: e.p.name, value: `${e.placed}`, detail: t('portal.detail', { n: e.pushes }) })),
       stars: 3,
     });
   }
 
   onStart() {
-    this.game.ui.toast(this.room.hint, 4500);
+    this.game.ui.toast(t(`room.${this.roomIndex}.hint`), 4500);
   }
 
   update(dt) {
@@ -682,9 +675,9 @@ export class PortalScene extends MiniGame {
     }
     if (this.state !== 'intro') {
       const left = this.ents.filter((e) => !e.exited).length;
-      this.game.ui.setTop(`<div class="pill hud-title">Room ${this.roomIndex + 1}/${ROOMS.length}: ${this.room.name}</div><div class="pill">${left} to go · hold A+B to reset</div>`);
+      this.game.ui.setTop(`<div class="pill hud-title">${t('portal.hud', { i: this.roomIndex + 1, n: ROOMS.length, name: t(`room.${this.roomIndex}.name`) })}</div><div class="pill">${t('portal.left', { n: left })}</div>`);
     }
-    this.game.ui.bar(this.players, (p) => (this.ents.find((e) => e.p === p)?.exited ? 'out!' : ''));
+    this.game.ui.bar(this.players, (p) => (this.ents.find((e) => e.p === p)?.exited ? t('portal.out') : ''));
   }
 }
 

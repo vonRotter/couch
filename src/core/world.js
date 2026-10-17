@@ -170,3 +170,29 @@ export function makeMushroom(capColor = 0xff5d73) {
   g.userData.cap = cap;
   return g;
 }
+
+let soccerTex = null;
+/** White ball with dark patches, drawn once. */
+export function soccerBallTexture() {
+  if (soccerTex) return soccerTex;
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, 512, 256);
+  g.fillStyle = '#2b2340';
+  const spots = [[64, 128], [192, 60], [192, 196], [320, 128], [448, 60], [448, 196], [0, 40], [512, 40], [320, 10], [320, 246]];
+  for (const [x, y] of spots) {
+    g.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      g.lineTo(x + Math.cos(a) * 30, y + Math.sin(a) * 26);
+    }
+    g.closePath();
+    g.fill();
+  }
+  soccerTex = new THREE.CanvasTexture(c);
+  soccerTex.colorSpace = THREE.SRGBColorSpace;
+  soccerTex.userData.shared = true;
+  return soccerTex;
+}

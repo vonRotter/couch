@@ -1,5 +1,6 @@
 import { BaseScene } from './scene.js';
 import { PLAYER_COLORS, COLORS } from './palette.js';
+import { t } from './i18n.js';
 
 /** Shared flow for every game: intro -> countdown -> play -> results -> back to the island. */
 export class MiniGame extends BaseScene {
@@ -20,7 +21,7 @@ export class MiniGame extends BaseScene {
     this.onStart?.();
   }
 
-  finish({ title, subtitle, rows, stars = 2, action = 'press jump to continue' }) {
+  finish({ title, subtitle, rows, stars = 2, action = t('footer.continue') }) {
     if (this.state === 'results') return;
     this.state = 'results';
     this.resultsDelay = 1.6;
@@ -32,7 +33,7 @@ export class MiniGame extends BaseScene {
       title,
       subtitle,
       rows,
-      footer: `<span class="star-icon"></span> +${stars} stars for the island · <span class="blink">${action}</span>`,
+      footer: `<span class="star-icon"></span> ${t('footer.stars', { n: stars })} · <span class="blink">${action}</span>`,
     });
     this.celebrate();
   }

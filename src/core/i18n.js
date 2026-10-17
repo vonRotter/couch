@@ -1,0 +1,240 @@
+// English / Norwegian (bokmål) text. t('key', { vars }) returns the current language.
+// The learning games are Norwegian in both modes.
+
+const en = {
+  'go': 'GO!',
+  'sound.on': 'Sound on',
+  'sound.off': 'Sound off',
+  'lang.name': 'English',
+  'lang.switched': 'Language: English',
+  'footer.stars': '+{n} stars for the island',
+  'footer.continue': 'press jump to continue',
+  'win': '{name} wins!',
+  'tie': "It's a tie!",
+  'badge.edu': 'LEARNING',
+
+  'color.0': 'Coral', 'color.1': 'Sunny', 'color.2': 'Mint', 'color.3': 'Sky', 'color.4': 'Grape', 'color.5': 'Tangerine',
+  'hat.0': 'No hat', 'hat.1': 'Party hat', 'hat.2': 'Flower', 'hat.3': 'Bunny ears', 'hat.4': 'Propeller', 'hat.5': 'Top hat', 'hat.6': 'Crown',
+  'device.kb0': 'WASD', 'device.kb1': 'Arrows', 'device.kb2': 'IJKL', 'device.kb3': 'Numpad', 'device.gp': 'Pad {n}',
+  'hint.kb0': 'WASD · Space · Shift', 'hint.kb1': 'Arrows · Enter · R-Shift', 'hint.kb2': 'IJKL · U · O', 'hint.kb3': 'Num 8456 · Num 0 · Num .',
+  'gamepad': 'Gamepad',
+  'akey.kb0': 'Space', 'akey.kb1': 'Enter', 'akey.kb2': 'U', 'akey.kb3': 'Num 0',
+
+  'game.bubble': 'Bubble Buddies', 'game.platformer': 'Sky Hop', 'game.paint': 'Paint Party',
+  'game.archers': 'Balloon Archers', 'game.brawl': 'Bonk Brawl', 'game.kart': 'Kart Party',
+  'game.portal': 'Portal Pals', 'game.football': 'Mega Ball',
+  'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
+
+  'hub.title': 'Couch Party Island',
+  'hub.join': 'Press your jump button to join (up to 6 players)',
+  'hub.keys': 'M: sound on/off · N: norsk · Esc: help',
+  'hub.hint': 'Stand on a pad together to play · join anytime',
+  'hub.nextHat': 'next hat at {n}',
+  'hub.padJoin': 'Join to play!',
+  'hub.padReady': '{on}/{need} ready',
+  'hub.padNeed': '{need} needed',
+  'hub.joined': '{name} joined!',
+  'hub.newHat': 'New hat: {hat}! Tap B to wear it',
+  'hub.eduOn': 'Learning games: ON',
+  'hub.eduOff': 'Learning games: OFF',
+  'hub.on': 'ON', 'hub.off': 'OFF',
+  'hub.jumpButton': 'jump on the button',
+  'hub.langSign': 'English',
+  'hub.jumpFlag': 'jump on the flag',
+  'hub.taken': 'taken',
+  'hub.newColor': '{name} is a new color!',
+  'hub.swapTitle': 'Swap colors',
+  'hub.swapHint': 'stand on both pads',
+  'hub.swapReady': 'both tap B!',
+  'hub.swapped': '{a} and {b} swapped colors!',
+  'help.title': 'How to play',
+  'help.1': 'Press your jump button to join. Up to 6 players: 4 gamepads + keyboards.',
+  'help.2': 'Walk onto a game pad. When half the group stands on it, the game starts.',
+  'help.3': 'Collect stars on the island to unlock hats. Tap B to change hat. Hold B to leave.',
+  'help.4': 'Walk into a paint pot to change color. To trade colors, stand on the two swap pads and both tap B.',
+  'help.5': 'Jump on the book button (or press G) to show or hide the learning games. Jump on the flag (or press N) to change language.',
+  'help.6': 'In a game, Esc returns to the island. M toggles sound.',
+
+  'bubble.intro': 'B: blow bubbles · pop trapped grumbles for fruit',
+  'bubble.wave': 'Wave {n}', 'bubble.last': 'Last one!', 'bubble.chain': 'Chain pop!',
+  'bubble.allClear': 'All clear!', 'bubble.grab': 'Grab the fruit!', 'bubble.cleared': 'Wave cleared!',
+  'bubble.sleepy': 'The grumbles got sleepy...', 'bubble.hudWave': 'Wave {n}/{m}', 'team': 'Team',
+  'bubble.title': 'Hooray, all waves cleared!', 'bubble.sub': 'Team score: {n}', 'bubble.detail': '{f} fruit · {r} rescues',
+
+  'sky.intro': 'Reach the flag together · fall and you float back in a bubble',
+  'sky.pick': 'Pick a level · stick left/right · jump to start', 'sky.locked': 'Locked',
+  'sky.unlock': 'Finish a level to unlock the next one',
+  'sky.madeIt': '{name} made it!', 'sky.everyone': 'Everyone to the flag!',
+  'sky.allMade': 'Everybody made it!', 'sky.youMade': 'You made it!',
+  'sky.sub': '{level} · team gems: {a} / {b}', 'sky.gems': '{n} gems', 'sky.first': 'First to the flag!',
+  'sky.stomps': '{n} stomps', 'sky.next': 'A: next level · B: back to the island',
+  'sky.hudGems': 'Gems', 'sky.flagCloses': 'Flag closes in',
+  'level.0': 'Sunny Meadow', 'level.1': 'Candy Clouds', 'level.2': 'Autumn Woods', 'level.3': 'Sunset Castle',
+
+  'paint.intro': 'Walk to paint · A: dash · B: throw a paint bomb',
+  'paint.mega': '{name} got the Mega Brush!', 'paint.ten': '10 seconds left!',
+  'paint.solo': 'What a masterpiece!', 'paint.sub': 'The floor is {n}% painted', 'paint.top': 'Top painter',
+
+  'archers.intro': 'Stick: aim · B: shoot · pop balloons, jump on heads, grab your arrows back',
+  'archers.soloTitle': '{n} balloons popped!', 'archers.soloSub': 'Target practice complete',
+  'archers.sub': 'Most balloons popped', 'archers.pops': '{n} pops', 'archers.popped': 'popped {n} times',
+
+  'brawl.intro': 'B: punch (hold to charge) · up+B: uppercut · down+B: spin · knock friends off the stage!',
+  'brawl.bot': 'Bonk Bot', 'brawl.ghostToast': '{name} is a bubble ghost now!',
+  'brawl.botWins': 'Bonk Bot wins this time!', 'brawl.sub': 'Last one on the island',
+  'brawl.left': '{n} left', 'brawl.ghost': 'Ghost', 'brawl.ghostTag': 'ghost', 'brawl.detail': '{k} bonks · {f} falls',
+
+  'kart.intro': 'Steer with the stick · A: hop & drift · B: use item · 3 laps',
+  'kart.item.boost': 'Zoom', 'kart.item.banana': 'Banana', 'kart.item.bubble': 'Bubble',
+  'kart.final': '{name}: final lap!', 'kart.winsRace': '{name} wins the race!',
+  'kart.lap': 'Lap {a}/{b}', 'kart.finished': 'Finished {ord}!', 'kart.closes': 'Finish closes in',
+  'kart.solo': 'Race complete!', 'kart.sub': '{n} laps around Party Park', 'kart.lapShort': 'lap {n}',
+  'ord.0': '1st', 'ord.1': '2nd', 'ord.2': '3rd', 'ord.3': '4th', 'ord.4': '5th', 'ord.5': '6th',
+
+  'portal.intro': 'Get everyone to the exit · A and B shoot your two portals',
+  'portal.cleared': 'Room cleared!', 'portal.reset': 'Room reset',
+  'portal.hud': 'Room {i}/{n}: {name}', 'portal.left': '{n} to go · hold A+B to reset', 'portal.out': 'out!',
+  'portal.title': 'All rooms cleared!', 'portal.sub': 'Thinking with portals, together',
+  'portal.detail': 'portals · {n} box pushes',
+  'room.0.name': 'Hello, portals!', 'room.0.hint': 'A and B shoot your two portals. Put one across the gap and one near you.',
+  'room.1.name': 'Hold the door', 'room.1.hint': 'Stand on the button to open the door. The last one out can use portals!',
+  'room.2.name': 'Special delivery', 'room.2.hint': 'Push the box into a portal so it lands on the button.',
+  'room.3.name': 'Team effort', 'room.3.hint': 'Box on the button, portal over the gap, then help each other out.',
+
+  'ball.intro': 'B: kick (or dash) · A: jump to head the ball · score in the other goal!',
+  'ball.teams': 'Pick a team · stick left/right · everyone taps jump to start',
+  'ball.left': 'Left team', 'ball.right': 'Right team', 'ball.helper': '+ helper keeper',
+  'ball.team.0': 'Team Sun', 'ball.team.1': 'Team Sea',
+  'ball.goal': 'GOAL!', 'ball.scored': '{name} scored for {team}!',
+  'ball.winTitle': '{team} wins!', 'ball.draw': "It's a draw!", 'ball.sub': '{a} - {b}',
+  'ball.goals': '{n} goals', 'ball.touches': '{n} kicks', 'ball.keeper': 'Keeper Bot',
+  'ball.overtime': 'Next goal wins!',
+};
+
+const no = {
+  'go': 'KJØR!',
+  'sound.on': 'Lyd på',
+  'sound.off': 'Lyd av',
+  'lang.name': 'Norsk',
+  'lang.switched': 'Språk: norsk',
+  'footer.stars': '+{n} stjerner til øya',
+  'footer.continue': 'trykk hopp for å fortsette',
+  'win': '{name} vinner!',
+  'tie': 'Uavgjort!',
+  'badge.edu': 'LÆRING',
+
+  'color.0': 'Korall', 'color.1': 'Solgul', 'color.2': 'Mynte', 'color.3': 'Himmel', 'color.4': 'Drue', 'color.5': 'Mandarin',
+  'hat.0': 'Ingen hatt', 'hat.1': 'Festhatt', 'hat.2': 'Blomst', 'hat.3': 'Kaninører', 'hat.4': 'Propell', 'hat.5': 'Flosshatt', 'hat.6': 'Krone',
+  'device.kb0': 'WASD', 'device.kb1': 'Piler', 'device.kb2': 'IJKL', 'device.kb3': 'Talltastatur', 'device.gp': 'Kontroll {n}',
+  'hint.kb0': 'WASD · Mellomrom · Shift', 'hint.kb1': 'Piler · Enter · H-Shift', 'hint.kb2': 'IJKL · U · O', 'hint.kb3': 'Num 8456 · Num 0 · Num ,',
+  'gamepad': 'Spillkontroll',
+  'akey.kb0': 'Mellomrom', 'akey.kb1': 'Enter', 'akey.kb2': 'U', 'akey.kb3': 'Num 0',
+
+  'game.bubble': 'Boblevenner', 'game.platformer': 'Skyhopp', 'game.paint': 'Malefest',
+  'game.archers': 'Ballongskyttere', 'game.brawl': 'Dunkekamp', 'game.kart': 'Gokartfest',
+  'game.portal': 'Portalvenner', 'game.football': 'Megaball',
+  'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
+
+  'hub.title': 'Sofafest-øya',
+  'hub.join': 'Trykk på hoppknappen for å bli med (opptil 6 spillere)',
+  'hub.keys': 'M: lyd av/på · N: English · Esc: hjelp',
+  'hub.hint': 'Stå på en plattform sammen for å spille · bli med når som helst',
+  'hub.nextHat': 'neste hatt ved {n}',
+  'hub.padJoin': 'Bli med for å spille!',
+  'hub.padReady': '{on}/{need} klare',
+  'hub.padNeed': '{need} trengs',
+  'hub.joined': '{name} er med!',
+  'hub.newHat': 'Ny hatt: {hat}! Trykk B for å ta den på',
+  'hub.eduOn': 'Læringsspill: PÅ',
+  'hub.eduOff': 'Læringsspill: AV',
+  'hub.on': 'PÅ', 'hub.off': 'AV',
+  'hub.jumpButton': 'hopp på knappen',
+  'hub.langSign': 'Norsk',
+  'hub.jumpFlag': 'hopp på flagget',
+  'hub.taken': 'opptatt',
+  'hub.newColor': '{name} har fått ny farge!',
+  'hub.swapTitle': 'Bytt farge',
+  'hub.swapHint': 'stå på begge plattene',
+  'hub.swapReady': 'begge trykker B!',
+  'hub.swapped': '{a} og {b} byttet farge!',
+  'help.title': 'Slik spiller du',
+  'help.1': 'Trykk på hoppknappen for å bli med. Opptil 6 spillere: 4 spillkontroller + tastatur.',
+  'help.2': 'Gå inn på en spillplattform. Når halve gruppen står der, starter spillet.',
+  'help.3': 'Samle stjerner på øya for å låse opp hatter. Trykk B for å bytte hatt. Hold B for å gå ut.',
+  'help.4': 'Gå inn i en malingsbøtte for å bytte farge. For å bytte farge med noen: stå på de to bytteplatene og trykk B begge to.',
+  'help.5': 'Hopp på bokknappen (eller trykk G) for å vise eller skjule læringsspillene. Hopp på flagget (eller trykk N) for å bytte språk.',
+  'help.6': 'I et spill tar Esc deg tilbake til øya. M slår lyden av og på.',
+
+  'bubble.intro': 'B: blås bobler · sprekk boblene med grumlinger for frukt',
+  'bubble.wave': 'Bølge {n}', 'bubble.last': 'Den siste!', 'bubble.chain': 'Kjedesprekk!',
+  'bubble.allClear': 'Alt ryddet!', 'bubble.grab': 'Ta frukten!', 'bubble.cleared': 'Bølgen er ryddet!',
+  'bubble.sleepy': 'Grumlingene ble søvnige ...', 'bubble.hudWave': 'Bølge {n}/{m}', 'team': 'Lag',
+  'bubble.title': 'Hurra, alle bølgene er ryddet!', 'bubble.sub': 'Lagpoeng: {n}', 'bubble.detail': '{f} frukt · {r} redninger',
+
+  'sky.intro': 'Kom til flagget sammen · faller du, flyter du tilbake i en boble',
+  'sky.pick': 'Velg bane · pinnen venstre/høyre · hopp for å starte', 'sky.locked': 'Låst',
+  'sky.unlock': 'Fullfør en bane for å låse opp den neste',
+  'sky.madeIt': '{name} klarte det!', 'sky.everyone': 'Alle til flagget!',
+  'sky.allMade': 'Alle klarte det!', 'sky.youMade': 'Dere klarte det!',
+  'sky.sub': '{level} · lagets steiner: {a} / {b}', 'sky.gems': '{n} steiner', 'sky.first': 'Først til flagget!',
+  'sky.stomps': '{n} hopp på hodet', 'sky.next': 'A: neste bane · B: tilbake til øya',
+  'sky.hudGems': 'Steiner', 'sky.flagCloses': 'Flagget stenger om',
+  'level.0': 'Solskinnsenga', 'level.1': 'Godteriskyene', 'level.2': 'Høstskogen', 'level.3': 'Solnedgangsslottet',
+
+  'paint.intro': 'Gå for å male · A: spurt · B: kast en malingsbombe',
+  'paint.mega': '{name} fikk megapenselen!', 'paint.ten': '10 sekunder igjen!',
+  'paint.solo': 'For et mesterverk!', 'paint.sub': 'Gulvet er {n} % malt', 'paint.top': 'Beste maler',
+
+  'archers.intro': 'Pinne: sikt · B: skyt · sprekk ballonger, hopp på hoder, plukk opp pilene igjen',
+  'archers.soloTitle': '{n} ballonger sprukket!', 'archers.soloSub': 'Blinkskytingen er ferdig',
+  'archers.sub': 'Flest ballonger sprukket', 'archers.pops': '{n} treff', 'archers.popped': 'sprukket {n} ganger',
+
+  'brawl.intro': 'B: slag (hold for å lade) · opp+B: oppstøt · ned+B: snurr · dunk vennene av øya!',
+  'brawl.bot': 'Dunkebot', 'brawl.ghostToast': '{name} er et boblespøkelse nå!',
+  'brawl.botWins': 'Dunkebot vant denne gangen!', 'brawl.sub': 'Sist igjen på øya',
+  'brawl.left': '{n} igjen', 'brawl.ghost': 'Spøkelse', 'brawl.ghostTag': 'spøkelse', 'brawl.detail': '{k} dunk · {f} fall',
+
+  'kart.intro': 'Styr med pinnen · A: hopp og drift · B: bruk ting · 3 runder',
+  'kart.item.boost': 'Turbo', 'kart.item.banana': 'Banan', 'kart.item.bubble': 'Boble',
+  'kart.final': '{name}: siste runde!', 'kart.winsRace': '{name} vinner løpet!',
+  'kart.lap': 'Runde {a}/{b}', 'kart.finished': 'I mål som nr. {ord}!', 'kart.closes': 'Målet stenger om',
+  'kart.solo': 'Løpet er ferdig!', 'kart.sub': '{n} runder rundt Festparken', 'kart.lapShort': 'runde {n}',
+  'ord.0': '1.', 'ord.1': '2.', 'ord.2': '3.', 'ord.3': '4.', 'ord.4': '5.', 'ord.5': '6.',
+
+  'portal.intro': 'Få alle til utgangen · A og B skyter de to portalene dine',
+  'portal.cleared': 'Rommet er klart!', 'portal.reset': 'Rommet starter på nytt',
+  'portal.hud': 'Rom {i}/{n}: {name}', 'portal.left': '{n} igjen · hold A+B for å starte rommet på nytt', 'portal.out': 'ute!',
+  'portal.title': 'Alle rommene er klare!', 'portal.sub': 'Portaltenking, sammen',
+  'portal.detail': 'portaler · {n} boksdytt',
+  'room.0.name': 'Hei, portaler!', 'room.0.hint': 'A og B skyter de to portalene dine. Sett én over kløfta og én ved deg.',
+  'room.1.name': 'Hold døra', 'room.1.hint': 'Stå på knappen for å åpne døra. Den siste kan bruke portaler!',
+  'room.2.name': 'Spesiallevering', 'room.2.hint': 'Dytt boksen inn i en portal så den lander på knappen.',
+  'room.3.name': 'Lagarbeid', 'room.3.hint': 'Boks på knappen, portal over kløfta, og så hjelper dere hverandre ut.',
+
+  'ball.intro': 'B: spark (eller spurt) · A: hopp for å heade · scor i det andre målet!',
+  'ball.teams': 'Velg lag · pinnen venstre/høyre · alle trykker hopp for å starte',
+  'ball.left': 'Venstre lag', 'ball.right': 'Høyre lag', 'ball.helper': '+ hjelpekeeper',
+  'ball.team.0': 'Lag Sol', 'ball.team.1': 'Lag Hav',
+  'ball.goal': 'MÅL!', 'ball.scored': '{name} scoret for {team}!',
+  'ball.winTitle': '{team} vinner!', 'ball.draw': 'Uavgjort!', 'ball.sub': '{a} - {b}',
+  'ball.goals': '{n} mål', 'ball.touches': '{n} spark', 'ball.keeper': 'Keeperbot',
+  'ball.overtime': 'Neste mål vinner!',
+};
+
+const DICTS = { en, no };
+let lang = 'en';
+
+export function setLang(l) {
+  lang = DICTS[l] ? l : 'en';
+  document.documentElement.lang = lang === 'no' ? 'nb' : 'en';
+}
+
+export function getLang() {
+  return lang;
+}
+
+export function t(key, vars) {
+  let s = DICTS[lang][key] ?? en[key] ?? key;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
+  return s;
+}

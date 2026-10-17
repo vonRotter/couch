@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
 import { COLORS, toon, sharedGeo } from '../core/palette.js';
@@ -44,7 +45,7 @@ export class BrawlScene extends MiniGame {
 
     this.updateCamera(1);
     game.audio.playMusic('paint');
-    this.intro('Bonk Brawl', 'B: punch (hold to charge) · up+B: uppercut · down+B: spin · knock friends off the stage!');
+    this.intro(t('game.brawl'), t('brawl.intro'));
   }
 
   makeFighter(p, x, i) {
@@ -73,7 +74,8 @@ export class BrawlScene extends MiniGame {
     tag.style.color = p ? p.css : '#1aa79b';
     return {
       p, bot, ch, glove, bubble, tag, tagPos: new THREE.Vector3(),
-      name: p ? p.name : 'Bonk Bot', css: p ? p.css : '#2ec4b6',
+      get name() { return p ? p.name : t('brawl.bot'); },
+      css: p ? p.css : '#2ec4b6',
       body: { x, y: 1, w: 0.75, h: 1.15, vx: 0, vy: 0, grounded: true },
       facing: x < 0 ? 1 : -1, damage: 0, stocks: STOCKS, state: 'play',
       attack: null, atkT: 0, hitSet: null, charge: 0, charging: false,
@@ -217,7 +219,7 @@ export class BrawlScene extends MiniGame {
     e.attack = null;
     e.ch.group.visible = false;
     e.glove.visible = false;
-    if (e.stocks <= 0 && !e.bot) this.game.ui.toast(`${e.name} is a bubble ghost now!`);
+    if (e.stocks <= 0 && !e.bot) this.game.ui.toast(t('brawl.ghostToast', { name: e.name }));
   }
 
   respawn(e) {
@@ -429,11 +431,11 @@ export class BrawlScene extends MiniGame {
       for (const e of this.ents) { e.tag.style.display = 'none'; e.glove.visible = false; }
     });
     this.finish({
-      title: top.bot ? 'Bonk Bot wins this time!' : `${top.name} wins!`,
-      subtitle: 'Last one on the island',
+      title: top.bot ? t('brawl.botWins') : t('win', { name: top.name }),
+      subtitle: t('brawl.sub'),
       rows: ranked.map((e, i) => ({
-        css: e.css, name: e.name, value: e.stocks > 0 ? `${e.stocks} left` : 'Ghost',
-        detail: `${e.kos} bonks · ${e.falls} falls`, crown: i === 0,
+        css: e.css, name: e.name, value: e.stocks > 0 ? t('brawl.left', { n: e.stocks }) : t('brawl.ghost'),
+        detail: t('brawl.detail', { k: e.kos, f: e.falls }), crown: i === 0,
       })),
       stars: 2,
     });
@@ -461,7 +463,7 @@ export class BrawlScene extends MiniGame {
       const heat = Math.min(1, e.damage / 120);
       const col = e.state === 'ghost' ? '#9a94b2' : `hsl(${Math.round(50 - heat * 50)}, 95%, ${Math.round(48 - heat * 8)}%)`;
       const dots = '●'.repeat(Math.max(0, e.stocks));
-      e.tag.innerHTML = e.state === 'ghost' ? 'ghost' : `<span style="color:${col}">${pct}%</span><small style="color:${e.css}">${dots}</small>`;
+      e.tag.innerHTML = e.state === 'ghost' ? t('brawl.ghostTag') : `<span style="color:${col}">${pct}%</span><small style="color:${e.css}">${dots}</small>`;
       e.tagPos.set(e.body.x, e.body.y + 2.3, 0);
       this.game.ui.place(e.tag, e.tagPos, this.camera);
     }
@@ -474,11 +476,11 @@ export class BrawlScene extends MiniGame {
     }
     if (this.state !== 'intro' && this.state !== 'results') {
       const m = Math.floor(Math.ceil(this.timeLeft) / 60), s = Math.ceil(this.timeLeft) % 60;
-      this.game.ui.setTop(`<div class="pill"><span class="big-num">${m}:${String(s).padStart(2, '0')}</span></div><div class="pill hud-title">Bonk Brawl</div>`);
+      this.game.ui.setTop(`<div class="pill"><span class="big-num">${m}:${String(s).padStart(2, '0')}</span></div><div class="pill hud-title">${t('game.brawl')}</div>`);
     }
     this.game.ui.bar(this.players, (p) => {
       const e = this.ents.find((x) => x.p === p);
-      return e ? esc(e.stocks > 0 ? `${'●'.repeat(e.stocks)} ${Math.round(e.damage)}%` : 'ghost') : '';
+      return e ? esc(e.stocks > 0 ? `${'●'.repeat(e.stocks)} ${Math.round(e.damage)}%` : t('brawl.ghostTag')) : '';
     });
   }
 }

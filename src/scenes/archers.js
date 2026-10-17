@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, seeded } from '../core/world.js';
@@ -84,7 +85,7 @@ export class ArchersScene extends MiniGame {
 
     this.frame();
     game.audio.playMusic('bubble');
-    this.intro('Balloon Archers', 'Stick: aim · B: shoot · pop balloons, jump on heads, grab your arrows back');
+    this.intro(t('game.archers'), t('archers.intro'));
   }
 
   onStart() {
@@ -447,11 +448,11 @@ export class ArchersScene extends MiniGame {
     const top = ranked[0];
     const tie = ranked.length > 1 && ranked[1].pops === top.pops && ranked[1].popped === top.popped;
     this.finish({
-      title: this.solo ? `${top.pops} balloons popped!` : tie ? "It's a tie!" : `${top.p.name} wins!`,
-      subtitle: this.solo ? 'Target practice complete' : 'Most balloons popped',
+      title: this.solo ? t('archers.soloTitle', { n: top.pops }) : tie ? t('tie') : t('win', { name: top.p.name }),
+      subtitle: this.solo ? t('archers.soloSub') : t('archers.sub'),
       rows: ranked.map((e) => ({
-        css: e.p.css, name: e.p.name, value: `${e.pops} pops`,
-        detail: `popped ${e.popped} times`, crown: e.pops === top.pops && e.popped === top.popped && e.pops > 0,
+        css: e.p.css, name: e.p.name, value: t('archers.pops', { n: e.pops }),
+        detail: t('archers.popped', { n: e.popped }), crown: e.pops === top.pops && e.popped === top.popped && e.pops > 0,
       })),
       stars: 2,
     });
@@ -473,7 +474,7 @@ export class ArchersScene extends MiniGame {
       if (this.timeLeft <= 0) { this.timeLeft = 0; this.end(); return; }
     }
     if (this.state !== 'intro') {
-      this.game.ui.setTop(`<div class="pill"><span class="big-num">${Math.ceil(this.timeLeft)}</span></div><div class="pill hud-title">Balloon Archers</div>`);
+      this.game.ui.setTop(`<div class="pill"><span class="big-num">${Math.ceil(this.timeLeft)}</span></div><div class="pill hud-title">${t('game.archers')}</div>`);
     }
     this.game.ui.bar(this.players, (p) => this.ents.find((e) => e.p === p)?.pops ?? 0);
   }

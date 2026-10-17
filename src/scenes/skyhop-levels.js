@@ -491,7 +491,6 @@ const CASTLE = [
 
 export const SKYHOP_LEVELS = [
   {
-    name: 'Sunny Meadow',
     chunks: MEADOW,
     theme: {
       sky: ['#6cc8ff', '#e6f9ff'],
@@ -506,7 +505,6 @@ export const SKYHOP_LEVELS = [
     },
   },
   {
-    name: 'Candy Clouds',
     chunks: CANDY,
     theme: {
       sky: ['#ffb3de', '#fff0d9'],
@@ -521,7 +519,6 @@ export const SKYHOP_LEVELS = [
     },
   },
   {
-    name: 'Autumn Woods',
     chunks: AUTUMN,
     theme: {
       sky: ['#ffcf8a', '#fff4dc'],
@@ -537,7 +534,6 @@ export const SKYHOP_LEVELS = [
     },
   },
   {
-    name: 'Sunset Castle',
     chunks: CASTLE,
     theme: {
       sky: ['#8a6ff0', '#ffb38a'],

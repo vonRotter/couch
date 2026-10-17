@@ -36,6 +36,13 @@ Each game shows its own controls before it starts.
 - Press A on any device to join (up to 6 players).
 - On the island: tap B to change hat, hold B to leave.
 - `Esc` returns to the island from a game (on the island it shows help). `M` toggles sound.
+- `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
+- `G` shows or hides the learning games, or jump on the green book button.
+
+### Colors
+
+Walk into (or jump into) a paint pot near the plaza to take that color, if nobody has it.
+To trade colors with someone, each of you stands on one of the two swap pads and both tap B.
 
 Chromium-based browsers report at most 4 gamepads, so 5–6 players need at least one
 keyboard scheme. Two keyboard players fit comfortably on one keyboard. The schemes use
@@ -86,6 +93,12 @@ boxes for items (B): Zoom boost, Banana, or a Bubble that floats a rival for a m
 Players further back get more boosts and a little extra speed, and the track edges steer
 you back on course.
 
+**Mega Ball** (team football, Rocket League spirit). A giant ball and two teams, Team Sun
+and Team Sea. Players are split automatically; before kickoff anyone can switch side with the
+stick, and everyone taps jump when ready. B kicks the ball when you are close (otherwise it
+is a dash), A jumps so you can head it. If the teams are uneven, the smaller side gets a helper
+keeper. 2.5 minutes; a draw goes to "next goal wins".
+
 **Portal Pals** (co-op puzzle, 4 rooms). Top-down rooms. A and B shoot your two portals onto
 white walls; walk into one to come out of the other. Anyone can use anyone's portals.
 Buttons open doors while someone (or a box) stands on them. Push boxes, even through
@@ -126,11 +139,12 @@ src/
     particles.js     instanced confetti and puffs
     audio.js         synthesized sound effects and music loops
     ui.js            HTML overlay: banners, chips, labels, results, wipe
+    i18n.js          English / Norwegian text, t('key')
     scene.js         base scene (camera fitting, game-time timers, disposal)
     minigame.js      shared intro -> countdown -> results -> back flow
   scenes/
     hub.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
-    archers.js  brawl.js  kart.js  portal.js
+    archers.js  brawl.js  kart.js  portal.js  football.js
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
 ```
 
