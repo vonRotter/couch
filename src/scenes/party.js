@@ -16,11 +16,16 @@ import { PotatoRound } from './party/potato.js';
 import { LilyPadRound } from './party/lilypad.js';
 import { BoatsRound } from './party/boats.js';
 import { KeepyRound } from './party/keepy.js';
+import { DigRound } from './party/dig.js';
+import { DrumsRound } from './party/drums.js';
+import { BalloonRound } from './party/balloon.js';
+import { MirrorRound } from './party/mirror.js';
 
 // Party Mix: five short random rounds in a row with a running scoreboard.
 export const ROUNDS = [
   CountRound, StatueRound, CushionRound, FruitRound, DanceRound, TugRound, TowerRound,
   PotatoRound, LilyPadRound, BoatsRound, KeepyRound,
+  DigRound, DrumsRound, BalloonRound, MirrorRound,
 ];
 const PER_MIX = 5;
 const PLACE_POINTS = [4, 3, 2, 1, 1, 1];

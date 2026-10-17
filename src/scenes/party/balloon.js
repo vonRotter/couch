@@ -9,13 +9,13 @@ addStrings({
     'balloon.title': 'Balloon Pump',
     'balloon.hint': 'Tap A to pump your balloon bigger. Tap B to bank it: bigger balloons are worth more points. But every balloon pops at a secret size, and a popped one gives nothing!',
     'balloon.pop': 'POP!', 'balloon.banked': 'banked',
-    'balloon.n': '{n} balloons · best {b}',
+    'balloon.n': '{n} balloons · best {b}', 'balloon.n1': '1 balloon · best {b}',
   },
   no: {
     'balloon.title': 'Ballongpumpa',
     'balloon.hint': 'Trykk A for å pumpe ballongen større. Trykk B for å spare den: store ballonger gir flere poeng. Men hver ballong sprekker ved en hemmelig størrelse, og da får du ingenting for den!',
     'balloon.pop': 'PANG!', 'balloon.banked': 'spart',
-    'balloon.n': '{n} ballonger · beste {b}',
+    'balloon.n': '{n} ballonger · beste {b}', 'balloon.n1': '1 ballong · beste {b}',
   },
 });
 
@@ -300,6 +300,6 @@ export class BalloonRound extends Round {
 
   detail(p) {
     const e = this.ents.find((x) => x.p === p);
-    return t('balloon.n', { n: e.count, b: e.best });
+    return t(e.count === 1 ? 'balloon.n1' : 'balloon.n', { n: e.count, b: e.best });
   }
 }
