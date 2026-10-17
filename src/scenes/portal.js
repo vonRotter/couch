@@ -125,6 +125,7 @@ export class PortalScene extends MiniGame {
     }
     for (const b of this.bolts) this.scene.remove(b.mesh);
     this.bolts = [];
+    for (const portal of this.portals.values()) this.scene.remove(portal.mesh);
     this.portals.clear();
     for (const e of this.ents) e.slots = [null, null];
 

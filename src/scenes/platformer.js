@@ -79,6 +79,10 @@ export class PlatformerScene extends MiniGame {
     this.intro(`${t('game.platformer')} ${this.levelIndex + 1}: ${this.levelName()}`, t('sky.intro'));
   }
 
+  retryOptions() {
+    return this.state === 'select' ? { key: this.key } : { key: this.key, level: this.levelIndex };
+  }
+
   levelName(i = this.levelIndex) {
     return t(`level.${i}`);
   }
@@ -92,7 +96,6 @@ export class PlatformerScene extends MiniGame {
   openPicker() {
     this.state = 'select';
     this.pickerEl = this.game.ui.panel('', 'panel picker');
-    this.stickPrev = new Map();
     this.renderPicker();
   }
 
@@ -113,8 +116,8 @@ export class PlatformerScene extends MiniGame {
     for (const p of this.players) {
       const d = this.input(p);
       if (!d) continue;
-      const dir = d.x > 0.5 ? 1 : d.x < -0.5 ? -1 : 0;
-      if (dir && dir !== this.stickPrev.get(p)) {
+      const dir = d.stepX;
+      if (dir) {
         const next = THREE.MathUtils.clamp(this.selection + dir, 0, SKYHOP_LEVELS.length - 1);
         if (next !== this.selection) {
           this.selection = next;
@@ -122,7 +125,6 @@ export class PlatformerScene extends MiniGame {
           this.renderPicker();
         }
       }
-      this.stickPrev.set(p, dir);
       if (d.aPressed) {
         if (this.selection > this.unlocked) {
           this.game.audio.play('bump');

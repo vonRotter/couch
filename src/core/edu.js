@@ -89,7 +89,7 @@ export function speak(text) {
 export function chooseLevels(scene, title) {
   const ui = scene.game.ui;
   const players = scene.players;
-  const state = new Map(players.map((p) => [p, { level: p.eduLevel ?? 0, done: false, prevX: 0 }]));
+  const state = new Map(players.map((p) => [p, { level: p.eduLevel ?? 0, done: false }]));
   const el = ui.panel('', 'panel picker');
   const render = () => {
     const cards = players.map((p) => {
@@ -110,13 +110,12 @@ export function chooseLevels(scene, title) {
         const d = scene.input(p);
         const st = state.get(p);
         if (!d) continue;
-        const dir = d.x > 0.5 ? 1 : d.x < -0.5 ? -1 : 0;
-        if (!st.done && dir && dir !== st.prevX) {
+        const dir = d.stepX;
+        if (!st.done && dir) {
           st.level = THREE.MathUtils.clamp(st.level + dir, 0, LEVELS.length - 1);
           scene.game.audio.play('select');
           changed = true;
         }
-        st.prevX = dir;
         if (d.aPressed) {
           st.done = !st.done;
           scene.game.audio.play(st.done ? 'join' : 'select');

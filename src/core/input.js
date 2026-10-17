@@ -58,6 +58,7 @@ export class Input {
     this.down = new Set();
     this.pressed = new Set();
     this.escPressed = false;
+    this.menuPressed = false;
     this.mutePressed = false;
     this.devices = new Map();
     for (const s of KEYBOARD_SCHEMES) {
@@ -72,7 +73,7 @@ export class Input {
       if (e.repeat) return;
       this.down.add(e.code);
       this.pressed.add(e.code);
-      if (e.code === 'Escape') this.escPressed = true;
+      if (e.code === 'Escape') { this.escPressed = true; this.menuPressed = true; }
       if (e.code === 'KeyM') this.mutePressed = true;
       this.onActivity?.();
     });
@@ -91,6 +92,8 @@ export class Input {
       d.x = (any(s.right) ? 1 : 0) - (any(s.left) ? 1 : 0);
       d.y = (any(s.up) ? 1 : 0) - (any(s.down) ? 1 : 0);
       if (d.x && d.y) { d.x *= Math.SQRT1_2; d.y *= Math.SQRT1_2; }
+      // Menu steps count quick taps too, even if the key was released before this frame.
+      this.step(d, (tapped(s.right) ? 1 : 0) - (tapped(s.left) ? 1 : 0), (tapped(s.up) ? 1 : 0) - (tapped(s.down) ? 1 : 0));
       const a = any(s.a), b = any(s.b);
       d.aPressed = tapped(s.a) || (a && !d.prevA);
       d.bPressed = tapped(s.b) || (b && !d.prevB);
@@ -106,6 +109,7 @@ export class Input {
       if (!gp || !gp.connected) {
         d.connected = false;
         d.x = d.y = 0; d.a = d.b = d.aPressed = d.bPressed = false;
+        d.stepX = d.stepY = 0;
         continue;
       }
       d.connected = true;
@@ -119,6 +123,10 @@ export class Input {
       if (btn(12)) y = 1;
       if (btn(13)) y = -1;
       d.x = x; d.y = y;
+      this.step(d, 0, 0);
+      const start = btn(9) || btn(8);
+      if (start && !d.prevStart) this.menuPressed = true;
+      d.prevStart = start;
       const a = btn(0) || btn(3);
       const b = btn(1) || btn(2) || btn(5) || btn(7);
       d.aPressed = a && !d.prevA;
@@ -129,10 +137,21 @@ export class Input {
     }
   }
 
+  /** stepX/stepY: -1/0/+1 on the frame a direction is first pushed (for menus and pickers). */
+  step(d, tapX, tapY) {
+    const dx = d.x > 0.5 ? 1 : d.x < -0.5 ? -1 : 0;
+    const dy = d.y > 0.5 ? 1 : d.y < -0.5 ? -1 : 0;
+    d.stepX = tapX || (dx !== d.prevDX ? dx : 0);
+    d.stepY = tapY || (dy !== d.prevDY ? dy : 0);
+    d.prevDX = dx;
+    d.prevDY = dy;
+  }
+
   /** Call once per frame after the scene consumed the input. */
   endFrame() {
     this.pressed.clear();
     this.escPressed = false;
+    this.menuPressed = false;
     this.mutePressed = false;
   }
 

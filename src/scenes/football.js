@@ -74,7 +74,7 @@ export class FootballScene extends MiniGame {
 
   openTeamPicker() {
     this.pickerEl = this.game.ui.panel('', 'panel picker');
-    this.pick = new Map(this.ents.map((e) => [e, { ready: false, prevX: 0 }]));
+    this.pick = new Map(this.ents.map((e) => [e, { ready: false }]));
     this.renderPicker();
     this.kickoffPositions();
   }
@@ -104,12 +104,11 @@ export class FootballScene extends MiniGame {
       const d = this.input(e.p);
       const st = this.pick.get(e);
       if (!d) continue;
-      const dir = d.x > 0.5 ? 1 : d.x < -0.5 ? -1 : 0;
-      if (!st.ready && dir && dir !== st.prevX) {
+      const dir = d.stepX;
+      if (!st.ready && dir) {
         const team = dir < 0 ? 0 : 1;
         if (team !== e.team) { this.setTeam(e, team); this.game.audio.play('select'); changed = true; }
       }
-      st.prevX = dir;
       if (d.aPressed) { st.ready = !st.ready; this.game.audio.play(st.ready ? 'join' : 'select'); changed = true; }
     }
     if (changed) { this.renderPicker(); this.kickoffPositions(); }

@@ -53,7 +53,9 @@ const en = {
   'help.3': 'Collect stars on the island to unlock hats. Tap B to change hat. Hold B to leave.',
   'help.4': 'Walk into a paint pot to change color. To trade colors, stand on the two swap pads and both tap B.',
   'help.5': 'Jump on the book button (or press G) to show or hide the learning games. Jump on the flag (or press N) to change language.',
-  'help.6': 'In a game, Esc returns to the island. M toggles sound.',
+  'help.6': 'In a game, Esc (or Start on a gamepad) opens the menu: resume, retry or end the game. M toggles sound.',
+  'pause.title': 'Paused', 'pause.resume': 'Resume', 'pause.retry': 'Retry', 'pause.end': 'End game',
+  'pause.hint': 'Stick up/down · jump to choose · B to resume',
 
   'bubble.intro': 'B: blow bubbles · pop trapped grumbles for fruit',
   'bubble.wave': 'Wave {n}', 'bubble.last': 'Last one!', 'bubble.chain': 'Chain pop!',
@@ -168,7 +170,9 @@ const no = {
   'help.3': 'Samle stjerner på øya for å låse opp hatter. Trykk B for å bytte hatt. Hold B for å gå ut.',
   'help.4': 'Gå inn i en malingsbøtte for å bytte farge. For å bytte farge med noen: stå på de to bytteplatene og trykk B begge to.',
   'help.5': 'Hopp på bokknappen (eller trykk G) for å vise eller skjule læringsspillene. Hopp på flagget (eller trykk N) for å bytte språk.',
-  'help.6': 'I et spill tar Esc deg tilbake til øya. M slår lyden av og på.',
+  'help.6': 'I et spill åpner Esc (eller Start på spillkontrollen) menyen: fortsett, prøv igjen eller avslutt. M slår lyden av og på.',
+  'pause.title': 'Pause', 'pause.resume': 'Fortsett', 'pause.retry': 'Prøv igjen', 'pause.end': 'Avslutt spillet',
+  'pause.hint': 'Pinne opp/ned · hopp for å velge · B for å fortsette',
 
   'bubble.intro': 'B: blås bobler · sprekk boblene med grumlinger for frukt',
   'bubble.wave': 'Bølge {n}', 'bubble.last': 'Den siste!', 'bubble.chain': 'Kjedesprekk!',

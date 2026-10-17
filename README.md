@@ -35,7 +35,7 @@ Each game shows its own controls before it starts.
 
 - Press A on any device to join (up to 6 players).
 - On the island: tap B to change hat, hold B to leave.
-- `Esc` returns to the island from a game (on the island it shows help). `M` toggles sound.
+- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). On the island `Esc` shows help. `M` toggles sound.
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
 - `G` shows or hides the learning games, or jump on the green book button.
 

@@ -96,6 +96,55 @@ class Game {
     this.current?.onLanguage?.();
   }
 
+  // ---------- pause menu ----------
+
+  openPause() {
+    this.pause = { index: 0, el: null };
+    this.audio.play('select');
+    this.renderPause();
+  }
+
+  renderPause() {
+    const items = ['resume', 'retry', 'end'];
+    const html = `<div class="results-title">${t('pause.title')}</div>
+      <div class="pause-list">${items.map((k, i) => `<div class="pause-item ${i === this.pause.index ? 'on' : ''}">${t(`pause.${k}`)}</div>`).join('')}</div>
+      <div class="results-footer">${t('pause.hint')}</div>`;
+    if (!this.pause.el) this.pause.el = this.ui.panel(html, 'panel pause');
+    else this.pause.el.innerHTML = html;
+  }
+
+  closePause() {
+    this.pause?.el?.remove();
+    this.pause = null;
+  }
+
+  updatePause() {
+    const P = this.pause;
+    for (const p of this.roster.players) {
+      const d = this.input.get(p.deviceId);
+      if (!d) continue;
+      const dir = -d.stepY;
+      if (dir) {
+        P.index = (P.index + dir + 3) % 3;
+        this.audio.play('select');
+        this.renderPause();
+      }
+      if (d.bPressed) { this.closePause(); return; }
+      if (d.aPressed) {
+        const choice = P.index;
+        this.closePause();
+        if (choice === 1) {
+          const opts = this.current.retryOptions();
+          const def = GAMES[opts.key];
+          this.transition(() => new def.Scene(this, opts));
+        } else if (choice === 2) {
+          this.goHub(this.current.key);
+        }
+        return;
+      }
+    }
+  }
+
   startGame(key) {
     const def = GAMES[key];
     if (!def || this.roster.players.length === 0) return;
@@ -117,8 +166,14 @@ class Game {
     this.input.update();
     if (this.input.mutePressed) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
     if (this.input.pressed.has('KeyN')) this.toggleLanguage();
-    if (this.input.escPressed && !this.switching && !(this.current instanceof HubScene)) {
-      this.goHub(this.current?.key ?? null);
+    if (this.input.menuPressed && !this.switching && this.current && !(this.current instanceof HubScene)) {
+      if (this.pause) this.closePause();
+      else this.openPause();
+    }
+    if (this.pause) {
+      this.updatePause();
+      this.input.endFrame();
+      return;
     }
     if (this.current) {
       this.current.baseUpdate(dt);

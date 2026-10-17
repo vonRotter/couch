@@ -51,6 +51,11 @@ export class MiniGame extends BaseScene {
     }
   }
 
+  /** Options for restarting this exact game from the pause menu. */
+  retryOptions() {
+    return { key: this.key };
+  }
+
   /** Call from update(); returns true while the results screen is up. */
   updateResults(dt) {
     if (this.state !== 'results') return false;
