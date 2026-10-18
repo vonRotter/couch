@@ -190,6 +190,15 @@ magic wall. Then grab the other team's flag and carry it to yours. Foam hits onl
 three hits (or one big slash) floats you home in a bubble for 3 seconds. Helper bots even out the
 teams.
 
+**Pillow Keep** (co-op dungeon, Gauntlet style, three floors). Everyone picks a class first:
+Knight (wide pillow swing, B spins), Archer (foam darts, B fires a fan), Wizard (bubbles trap a
+grumble for a while, B fires a ring) or Bard (a note, B sings a lullaby that puts grumbles to sleep
+and speeds up teammates). C wakes a napping teammate, opens doors with a key and opens chests.
+Fluff the pillow nests that keep sending grumbles; a grumble touch fills your yawn meter, and a full
+meter means a nap until a teammate taps you (or a few seconds pass). Find keys, open doors, and meet
+on the stairs; the last floor ends with the Sleepy Sheep, who needs enough bonks on its glowing
+spots to curl up and fall asleep. The team shares coins; 3 stars under 7 minutes.
+
 **Story** (co-op campaign, next to the hub, not instead of it). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
 the island games with a co-op goal (for example "together, paint a share of the floor" or "everyone reaches the flag") and
@@ -283,7 +292,7 @@ src/
   scenes/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
-    space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js
+    space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
     learnmix.js  learn/  Læringsmiks and its rounds (klokka, penger, rimord)

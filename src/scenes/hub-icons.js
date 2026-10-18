@@ -234,6 +234,25 @@ const ICONS = {
     sword.rotation.z = -0.5;
     g.add(sword);
   },
+  keep(g) {
+    // Castle gate with two towers, a pillow on top and a golden key.
+    g.add(mesh(box('keepWall', 1.0, 1.0, 0.45), toon(0xb79fd6), 0, -0.25, 0));
+    g.add(mesh(box('keepGate', 0.5, 0.65, 0.12, 0.05), toon(0xb07848), 0, -0.42, 0.22));
+    for (const s of [-1, 1]) {
+      g.add(mesh(cyl('keepTower', 0.28, 0.3, 1.4), toon(0xc9b5e6), s * 0.62, -0.05, 0));
+      g.add(mesh(cyl('keepRoof', 0.0, 0.38, 0.5), toon(0xff5d73), s * 0.62, 0.9, 0));
+    }
+    const pillow = mesh(box('keepPillow', 0.85, 0.28, 0.6, 0.13), toon(0xfff3f8), 0, 0.42, 0.05);
+    pillow.rotation.set(0.15, 0.4, -0.12);
+    g.add(pillow);
+    const key = new THREE.Group();
+    key.add(mesh(sharedGeo('icon-keyRing', () => new THREE.TorusGeometry(0.16, 0.06, 8, 16)), toon(COLORS.gold), 0, 0.22, 0));
+    key.add(mesh(box('keyShaft', 0.08, 0.45, 0.08, 0.02), toon(COLORS.gold), 0, -0.1, 0));
+    key.add(mesh(box('keyTooth', 0.16, 0.07, 0.08, 0.02), toon(COLORS.gold), 0.09, -0.27, 0));
+    key.position.set(0.45, -0.2, 0.4);
+    key.rotation.z = -0.5;
+    g.add(key);
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

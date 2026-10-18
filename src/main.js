@@ -31,6 +31,7 @@ import { SnowballScene } from './scenes/snowball.js';
 import { LearnMixScene } from './scenes/learnmix.js';
 import { GolfScene } from './scenes/golf.js';
 import { CastleScene } from './scenes/castle.js';
+import { KeepScene } from './scenes/keep.js';
 import { StoryScene, STORY_GAMES } from './scenes/story.js';
 
 export const GAMES = {
@@ -52,6 +53,7 @@ export const GAMES = {
   snowball: { Scene: SnowballScene },
   golf: { Scene: GolfScene },
   castle: { Scene: CastleScene },
+  keep: { Scene: KeepScene },
   story: { Scene: StoryScene },
   ...STORY_GAMES, // the four Grumble King boss games (only reachable from the story map)
   spelling: { Scene: SpellingScene, edu: true },
