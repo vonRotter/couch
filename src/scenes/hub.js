@@ -46,7 +46,6 @@ const PADS = [
   { key: 'guides', color: 0x9a6a44, css: '#8a5a32' },
   { key: 'splash', color: 0x3a6fe0, css: '#2257c8' },
   { key: 'cave', color: 0x7a7fa8, css: '#565c8c' },
-  { key: 'story', color: 0xffd23f, css: '#e0a100' },
 ].map((p, i, all) => {
   const a = (i / all.length) * Math.PI * 2;
   return { ...p, angle: a, x: Math.sin(a) * RING_R, z: -Math.cos(a) * RING_R };
@@ -76,7 +75,7 @@ const STAR_SPOTS = [
 ];
 
 export class HubScene extends BaseScene {
-  constructor(game, { fromGame = null } = {}) {
+  constructor(game, { fromGame = null, chooseMode = false } = {}) {
     super(game);
     this.key = null;
     this.camera.fov = 45;
@@ -112,6 +111,12 @@ export class HubScene extends BaseScene {
 
     this.titleEl = null;
     this.refreshTitle();
+    // Start menu: Island or Story. Asked when the first player joins, after leaving the story,
+    // and whenever someone presses C on the island.
+    this.modeEl = null;
+    this.modeIndex = 0;
+    this.modeAsked = !!fromGame || this.players.length > 0;
+    if (chooseMode && this.players.length) this.openMode(1);
     game.audio.playMusic('hub');
   }
 
@@ -579,6 +584,49 @@ export class HubScene extends BaseScene {
       this.game.ui.toast(t('hub.joined', { name: p.name }));
     }
     if (this.game.input.escPressed) this.toggleHelp();
+    if (!this.modeAsked && this.players.length) { this.modeAsked = true; this.openMode(0); }
+  }
+
+  // ---------- start menu (Island or Story) ----------
+
+  openMode(index = 0) {
+    if (this.helpEl) this.toggleHelp();
+    this.modeIndex = index;
+    this.modeT = 0;
+    this.modeEl = this.game.ui.panel('', 'panel picker');
+    this.renderMode();
+    this.game.audio.play('select');
+  }
+
+  renderMode() {
+    const opts = ['island', 'story'].map((k, i) => `<div class="vote-opt mode-opt ${i === this.modeIndex ? 'on' : ''}">
+      <div class="mode-icon">${k === 'island' ? '🏝️' : '📖'}</div><b>${t(`mode.${k}`)}</b><small>${t(`mode.${k}.sub`)}</small></div>`).join('');
+    this.modeEl.innerHTML = `<div class="results-title">${t('mode.title')}</div>
+      <div class="vote-row">${opts}</div>
+      <div class="results-footer">${t('mode.hint')}</div>`;
+  }
+
+  /** True while the menu is open (the island waits behind it). */
+  updateMode(dt) {
+    if (!this.modeEl) return false;
+    this.modeT += dt;
+    for (const p of this.players) {
+      const d = this.input(p);
+      if (!d) continue;
+      if (d.stepX && (d.stepX > 0 ? 1 : 0) !== this.modeIndex) {
+        this.modeIndex = d.stepX > 0 ? 1 : 0;
+        this.game.audio.play('select');
+        this.renderMode();
+      }
+      if ((d.aPressed || d.bPressed) && this.modeT > 0.25) {
+        this.modeEl.remove();
+        this.modeEl = null;
+        this.game.audio.play('join');
+        if (this.modeIndex === 1) { this.launching = true; this.game.startGame('story'); }
+        return true;
+      }
+    }
+    return true;
   }
 
   /** B: pick up / throw, toggle swap readiness, or hold to leave. */
@@ -1310,14 +1358,16 @@ export class HubScene extends BaseScene {
     this.helpEl = this.game.ui.panel(`
       <div class="help-panel">
         <h2>${t('help.title')}</h2>
-        <ul>${[1, 2, 3, 7, 4, 5, 6].map((i) => `<li>${t(`help.${i}`)}</li>`).join('')}</ul>
+        <ul>${[1, 2, 8, 3, 7, 4, 5, 6].map((i) => `<li>${t(`help.${i}`)}</li>`).join('')}</ul>
       </div>`);
   }
 
   update(dt) {
     this.handleJoins();
     this.refreshTitle();
-    for (const e of [...this.entities.values()]) this.updatePlayer(e, dt);
+    const menu = this.updateMode(dt);
+    if (!menu && !this.launching && this.players.some((p) => this.input(p)?.cPressed)) this.openMode(0);
+    for (const e of [...this.entities.values()]) if (!menu) this.updatePlayer(e, dt);
     this.separatePlayers();
     this.updateToys(dt);
     this.updatePins(dt);

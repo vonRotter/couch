@@ -297,3 +297,10 @@ html, body {
 .vote-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 16px 0 8px; }
 .vote-opt { min-width: clamp(90px, 10vw, 150px); border-radius: 18px; background: #f4efff; padding: 10px; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
 .vote-label { font-weight: 700; font-size: clamp(14px, 1.4vw, 22px); color: var(--purple, #8a45e0); text-align: center; margin-bottom: 4px; }
+
+/* Start menu: Island or Story */
+.mode-opt { width: clamp(160px, 22vw, 300px); align-items: center; text-align: center; border: 4px solid transparent; transition: transform 0.15s; }
+.mode-opt.on { border-color: #ff8c42; background: #fff3e6; transform: scale(1.06); }
+.mode-opt b { font-size: clamp(20px, 2.4vw, 36px); }
+.mode-opt small { font-size: clamp(12px, 1.1vw, 17px); opacity: 0.8; }
+.mode-icon { font-size: clamp(36px, 5vw, 72px); line-height: 1; }

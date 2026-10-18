@@ -3,6 +3,8 @@
 // A is jump / confirm, B is the "use" button, C is the third button. No key counts as two buttons.
 // y is +1 for "up".
 
+import { keyName } from './i18n.js';
+
 export const KEYBOARD_SCHEMES = [
   {
     id: 'kb0',
@@ -36,6 +38,11 @@ export const PAD_LABELS = {
   ps: { a: '✕', b: '○', c: '□' },
   nintendo: { a: 'B', b: 'A', c: 'Y' },
 };
+
+/** What a player presses for button 'a' | 'b' | 'c' on this device: "E", "R-Shift", "B", "○"... */
+export function buttonLabel(device, btn) {
+  return device.type === 'keyboard' ? keyName(device.scheme[btn][0]) : PAD_LABELS[device.kind][btn];
+}
 
 /** Guess the controller family from the Gamepad id string. */
 export function padKind(id = '') {

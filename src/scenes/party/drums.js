@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Round, clock } from './common.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../../core/palette.js';
 import { glyphMaterial } from '../../core/edu.js';
+import { buttonLabel } from '../../core/input.js';
 import { t, addStrings } from '../../core/i18n.js';
 
 addStrings({
@@ -18,6 +19,14 @@ addStrings({
     'drums.streak': '{n} på rad', 'drums.n': '{n} treff · rekke {s}',
   },
 });
+
+const SHORT = { Space: 'Spc', Enter: 'Ent', ShiftRight: 'Shft', ControlRight: 'Ctrl', Numpad0: 'N0', NumpadDecimal: 'N.', NumpadEnter: 'NEnt' };
+/** A button name short enough for a drum note: "E", "Spc", "B", "○". */
+function shortKey(device, btn) {
+  if (!device) return btn.toUpperCase();
+  if (device.type === 'keyboard') return SHORT[device.scheme[btn][0]] || buttonLabel(device, btn);
+  return buttonLabel(device, btn);
+}
 
 // Rhythm Drums: every player gets the same chart in their own lane, scrolling down to a hit line.
 const BPM = 120;
@@ -72,6 +81,8 @@ export class DrumsRound extends Round {
     this.over = false;
     this.build();
     this.lanes = this.players.map((p, i) => this.makeLane(p, i));
+    // Each lane's notes show what that player presses (short form so it fits on a note).
+    for (const lane of this.lanes) lane.keys = ['a', 'b'].map((b) => shortKey(this.game.input.get(lane.p.deviceId), b));
   }
 
   get title() { return t('drums.title'); }
@@ -160,7 +171,7 @@ export class DrumsRound extends Round {
       ring.position.set(x, HIT_Y, -0.15);
       const fill = new THREE.Mesh(sharedGeo(`drumFill${r}`, () => new THREE.CircleGeometry(r * 0.82, 28)), basic(0x2b2340, { transparent: true, opacity: 0.6 }));
       fill.position.set(x, HIT_Y, -0.17);
-      const letter = new THREE.Mesh(sharedGeo(`drumTLetter${r}`, () => new THREE.PlaneGeometry(r * 1.4, r * 1.4)), glyphMaterial(c ? 'B' : 'A', { fg: c ? B_CSS : A_CSS, stroke: '#2b2340' }));
+      const letter = new THREE.Mesh(sharedGeo(`drumTLetter${r}`, () => new THREE.PlaneGeometry(r * 1.4, r * 1.4)), glyphMaterial(shortKey(this.game.input.get(p.deviceId), c ? 'b' : 'a'), { fg: c ? B_CSS : A_CSS, stroke: '#2b2340' }));
       letter.position.set(x, HIT_Y, -0.14);
       g.add(ring, fill, letter);
       return { ring, flash: 0 };
@@ -374,7 +385,7 @@ export class DrumsRound extends Round {
     const r = lane.r;
     const g = new THREE.Group();
     const back = new THREE.Mesh(sharedGeo(`drumNoteBack${r}`, () => new THREE.CircleGeometry(r * 1.02, 28)), basic(COLORS.ink));
-    const face = new THREE.Mesh(sharedGeo(`drumNote${r}`, () => new THREE.PlaneGeometry(r * 2.06, r * 2.06)), glyphMaterial(note.col ? 'B' : 'A', { disc: note.col ? B_CSS : A_CSS, fg: '#ffffff', stroke: '#2b2340' }));
+    const face = new THREE.Mesh(sharedGeo(`drumNote${r}`, () => new THREE.PlaneGeometry(r * 2.06, r * 2.06)), glyphMaterial(lane.keys[note.col], { disc: note.col ? B_CSS : A_CSS, fg: '#ffffff', stroke: '#2b2340' }));
     face.position.z = 0.01;
     g.add(back, face);
     if (note.pair && note.col === 0) {

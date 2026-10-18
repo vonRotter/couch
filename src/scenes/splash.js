@@ -4,14 +4,15 @@ import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
-import { t, addStrings } from '../core/i18n.js';
+import { t, addStrings, getLang, keyName, buttonText } from '../core/i18n.js';
+import { PAD_LABELS } from '../core/input.js';
 import { esc } from '../core/ui.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 
-addStrings({
+const STRINGS = {
   en: {
     'game.splash': 'Splash Squad',
-    'splash.intro': 'Take turns! Stick: walk and aim · [A]: jump · [C]: change tool · hold [B] for power, let go to throw',
+    'splash.intro': 'Take turns! Stick left/right: walk (small steps are automatic) · up/down: aim · [A]: jump · [C]: change tool · hold [B], let go to throw',
     'splash.turn': "{name}'s turn!",
     'splash.turnPill': "{name}'s turn",
     'splash.turnOf': 'Turn {n}/{m}',
@@ -25,6 +26,10 @@ addStrings({
     'splash.hint.girder': 'stick up/down tilts · [B] places',
     'splash.hint.bubble': 'short range · [B] blows',
     'splash.hint.used': 'one plank per turn',
+    'splash.hint.move': '◀ ▶ walk · [A] jump',
+    'splash.hint.aim': '▲ ▼ aim',
+    'splash.hint.tool': '[C] next tool',
+    'splash.yourGo': 'Your turn!',
     'splash.timeUp': "Time's up!",
     'splash.cold': 'Brr, too cold!',
     'splash.blocked': 'No room there!',
@@ -39,7 +44,7 @@ addStrings({
   },
   no: {
     'game.splash': 'Plaskeslaget',
-    'splash.intro': 'Bytt på! Pinnen: gå og sikt · [A]: hopp · [C]: bytt verktøy · hold [B] for kraft, slipp for å kaste',
+    'splash.intro': 'Bytt på! Pinnen venstre/høyre: gå (små kanter går av seg selv) · opp/ned: sikt · [A]: hopp · [C]: bytt verktøy · hold [B], slipp for å kaste',
     'splash.turn': '{name} sin tur!',
     'splash.turnPill': '{name} sin tur',
     'splash.turnOf': 'Tur {n}/{m}',
@@ -53,6 +58,10 @@ addStrings({
     'splash.hint.girder': 'pinnen opp/ned vipper · [B] setter ned',
     'splash.hint.bubble': 'kort rekkevidde · [B] blåser',
     'splash.hint.used': 'én planke per tur',
+    'splash.hint.move': '◀ ▶ gå · [A] hopp',
+    'splash.hint.aim': '▲ ▼ sikt',
+    'splash.hint.tool': '[C] neste verktøy',
+    'splash.yourGo': 'Din tur!',
     'splash.timeUp': 'Tiden er ute!',
     'splash.cold': 'Brr, for kaldt!',
     'splash.blocked': 'Ikke plass der!',
@@ -65,7 +74,23 @@ addStrings({
     'splash.hits': '{n} plask', 'splash.hit1': '1 plask',
     'splash.dunks': '{n} dukkerter', 'splash.dunk1': '1 dukkert',
   },
-});
+};
+addStrings(STRINGS);
+
+/** Button name a single player presses (their own key or pad button), for the active bean's hints. */
+function buttonFor(game, p, b) {
+  const d = p && game.input.get(p.deviceId);
+  if (!d) return buttonText(b);
+  return d.type === 'keyboard' ? keyName(d.scheme[b][0]) : PAD_LABELS[d.kind][b];
+}
+
+/** Like t(), but [A]/[B]/[C] become the keys of this one player instead of everyone's. */
+function tFor(game, p, key, vars) {
+  let s = (STRINGS[getLang()] || STRINGS.en)[key] ?? STRINGS.en[key];
+  if (s === undefined) return t(key, vars);
+  if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
+  return s.replace(/\[([ABC])\]/g, (_, b) => buttonFor(game, p, b.toLowerCase()));
+}
 
 // Splash Squad: a turn-based Worms-style water fight on a destructible cookie island.
 // Two teams take turns; the active bean walks, aims and throws water balloons. Splashes bite

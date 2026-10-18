@@ -22,21 +22,25 @@ The Vite `base` is relative, so the site works from any sub-path.
 
 ## Controls
 
-Every player has a stick and buttons **A** (jump/action) and **B** (secondary). A few games
-(so far Rooftop Rush) also use **C**; the C keys also count as B everywhere else.
+Every player has a stick and three buttons: **A** (jump, confirm), **B** (the "use" button) and
+**C** (the third button: switch tool, next piece, rope and the like). No key counts as two buttons.
+On-screen text always names the buttons the current players actually press: keyboard keys,
+Xbox letters (A, B, X), PlayStation symbols (✕, ○, □) or Nintendo letters.
 Each game shows its own controls before it starts.
 
-| Device | Move | A | B | C |
+| Device | Move | A (jump) | B (use) | C (third) |
 | --- | --- | --- | --- | --- |
-| Gamepad 1–4 | Left stick / D-pad | A / Y | B, RB, RT (and C buttons) | X / LB / LT |
-| Keyboard 1 | W A S D | Space | Left Shift (and E) | E |
-| Keyboard 2 | Arrow keys | Enter | Right Shift (and Right Ctrl) | Right Ctrl |
-| Keyboard 3 | I J K L | U | O (and P) | P |
-| Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . (and Numpad Enter) | Numpad Enter |
+| Gamepad 1–4 | Left stick / D-pad | A / Y (✕ / △) | B, RB, RT (○) | X, LB, LT (□) |
+| Keyboard 1 | W A S D | Space | E | Q |
+| Keyboard 2 | Arrow keys | Enter | Right Shift | Right Ctrl |
+| Keyboard 3 | I J K L | U | O | P |
+| Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . | Numpad Enter |
 
-- Press A on any device to join (up to 6 players).
+- Press A on any device to join (up to 6 players). The first player picks a mode in the start
+  menu: **Island** (roam and pick games on the pads) or **Story** (the co-op campaign). Press C on
+  the island to open the start menu again; leaving the Story also returns to it.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
-- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). On the island `Esc` shows help. `M` toggles sound.
+- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). Pick with B (use) or A; `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound.
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
 - `G` shows or hides the learning games, or jump on the green book button.
 
@@ -223,7 +227,7 @@ the lost puppy on your head to the exit for a team bonus. Hazards are soft: boun
 sticky honey and rolling snowballs; a long fall only makes you dizzy. Stragglers float to the leader
 in a bubble, sparkles show the way after a while, and nobody is ever out.
 
-**Story** (co-op campaign, next to the hub, not instead of it). A map of four floating lands
+**Story** (co-op campaign, chosen in the start menu instead of the island). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
 the island games with a co-op goal (for example "together, paint a share of the floor" or "everyone reaches the flag") and
 one to three stars, then a Grumble King boss: bounce on him when he is dizzy, ring the bells on his

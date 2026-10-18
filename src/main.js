@@ -4,11 +4,11 @@ import '@fontsource/fredoka/600.css';
 import '@fontsource/fredoka/700.css';
 import './style.css';
 
-import { Input, PAD_LABELS } from './core/input.js';
+import { Input, buttonLabel } from './core/input.js';
 import { Roster } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
-import { t, setLang, getLang, setButtonSource, keyName } from './core/i18n.js';
+import { t, setLang, getLang, setButtonSource } from './core/i18n.js';
 import { HubScene } from './scenes/hub.js';
 import { BubbleScene } from './scenes/bubble.js';
 import { PlatformerScene } from './scenes/platformer.js';
@@ -82,7 +82,7 @@ class Game {
     setButtonSource((b) => {
       let devs = this.roster.players.map((p) => this.input.get(p.deviceId)).filter(Boolean);
       if (!devs.length) devs = [this.input.get('kb0'), ...[0, 1, 2, 3].map((i) => this.input.get(`gp${i}`)).filter((d) => d.connected)];
-      return [...new Set(devs.map((d) => (d.type === 'keyboard' ? keyName(d.scheme[b][0]) : PAD_LABELS[d.kind][b])))];
+      return [...new Set(devs.map((d) => buttonLabel(d, b)))];
     });
     this.audio = new AudioEngine();
     this.ui = new UI(document.getElementById('ui'));
@@ -122,7 +122,8 @@ class Game {
 
   goHub(fromGame = null) {
     if (this.campaign) { this.backToStory(); return; }
-    const make = () => new HubScene(this, { fromGame });
+    // Leaving the story goes back to the start menu (Island or Story).
+    const make = () => new HubScene(this, { fromGame: fromGame === 'story' ? null : fromGame, chooseMode: fromGame === 'story' });
     if (!this.current) this.setScene(make);
     else this.transition(make);
   }
