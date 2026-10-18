@@ -180,6 +180,24 @@ says boing. Hidden players wobble when they move, and now and then one giggles. 
 once (up to 4 rounds); with 5–6 players the final score evens out who got to seek. Solo play is
 you seeking grumble bots.
 
+**Knights & Builders** (two teams, match length by vote; a kid-friendly take on King Arthur's
+Gold). A side-view map with terrain you can dig and build, and a stone fort with a flag for each team.
+After the team pick, everyone chooses a class: Builder (B builds wood blocks, doors, ladders and
+bounce pads where you aim, hold B to take a block down, C picks the next piece), Knight (B swings a
+foam sword, hold for a big slash, C raises a shield that also glides) or Archer (hold B to draw
+suction-cup arrows, C shoots a rope arrow to climb). The first 45 seconds are a build phase behind a
+magic wall. Then grab the other team's flag and carry it to yours. Foam hits only push and wobble;
+three hits (or one big slash) floats you home in a bubble for 3 seconds. Helper bots even out the
+teams.
+
+**Story** (co-op campaign, next to the hub, not instead of it). A map of four floating lands
+(Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
+the island games with a co-op goal (for example "together, paint a share of the floor" or "everyone reaches the flag") and
+one to three stars, then a Grumble King boss: bounce on him when he is dizzy, ring the bells on his
+snow fort, serve him the right cakes, and fly through his bubble rings. He always ends up dizzy and
+giggling, never hurt. Stick left/right picks any unlocked node, A starts it, and hold B to go back
+to the island. Progress is saved; retry from the pause menu keeps the stage settings.
+
 **Party Mix** (3, 5 or 7 short rounds by vote, from a pool of 19). A running scoreboard follows
 each round. Before each round a card explains it and everyone taps jump when ready.
 Each round gives placement points (4, 3, 2, then 1 for everyone else, ties share the higher
@@ -265,7 +283,8 @@ src/
   scenes/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
-    space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js
+    space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js
+    story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
     learnmix.js  learn/  Læringsmiks and its rounds (klokka, penger, rimord)
     party.js         Party Mix flow: vote, how-to cards, countdown, scoreboard
