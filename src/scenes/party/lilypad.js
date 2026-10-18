@@ -7,12 +7,12 @@ import { t, addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'lilypad.title': 'Lily Pad Hop',
-    'lilypad.hint': 'Tap the stick to hop one step at a time (A hops forward too). Ride the logs and lily pads across the pond. Pale pads sink for a moment! Every crossing scores a point.',
+    'lilypad.hint': 'Tap the stick to hop one step at a time ([A] hops forward too). Ride the logs and lily pads across the pond. Pale pads sink for a moment! Every crossing scores a point.',
     'lilypad.go': 'Hop across!', 'lilypad.splash': 'splash!', 'lilypad.n': '{n} crossings',
   },
   no: {
     'lilypad.title': 'Nøkkerosehopp',
-    'lilypad.hint': 'Trykk på spaken for å hoppe ett steg om gangen (A hopper også fremover). Hopp på stokkene og nøkkerosebladene over dammen. Lyse blader synker en liten stund! Hver tur over gir ett poeng.',
+    'lilypad.hint': 'Trykk på spaken for å hoppe ett steg om gangen ([A] hopper også fremover). Hopp på stokkene og nøkkerosebladene over dammen. Lyse blader synker en liten stund! Hver tur over gir ett poeng.',
     'lilypad.go': 'Hopp over!', 'lilypad.splash': 'plask!', 'lilypad.n': '{n} turer over',
   },
 });

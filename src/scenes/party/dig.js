@@ -7,14 +7,14 @@ import { t, addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'dig.title': 'Treasure Dig',
-    'dig.hint': 'Treasure is hidden in the sand! Your sparkles get brighter and faster the closer you are. Hold A to dig. Chest = 3, coin = 1, old boot = 0.',
+    'dig.hint': 'Treasure is hidden in the sand! Your sparkles get brighter and faster the closer you are. Hold [A] to dig. Chest = 3, coin = 1, old boot = 0.',
     'dig.hot': 'Hot!', 'dig.warm': 'Warm',
     'dig.boot': 'Boot!', 'dig.nothing': 'Nothing...',
     'dig.n': '{c} chests · {k} coins',
   },
   no: {
     'dig.title': 'Skattejakt',
-    'dig.hint': 'Det er skatter gjemt i sanden! Glitteret ditt blir sterkere og raskere jo nærmere du er. Hold A for å grave. Kiste = 3, mynt = 1, gammel støvel = 0.',
+    'dig.hint': 'Det er skatter gjemt i sanden! Glitteret ditt blir sterkere og raskere jo nærmere du er. Hold [A] for å grave. Kiste = 3, mynt = 1, gammel støvel = 0.',
     'dig.hot': 'Varmt!', 'dig.warm': 'Lunkent',
     'dig.boot': 'Støvel!', 'dig.nothing': 'Ingenting...',
     'dig.n': '{c} kister · {k} mynter',

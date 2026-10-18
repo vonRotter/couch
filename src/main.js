@@ -4,11 +4,11 @@ import '@fontsource/fredoka/600.css';
 import '@fontsource/fredoka/700.css';
 import './style.css';
 
-import { Input } from './core/input.js';
+import { Input, PAD_LABELS } from './core/input.js';
 import { Roster } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
-import { t, setLang, getLang } from './core/i18n.js';
+import { t, setLang, getLang, setButtonSource, keyName } from './core/i18n.js';
 import { HubScene } from './scenes/hub.js';
 import { BubbleScene } from './scenes/bubble.js';
 import { PlatformerScene } from './scenes/platformer.js';
@@ -79,6 +79,11 @@ class Game {
     this.input = new Input();
     this.roster = new Roster();
     setLang(this.roster.progress.lang || 'en');
+    setButtonSource((b) => {
+      let devs = this.roster.players.map((p) => this.input.get(p.deviceId)).filter(Boolean);
+      if (!devs.length) devs = [this.input.get('kb0'), ...[0, 1, 2, 3].map((i) => this.input.get(`gp${i}`)).filter((d) => d.connected)];
+      return [...new Set(devs.map((d) => (d.type === 'keyboard' ? keyName(d.scheme[b][0]) : PAD_LABELS[d.kind][b])))];
+    });
     this.audio = new AudioEngine();
     this.ui = new UI(document.getElementById('ui'));
     this.input.onActivity = () => this.audio.ensure();
@@ -188,8 +193,7 @@ class Game {
         this.audio.play('select');
         this.renderPause();
       }
-      if (d.bPressed) { this.closePause(); return; }
-      if (d.aPressed) {
+      if (d.aPressed || d.bPressed) {
         const choice = P.index;
         this.closePause();
         if (choice === 1) {

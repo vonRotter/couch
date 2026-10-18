@@ -118,14 +118,14 @@ addStrings({
   en: {
     ...bank.en,
     'quiz.title': 'Quiz Run',
-    'quiz.hint': 'Read the question and run to the colored zone with the right answer before time runs out! Press A to lock in early.',
+    'quiz.hint': 'Read the question and run to the colored zone with the right answer before time runs out! Press [A] to lock in early.',
     'quiz.kid': "Kids' question", 'quiz.grown': 'Grown-up question', 'quiz.q': 'Question {n} of {total}',
     'quiz.answer': 'Answer: {a}', 'quiz.n': '{n} correct',
   },
   no: {
     ...bank.no,
     'quiz.title': 'Quizløpet',
-    'quiz.hint': 'Les spørsmålet og løp til fargefeltet med riktig svar før tiden er ute! Trykk A for å låse svaret tidlig.',
+    'quiz.hint': 'Les spørsmålet og løp til fargefeltet med riktig svar før tiden er ute! Trykk [A] for å låse svaret tidlig.',
     'quiz.kid': 'Barnespørsmål', 'quiz.grown': 'Voksenspørsmål', 'quiz.q': 'Spørsmål {n} av {total}',
     'quiz.answer': 'Svar: {a}', 'quiz.n': '{n} riktige',
   },

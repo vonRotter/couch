@@ -7,13 +7,13 @@ import { t, addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'keepy.title': 'Keepy-Uppy',
-    'keepy.hint': 'Work together! Jump with A and bop the balloons with your head to keep them in the air. Every bop adds to the team streak. More balloons float in as you go.',
+    'keepy.hint': 'Work together! Jump with [A] and bop the balloons with your head to keep them in the air. Every bop adds to the team streak. More balloons float in as you go.',
     'keepy.streak': 'Streak {n}', 'keepy.best': 'Team best {n}', 'keepy.more': 'Another balloon!', 'keepy.aww': 'aww',
     'keepy.n': '{n} bops',
   },
   no: {
     'keepy.title': 'Hold ballongen oppe',
-    'keepy.hint': 'Samarbeid! Hopp med A og dunk ballongene med hodet så de holder seg i lufta. Hvert dunk teller på lagets rekke. Flere ballonger kommer svevende etter hvert.',
+    'keepy.hint': 'Samarbeid! Hopp med [A] og dunk ballongene med hodet så de holder seg i lufta. Hvert dunk teller på lagets rekke. Flere ballonger kommer svevende etter hvert.',
     'keepy.streak': 'Rekke {n}', 'keepy.best': 'Lagrekord {n}', 'keepy.more': 'En ballong til!', 'keepy.aww': 'åhh',
     'keepy.n': '{n} dunk',
   },

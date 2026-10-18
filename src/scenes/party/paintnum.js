@@ -9,7 +9,7 @@ import { t, addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'paintnum.title': 'Paint by Numbers',
-    'paintnum.hint': 'Walk into a paint pot to fill your brush. Then stand on squares with the same number and hold A to paint. Finish the picture together for a bonus!',
+    'paintnum.hint': 'Walk into a paint pot to fill your brush. Then stand on squares with the same number and hold [A] to paint. Finish the picture together for a bonus!',
     'paintnum.left': 'Painted {n} / {total}', 'paintnum.done': 'Picture done!', 'paintnum.bonus': 'Bonus for everyone!',
     'paintnum.n': '{n} painted',
     'paintnum.heart': 'a heart', 'paintnum.fish': 'a fish', 'paintnum.house': 'a house', 'paintnum.flower': 'a flower', 'paintnum.mushroom': 'a mushroom', 'paintnum.boat': 'a boat',
@@ -17,7 +17,7 @@ addStrings({
   },
   no: {
     'paintnum.title': 'Mal etter tall',
-    'paintnum.hint': 'Gå inn i en malingsbøtte for å fylle penselen. Stå på ruter med samme tall og hold inne A for å male. Gjør ferdig bildet sammen for bonus!',
+    'paintnum.hint': 'Gå inn i en malingsbøtte for å fylle penselen. Stå på ruter med samme tall og hold inne [A] for å male. Gjør ferdig bildet sammen for bonus!',
     'paintnum.left': 'Malt {n} / {total}', 'paintnum.done': 'Bildet er ferdig!', 'paintnum.bonus': 'Bonus til alle!',
     'paintnum.n': '{n} malt',
     'paintnum.heart': 'et hjerte', 'paintnum.fish': 'en fisk', 'paintnum.house': 'et hus', 'paintnum.flower': 'en blomst', 'paintnum.mushroom': 'en sopp', 'paintnum.boat': 'en båt',

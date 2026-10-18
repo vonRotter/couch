@@ -10,13 +10,13 @@ import { t, addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'spot.title': 'Spot the Difference',
-    'spot.hint': 'The two pictures are almost the same. Move your ring over the RIGHT picture and press A on each difference! Wrong guesses freeze your ring for a moment.',
+    'spot.hint': 'The two pictures are almost the same. Move your ring over the RIGHT picture and press [A] on each difference! Wrong guesses freeze your ring for a moment.',
     'spot.pic': 'Picture {n} of {total}', 'spot.found': 'Found {n} / {total}', 'spot.all': 'All found!',
     'spot.missed': 'Here they were!', 'spot.n': '{n} found',
   },
   no: {
     'spot.title': 'Finn forskjellene',
-    'spot.hint': 'De to bildene er nesten like. Flytt ringen din over det HØYRE bildet og trykk A på hver forskjell! Feil gjetning fryser ringen litt.',
+    'spot.hint': 'De to bildene er nesten like. Flytt ringen din over det HØYRE bildet og trykk [A] på hver forskjell! Feil gjetning fryser ringen litt.',
     'spot.pic': 'Bilde {n} av {total}', 'spot.found': 'Funnet {n} / {total}', 'spot.all': 'Alle funnet!',
     'spot.missed': 'Her var de!', 'spot.n': '{n} funnet',
   },

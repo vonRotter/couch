@@ -12,21 +12,21 @@ import { voteLength } from '../core/vote.js';
 addStrings({
   en: {
     'game.snowball': 'Snowball Fort',
-    'snowball.intro': "B: tap to throw at the other team's targets · hold B to scoop snow · A: build a snow wall (3 snow)",
+    'snowball.intro': "[B]: tap to throw at the other team's targets · hold [B] to scoop snow · [A]: build a snow wall (3 snow)",
     'snowball.bot': 'Snow Bot',
     'snowball.hits': '{n} hits', 'snowball.hit1': '1 hit',
     'snowball.walls': '{n} walls', 'snowball.wall1': '1 wall',
     'snowball.throws': '{n} throws', 'snowball.throw1': '1 throw',
-    'snowball.need': 'Hold B for snow!',
+    'snowball.need': 'Hold [B] for snow!',
   },
   no: {
     'game.snowball': 'Snøballfestningen',
-    'snowball.intro': 'B: trykk for å kaste på det andre lagets blinker · hold B for å samle snø · A: bygg en snømur (3 snø)',
+    'snowball.intro': '[B]: trykk for å kaste på det andre lagets blinker · hold [B] for å samle snø · [A]: bygg en snømur (3 snø)',
     'snowball.bot': 'Snøbot',
     'snowball.hits': '{n} treff', 'snowball.hit1': '1 treff',
     'snowball.walls': '{n} murer', 'snowball.wall1': '1 mur',
     'snowball.throws': '{n} kast', 'snowball.throw1': '1 kast',
-    'snowball.need': 'Hold B for snø!',
+    'snowball.need': 'Hold [B] for snø!',
   },
 });
 

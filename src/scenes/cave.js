@@ -11,7 +11,7 @@ import { esc } from '../core/ui.js';
 addStrings({
   en: {
     'game.cave': 'Crystal Caves',
-    'cave.intro': 'Dig down to the glowing door together! A jump · up/down climb · B rope · C pop bomb',
+    'cave.intro': 'Dig down to the glowing door together! [A] jump · up/down climb · [B] rope · [C] pop bomb',
     'cave.d0': 'Mossy Mine', 'cave.d1': 'Frosty Hollow', 'cave.d2': 'Crystal Heart',
     'cave.depth': 'Depth {n} of {total}',
     'cave.team': 'Team gems',
@@ -32,7 +32,7 @@ addStrings({
   },
   no: {
     'game.cave': 'Krystallgrottene',
-    'cave.intro': 'Grav dere ned til den lysende døra sammen! A hopp · opp/ned klatre · B tau · C poppbombe',
+    'cave.intro': 'Grav dere ned til den lysende døra sammen! [A] hopp · opp/ned klatre · [B] tau · [C] poppbombe',
     'cave.d0': 'Mosegruva', 'cave.d1': 'Frosthulen', 'cave.d2': 'Krystallhjertet',
     'cave.depth': 'Dybde {n} av {total}',
     'cave.team': 'Lagets edelsteiner',

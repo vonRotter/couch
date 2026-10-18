@@ -8,12 +8,12 @@ import { t, addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'boats.title': 'Bumper Boats',
-    'boats.hint': 'Steer with the stick, press A for a little dash. Bump other boats out of the buoy ring for a point. Floating out costs a point, then you drift right back in. The ring keeps shrinking!',
+    'boats.hint': 'Steer with the stick, press [A] for a little dash. Bump other boats out of the buoy ring for a point. Floating out costs a point, then you drift right back in. The ring keeps shrinking!',
     'boats.stay': 'Stay in the ring!', 'boats.oops': 'oops!', 'boats.n': '{n} points · {b} bumps out',
   },
   no: {
     'boats.title': 'Dulteboter',
-    'boats.hint': 'Styr med spaken, trykk A for et lite byks. Dult andre båter ut av bøyeringen for å få poeng. Flyter du ut, mister du ett poeng, men du driver rett inn igjen. Ringen blir stadig mindre!',
+    'boats.hint': 'Styr med spaken, trykk [A] for et lite byks. Dult andre båter ut av bøyeringen for å få poeng. Flyter du ut, mister du ett poeng, men du driver rett inn igjen. Ringen blir stadig mindre!',
     'boats.stay': 'Hold deg i ringen!', 'boats.oops': 'oi!', 'boats.n': '{n} poeng · {b} dulta ut',
   },
 });

@@ -10,8 +10,8 @@ import { BossScene } from './boss-common.js';
 // at the bells; a blocked one just goes poof on his umbrella and he laughs.
 
 addStrings({
-  en: { 'bossf.hint': 'Stand in front of a bell · A or B throws a snowball', 'bossf.ha': 'Ha!' },
-  no: { 'bossf.hint': 'Stå foran en bjelle · A eller B kaster en snøball', 'bossf.ha': 'Ha!' },
+  en: { 'bossf.hint': 'Stand in front of a bell · [A] or [B] throws a snowball', 'bossf.ha': 'Ha!' },
+  no: { 'bossf.hint': 'Stå foran en bjelle · [A] eller [B] kaster en snøball', 'bossf.ha': 'Ha!' },
 });
 
 const HW = 10.5; // yard half width

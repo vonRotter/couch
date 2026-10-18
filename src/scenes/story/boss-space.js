@@ -10,8 +10,8 @@ import { darken } from '../../core/character.js';
 // Golden rings count double. Rings that float away just fade out.
 
 addStrings({
-  en: { 'bosss.hint': 'Stick: fly · A: boost · fly through the bubble rings!', 'bosss.gold': 'Golden ring! +2' },
-  no: { 'bosss.hint': 'Pinnen: fly · A: fart · fly gjennom bobleringene!', 'bosss.gold': 'Gullring! +2' },
+  en: { 'bosss.hint': 'Stick: fly · [A]: boost · fly through the bubble rings!', 'bosss.gold': 'Golden ring! +2' },
+  no: { 'bosss.hint': 'Pinnen: fly · [A]: fart · fly gjennom bobleringene!', 'bosss.gold': 'Gullring! +2' },
 });
 
 const X0 = -14, X1 = 4.5, Y0 = 0.8, Y1 = 12.2;

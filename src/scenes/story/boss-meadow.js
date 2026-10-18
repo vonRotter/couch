@@ -9,8 +9,8 @@ import { BossScene, PR } from './boss-common.js';
 // dizzy just boings you off, and when he bumps into you, you only get pushed away.
 
 addStrings({
-  en: { 'bossm.hint': 'Run away while he chases you · when he is dizzy, jump on his head (A)!', 'bossm.hey': 'Hey!', 'bossm.dizzy': 'Dizzy! Bounce now!' },
-  no: { 'bossm.hint': 'Løp unna når han jager deg · når han er svimmel, hopp på hodet hans (A)!', 'bossm.hey': 'Hei!', 'bossm.dizzy': 'Svimmel! Hopp nå!' },
+  en: { 'bossm.hint': 'Run away while he chases you · when he is dizzy, jump on his head ([A])!', 'bossm.hey': 'Hey!', 'bossm.dizzy': 'Dizzy! Bounce now!' },
+  no: { 'bossm.hint': 'Løp unna når han jager deg · når han er svimmel, hopp på hodet hans ([A])!', 'bossm.hey': 'Hei!', 'bossm.dizzy': 'Svimmel! Hopp nå!' },
 });
 
 const R = 9.5; // arena radius

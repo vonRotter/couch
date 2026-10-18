@@ -1,52 +1,58 @@
 // Unified input: up to 4 keyboard schemes + up to 4 gamepads.
-// Every device exposes the same tiny controller: a stick (x, y), button A and button B.
-// A few games also use button C; its keys also count as B, so games that ignore C keep working.
+// Every device exposes the same tiny controller: a stick (x, y) and buttons A, B and C.
+// A is jump / confirm, B is the "use" button, C is the third button. No key counts as two buttons.
 // y is +1 for "up".
 
 export const KEYBOARD_SCHEMES = [
   {
     id: 'kb0',
     label: 'WASD',
-    hint: 'WASD · Space · Shift',
     up: ['KeyW'], down: ['KeyS'], left: ['KeyA'], right: ['KeyD'],
-    a: ['Space'], b: ['ShiftLeft', 'KeyE'], c: ['KeyE'],
-    aLabel: 'Space', bLabel: 'Shift', cLabel: 'E',
+    a: ['Space'], b: ['KeyE'], c: ['KeyQ'],
   },
   {
     id: 'kb1',
     label: 'Arrows',
-    hint: 'Arrows · Enter · R-Shift',
     up: ['ArrowUp'], down: ['ArrowDown'], left: ['ArrowLeft'], right: ['ArrowRight'],
-    a: ['Enter'], b: ['ShiftRight', 'ControlRight'], c: ['ControlRight'],
-    aLabel: 'Enter', bLabel: 'R-Shift', cLabel: 'R-Ctrl',
+    a: ['Enter'], b: ['ShiftRight'], c: ['ControlRight'],
   },
   {
     id: 'kb2',
     label: 'IJKL',
-    hint: 'IJKL · U · O',
     up: ['KeyI'], down: ['KeyK'], left: ['KeyJ'], right: ['KeyL'],
-    a: ['KeyU'], b: ['KeyO', 'KeyP'], c: ['KeyP'],
-    aLabel: 'U', bLabel: 'O', cLabel: 'P',
+    a: ['KeyU'], b: ['KeyO'], c: ['KeyP'],
   },
   {
     id: 'kb3',
     label: 'Numpad',
-    hint: 'Num 8456 · Num 0 · Num .',
     up: ['Numpad8'], down: ['Numpad5', 'Numpad2'], left: ['Numpad4'], right: ['Numpad6'],
-    a: ['Numpad0'], b: ['NumpadDecimal', 'NumpadEnter'], c: ['NumpadEnter'],
-    aLabel: 'Num 0', bLabel: 'Num .', cLabel: 'Num Enter',
+    a: ['Numpad0'], b: ['NumpadDecimal'], c: ['NumpadEnter'],
   },
 ];
 
+/** What the A / B / C buttons are called on each kind of gamepad (standard mapping: 0, 1, 2). */
+export const PAD_LABELS = {
+  xbox: { a: 'A', b: 'B', c: 'X' },
+  ps: { a: '✕', b: '○', c: '□' },
+  nintendo: { a: 'B', b: 'A', c: 'Y' },
+};
+
+/** Guess the controller family from the Gamepad id string. */
+export function padKind(id = '') {
+  if (/054c|playstation|dualshock|dualsense|wireless controller/i.test(id)) return 'ps';
+  if (/057e|nintendo|switch|joy-con|pro controller/i.test(id)) return 'nintendo';
+  return 'xbox';
+}
+
 const ALL_CODES = new Set(
-  KEYBOARD_SCHEMES.flatMap((s) => [...s.up, ...s.down, ...s.left, ...s.right, ...s.a, ...s.b]),
+  KEYBOARD_SCHEMES.flatMap((s) => [...s.up, ...s.down, ...s.left, ...s.right, ...s.a, ...s.b, ...s.c]),
 );
 
 const DEADZONE = 0.28;
 
-function makeDevice(id, type, label, hint) {
+function makeDevice(id, type, label, scheme = null) {
   return {
-    id, type, label, hint,
+    id, type, label, scheme, kind: type === 'keyboard' ? 'keyboard' : 'xbox',
     x: 0, y: 0, a: false, b: false, c: false,
     aPressed: false, bPressed: false, cPressed: false,
     prevA: false, prevB: false, prevC: false,
@@ -63,10 +69,10 @@ export class Input {
     this.mutePressed = false;
     this.devices = new Map();
     for (const s of KEYBOARD_SCHEMES) {
-      this.devices.set(s.id, makeDevice(s.id, 'keyboard', s.label, s.hint));
+      this.devices.set(s.id, makeDevice(s.id, 'keyboard', s.label, s));
     }
     for (let i = 0; i < 4; i++) {
-      this.devices.set(`gp${i}`, makeDevice(`gp${i}`, 'gamepad', `Pad ${i + 1}`, 'Stick · A · B'));
+      this.devices.set(`gp${i}`, makeDevice(`gp${i}`, 'gamepad', `Pad ${i + 1}`));
     }
 
     window.addEventListener('keydown', (e) => {
@@ -118,6 +124,7 @@ export class Input {
         continue;
       }
       d.connected = true;
+      if (d.padId !== gp.id) { d.padId = gp.id; d.kind = padKind(gp.id); }
       const btn = (n) => !!gp.buttons[n]?.pressed;
       let x = gp.axes[0] || 0;
       let y = -(gp.axes[1] || 0);
@@ -133,7 +140,7 @@ export class Input {
       if (start && !d.prevStart) this.menuPressed = true;
       d.prevStart = start;
       const a = btn(0) || btn(3);
-      const b = btn(1) || btn(2) || btn(4) || btn(5) || btn(6) || btn(7);
+      const b = btn(1) || btn(5) || btn(7); // B, RB, RT
       d.aPressed = a && !d.prevA;
       d.bPressed = b && !d.prevB;
       d.a = a; d.b = b;
@@ -142,7 +149,7 @@ export class Input {
       d.cPressed = c && !d.prevC;
       d.c = c;
       d.prevC = c;
-      if (a || b) this.onActivity?.();
+      if (a || b || c) this.onActivity?.();
     }
   }
 
