@@ -207,6 +207,14 @@ Grumbles never get hurt: a long fall bounces them back up dizzy, and water float
 start in a bubble. 1 to 3 stars per level (goal, halfway to everyone, everyone home); levels unlock in
 order and progress is saved.
 
+**Splash Squad** (two teams, turn based, Worms style). Beans on a cookie-and-cake island over the
+sea take turns: 20 seconds to walk (stick), jump (A), pick a tool (C) and hold B to charge a throw.
+Tools: water balloon (blown by the wind, which changes every turn), bouncy ball (three bounces), candy
+plank (build a bridge or a wall) and big bubble (floats a bean gently away). Splashes bite craters
+out of the island and push beans; the wetter a bean, the further it slides. A bean that falls in
+the sea gives the other team 2 points and floats straight back home in a bubble, and walking never
+takes you into the water. Grumble bots even out the teams; solo is you against two bots.
+
 **Story** (co-op campaign, next to the hub, not instead of it). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
 the island games with a co-op goal (for example "together, paint a share of the floor" or "everyone reaches the flag") and
@@ -301,7 +309,7 @@ src/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
-    guides.js
+    guides.js  splash.js
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
     learnmix.js  learn/  Læringsmiks and its rounds (klokka, penger, rimord)

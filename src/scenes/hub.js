@@ -44,6 +44,7 @@ const PADS = [
   { key: 'castle', color: 0xd9a066, css: '#b8752f' },
   { key: 'keep', color: 0xb79fd6, css: '#8a63c9' },
   { key: 'guides', color: 0x9a6a44, css: '#8a5a32' },
+  { key: 'splash', color: 0x3a6fe0, css: '#2257c8' },
   { key: 'story', color: 0xffd23f, css: '#e0a100' },
 ].map((p, i, all) => {
   const a = (i / all.length) * Math.PI * 2;

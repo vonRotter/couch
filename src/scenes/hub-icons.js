@@ -270,6 +270,20 @@ const ICONS = {
     critter.add(mesh(cyl('gdBrim', 0.44, 0.44, 0.05), toon(0xffc93c), 0, 0.76, 0.04));
     g.add(critter);
   },
+  splash(g) {
+    g.add(mesh(cyl('spCookie', 0.85, 0.9, 0.35, 24), toon(0xb87a48), 0, -0.75, 0));
+    g.add(mesh(cyl('spFrost', 0.8, 0.86, 0.12, 24), toon(COLORS.candyPink), 0, -0.53, 0));
+    const balloon = mesh(sph(0.55), toon(0x4cc9f0), 0, 0.25, 0);
+    balloon.scale.set(1, 1.18, 1);
+    g.add(balloon);
+    g.add(mesh(sharedGeo('icon-spKnot', () => new THREE.ConeGeometry(0.12, 0.2, 8)), toon(0x4cc9f0), 0, -0.47, 0));
+    g.add(mesh(sph(0.13), toon(COLORS.white), -0.22, 0.5, 0.42));
+    [[-0.78, 0.05], [0.78, 0.15], [-0.6, -0.3], [0.62, -0.25], [0.05, 1.05]].forEach(([x, y], i) => {
+      const d = mesh(sph(0.11), toon(i % 2 ? 0xbfe9ff : 0x8fd8ff), x, y, 0.15);
+      d.scale.set(0.8, 1.3, 0.8);
+      g.add(d);
+    });
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

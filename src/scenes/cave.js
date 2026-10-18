@@ -431,9 +431,9 @@ function decorate(lv, seen) {
 // ---------- look and feel ----------
 
 const THEMES = [
-  { name: 'cave.d0', sky: ['#2c2350', '#5b3f78'], dirt: [0xc98a5a, 0xbb7c4e], rock: 0x6f6488, top: 0x7ad65a, wall: 0x4d3b66, crystal: [0x4cc9f0, 0x9ff0c8, 0xffe47a], mush: 0xff5d73, glow: 0x9ff0c8 },
-  { name: 'cave.d1', sky: ['#1f2f5c', '#4f6fa8'], dirt: [0x9cc3ec, 0x8bb3e0], rock: 0x5d6f9a, top: 0xffffff, wall: 0x34497c, crystal: [0xbfe9ff, 0xffffff, 0x8fd8ff], mush: 0x4cc9f0, glow: 0xbfe9ff },
-  { name: 'cave.d2', sky: ['#2a1746', '#6a3d8a'], dirt: [0xb592e0, 0xa580d2], rock: 0x6a4f8c, top: 0xff9fd0, wall: 0x3f2862, crystal: [0xff7eb6, 0xffd23f, 0xc9a8ff], mush: 0xffc93c, glow: 0xff9fd0 },
+  { name: 'cave.d0', sky: ['#2c2350', '#5b3f78'], dirt: [0xc98a5a, 0xbb7c4e], rock: 0x6f6488, top: 0x7ad65a, wall: 0x5e4a7c, crystal: [0x4cc9f0, 0x9ff0c8, 0xffe47a], mush: 0xff5d73, glow: 0x9ff0c8 },
+  { name: 'cave.d1', sky: ['#1f2f5c', '#4f6fa8'], dirt: [0x9cc3ec, 0x8bb3e0], rock: 0x5d6f9a, top: 0xffffff, wall: 0x435c92, crystal: [0xbfe9ff, 0xffffff, 0x8fd8ff], mush: 0x4cc9f0, glow: 0xbfe9ff },
+  { name: 'cave.d2', sky: ['#2a1746', '#6a3d8a'], dirt: [0xb592e0, 0xa580d2], rock: 0x6a4f8c, top: 0xff9fd0, wall: 0x553a7a, crystal: [0xff7eb6, 0xffd23f, 0xc9a8ff], mush: 0xffc93c, glow: 0xff9fd0 },
 ];
 
 const PHYS = {
@@ -956,7 +956,7 @@ export class CaveScene extends MiniGame {
         b.x += (this.door.x - b.x) * Math.min(1, dt * 8);
         e.ch.group.scale.setScalar(BEAN_SCALE * k);
         e.ch.group.visible = k > 0;
-      } else this.updateExplorer(e, dt, inp);
+      } else this.updateExplorer(e, dt, inp, lead);
 
       e.ch.faceSide(e.facing);
       if (e.climbing) e.ch.targetYaw = Math.PI;
@@ -979,7 +979,7 @@ export class CaveScene extends MiniGame {
     const b = e.body;
     e.t += dt;
     let tx, ty;
-    if (e.toExit || !lead) { tx = this.door.x; ty = this.door.y + 0.6; } else { tx = lead.lastSafe.x - 0.4 * Math.sign(lead.facing || 1); ty = lead.lastSafe.y + 1.2; }
+    if (e.toExit) { tx = this.door.x; ty = this.door.y + 0.6; } else if (lead) { tx = lead.lastSafe.x - 0.4 * Math.sign(lead.facing || 1); ty = lead.lastSafe.y + 1.2; } else { tx = e.lastSafe.x; ty = e.lastSafe.y + 1.2; }
     const dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy);
     const sp = Math.min(d / dt, 7 + d * 2);
     if (d > 0.01) { b.x += (dx / d) * sp * dt; b.y += (dy / d) * sp * dt; }
@@ -1000,7 +1000,7 @@ export class CaveScene extends MiniGame {
     }
   }
 
-  updateExplorer(e, dt, inp) {
+  updateExplorer(e, dt, inp, lead) {
     const b = e.body;
     const playing = this.state === 'play';
     e.dizzy -= dt;
@@ -1065,7 +1065,8 @@ export class CaveScene extends MiniGame {
     if (!playing) return;
     // Stragglers who drop off the shared screen float back to the group.
     const half = this.viewHalfSize(this.camDist);
-    if (Math.abs(b.x - this.camX) > half.w + 0.6 || Math.abs(b.y + 0.4 - this.camY) > half.h + 0.8) this.bubbleUp(e);
+    // (The camera always follows whoever is furthest along, so they never bubble.)
+    if (e !== lead && (Math.abs(b.x - this.camX) > half.w + 0.6 || Math.abs(b.y + 0.4 - this.camY) > half.h + 0.8)) this.bubbleUp(e);
     else if (Math.abs(b.x - this.door.x) < 0.6 && b.y > this.door.y - 0.3 && b.y < this.door.y + 1.2) this.enterExit(e);
   }
 
@@ -1541,15 +1542,17 @@ export class CaveScene extends MiniGame {
     const want = THREE.MathUtils.clamp(this.fitDistance(maxX - minX + 9, maxY - minY + 7), minDist, maxDist);
     this.camDist = snap ? want : THREE.MathUtils.lerp(this.camDist, want, Math.min(1, dt * 2));
     const half = this.viewHalfSize(this.camDist);
-    let cx = (minX + maxX) / 2, cy = (minY + maxY) / 2 - 0.5;
+    let cx = (minX + maxX) / 2, cy = (minY + maxY) / 2 - 1.2; // look a little below: we're heading down
     // If the group is too spread out, follow whoever is furthest along.
-    if (lead && (maxX - minX > half.w * 2 - 3 || maxY - minY > half.h * 2 - 3)) { cx = lead.body.x; cy = lead.body.y - 0.5; }
+    if (lead && (maxX - minX > half.w * 2 - 3 || maxY - minY > half.h * 2 - 3)) { cx = lead.body.x; cy = lead.body.y - 1.2; }
     const { W, H } = this.lv;
     cx = W > half.w * 2 ? THREE.MathUtils.clamp(cx, half.w, W - half.w) : W / 2;
     cy = H > half.h * 2 ? THREE.MathUtils.clamp(cy, half.h, H - half.h) : H / 2;
     const k = snap ? 1 : Math.min(1, dt * 3);
     this.camX = THREE.MathUtils.lerp(this.camX, cx, k);
-    this.camY = THREE.MathUtils.lerp(this.camY, cy, k);
+    this.camY = THREE.MathUtils.lerp(this.camY, cy, snap ? 1 : Math.min(1, dt * (cy < this.camY ? 6 : 3)));
+    // Never let whoever is in front drop out of the bottom of the screen.
+    if (lead) this.camY = Math.min(this.camY, Math.max(lead.body.y + half.h - 2.2, cy));
     this.camera.position.set(this.camX, this.camY + 0.6, this.camDist);
     this.camera.lookAt(this.camX, this.camY, 0);
     this.sun.position.set(this.camX - 12, this.camY + 24, 22);
