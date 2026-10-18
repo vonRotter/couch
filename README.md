@@ -22,16 +22,17 @@ The Vite `base` is relative, so the site works from any sub-path.
 
 ## Controls
 
-Every player has a stick and two buttons: **A** (jump/action) and **B** (secondary).
+Every player has a stick and buttons **A** (jump/action) and **B** (secondary). A few games
+(so far Rooftop Rush) also use **C**; the C keys also count as B everywhere else.
 Each game shows its own controls before it starts.
 
-| Device | Move | A | B |
-| --- | --- | --- | --- |
-| Gamepad 1–4 | Left stick / D-pad | A | B / X |
-| Keyboard 1 | W A S D | Space | Left Shift / E |
-| Keyboard 2 | Arrow keys | Enter | Right Shift / Right Ctrl |
-| Keyboard 3 | I J K L | U | O |
-| Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . / Numpad Enter |
+| Device | Move | A | B | C |
+| --- | --- | --- | --- | --- |
+| Gamepad 1–4 | Left stick / D-pad | A / Y | B, RB, RT (and C buttons) | X / LB / LT |
+| Keyboard 1 | W A S D | Space | Left Shift (and E) | E |
+| Keyboard 2 | Arrow keys | Enter | Right Shift (and Right Ctrl) | Right Ctrl |
+| Keyboard 3 | I J K L | U | O (and P) | P |
+| Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . (and Numpad Enter) | Numpad Enter |
 
 - Press A on any device to join (up to 6 players).
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
@@ -59,12 +60,20 @@ the island is a playground:
   with six pins (knock them all down within 3 seconds for a strike);
 - a trampoline, a bouncy mushroom, a stump staircase and two swings (walk onto a seat to
   ride, A to let go and fly);
-- a kickable beach ball and stars to hunt.
+- a kickable beach ball and 16 stars to hunt. Each island star can be collected once; collected
+  stars are saved and never come back (more stars come from finishing games).
 
 The settings corner south of the plaza has the paint pots, the color swap pads, the hat
 stand, the learning-games button and the language flag. Stars (from the island and from
 finishing games) unlock hats: party hat, flower, bunny ears, propeller cap, top hat and
-crown. Walk into the hat stand to try on the next unlocked hat.
+crown. Stand by the hat stand and press B to try on the next unlocked hat (bumping into it also
+changes hat once).
+
+**Votes before a game.** Several games start with a quick vote: everyone moves to an option
+with the stick and taps jump. Most votes wins; a tie, or a winning "Random", picks at random.
+Space Race and Kart Party vote on laps (1, 2, 3 or 5), Mega Ball, Ice Hockey and Snowball Fort
+on match length (1:30, 2:30 or 4:00), Party Mix on rounds (3, 5 or 7) and Bean Golf on holes
+(3 or 6). Retry from the pause menu keeps the choice.
 
 **Bubble Buddies** (co-op arena, Bubble Bobble style). Blow bubbles (B) to trap the
 grumbles, then pop the bubbles for fruit. Jump on empty bubbles to bounce higher. Popping
@@ -96,7 +105,7 @@ fall off the island and you lose one. You get 3 jumps and holding A while fallin
 you down slowly. Players who are out become bubble ghosts that can still give small pushes.
 Playing alone adds a Bonk Bot.
 
-**Kart Party** (split-screen racing, 3 laps). Each player gets their own chase camera
+**Kart Party** (split-screen racing, laps by vote). Each player gets their own chase camera
 (up to a 3x2 grid). The kart drives forward on its own: steer with the stick, stick down to
 brake, A to hop, and hold A while steering to drift for a mini boost. Drive through rainbow
 boxes for items (B): Zoom boost, Banana, or a Bubble that floats a rival for a moment.
@@ -107,20 +116,22 @@ you back on course.
 and Team Sea. Players are split automatically; before kickoff anyone can switch side with the
 stick, and everyone taps jump when ready. B kicks the ball when you are close (otherwise it
 is a dash), A jumps so you can head it. If the teams are uneven, the smaller side gets a helper
-keeper. 2.5 minutes; a draw goes to "next goal wins".
+keeper, a friendly one that reacts late and leaves the corners open. The ball is a big striped
+play ball. Match length by vote; a draw goes to "next goal wins".
 
 **Ice Hockey** (team hockey on a rounded rink). Same team picker as Mega Ball. Skate into
 the puck and it sticks to your stick. Hold B to wind up and let go to shoot; shots aimed
 roughly at the goal get a little help. A dashes, and dashing into the puck carrier steals
 the puck (a fresh carrier is safe for half a second). Without the puck, B pokes it away from
 someone close by. The puck bounces off the boards, and you can skate behind the goals. An
-uneven or solo team gets a Goalie Bot that saves about half the hard shots. 2.5 minutes with
-golden-goal overtime.
+uneven or solo team gets a Goalie Bot that saves about half the hard shots. Match length by vote,
+with golden-goal overtime.
 
-**Snow Slalom** (race, shared camera). Everyone skis down the same slope at once. Steer
+**Snow Slalom** (race, shared camera). Everyone skis down the same steep hill at once; the camera
+looks down the fall line into a valley with mountains. Steer
 between the red and blue gates: each gate you pass is a point, and finishing earns a bonus
 (1st place most). Missing a gate only costs that point. Stick up to tuck (faster), stick down
-to brake, A to jump (ramps launch you), B to push off for a short boost. Snowmen bump you
+to brake, A to jump (snow ramps with orange bars launch you), B to push off for a short boost. Snowmen bump you
 aside. Anyone who falls far behind floats back to the pack in a bubble.
 
 **Portal Pals** (co-op puzzle, 4 rooms). Top-down rooms. A and B shoot your two portals onto
@@ -128,29 +139,49 @@ white walls; walk into one to come out of the other. Anyone can use anyone's por
 Buttons open doors while someone (or a box) stands on them. Push boxes, even through
 portals. Everyone has to reach the gold exit. Hold A+B to reset a room.
 
-**Space Race** (split-screen 3D, 3 laps through 14 rings). Every rocket has its pilot bean in a
+**Space Race** (split-screen 3D, laps by vote, 14 rings per lap). Every rocket has its pilot bean in a
 glass dome. The flight model borrows the feel of Tachyon-style arcade flight: turn rates ease in
 and out with a little inertia, the velocity chases the nose, and holding **B** slides, which keeps
 your momentum while the nose swings freely (handy for lining up the next ring). Hold **A** to boost
-from a tank that refills on its own; flying through a ring, or a mint boost ring, tops it up.
+from a tank that refills on its own; flying cleanly through a ring tops it up.
 Pitch is limited and the ship never rolls upside down, so nobody gets lost. A small arrow
 (only on your own screen) points to your next ring. Asteroids bounce you off gently, and if you
 drift too far from the course you float back to the last ring in a bubble. Players further back
 get slightly more top speed.
 
 **Rooftop Rush** (side-scrolling speedrun race, shared camera). Race over the rooftops to the
-flag. **A** jumps, and also kicks off walls (wall jump). **B** on the ground slides (so does stick
-down while running), which keeps your speed and gets you under billboards. **B** in the air near a
-balloon hook grabs it: hold B to swing, let go (or press A) to fly off. Otherwise **B** in the air is
-a dash. Signs name each move the first time it is needed: slide tunnel, wall-jump chimney, hook
+flag. **A** jumps, and also kicks off walls (wall jump). Stick **down** slides, which keeps your speed
+and gets you under billboards. **B** dashes (once per jump in the air). **C** near a balloon hook
+grabs it: hold C to swing, let go (or press A) to fly off. Signs name each move the first time it is needed: slide tunnel, wall-jump chimney, hook
 gap, dash gap, then a spring to a high road or a slide through the low road, and a final hook and
 chimney. Speed pads push you to 18 m/s. The camera follows the leader; anyone who falls or drops
 off the left edge floats forward in a bubble to just behind the leader (it takes at least 1.5 s),
 so nobody gets stuck. After the first finisher, the others have 12 seconds, and the race ends
 after 150 seconds regardless.
 
-**Party Mix** (5 short rounds in a row). One pad plays five random rounds out of seven, with
-a running scoreboard. Before each round a card explains it and everyone taps jump when ready.
+**Cook-Off** (co-op kitchen, 3 minutes, Overcooked style but forgiving). A picks up, puts down
+and serves; hold B at a chopping board to chop. Recipes: salad, tomato soup and mushroom soup.
+Pots never burn, and an expired order just walks away. The team earns coins and 1 to 3 stars;
+the kitchen grows with the number of players.
+
+**Bean Golf** (mini golf, 3 or 6 holes by vote). Everyone putts on the same hole at once: the stick
+aims, hold B for fine aim, hold A to charge and let go to putt. Six candy holes: warm-up, bumper
+bend, windmill, big jump, sliding blocks and a loop. Falling off costs a stroke, 8 strokes puts the
+ball in for you, and once the first ball drops the others get 25 seconds.
+
+**Snowball Fort** (two teams). Snowballs are thrown at the other team's targets (bells, flags,
+snowman heads), never at players. Tap B to throw (with gentle auto-aim), hold B to scoop snow, and
+A builds a snow wall that blocks the other team's throws. Helper bots even out the teams.
+
+**Garden Hide & Seek** (one seeker per round). While the seeker looks away from the screen for
+9 seconds, everyone else turns into a garden prop (gnome, pumpkin, bush, flower pot, watering can)
+next to identical decoys. Then the seeker has 45 seconds to check props with A; a decoy just
+says boing. Hidden players wobble when they move, and now and then one giggles. Everyone seeks
+once (up to 4 rounds); with 5–6 players the final score evens out who got to seek. Solo play is
+you seeking grumble bots.
+
+**Party Mix** (3, 5 or 7 short rounds by vote, from a pool of 19). A running scoreboard follows
+each round. Before each round a card explains it and everyone taps jump when ready.
 Each round gives placement points (4, 3, 2, then 1 for everyone else, ties share the higher
 number). Nobody is ever knocked out of a round.
 
@@ -168,17 +199,34 @@ number). Nobody is ever knocked out of a round.
   the paint pool. Team pull is averaged, so uneven teams are fair. Solo play adds a Tug Bot.
 - **Bean Tower**: take turns dropping a sliding block onto the tower. Overhangs are trimmed off,
   a perfect drop snaps into place and widens the block a little, and a miss only costs the turn.
+- **Hot Potato Picnic**: pass the ticking cream pie by bumping into someone; when it goes off,
+  everyone else gets a point.
+- **Lily Pad Hop**: hop across a pond on logs and lily pads (some sink for a moment); a splash
+  just sends you back to the bank.
+- **Bumper Boats**: bump each other out of a shrinking pool; falling out costs a point, bumping
+  someone out earns one.
+- **Keepy-Uppy**: co-op, keep the balloons in the air by jumping into them.
+- **Treasure Dig**: hold A to dig; sparkles get warmer near buried treasure (chest 3, coin 1, boot 0).
+- **Rhythm Drums**: hit A and B notes on the beat in your own lane.
+- **Balloon Pump**: pump with A, bank with B; every balloon pops at a secret size.
+- **Mirror Maze**: race to the star; colored floors flip your controls while you stand on them.
+- **Spot the Difference**: two dioramas side by side; mark the differences with your cursor.
+- **Paint by Numbers**: calm co-op, load a numbered paint and paint the matching cells.
+- **Follow the Leader**: stay on the leader's glowing trail; everyone leads in turn.
+- **Quiz Run**: run to the right answer zone; alternating kids' and grown-up questions,
+  in English or Norwegian.
 
 ## Learning games (LÆRING)
 
-Two educational games in Norwegian (bokmål), marked with a green **LÆRING** badge on the
+Three educational games in Norwegian (bokmål), marked with a green **LÆRING** badge on the
 island. Jump on the green book button in the settings corner (or press `G`) to show or hide them;
 the choice is saved. Before each round every player picks their own level (Lett, Middels,
 Vanskelig), so younger and older kids can play together. Mistakes never cost anything.
 
-**Bokstavballonger** (spelling). Letter balloons float up. Each player has their own word
-with blanks and a clue at the bottom of the screen; touch the balloon with the next missing
-letter. Lett: 3-letter words, one blank. Middels: 4-5 letters, two blanks. Vanskelig: longer
+**Bokstavballonger** (spelling). Letter balloons drift slowly across the sky in four lanes,
+coming in from the sides, so every letter can be read before anyone reaches it. Each player has
+their own word with blanks and a clue at the bottom of the screen; jump up to the balloon with the
+next missing letter. The lowest lane is above head height, so nothing pops by accident. Lett: 3-letter words, one blank. Middels: 4-5 letters, two blanks. Vanskelig: longer
 words, only the first letter shown. The letter you need always floats by. Finished words are
 read aloud if the device has a Norwegian voice.
 
@@ -187,6 +235,11 @@ head; run to the coin with the answer. Lett: adding within 10. Middels: adding a
 subtracting within 20. Vanskelig: times tables and adding/subtracting within 100. Every
 player's answer is always somewhere on the field. Word lists live in
 `src/scenes/edu-words.js`.
+
+**Læringsmiks** (three rounds in a row). *Klokka*: read the clock floating over you and walk to the
+right time ("kl. 3", "halv fire", "kvart over to", "ti på halv fem"). *Pengebutikken*: pay the exact
+price with 1, 5, 10 and 20 kroner coins (a coin that would overshoot just hops away). *Rimord*:
+walk to the word that rhymes with yours. Each player picks their own level first.
 
 ## Code layout
 
@@ -206,19 +259,23 @@ src/
     ui.js            HTML overlay: banners, chips, labels, results, wipe
     i18n.js          English / Norwegian text, t('key')
     scene.js         base scene (camera fitting, game-time timers, disposal)
-    teams.js         two-team picker and helper-bot balancing (Mega Ball, Ice Hockey, Tug of War colors)
+    teams.js         two-team picker and helper-bot balancing (Mega Ball, Ice Hockey, Snowball Fort)
+    vote.js          pre-game vote picker (laps, match length, rounds, holes)
     minigame.js      shared intro -> countdown -> results -> back flow
   scenes/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
-    space.js  runner.js
+    space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
-    party.js         Party Mix flow: how-to cards, countdown, scoreboard
-    party/           one file per round (count, statue, cushions, fruit, dance, tug, tower)
+    learnmix.js  learn/  Læringsmiks and its rounds (klokka, penger, rimord)
+    party.js         Party Mix flow: vote, how-to cards, countdown, scoreboard
+    party/           one file per round (19 rounds)
 ```
 
 To add a Party Mix round: subclass `Round` from `scenes/party/common.js` (set `done` when it
 ends, return a higher-is-better `score(p)`), and add it to `ROUNDS` in `scenes/party.js`.
+
+Modules can bring their own text with `addStrings({ en, no })` from `core/i18n.js`.
 
 To add a game: subclass `MiniGame`, register it in `GAMES` in `main.js`, and add a pad in
 `PADS` in `scenes/hub.js` and an icon in `scenes/hub-icons.js`.
