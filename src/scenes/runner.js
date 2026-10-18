@@ -528,6 +528,11 @@ export class RunnerScene extends MiniGame {
     this.confettiOrigin = new THREE.Vector3(this.camX, this.camY, 0);
   }
 
+  /** Story campaign: how many reached the flag. */
+  campaignStats() {
+    return { finished: this.finishOrder.length, players: this.ents.length };
+  }
+
   end() {
     if (this.state === 'results') return;
     const ranked = [...this.ents].sort((a, b) => {

@@ -98,7 +98,10 @@ export class PortalScene extends MiniGame {
       };
     });
 
-    this.loadRoom(0);
+    // opts.room / opts.rooms play only part of the rooms (used by the story campaign).
+    this.firstRoom = Math.min(ROOMS.length - 1, opts.room || 0);
+    this.lastRoom = opts.rooms ? Math.min(ROOMS.length, this.firstRoom + opts.rooms) - 1 : ROOMS.length - 1;
+    this.loadRoom(this.firstRoom);
     game.audio.playMusic('hub');
     this.intro(t('game.portal'), t('portal.intro'));
   }
@@ -628,7 +631,7 @@ export class PortalScene extends MiniGame {
   roomCleared() {
     this.roomDone = true;
     this.game.audio.play('fanfare');
-    if (this.roomIndex + 1 < ROOMS.length) {
+    if (this.roomIndex < this.lastRoom) {
       this.game.ui.banner(t('portal.cleared'), t(`room.${this.roomIndex + 1}.name`), 1800);
       this.later(2.2, () => {
         this.game.ui.wipe(() => {
@@ -639,6 +642,11 @@ export class PortalScene extends MiniGame {
     } else {
       this.later(1.2, () => this.end());
     }
+  }
+
+  /** Story campaign: rooms cleared. */
+  campaignStats() {
+    return { rooms: this.roomIndex - this.firstRoom + (this.roomDone ? 1 : 0), roomCount: this.lastRoom - this.firstRoom + 1 };
   }
 
   end() {

@@ -534,6 +534,11 @@ export class SpaceScene extends MiniGame {
     });
   }
 
+  /** Story campaign: rings flown through by the whole team, and who finished. */
+  campaignStats() {
+    return { rings: this.ships.reduce((s, x) => s + x.gatesPassed, 0), finished: this.finishOrder.length, players: this.ships.length, laps: this.laps };
+  }
+
   end() {
     if (this.state === 'results') return;
     this.updatePlaces();

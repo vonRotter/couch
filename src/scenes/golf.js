@@ -996,6 +996,12 @@ export class GolfScene extends MiniGame {
     this.game.audio.play('whoosh');
   }
 
+  /** Story campaign: team strokes against the course par. */
+  campaignStats() {
+    const par = this.course.reduce((s, h) => s + h.par, 0);
+    return { strokes: this.ents.reduce((s, e) => s + this.total(e), 0), par, players: this.ents.length };
+  }
+
   end() {
     if (this.state === 'results') return;
     const totals = this.ents.map((e) => this.total(e));

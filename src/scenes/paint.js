@@ -373,6 +373,11 @@ export class PaintScene extends MiniGame {
     }
   }
 
+  /** Story campaign: share of the floor the whole team painted (0..1). */
+  campaignStats() {
+    return { painted: this.ents.reduce((s, e) => s + e.count, 0) / this.paintable };
+  }
+
   end() {
     const ranked = [...this.ents].sort((a, b) => b.count - a.count);
     const pct = (e) => Math.round((e.count / this.paintable) * 100);

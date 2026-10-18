@@ -199,6 +199,11 @@ export class TowerRound extends Round {
     return `<div class="pill"><b>${t('tower.height', { n: this.stack.length - 1 })}</b></div>${who}${clock(TIME - this.t)}`;
   }
 
+  /** Story campaign: tower height, as 0..1 of a great tower (12 blocks). */
+  campaignStats() {
+    return { team: Math.min(1, (this.stack.length - 1) / 12) };
+  }
+
   score(p) {
     return this.ents.find((x) => x.p === p).points;
   }

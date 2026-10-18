@@ -300,6 +300,11 @@ export class KeepyRound extends Round {
     return `<div class="pill"><b>${t('keepy.streak', { n: this.streak })}</b></div><div class="pill">${t('keepy.best', { n: this.best })}</div>${clock(TIME - this.t)}`;
   }
 
+  /** Story campaign: best team streak, as 0..1 of a great streak (25 bops). */
+  campaignStats() {
+    return { team: Math.min(1, this.best / 25) };
+  }
+
   score(p) {
     return this.ents.find((x) => x.p === p).touches;
   }

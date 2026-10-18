@@ -477,6 +477,11 @@ export class SlalomScene extends MiniGame {
     return e.gates + bonus;
   }
 
+  /** Story campaign: gates passed by the whole team. */
+  campaignStats() {
+    return { gates: this.ents.reduce((s, e) => s + e.gates, 0), gateCount: this.gates.length, finished: this.finishOrder.length };
+  }
+
   end() {
     if (this.state === 'results') return;
     const ranked = [...this.ents].sort((a, b) => this.score(b) - this.score(a) || (a.place || 99) - (b.place || 99));

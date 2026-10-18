@@ -30,6 +30,7 @@ import { HideSeekScene } from './scenes/hideseek.js';
 import { SnowballScene } from './scenes/snowball.js';
 import { LearnMixScene } from './scenes/learnmix.js';
 import { GolfScene } from './scenes/golf.js';
+import { StoryScene, STORY_GAMES } from './scenes/story.js';
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -49,6 +50,8 @@ export const GAMES = {
   hideseek: { Scene: HideSeekScene },
   snowball: { Scene: SnowballScene },
   golf: { Scene: GolfScene },
+  story: { Scene: StoryScene },
+  ...STORY_GAMES, // the four Grumble King boss games (only reachable from the story map)
   spelling: { Scene: SpellingScene, edu: true },
   math: { Scene: MathScene, edu: true },
   learnmix: { Scene: LearnMixScene, edu: true },
@@ -72,6 +75,8 @@ class Game {
 
     this.current = null;
     this.switching = false;
+    // Story campaign: the stage being played ({ id, opts, stats }), or null in free play.
+    this.campaign = null;
     this.last = performance.now();
 
     window.addEventListener('resize', () => this.resize());
@@ -101,9 +106,35 @@ class Game {
   }
 
   goHub(fromGame = null) {
+    if (this.campaign) { this.backToStory(); return; }
     const make = () => new HubScene(this, { fromGame });
     if (!this.current) this.setScene(make);
     else this.transition(make);
+  }
+
+  // ---------- story campaign ----------
+
+  /** Start a story stage: { id, key, opts }. Results and the pause menu lead back to the map. */
+  startStage(stage) {
+    const def = GAMES[stage.key];
+    if (!def || this.switching || this.roster.players.length === 0) return;
+    this.campaign = { id: stage.id, opts: { ...stage.opts, campaign: true }, stats: null };
+    this.transition(() => new def.Scene(this, { key: stage.key, ...this.campaign.opts }));
+  }
+
+  /** Called by MiniGame.finish() during a campaign stage. */
+  reportStage(scene) {
+    if (!this.campaign || this.campaign.stats) return;
+    this.campaign.stats = { ...(scene.campaignStats?.() || {}), n: scene.players.length, time: scene.playTime };
+  }
+
+  /** Back to the story map with the stage result (no stats = ended early from the pause menu). */
+  backToStory() {
+    if (this.switching) return;
+    const c = this.campaign;
+    this.campaign = null;
+    const result = { id: c.id, stats: c.stats, quit: !c.stats };
+    this.transition(() => new StoryScene(this, { key: 'story', result }));
   }
 
   toggleLanguage() {
@@ -152,7 +183,12 @@ class Game {
         const choice = P.index;
         this.closePause();
         if (choice === 1) {
-          const opts = this.current.retryOptions();
+          let opts = this.current.retryOptions();
+          // A story stage retries with its own settings (no votes) and stays in the campaign.
+          if (this.campaign) {
+            opts = { ...opts, ...this.campaign.opts };
+            this.campaign.stats = null;
+          }
           const def = GAMES[opts.key];
           this.transition(() => new def.Scene(this, opts));
         } else if (choice === 2) {

@@ -258,6 +258,28 @@ const ICONS = {
     }
     g.add(cube);
   },
+  story(g) {
+    // A big Party Star wearing the Grumble King's crown.
+    const shape = new THREE.Shape();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 === 0 ? 0.85 : 0.4;
+      const a = (i / 10) * Math.PI * 2 + Math.PI / 2;
+      if (i === 0) shape.moveTo(Math.cos(a) * r, Math.sin(a) * r); else shape.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    shape.closePath();
+    const star = mesh(sharedGeo('icon-storyStar', () => new THREE.ExtrudeGeometry(shape, { depth: 0.25, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.07, bevelSegments: 2 }).center()), toon(COLORS.gold));
+    g.add(star);
+    for (const s of [-1, 1]) g.add(mesh(sph(0.09), toon(COLORS.ink), s * 0.2, 0.05, 0.22));
+    const crown = new THREE.Group();
+    crown.add(mesh(cyl('storyCrown', 0.36, 0.32, 0.22, 16), toon(0x8a63f0)));
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      crown.add(mesh(sharedGeo('icon-storySpike', () => new THREE.ConeGeometry(0.09, 0.22, 8)), toon(0x8a63f0), Math.cos(a) * 0.3, 0.2, Math.sin(a) * 0.3));
+    }
+    crown.position.y = 0.95;
+    crown.rotation.z = 0.15;
+    g.add(crown);
+  },
 };
 
 export function makeGameIcon(key) {

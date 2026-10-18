@@ -138,7 +138,16 @@ export class SnowballScene extends MiniGame {
         this.intro(t('game.snowball'), t('snowball.intro'));
       },
     }); };
-    voteLength(this, opts, () => t('game.snowball'), teams);
+    // Story campaign (opts.coop): every player on one team against helper bots, no team picker.
+    const coop = () => {
+      for (const e of this.ents) this.setTeam(e, 0);
+      helpersNeeded(this.ents).forEach((need, team) => {
+        for (let i = 0; i < need; i++) this.ents.push(this.makeEnt(null, team, i));
+      });
+      this.placeEnts();
+      this.intro(t('game.snowball'), t('snowball.intro'));
+    };
+    voteLength(this, opts, () => t('game.snowball'), opts.coop ? coop : teams);
     this.placeEnts();
   }
 
@@ -1001,6 +1010,11 @@ export class SnowballScene extends MiniGame {
       else e.reticle.position.set(aim.x, 0.05, aim.z);
       e.reticle.scale.setScalar(aim.target ? 1.25 + Math.sin(this.time * 8) * 0.08 : 0.8);
     }
+  }
+
+  /** Story campaign: the players' team score against the helper bots. */
+  campaignStats() {
+    return { team: this.score[0], bots: this.score[1] };
   }
 
   end() {

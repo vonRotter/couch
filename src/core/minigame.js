@@ -4,9 +4,12 @@ import { t } from './i18n.js';
 
 /** Shared flow for every game: intro -> countdown -> play -> results -> back to the island. */
 export class MiniGame extends BaseScene {
-  constructor(game, { key }) {
+  constructor(game, opts = {}) {
     super(game);
-    this.key = key;
+    this.key = opts.key;
+    // Story campaign stage (scenes/story.js): the game skips its votes/pickers via opts and
+    // reports campaignStats() when it finishes.
+    this.campaign = !!opts.campaign;
     this.state = 'intro';
     this.resultsDelay = 0;
   }
@@ -18,6 +21,7 @@ export class MiniGame extends BaseScene {
     await this.game.ui.countdown(this.game.audio);
     if (this.game.current !== this) return;
     this.state = 'play';
+    this.playStart = this.time;
     this.onStart?.();
   }
 
@@ -25,6 +29,8 @@ export class MiniGame extends BaseScene {
     if (this.state === 'results') return;
     this.state = 'results';
     this.resultsDelay = 1.6;
+    this.playTime = this.time - (this.playStart ?? 0);
+    if (this.campaign) this.game.reportStage?.(this);
     this.game.roster.addStars(stars);
     this.game.audio.playMusic('results');
     this.game.audio.play('fanfare');

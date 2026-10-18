@@ -557,6 +557,11 @@ export class BubbleScene extends MiniGame {
     this.fruits = this.fruits.filter((f) => f.life > 0);
   }
 
+  /** Story campaign: did the team clear every wave, and the team score. */
+  campaignStats() {
+    return { cleared: this.wave >= WAVES && this.waveDone, waves: this.wave, score: this.teamScore };
+  }
+
   end() {
     const ranked = [...this.ents].sort((a, b) => b.score - a.score);
     this.finish({

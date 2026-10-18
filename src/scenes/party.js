@@ -144,6 +144,7 @@ export class PartyScene extends MiniGame {
     this.state = 'scores';
     this.stateT = 0;
     r.hideLabels();
+    if (this.campaign) (this.teamResults ||= []).push(r.campaignStats?.().team ?? null);
     const vals = this.players.map((p) => r.score(p));
     const best = Math.max(...vals);
     this.lastPoints = new Map();
@@ -186,6 +187,12 @@ export class PartyScene extends MiniGame {
       this.state = 'wipe';
       this.game.ui.wipe(() => this.nextRound());
     }
+  }
+
+  /** Story campaign: average team result of the co-op rounds (each 0..1). */
+  campaignStats() {
+    const list = (this.teamResults || []).filter((v) => v !== null);
+    return { team: list.length ? list.reduce((s, v) => s + v, 0) / list.length : 0, rounds: list.length };
   }
 
   end() {

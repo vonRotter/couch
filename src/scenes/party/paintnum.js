@@ -344,6 +344,11 @@ export class PaintNumRound extends Round {
     return `<div class="pill"><b>${t('paintnum.left', { n, total: this.toPaint })}</b></div>${clock(TIME - this.t)}`;
   }
 
+  /** Story campaign: share of the picture the team painted (0..1). */
+  campaignStats() {
+    return { team: this.cells.filter((c) => c.num && c.painted).length / Math.max(1, this.toPaint) };
+  }
+
   score(p) {
     const e = this.ents.find((x) => x.p === p);
     return e.painted + e.bonus;

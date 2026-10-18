@@ -118,7 +118,16 @@ export class HockeyScene extends MiniGame {
         this.intro(t('game.hockey'), t('hockey.intro'));
       },
     }); };
-    voteLength(this, opts, () => t('game.hockey'), teams);
+    // Story campaign (opts.coop): every player on one team against helper bots, no team picker.
+    const coop = () => {
+      for (const e of this.ents) this.setTeam(e, 0);
+      helpersNeeded(this.ents).forEach((need, team) => {
+        for (let i = 0; i < need; i++) this.ents.push(this.makeSkater(null, team, i));
+      });
+      this.faceoff();
+      this.intro(t('game.hockey'), t('hockey.intro'));
+    };
+    voteLength(this, opts, () => t('game.hockey'), opts.coop ? coop : teams);
     this.faceoff();
   }
 
@@ -622,6 +631,11 @@ export class HockeyScene extends MiniGame {
       this.faceoff();
       this.game.audio.play('go');
     });
+  }
+
+  /** Story campaign: the players' team score against the helper bots. */
+  campaignStats() {
+    return { team: this.score[0], bots: this.score[1] };
   }
 
   end() {

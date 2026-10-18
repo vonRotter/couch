@@ -640,7 +640,7 @@ export class PlatformerScene extends MiniGame {
       roster.progress.skyhop = this.levelIndex + 1;
       roster.save();
     }
-    this.hasNext = finished > 0 && this.levelIndex + 1 < SKYHOP_LEVELS.length;
+    this.hasNext = !this.campaign && finished > 0 && this.levelIndex + 1 < SKYHOP_LEVELS.length;
     this.finish({
       title: finished === this.ents.length ? t('sky.allMade') : t('sky.youMade'),
       subtitle: t('sky.sub', { level: this.levelName(), a: this.teamGems, b: this.totalGems }),
@@ -652,6 +652,11 @@ export class PlatformerScene extends MiniGame {
       stars: 3,
       action: this.hasNext ? t('sky.next') : t('footer.continue'),
     });
+  }
+
+  /** Story campaign: how the team did (see scenes/story/stages.js). */
+  campaignStats() {
+    return { finished: this.ents.filter((e) => e.state === 'done').length, players: this.ents.length, gems: this.teamGems, totalGems: this.totalGems };
   }
 
   updateResults(dt) {

@@ -1036,6 +1036,11 @@ export class CookScene extends MiniGame {
     return `<div class="pill"><b>${clock}</b></div>${cards}<div class="pill">${coin}<b>${this.coins}</b><span style="letter-spacing:-2px">${stars}</span></div>`;
   }
 
+  /** Story campaign: orders the team served. */
+  campaignStats() {
+    return { served: this.servedCount, coins: this.coins, stars: this.stars() };
+  }
+
   end() {
     for (const e of this.ents) { e.hl.visible = false; e.ring.visible = false; e.hint.style.display = 'none'; }
     for (const st of this.stations) if (st.label) st.label.style.display = 'none';
