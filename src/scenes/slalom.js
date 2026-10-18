@@ -10,7 +10,7 @@ import { esc } from '../core/ui.js';
 // Snow slalom: everyone skis down the same slope (toward -z) through flag gates.
 const LENGTH = 470;
 const HALF_W = 12;
-const SLOPE = 0.22; // height drop per unit of z
+const SLOPE = 0.36; // height drop per unit of z (about 20 degrees, so it reads as a real hill)
 const GATE_EVERY = 22;
 const GATE_HALF = 2.8;
 const MAX_SPEED = 14;
@@ -20,6 +20,16 @@ const PR = 0.45;
 
 // The slope flattens out just after the finish line.
 const groundY = (z) => SLOPE * Math.max(z, -LENGTH - 6);
+
+/** Triangular prism: half width w, lip height h at -z, half length d; flat bottom on y = 0. */
+function wedgeGeometry(w, h, d) {
+  const A = [-w, 0, d], B = [w, 0, d], C = [-w, h, -d], D = [w, h, -d], E = [-w, 0, -d], F = [w, 0, -d];
+  const tris = [A, B, D, A, D, C, E, C, D, E, D, F, A, C, E, B, F, D, A, E, F, A, F, B];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(tris.flat(), 3));
+  g.computeVertexNormals();
+  return g;
+}
 
 function makeFir(rand, scale = 1) {
   const g = new THREE.Group();
@@ -43,7 +53,7 @@ export class SlalomScene extends MiniGame {
   constructor(game, opts) {
     super(game, opts);
     this.camera.fov = 50;
-    this.camera.far = 260;
+    this.camera.far = 800;
     this.camera.updateProjectionMatrix();
     this.scene.background = skyTexture('#7cc7ff', '#eef8ff');
     this.scene.fog = new THREE.Fog(0xe6f4ff, 60, 170);
@@ -93,7 +103,7 @@ export class SlalomScene extends MiniGame {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
       const edge = Math.max(0, Math.abs(x) - HALF_W - 2);
-      pos.setY(i, groundY(z) + edge * edge * 0.04 + Math.sin(x * 0.4 + z * 0.1) * 0.15 * Math.min(1, edge));
+      pos.setY(i, groundY(z) + edge * 0.3 + edge * edge * 0.006 + Math.sin(x * 0.4 + z * 0.1) * 0.15 * Math.min(1, edge));
     }
     geo.computeVertexNormals();
     const snow = new THREE.Mesh(geo, toon(0xf4f9ff));
@@ -157,21 +167,37 @@ export class SlalomScene extends MiniGame {
         if (rand() < 0.35) continue;
         const x = sx * (HALF_W + 3 + rand() * 14);
         const tree = makeFir(rand, 1.2 + rand() * 0.6);
-        tree.position.set(x, groundY(z) + (Math.abs(x) - HALF_W - 2) ** 2 * 0.04, z);
+        const edge = Math.max(0, Math.abs(x) - HALF_W - 2);
+        tree.position.set(x, groundY(z) + edge * 0.3 + edge * edge * 0.006, z);
         s.add(tree);
       }
     }
-    for (let i = 0; i < 9; i++) {
+    // Far scenery (valley and mountains) rides along with the camera, below the skiers, so you
+    // always look down into the valley: that is what makes the slope read as downhill.
+    const noFog = (c) => { const m = toon(c).clone(); m.fog = false; m.userData = {}; return m; };
+    this.far = new THREE.Group();
+    const valley = new THREE.Mesh(new THREE.CircleGeometry(400, 32), noFog(0xe8f3ff));
+    valley.rotation.x = -Math.PI / 2;
+    this.far.add(valley);
+    const rockMat = noFog(0xa7b4d6), capMat = noFog(COLORS.white), pineMat = noFog(0x5f9e7a);
+    for (let i = 0; i < 14; i++) {
       const m = new THREE.Group();
-      const rock = new THREE.Mesh(sharedGeo('mountain', () => new THREE.ConeGeometry(1, 1, 7)), toon(0xa7b4d6));
-      const cap = new THREE.Mesh(sharedGeo('mountainCap', () => new THREE.ConeGeometry(0.42, 0.42, 7)), toon(COLORS.white));
-      cap.position.y = 0.29;
+      const rock = new THREE.Mesh(sharedGeo('mountain', () => new THREE.ConeGeometry(1, 1, 7)), rockMat);
+      // The cap sits clearly outside the rock so distant peaks don't flicker.
+      const cap = new THREE.Mesh(sharedGeo('mountainCap2', () => new THREE.ConeGeometry(0.5, 0.44, 7)), capMat);
+      cap.position.y = 0.3;
       m.add(rock, cap);
-      const sc = 40 + rand() * 30;
-      m.scale.set(sc, sc * 0.8, sc);
-      m.position.set(-120 + i * 30, groundY(-LENGTH) - 10 + sc * 0.3, -LENGTH - 110 - rand() * 40);
-      s.add(m);
+      const sc = 50 + rand() * 40;
+      m.scale.set(sc, sc * 0.9, sc);
+      m.position.set(-260 + i * 40 + rand() * 10, sc * 0.45, -120 - rand() * 80);
+      this.far.add(m);
     }
+    for (let i = 0; i < 40; i++) {
+      const fir = new THREE.Mesh(sharedGeo('farFir', () => new THREE.ConeGeometry(3, 8, 6)), pineMat);
+      fir.position.set(-150 + rand() * 300, 4, -40 - rand() * 60);
+      this.far.add(fir);
+    }
+    s.add(this.far);
     for (let i = 0; i < 10; i++) {
       const c = makeCloud(rand, 4 + rand() * 3);
       c.position.set(-80 + rand() * 160, groundY(-i * 50) + 30 + rand() * 20, -i * 55 - 40);
@@ -180,19 +206,26 @@ export class SlalomScene extends MiniGame {
   }
 
   addRamp(x, z) {
-    const m = new THREE.Mesh(sharedGeo('ramp', () => {
-      const g = new THREE.BoxGeometry(3.2, 0.7, 3);
-      g.translate(0, 0.35, 0);
-      return g;
-    }), toon(0xbfe6ff));
-    m.position.set(x, groundY(z), z);
-    m.rotation.x = -0.35;
+    // A snow wedge lying on the slope: flush with the snow uphill, a lip downhill.
+    const m = new THREE.Mesh(sharedGeo('rampWedge', () => wedgeGeometry(1.6, 0.9, 1.7)), toon(0xdff1ff));
+    m.position.set(x, groundY(z) + 0.02, z);
+    m.rotation.x = -Math.atan(SLOPE);
     m.castShadow = m.receiveShadow = true;
     this.scene.add(m);
     for (const sx of [-1, 1]) {
-      const stripe = new THREE.Mesh(sharedGeo('rampStripe', () => new THREE.BoxGeometry(0.2, 0.72, 3.02)), toon(0xff8c42));
-      stripe.position.set(sx * 1.5, 0.36, 0);
+      const stripe = new THREE.Mesh(sharedGeo('rampEdge', () => wedgeGeometry(0.09, 0.92, 1.72)), toon(0xff8c42));
+      stripe.position.x = sx * 1.55;
       m.add(stripe);
+    }
+    const lip = new THREE.Mesh(sharedGeo('rampLip', () => new THREE.BoxGeometry(3.2, 0.1, 0.12)), toon(0xff8c42));
+    lip.position.set(0, 0.9, -1.7);
+    m.add(lip);
+    // Orange bars across the incline so you can see it is a ramp, even from behind.
+    for (const bz of [0.8, -0.4]) {
+      const bar = new THREE.Mesh(sharedGeo('rampBar', () => new THREE.BoxGeometry(2.6, 0.04, 0.28)), toon(0xff8c42));
+      bar.position.set(0, (0.9 * (1.7 - bz)) / 3.4 + 0.03, bz);
+      bar.rotation.x = Math.atan(0.9 / 3.4);
+      m.add(bar);
     }
     return { x, z, w: 1.6, d: 1.5 };
   }
@@ -428,9 +461,11 @@ export class SlalomScene extends MiniGame {
     this.camZ = THREE.MathUtils.lerp(this.camZ, target, Math.min(1, dt * 3));
     const cz = this.camZ;
     const spread = THREE.MathUtils.clamp(back - front, 0, 22);
-    const dist = 12 + spread * 0.35;
-    this.camera.position.set(0, groundY(cz) + 7 + spread * 0.25, cz + dist);
-    this.camera.lookAt(0, groundY(cz - 10), cz - 10);
+    const dist = 11 + spread * 0.35;
+    // Sit up the hill behind the skiers and look down the fall line, so the slope drops away.
+    this.camera.position.set(0, groundY(cz) + 6.5 + spread * 0.25, cz + dist);
+    this.camera.lookAt(0, groundY(cz) - 2.5, cz - 30);
+    this.far?.position.set(0, groundY(cz) - 80, cz - 150);
     const sun = this.lights.sun;
     sun.position.set(-15, groundY(cz) + 30, cz + 15);
     sun.target.position.set(0, groundY(cz), cz - 8);
