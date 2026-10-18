@@ -55,7 +55,7 @@ const FRIC_A = 2.6, FRIC_K = 0.35; // rolling friction: constant + speed-based
 const MIN_PUTT = 0.9, MAX_PUTT = 14; // putt speed range
 const CHARGE_T = 1.1; // seconds from empty to full power (the meter then swings back down)
 const WALL_E = 0.62, BALL_E = 0.6, BUMP_E = 1.1;
-const CUP_R = 0.36, CUP_PULL = 0.9, SINK_SPEED = 6.5;
+const CUP_R = 0.36, CUP_PULL = 0.9, SINK_SPEED = 5.5;
 const LOOP_G = 9; // gravity used inside the loop (gentler than the real one)
 const FALL_Y = -3;
 const MAX_STROKES = 8;
@@ -97,16 +97,17 @@ const HOLES = [
     tee: [0, 5.4], cup: [1.2, -6], path: [[0, 1.4], [0, -3.4]],
     decor: [['tree', -7, 4], ['lolly', 7, 3], ['cupcake', -7, -5], ['gum', 7, -6], ['cane', -7.2, -0.5], ['tree', 7.5, -1.5]],
   },
-  { // 4: ramp and jump over a gap
+  { // 4: ramp and jump over a gap (the landing's front wall is low enough to fly over)
     par: 3, felt: 0x7ad65a, cake: 0xff9fd0, stripe: [0x9b5de5, COLORS.icing], tilt: 48,
-    tiles: [{ x0: -10, x1: -2, z0: -2.2, z1: 2.2 }, { x0: -2, x1: 1, z0: -1.6, z1: 1.6, h0: 0, h1: 1.0 }, { x0: 3.5, x1: 10, z0: -3, z1: 3, h0: 0.4, h1: 0.4 }],
+    tiles: [{ x0: -8.5, x1: -2, z0: -2.2, z1: 2.2 }, { x0: -2, x1: 1, z0: -1.6, z1: 1.6, h0: 0, h1: 0.7 }, { x0: 2.8, x1: 10, z0: -3, z1: 3, h0: 0.2, h1: 0.2 }],
     walls: [
-      [-2, -1.6, -2, -2.2, -10, -2.2, -10, 2.2, -2, 2.2, -2, 1.6],
-      { p: [-2, -1.6, 1, -1.6], h0: 0, h1: 1 }, { p: [-2, 1.6, 1, 1.6], h0: 0, h1: 1 },
-      { p: [3.5, -3, 10, -3, 10, 3, 3.5, 3], h: 0.4 },
+      [-2, -1.6, -2, -2.2, -8.5, -2.2, -8.5, 2.2, -2, 2.2, -2, 1.6],
+      { p: [-2, -1.6, 1, -1.6], h0: 0, h1: 0.7 }, { p: [-2, 1.6, 1, 1.6], h0: 0, h1: 0.7 },
+      { p: [2.8, -3, 10, -3, 10, 3, 2.8, 3, 2.8, -3], h: 0.2 },
     ],
-    tee: [-8, 0], cup: [7.5, 0], path: [[1, 0]],
-    decor: [['lolly', -6, -4.3], ['cupcake', -6, 4.3], ['gum', 2.2, -3.6], ['tree', 12.2, -1], ['cane', 7, -5], ['gum', 2.4, 3.8]],
+    bumpers: [[6.5, 0, 0.45]],
+    tee: [-6.3, 0], cup: [8.3, 0], path: [[1, 0]],
+    decor: [['lolly', -5, -4.3], ['cupcake', -5, 4.3], ['gum', 1.9, -3.6], ['tree', 12.2, -1], ['cane', 7, -5], ['gum', 1.9, 3.8]],
   },
   { // 5: sliding marshmallow blocks
     par: 3, felt: 0x5fd69a, cake: 0x8fd8ff, stripe: [0xffc93c, COLORS.icing],
@@ -169,7 +170,10 @@ export class GolfScene extends MiniGame {
     this.lights = addLights(this.scene, { size: 17, dir: new THREE.Vector3(-0.4, 1, 0.5) });
     this.outlineMat = new THREE.MeshBasicMaterial({ color: COLORS.ink, side: THREE.BackSide });
 
-    this.holes = HOLES.map((def, i) => this.buildHole(def, i));
+    // opts.holes picks a shorter round: 3 plays the first three holes.
+    this.holeCount = clamp(Math.round(opts.holes || HOLES.length), 1, HOLES.length);
+    this.course = HOLES.slice(0, this.holeCount);
+    this.holes = this.course.map((def, i) => this.buildHole(def, i));
     this.buildSky();
 
     this.ents = this.players.map((p, i) => this.makeEnt(p, i));
@@ -184,6 +188,11 @@ export class GolfScene extends MiniGame {
 
   onStart() {
     this.startHole();
+  }
+
+  /** Retry from the pause menu keeps the same round length. */
+  retryOptions() {
+    return { key: this.key, holes: this.holeCount };
   }
 
   // ---------- building ----------
@@ -242,7 +251,7 @@ export class GolfScene extends MiniGame {
       for (let k = 0; k + 3 < pts.length; k += 2) {
         const ax = pts[k], az = pts[k + 1], bx = pts[k + 2], bz = pts[k + 3];
         const ha = hBase ?? wd.h0 ?? 0, hb = hBase ?? wd.h1 ?? 0;
-        H.segs.push([ax, az, bx, bz]);
+        H.segs.push([ax, az, bx, bz, ha, hb]);
         const L = Math.hypot(bx - ax, bz - az);
         const n = Math.max(1, Math.round(L / 1.1));
         for (let s = 0; s < n; s++) {
@@ -446,7 +455,7 @@ export class GolfScene extends MiniGame {
     const rand = seeded(9);
     for (let i = 0; i < 26; i++) {
       const c = makeCloud(rand, 2 + rand() * 2.5);
-      c.position.set(-30 + rand() * (HOLE_SPACING * HOLES.length + 30), -16 - rand() * 10, -40 + rand() * 34);
+      c.position.set(-30 + rand() * (HOLE_SPACING * this.holeCount + 30), -16 - rand() * 10, -40 + rand() * 34);
       this.scene.add(c);
     }
   }
@@ -524,8 +533,18 @@ export class GolfScene extends MiniGame {
 
   /** True if the straight line between two points crosses no wall. */
   clearLine(ax, az, bx, bz) {
-    for (const [cx, cz, dx, dz] of this.hole.segs) {
-      if (segCross(ax, az, bx, bz, cx, cz, dx, dz)) return false;
+    // Check the center line and both edges of the ball's path.
+    const L = Math.hypot(bx - ax, bz - az) || 1;
+    const ox = (-(bz - az) / L) * BALL_R, oz = ((bx - ax) / L) * BALL_R;
+    for (const k of [0, 1, -1]) {
+      for (const [cx, cz, dx, dz] of this.hole.segs) {
+        if (segCross(ax + ox * k, az + oz * k, bx + ox * k, bz + oz * k, cx, cz, dx, dz)) return false;
+      }
+    }
+    // Bumpers in the way count too.
+    for (const [x, z, r] of this.hole.bumpers) {
+      const k = clamp(((x - ax) * (bx - ax) + (z - az) * (bz - az)) / (L * L), 0, 1);
+      if (Math.hypot(ax + (bx - ax) * k - x, az + (bz - az) * k - z) < r + BALL_R) return false;
     }
     return true;
   }
@@ -663,9 +682,10 @@ export class GolfScene extends MiniGame {
   collide(b, time, fx) {
     const H = this.hole;
     const rr = BALL_R + WALL_HALF;
-    for (const [ax, az, bx, bz] of H.segs) {
+    for (const [ax, az, bx, bz, ha, hb] of H.segs) {
       const ex = bx - ax, ez = bz - az;
       const k = clamp(((b.x - ax) * ex + (b.z - az) * ez) / (ex * ex + ez * ez), 0, 1);
+      if (b.y > ha + (hb - ha) * k + WALL_H - 0.05) continue; // flying over the wall
       const cx = ax + ex * k, cz = az + ez * k;
       const dx = b.x - cx, dz = b.z - cz, d = Math.hypot(dx, dz);
       if (d >= rr || d < 1e-6) continue;
@@ -800,7 +820,7 @@ export class GolfScene extends MiniGame {
   startHole() {
     this.phase = 'play';
     const H = this.hole;
-    this.game.ui.banner(`${t('golf.hole', { n: H.index + 1, total: HOLES.length })}: ${t(`golf.name.${H.index}`)}`, t('golf.par', { n: H.par }), 1700);
+    this.game.ui.banner(`${t('golf.hole', { n: H.index + 1, total: this.holeCount })}: ${t(`golf.name.${H.index}`)}`, t('golf.par', { n: H.par }), 1700);
   }
 
   frame() {
@@ -912,23 +932,24 @@ export class GolfScene extends MiniGame {
   }
 
   renderCard() {
-    const last = this.holeIndex === HOLES.length - 1;
-    const cell = 'padding:4px 8px;border-radius:10px;min-width:1.8em;text-align:center';
-    const head = HOLES.map((_, i) => `<th style="${cell}">${i + 1}</th>`).join('');
-    const pars = HOLES.map((h) => `<td style="${cell}">${h.par}</td>`).join('');
-    const parTotal = HOLES.reduce((s, h) => s + h.par, 0);
+    const last = this.holeIndex === this.holeCount - 1;
+    const big = this.ents.length > 3;
+    const cell = `padding:${big ? 2 : 4}px 8px;border-radius:10px;min-width:1.8em;text-align:center`;
+    const head = this.course.map((_, i) => `<th style="${cell}">${i + 1}</th>`).join('');
+    const pars = this.course.map((h) => `<td style="${cell}">${h.par}</td>`).join('');
+    const parTotal = this.course.reduce((s, h) => s + h.par, 0);
     const rows = this.ents.map((e) => {
-      const cells = HOLES.map((h, i) => {
+      const cells = this.course.map((h, i) => {
         const s = e.scores[i];
         if (s === undefined) return `<td style="${cell};opacity:.3">·</td>`;
         const bg = s === 1 ? '#ffd23f' : s < h.par ? '#9ff0c8' : s === h.par ? '#f1ecff' : '#ffe0e8';
         return `<td style="${cell};background:${bg}">${s}</td>`;
       }).join('');
-      return `<tr><td style="padding:4px 10px;text-align:left;white-space:nowrap"><span style="display:inline-block;width:.9em;height:.9em;border-radius:50%;background:${e.p.css};margin-right:6px;vertical-align:-1px"></span>${esc(e.p.name)}</td>${cells}<td style="${cell};color:#9b5de5">${this.total(e)}</td></tr>`;
+      return `<tr><td style="padding:2px 10px;text-align:left;white-space:nowrap"><span style="display:inline-block;width:.9em;height:.9em;border-radius:50%;background:${e.p.css};margin-right:6px;vertical-align:-1px"></span>${esc(e.p.name)}</td>${cells}<td style="${cell};color:#9b5de5">${this.total(e)}</td></tr>`;
     }).join('');
-    const html = `<div class="results-title">${last ? t('golf.final') : t('golf.card')}</div>
-      <div class="results-sub">${t('golf.cardSub', { n: this.holeIndex + 1, total: HOLES.length })}</div>
-      <table style="margin:14px auto 10px;border-collapse:separate;border-spacing:4px 4px;font-weight:700;font-size:clamp(14px,1.7vw,26px)">
+    const html = `<div class="results-title" style="font-size:clamp(28px,4vw,60px)">${last ? t('golf.final') : t('golf.card')}</div>
+      <div class="results-sub">${t('golf.cardSub', { n: this.holeIndex + 1, total: this.holeCount })}</div>
+      <table style="margin:${big ? 8 : 14}px auto ${big ? 6 : 10}px;border-collapse:separate;border-spacing:4px 3px;font-weight:700;font-size:${big ? 'clamp(13px,1.4vw,22px)' : 'clamp(14px,1.7vw,26px)'}">
         <tr><th></th>${head}<th style="${cell}">${t('golf.total')}</th></tr>
         <tr style="opacity:.6"><td style="padding:4px 10px;text-align:left">${t('golf.parRow')}</td>${pars}<td style="${cell}">${parTotal}</td></tr>
         ${rows}
@@ -949,7 +970,7 @@ export class GolfScene extends MiniGame {
   closeCard() {
     this.cardEl?.remove();
     this.cardEl = null;
-    if (this.holeIndex >= HOLES.length - 1) { this.end(); return; }
+    if (this.holeIndex >= this.holeCount - 1) { this.end(); return; }
     this.setupHole(this.holeIndex + 1);
     this.phase = 'pan';
     this.panT = 0;
@@ -960,7 +981,7 @@ export class GolfScene extends MiniGame {
     if (this.state === 'results') return;
     const totals = this.ents.map((e) => this.total(e));
     const best = Math.min(...totals);
-    const coursePar = HOLES.reduce((s, h) => s + h.par, 0);
+    const coursePar = this.course.reduce((s, h) => s + h.par, 0);
     const ranked = [...this.ents].sort((a, b) => this.total(a) - this.total(b) || b.aces - a.aces);
     const winners = ranked.filter((e) => this.total(e) === best);
     let title;
@@ -1240,7 +1261,8 @@ export class GolfScene extends MiniGame {
     let left = len;
     for (let bounce = 0; bounce < 3 && left > 0; bounce++) {
       let bestT = left, nrm = null;
-      for (const [ax, az, bx, bz] of this.hole.segs) {
+      for (const [ax, az, bx, bz, ha, hb] of this.hole.segs) {
+        if (Math.min(ha, hb) > b.y + 0.1) continue; // raised walls the ball will fly over
         const hit = raySeg(x, z, dx, dz, ax, az, bx, bz);
         if (hit && hit.t > 1e-3 && hit.t < bestT) { bestT = hit.t; nrm = hit.n; }
       }
@@ -1281,7 +1303,7 @@ export class GolfScene extends MiniGame {
   updateHud() {
     if (this.state === 'results') return;
     const H = this.hole;
-    let html = `<div class="pill"><b>${t('golf.hole', { n: H.index + 1, total: HOLES.length })}</b> ${esc(t(`golf.name.${H.index}`))} · ${t('golf.par', { n: H.par })}</div>`;
+    let html = `<div class="pill"><b>${t('golf.hole', { n: H.index + 1, total: this.holeCount })}</b> ${esc(t(`golf.name.${H.index}`))} · ${t('golf.par', { n: H.par })}</div>`;
     if (this.hurry > 0 && this.phase === 'play') html += `<div class="pill" style="color:#ff5d73"><b>${t('golf.hurry', { n: Math.ceil(this.hurry) })}</b></div>`;
     this.game.ui.setTop(html);
     this.game.ui.bar(this.players, (p) => {

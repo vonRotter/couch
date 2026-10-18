@@ -312,6 +312,11 @@ export class ArchersScene extends MiniGame {
     }
   }
 
+  /** True if a box of half-size (rx, ry) around (x, y) overlaps a solid wall or floor. */
+  blocked(x, y, rx, ry, oneWayToo = false) {
+    return this.solids.some((s) => (oneWayToo || !s.oneWay) && x + rx > s.x && x - rx < s.x + s.w && y + ry > s.y && y - ry < s.y + s.h);
+  }
+
   spawnTarget() {
     const color = PLAYER_COLORS[Math.floor(Math.random() * 6)].hex;
     const mesh = this.makeBalloon(color);
@@ -319,7 +324,14 @@ export class ArchersScene extends MiniGame {
     const g = new THREE.Group();
     g.add(mesh);
     this.scene.add(g);
-    const t = { mesh: g, x: (Math.random() - 0.5) * 20, y: 2 + Math.random() * 10, phase: Math.random() * 6, alive: true };
+    // Pick a spot where the balloon can bob around without touching any wall.
+    let x = 0, y = 6;
+    for (let tries = 0; tries < 60; tries++) {
+      x = (Math.random() - 0.5) * 20;
+      y = 2 + Math.random() * 10;
+      if (!this.blocked(x, y, 1.7, 1.2, true)) break;
+    }
+    const t = { mesh: g, x, y, phase: Math.random() * 6, alive: true };
     t.cx = t.x; t.cy = t.y;
     g.position.set(t.x, t.y, 0);
     this.targets.push(t);
@@ -388,8 +400,10 @@ export class ArchersScene extends MiniGame {
         e.t += dt;
         b.vx += (inp.x * 3 - b.vx) * Math.min(1, dt * 3);
         b.vy += (1.5 - b.vy) * Math.min(1, dt * 3);
-        b.x += b.vx * dt;
-        b.y = Math.min(ROWS - 3, b.y + b.vy * dt);
+        // Bubbles float but do not pass through walls.
+        const nx = b.x + b.vx * dt, ny = Math.min(ROWS - 3, b.y + b.vy * dt);
+        if (!this.blocked(nx, b.y + 0.55, 0.8, 0.8, true)) b.x = nx; else b.vx = 0;
+        if (!this.blocked(b.x, ny + 0.55, 0.8, 0.8, true)) b.y = ny; else b.vy = 0;
         this.wrap(b);
         e.bubble.position.set(b.x, b.y + 0.55, 0);
         e.ch.spin += dt * 3;
@@ -416,7 +430,14 @@ export class ArchersScene extends MiniGame {
       e.ch.group.position.set(b.x, b.y, 0);
       e.ch.group.visible = e.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
       e.ch.update(dt, { moving: Math.min(1, Math.abs(b.vx) / PHYS.speed), grounded: b.grounded || e.state === 'bubble', vy: b.vy });
-      e.balloon.rotation.z = Math.sin(this.time * 2 + b.x) * 0.1 - b.vx * 0.02;
+      // Under a low ceiling the balloon ducks down instead of poking through it.
+      let duck = 0;
+      for (const sd of this.solids) {
+        if (sd.oneWay || b.x + 0.4 < sd.x || b.x - 0.4 > sd.x + sd.w) continue;
+        if (sd.y > b.y + 1.0 && sd.y < b.y + 2.7) duck = Math.min(duck, sd.y - (b.y + 2.65));
+      }
+      e.balloon.position.y += (Math.max(-1.3, duck) - e.balloon.position.y) * Math.min(1, dt * 12);
+      e.balloon.rotation.z = Math.sin(this.time * 2 + b.x) * 0.1 - b.vx * 0.02 + e.balloon.position.y * 0.5;
       e.quiver.position.set(b.x, b.y + 2.85, 0.2);
       e.quiver.visible = e.state === 'play';
       e.quiver.children.forEach((pip, k) => { pip.visible = k < e.arrows; });

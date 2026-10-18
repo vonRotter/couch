@@ -522,9 +522,13 @@ export class HubScene extends BaseScene {
       this.scene.add(m);
       return { x, y, z, mesh: m, active: false, timer: 0 };
     });
-    const order = [...this.stars.keys()].sort(() => Math.random() - 0.5);
-    order.slice(0, 7).forEach((i) => { this.stars[i].active = true; this.stars[i].mesh.visible = true; });
-    this.stars.forEach((s) => { if (!s.active) s.timer = 4 + Math.random() * 10; });
+    // Each island star can be collected once; collected ones are saved and never come back.
+    const taken = new Set(this.game.roster.progress.islandStars || []);
+    this.stars.forEach((s, i) => {
+      s.index = i;
+      s.active = !taken.has(i);
+      s.mesh.visible = s.active;
+    });
   }
 
   // ---------- players ----------
@@ -577,6 +581,9 @@ export class HubScene extends BaseScene {
       if (e.carry) {
         e.bAction = 'throw';
         e.charge = 0;
+      } else if (Math.hypot(e.x - HAT_STAND.x, e.z - HAT_STAND.z) < 1.7) {
+        e.bAction = 'hat';
+        this.cycleHat(e);
       } else if (this.onSwapPad(e)) {
         e.bAction = 'swap';
         e.swapReady = !e.swapReady;
@@ -1043,9 +1050,14 @@ export class HubScene extends BaseScene {
     }
   }
 
+  /** Bumping into the stand tries the next hat once; standing next to it, B keeps cycling. */
   touchHatStand(e) {
-    if (e.hatCd > 0) return;
-    e.hatCd = 0.9;
+    const fresh = this.time - (e.standTouch ?? -9) > 0.4;
+    e.standTouch = this.time;
+    if (fresh) this.cycleHat(e);
+  }
+
+  cycleHat(e) {
     const h = this.game.roster.cycleHat(e.p);
     e.ch.setHat(h);
     e.ch.squash(1.25);
@@ -1161,15 +1173,7 @@ export class HubScene extends BaseScene {
   updateStars(dt) {
     const roster = this.game.roster;
     for (const s of this.stars) {
-      if (!s.active) {
-        s.timer -= dt;
-        if (s.timer <= 0) {
-          s.active = true;
-          s.mesh.visible = true;
-          s.mesh.scale.setScalar(0.01);
-        }
-        continue;
-      }
+      if (!s.active) continue;
       s.mesh.rotation.y += dt * 2.5;
       s.mesh.position.y = s.y + Math.sin(this.time * 3 + s.x) * 0.15;
       s.mesh.scale.lerp(new THREE.Vector3(1, 1, 1), Math.min(1, dt * 6));
@@ -1177,8 +1181,8 @@ export class HubScene extends BaseScene {
         if (Math.hypot(e.x - s.x, e.z - s.z) < 0.95 && Math.abs(e.y + 0.6 - s.y) < 1.1) {
           s.active = false;
           s.mesh.visible = false;
-          s.timer = 12 + Math.random() * 10;
           const before = roster.unlockedHats().length;
+          roster.progress.islandStars = [...(roster.progress.islandStars || []), s.index];
           roster.addStars(1);
           this.game.audio.play('star');
           this.confetti.burst(s.mesh.position, 0, { count: 26, speed: 6, colors: PLAYER_COLORS.map((c) => c.hex).concat(COLORS.gold) });

@@ -5,8 +5,8 @@ import { makeTree, makeFlower, seeded } from '../../core/world.js';
 import { t } from '../../core/i18n.js';
 
 // Statue Stop: walk toward the owl while it looks away, freeze when it turns.
-const START_Z = 9;
-const FINISH_Z = -8.5;
+const START_Z = 13;
+const FINISH_Z = -15; // long enough that it takes several green phases
 const SPEED = 4.2;
 const TIME = 45;
 
@@ -97,7 +97,7 @@ export class StatueRound extends Round {
     for (let i = 0; i < 22; i++) {
       const side = i % 2 ? 1 : -1;
       const tr = makeTree(rand, 1.1 + rand() * 0.6);
-      tr.position.set(side * (this.halfW + 3 + rand() * 6), 0, FINISH_Z - 6 + rand() * 20);
+      tr.position.set(side * (this.halfW + 3 + rand() * 6), 0, FINISH_Z - 6 + rand() * (START_Z - FINISH_Z + 6));
       g.add(tr);
     }
     for (let i = 0; i < 40; i++) {
@@ -109,9 +109,10 @@ export class StatueRound extends Round {
   }
 
   frame() {
-    const d = this.party.fitDistance(this.halfW * 2 + 4, 16);
-    this.camera.position.set(0, d * 0.75, START_Z + d * 0.62);
-    this.camera.lookAt(0, 0, -0.5);
+    const mid = (START_Z + FINISH_Z) / 2 + 0.5;
+    const d = this.party.fitDistance(this.halfW * 2 + 4, START_Z - FINISH_Z + 11);
+    this.camera.position.set(0, d * 0.92, mid + d * 0.4);
+    this.camera.lookAt(0, 0, mid);
   }
 
   /** Owl cycle: away (safe) -> turning (warning) -> watching -> turning back. */
@@ -119,7 +120,7 @@ export class StatueRound extends Round {
     this.phaseT -= dt;
     if (this.phaseT <= 0) {
       if (this.phase === 'away') {
-        this.phase = 'turning'; this.phaseT = 0.6;
+        this.phase = 'turning'; this.phaseT = 0.5;
         this.game.audio.play('dizzy');
       } else if (this.phase === 'turning') {
         this.phase = 'watch'; this.phaseT = 1.4 + Math.random() * 1.6;
@@ -127,7 +128,7 @@ export class StatueRound extends Round {
       } else if (this.phase === 'watch') {
         this.phase = 'back'; this.phaseT = 0.4;
       } else {
-        this.phase = 'away'; this.phaseT = 1.6 + Math.random() * 3;
+        this.phase = 'away'; this.phaseT = 1.0 + Math.random() * 1.8;
       }
     }
     const facing = this.phase === 'watch' || this.phase === 'turning';
@@ -156,7 +157,7 @@ export class StatueRound extends Round {
         // Caught: hop back a few steps, never out.
         e.caught = true;
         e.stun = 0.8;
-        e.z = Math.min(START_Z, e.z + 4);
+        e.z = Math.min(START_Z, e.z + 5);
         e.ch.squash(0.6);
         this.game.audio.play('boing');
         this.party.puffs.burst(new THREE.Vector3(e.x, 0.6, e.z), 0xffffff, { count: 10, size: 0.35, life: 0.5 });

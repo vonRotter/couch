@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Round, clock } from './common.js';
 import { makeGrumble } from '../../core/critters.js';
-import { COLORS, PLAYER_COLORS, toon } from '../../core/palette.js';
+import { COLORS, PLAYER_COLORS, toon, basic } from '../../core/palette.js';
 import { t } from '../../core/i18n.js';
 
 // Copy Dance: watch the teacher's moves, then repeat them with the stick.
@@ -9,12 +9,23 @@ const DIRS = ['up', 'right', 'down', 'left'];
 const ARROW = { up: '↑', right: '→', down: '↓', left: '←' };
 const LEVELS = [3, 4, 5, 6];
 
+const DIR_COLOR = { up: 0xffc93c, right: 0x4cc9f0, down: 0x3ddc97, left: 0xff7eb6 };
+const DIR_ROT = { up: 0, right: -Math.PI / 2, down: Math.PI, left: Math.PI / 2 };
+
 function pose(target, dir, k = 1) {
   // Lean the dancer: left/right tilt, up stretches, down squats.
   if (dir === 'left') target.rotation.z = 0.45 * k;
   if (dir === 'right') target.rotation.z = -0.45 * k;
   if (dir === 'up') target.position.y = 0.5 * k;
   if (dir === 'down') target.scale.y = 1 - 0.35 * k;
+}
+
+/** The teacher's moves are big and obvious: a hop sideways, a jump, or a deep squat. */
+function teacherPose(target, dir) {
+  if (dir === 'left') { target.rotation.z = 0.5; target.position.x = -1.1; }
+  if (dir === 'right') { target.rotation.z = -0.5; target.position.x = 1.1; }
+  if (dir === 'up') target.position.y = 1.4;
+  if (dir === 'down') target.scale.y = 0.5;
 }
 
 export class DanceRound extends Round {
@@ -64,6 +75,27 @@ export class DanceRound extends Round {
     this.teacher.add(this.teacherBody);
     this.teacher.position.set(0, 2.2, -2.6);
     g.add(this.teacher);
+    // A big colored arrow above the teacher shows each move while it is danced.
+    this.signs = {};
+    for (const dir of Object.keys(DIR_COLOR)) {
+      const sign = new THREE.Group();
+      const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.1, 0.2), basic(DIR_COLOR[dir]));
+      shaft.position.y = -0.35;
+      const head = new THREE.Mesh(new THREE.ConeGeometry(0.75, 0.9, 3), basic(DIR_COLOR[dir]));
+      head.position.y = 0.6;
+      const outline = new THREE.Mesh(new THREE.CircleGeometry(1.35, 32), basic(COLORS.white));
+      outline.position.z = -0.12;
+      sign.add(outline, shaft, head);
+      sign.rotation.z = DIR_ROT[dir];
+      sign.visible = false;
+      // One on each side of the teacher, so it never hides behind the top bar or the teacher.
+      const twin = sign.clone();
+      sign.position.set(-3.6, 3.4, -2.4);
+      twin.position.set(3.6, 3.4, -2.4);
+      g.add(sign, twin);
+      this.signs[dir] = [sign, twin];
+    }
+    this.signT = 0;
     // Spotlights (just cones of soft light).
     for (const x of [-6, 6]) {
       const cone = new THREE.Mesh(new THREE.ConeGeometry(1.8, 6, 20, 1, true), toon(0xfff3b0, { transparent: true, opacity: 0.18 }));
@@ -110,6 +142,14 @@ export class DanceRound extends Round {
       o.scale.y += (1 - o.scale.y) * Math.min(1, dt * 8);
     };
     relax(this.teacherBody);
+    this.teacherBody.position.x *= Math.max(0, 1 - dt * 6);
+    this.signT -= dt;
+    for (const [dir, pair] of Object.entries(this.signs)) {
+      for (const sign of pair) {
+        sign.visible = this.signT > 0 && this.signDir === dir;
+        sign.scale.setScalar(sign.visible ? 1 + Math.max(0, this.signT - 0.25) * 0.8 : 1);
+      }
+    }
     this.tiles.forEach((tile, i) => { tile.position.y = 0.42 + (Math.sin(this.time * 4 + i) > 0.7 ? 0.04 : 0); });
     for (const e of this.ents) {
       e.ch.pivot.rotation.z *= Math.max(0, 1 - dt * 8);
@@ -117,13 +157,15 @@ export class DanceRound extends Round {
     }
     if (!playing) return;
     this.phaseT -= dt;
-    const speed = Math.max(0.42, 0.75 - this.level * 0.08);
+    const speed = Math.max(0.55, 0.9 - this.level * 0.1);
 
     if (this.phase === 'show' && this.phaseT <= 0) {
       this.showI++;
       if (this.showI < this.seq.length) {
         const dir = this.seq[this.showI];
-        pose(this.teacherBody, dir);
+        teacherPose(this.teacherBody, dir);
+        this.signDir = dir;
+        this.signT = speed * 0.85;
         this.tone(dir);
         this.phaseT = speed;
       } else {
