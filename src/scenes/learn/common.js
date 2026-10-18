@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { Round } from '../party/common.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeTree, makeFlower, makeCloud, seeded } from '../../core/world.js';
-import { LEVELS } from '../../core/edu.js';
+import { LEVELS, shuffle } from '../../core/edu.js';
 import { esc } from '../../core/ui.js';
 
 // Shared pieces for the Læringsmiks rounds: a fenced top-down field where every
@@ -110,7 +110,9 @@ export function makeBoard(lines, color, { w = 3.4, d = 1.7 } = {}) {
 
 /**
  * Base for a Læringsmiks round. Subclasses implement:
- *  newTask(e)        give player e a new task (e.task)
+ *  newTask(e)        give player e a new task (e.task). Prefer a task whose answer is
+ *                    already on the field (see freeTiles): spawning the answer fresh would
+ *                    make the newest tile the right one nearly every time.
  *  need(e)           one tile value that must exist on the field for e (always reachable)
  *  isRight(e, tile)  true if touching this tile answers e's task
  *  filler()          a value for a random practice tile
@@ -154,8 +156,9 @@ export class FieldRound extends Round {
 
   /** Called by the mix once levels are known, before the how-to card. */
   prepare() {
-    for (const e of this.ents) this.newTask(e);
+    // Fill the field first, so the first tasks can be picked from tiles already lying there.
     for (let i = 0; i < this.tileCount; i++) this.spawnTile();
+    for (const e of shuffle(this.ents)) this.newTask(e);
     this.ensure();
   }
 
@@ -251,22 +254,31 @@ export class FieldRound extends Round {
     this.tiles = this.tiles.filter((t) => t !== tile);
   }
 
-  /** Every player who is working on a task always has a matching tile on the field. */
+  /** Tiles no other player is working toward: a new task for e may take its answer from these. */
+  freeTiles(e) {
+    return this.tiles.filter((t) => !this.ents.some((o) => o !== e && o.task && o.doneT <= 0 && this.isRight(o, t)));
+  }
+
+  /**
+   * Every player who is working on a task always has a matching tile on the field.
+   * Tasks normally come from tiles already there, so this rarely has to spawn. When it
+   * does, the answer arrives in a small batch with fresh decoys in random order, so the
+   * newest tile is still not a giveaway.
+   */
   ensure() {
     for (const e of this.ents) {
       if (!e.task || e.doneT > 0) continue;
       const need = this.need(e);
       if (need === undefined || need === null) continue;
       if (this.tiles.some((t) => t.value === need || (this.counts(e, t)))) continue;
-      // Swap the tile farthest from everyone that nobody needs.
-      let far = null, farD = -1;
-      for (const t of this.tiles) {
-        if (this.ents.some((o) => o.task && this.counts(o, t))) continue;
-        const dd = Math.min(...this.ents.map((o) => Math.hypot(o.x - t.x, o.z - t.z)));
-        if (dd > farD) { farD = dd; far = t; }
-      }
-      if (far && this.tiles.length >= this.tileCount) this.removeTile(far);
-      this.spawnTile(need);
+      // Swap out tiles nobody needs, preferring the ones far from everyone.
+      const spare = this.tiles.filter((t) => !this.ents.some((o) => o.task && this.counts(o, t)));
+      const far = (t) => Math.min(...this.ents.map((o) => Math.hypot(o.x - t.x, o.z - t.z))) * (0.6 + Math.random() * 0.8);
+      spare.sort((a, b) => far(b) - far(a));
+      const decoys = Math.min(2, spare.length);
+      const room = this.tileCount - this.tiles.length;
+      for (let i = 0; i < Math.max(0, decoys + 1 - room) && i < spare.length; i++) this.removeTile(spare[i]);
+      for (const v of shuffle([need, ...Array(decoys).fill(undefined)])) this.spawnTile(v);
     }
   }
 
@@ -369,6 +381,7 @@ export class FieldRound extends Round {
   updateLabels() {
     if (this.labelsHidden) return;
     for (const e of this.ents) {
+      if (!e.task) { e.tagEl.style.display = 'none'; continue; }
       const html = e.flashT > 0 ? `<span style="color:#ff5d73">${esc(e.flash)}</span>` : this.tag(e);
       if (!html) { e.tagEl.style.display = 'none'; continue; }
       e.tagPos.set(e.x, this.tagHeight(e), e.z);

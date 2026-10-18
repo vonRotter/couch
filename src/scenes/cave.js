@@ -57,15 +57,22 @@ addStrings({
 // chunks on a room grid with a guaranteed path from the top entrance to the exit at the bottom.
 // Every generated cave is checked with a movement model (walk, jump 3 tiles, climb, fall) and
 // re-rolled if the exit can't be reached, or if any reachable spot could trap you without a rope.
+// Dangers (spikes, hot goo, crumbly floors) are then added one at a time, and each one is kept
+// only if the model still finds a route to the exit that never touches a danger or falls too far.
+// Moving dangers (stalactites, bats, grumbles, pea plants, boulders) are placed so you can always
+// dodge them: hop over, wait for them or stomp them.
 
 // ---------- tiles and rooms ----------
 
 const RW = 10, RH = 8; // room size in tiles
 export const DEPTHS = [{ cols: 4, rows: 4 }, { cols: 4, rows: 5 }, { cols: 5, rows: 5 }];
-export const TL = { EMPTY: 0, DIRT: 1, ROCK: 2, LADDER: 3, VINE: 4, PLAT: 5, GOLD: 6, MUD: 7, HONEY: 8, MUSH: 9 };
-const SOLID = [false, true, true, false, false, false, true, false, false, true];
-const CLIMBY = [false, false, false, true, true, false, false, false, false, false];
-const BREAKABLE = [false, true, false, false, false, false, true, false, false, false];
+export const TL = { EMPTY: 0, DIRT: 1, ROCK: 2, LADDER: 3, VINE: 4, PLAT: 5, GOLD: 6, MUD: 7, HONEY: 8, MUSH: 9, SPIKE: 10, CSPIKE: 11, GOO: 12, CRUMB: 13 };
+const SOLID = [false, true, true, false, false, false, true, false, false, true, false, false, false, true];
+const CLIMBY = [false, false, false, true, true, false, false, false, false, false, false, false, false, false];
+const BREAKABLE = [false, true, false, false, false, false, true, false, false, false, true, true, false, true];
+// Cells that cost a heart: floor spikes, ceiling spikes and hot goo / icy water.
+const HAZ = [false, false, false, false, false, false, false, false, false, false, true, true, true, false];
+const SAFE_DROP = 8; // longest fall (in rows) the solvability model may use; real falls hurt above HURT_FALL
 
 // Legend: # dirt, g dirt with gold inside, ? maybe dirt, H ladder, V vine, = wooden ledge,
 // m bouncy mushroom, u mud, h honey, * gem, $ gold, C crate, o snowball.
@@ -99,6 +106,7 @@ const ROOMS = {
     ['###....###', '#........#', '#.##..##.#', '#........#', '..........', '...=..=...', '..........', '###....###'],
     ['###....###', '#..#..#..#', '#.*#..#*.#', '#.##..##.#', '....==....', '..........', '..........', '##......##'],
     ['###....###', '#........#', '#.$.##.$.#', '#..####..#', '..........', '.==....==.', '..........', '####..####'],
+    ['###.H..###', '#...H..*.#', '#.$.H....#', '#.##H###.#', '....H.....', '....H.....', '....H.....', '###.H..###'],
   ],
   SIDE: [
     ['##########', '#gg####gg#', '##########', '####gg####', '##########', '#g######g#', '##########', '##########'],
@@ -152,7 +160,9 @@ function layoutCave(rand, cols, rows, depth, forceSimple = false) {
   for (let ry = 0; ry < rows; ry++) {
     for (let rx = 0; rx < cols; rx++) {
       const nd = need[ry][rx];
-      let tpl = forceSimple && nd ? ROOMS.LRUD[0] : pick(rand, nd ? poolFor(nd) : ROOMS.SIDE);
+      // Last-resort layout: plain path rooms where every drop has a ladder.
+      const simple = nd && (nd.U && nd.D ? ROOMS.LRUD[3] : nd.D ? ROOMS.LRD[3] : nd.U ? ROOMS.LRU[0] : ROOMS.LR[0]);
+      let tpl = forceSimple && nd ? simple : pick(rand, nd ? poolFor(nd) : ROOMS.SIDE);
       if (rand() < 0.5) tpl = tpl.map((row) => row.split('').reverse().join(''));
       for (let y = 0; y < RH; y++) {
         for (let x = 0; x < RW; x++) {
@@ -191,11 +201,19 @@ function layoutCave(rand, cols, rows, depth, forceSimple = false) {
 
 // ---------- movement model (used for the solvability check, the hint trail and test bots) ----------
 
-/** Tile queries for a level; `ropes` is an optional Set of cell indices with hanging ropes. */
-export function caveQuery(lv, ropes = null) {
+/**
+ * Tile queries for a level; `ropes` is an optional Set of cell indices with hanging ropes.
+ * mode.safe (default true): danger cells count as walls and long falls are not allowed, so every
+ * route found never costs a heart. mode.open: crumbly floors are treated as already crumbled.
+ */
+export function caveQuery(lv, ropes = null, mode = {}) {
   const { W, H, grid } = lv;
-  const at = (c, r) => (c < 0 || r < 0 || c >= W || r >= H ? TL.ROCK : grid[r * W + c]);
-  const pass = (c, r) => !SOLID[at(c, r)];
+  const safe = mode.safe !== false, open = !!mode.open;
+  const at = (c, r) => {
+    const tl = c < 0 || r < 0 || c >= W || r >= H ? TL.ROCK : grid[r * W + c];
+    return open && tl === TL.CRUMB ? TL.EMPTY : tl;
+  };
+  const pass = (c, r) => { const tl = at(c, r); return !SOLID[tl] && !(safe && HAZ[tl]); };
   const climb = (c, r) => CLIMBY[at(c, r)] || !!(ropes && c >= 0 && c < W && ropes.has(r * W + c));
   // Something to stand on: solid ground, a wooden ledge or the top of a ladder/vine.
   const support = (c, r) => {
@@ -203,21 +221,26 @@ export function caveQuery(lv, ropes = null) {
     return SOLID[b] || b === TL.PLAT || (CLIMBY[b] && !CLIMBY[at(c, r)]);
   };
   const stand = (c, r) => pass(c, r) && (climb(c, r) || support(c, r));
-  return { W, H, at, pass, climb, support, stand };
+  // Landing here doesn't hurt, however far you fell.
+  const soft = (c, r) => { const tl = at(c, r); return tl === TL.MUD || tl === TL.HONEY || at(c, r + 1) === TL.MUSH; };
+  return { W, H, at, pass, climb, support, stand, soft, safe };
 }
 
 /**
  * Every move from a standing (or hanging) cell. emit(c, r, act) is called for each landing cell.
- * Jumps reach 3 tiles up (4 from a mushroom), need head room, and move at most 1-2 tiles sideways
+ * Jumps reach 3 tiles up (4 from a mushroom), need head room, and move at most 1-3 tiles sideways
  * at the top; falls go straight down and may grab a ladder on the way. This is deliberately a bit
- * weaker than the real controls, so anything it can do, players can do.
+ * weaker than the real controls, so anything it can do, players can do. In safe mode a fall may
+ * be at most SAFE_DROP rows (from the top of the jump) unless it ends somewhere soft.
  */
 export function caveMoves(q, c, r, emit) {
-  const fallFrom = (c2, r2, act) => {
+  const fallFrom = (c2, r2, act, fromRow) => {
     for (let rr = r2; rr < q.H; rr++) {
       if (!q.pass(c2, rr)) return;
-      if (q.climb(c2, rr) || q.support(c2, rr)) emit(c2, rr, act);
-      if (q.support(c2, rr)) return;
+      const sup = q.support(c2, rr);
+      if (q.climb(c2, rr)) emit(c2, rr, act);
+      else if (sup && (!q.safe || rr - fromRow <= SAFE_DROP || q.soft(c2, rr))) emit(c2, rr, act);
+      if (sup) return;
     }
   };
   const hanging = q.climb(c, r);
@@ -227,18 +250,19 @@ export function caveMoves(q, c, r, emit) {
     if (q.pass(c, r - 1) && (q.climb(c, r - 1) || q.support(c, r - 1))) emit(c, r - 1, { kind: 'up' });
     if (q.pass(c, r + 1)) {
       if (q.stand(c, r + 1)) emit(c, r + 1, { kind: 'down' });
-      else fallFrom(c, r + 1, { kind: 'down' });
+      else fallFrom(c, r + 1, { kind: 'down' }, r);
     }
   } else if (q.climb(c, r + 1)) {
     emit(c, r + 1, { kind: 'down' });
   }
-  if (below === TL.PLAT) fallFrom(c, r + 1, { kind: 'drop' });
+  if (below === TL.PLAT) fallFrom(c, r + 1, { kind: 'drop' }, r);
   for (let k = 0; k <= K; k++) {
     if (k > 0 && !q.pass(c, r - k)) break;
     if (k > 0 && q.climb(c, r - k)) emit(c, r - k, { kind: 'jump', k, dir: 0, i: 0 });
     if (k > 0 && !q.pass(c, r - k - 1)) continue; // need head room to hop onto a ledge at this height
     if (k > 0 && q.at(c, r - k + 1) === TL.PLAT) emit(c, r - k, { kind: 'jump', k, dir: 0, i: 0 });
-    const maxI = k === 0 ? (q.pass(c, r - 1) ? 3 : 1) : k >= K ? 1 : 2;
+    // A one-tile hop can carry you three tiles sideways (over a small pit or a patch of spikes).
+    const maxI = k === 0 ? (q.pass(c, r - 1) ? 3 : 1) : k >= K ? 1 : k === 1 ? 3 : 2;
     for (const dir of [-1, 1]) {
       for (let i = 1; i <= maxI; i++) {
         const cx = c + dir * i, ry = r - k;
@@ -246,7 +270,7 @@ export function caveMoves(q, c, r, emit) {
         if (i >= 2 && (!q.pass(cx, ry - 1) || !q.pass(cx - dir, ry - 1))) break; // long hops need head room all the way
         const act = { kind: k === 0 && i === 1 ? 'walk' : 'jump', k, dir, i };
         if (q.stand(cx, ry)) emit(cx, ry, act);
-        else fallFrom(cx, ry, act);
+        else fallFrom(cx, ry, act, ry);
       }
     }
   }
@@ -283,8 +307,8 @@ function caveSearch(q, from, stopAt = -1) {
  * Checks a level: can the exit be reached from the entrance, and can the exit still be reached
  * from every spot you can get to (no pits that need a rope)? Picks the exit if none is set.
  */
-export function analyseCave(lv) {
-  const q = caveQuery(lv);
+export function analyseCave(lv, mode = { safe: false }) {
+  const q = caveQuery(lv, null, mode);
   const { W } = lv;
   const start = lv.entrance.r * W + lv.entrance.c;
   const s = caveSearch(q, start);
@@ -326,20 +350,58 @@ function pathLength(prev, to, from) {
   return n;
 }
 
-/** Shortest list of moves [{ idx, act }] from a cell to the exit (empty if unreachable). */
-export function routeToExit(lv, fromIdx, ropes = null) {
-  const q = caveQuery(lv, ropes);
-  const exitIdx = lv.exit.r * lv.W + lv.exit.c;
-  if (!q.stand(fromIdx % lv.W, Math.floor(fromIdx / lv.W))) return [];
-  const s = caveSearch(q, fromIdx, exitIdx);
-  if (!s.seen[exitIdx]) return [];
-  const out = [];
-  for (let i = exitIdx; i !== fromIdx; i = s.prev[i]) out.push({ idx: i, act: s.act[i] });
-  return out.reverse();
+/**
+ * Shortest list of moves [{ idx, act }] from a cell to the exit (empty if unreachable).
+ * Prefers a route that never touches a danger; falls back to any route.
+ */
+export function routeToExit(lv, fromIdx, ropes = null, safeOnly = false) {
+  for (const safe of safeOnly ? [true] : [true, false]) {
+    const q = caveQuery(lv, ropes, { safe });
+    const exitIdx = lv.exit.r * lv.W + lv.exit.c;
+    if (!q.stand(fromIdx % lv.W, Math.floor(fromIdx / lv.W))) continue;
+    const s = caveSearch(q, fromIdx, exitIdx);
+    if (!s.seen[exitIdx]) continue;
+    const out = [];
+    for (let i = exitIdx; i !== fromIdx; i = s.prev[i]) out.push({ idx: i, act: s.act[i] });
+    return out.reverse();
+  }
+  return [];
 }
 
-/** Builds a checked cave for one depth. Same seed, same cave. */
-export function generateCave(seed, depth = 0) {
+/**
+ * The full danger check for a level with its exit set. It must hold in every "world":
+ * - safe, crumbly floors intact and safe, crumbly floors gone: the exit is reachable without
+ *   touching a danger or falling too far, and from every spot you can reach that way too
+ *   (so no danger is ever forced on you);
+ * - unsafe with crumbly floors gone: nowhere you could tumble into is a dead end.
+ */
+export function checkCave(lv) {
+  const hasCrumb = lv.grid.includes(TL.CRUMB);
+  const a = analyseCave(lv, { safe: true });
+  if (!a.ok || a.trapped) return { ok: false, seen: a.seen };
+  if (hasCrumb) {
+    const b = analyseCave(lv, { safe: true, open: true });
+    if (!b.ok || b.trapped) return { ok: false, seen: a.seen };
+    const c = analyseCave(lv, { safe: false, open: true });
+    if (!c.ok || c.trapped) return { ok: false, seen: a.seen };
+  }
+  return { ok: true, seen: a.seen, reach: a.reach, pathLen: a.pathLen };
+}
+
+/** How many of each danger a depth gets: more further down and with more players. */
+export function dangerBudget(depth, players = 1) {
+  const f = 1 + (Math.max(1, players) - 1) * 0.12;
+  const n = (list) => Math.round(list[depth] * f);
+  return {
+    spikes: n([3, 5, 7]), goo: n([1, 2, 3]), ceiling: n([1, 2, 3]), crumbs: n([2, 3, 4]),
+    stalactites: n([2, 4, 6]), bats: [1, 2, 3][depth] + Math.floor((players - 1) / 2),
+    grumbles: [1, 2, 3][depth] + Math.floor((players - 1) / 3), plants: [1, 2, 3][depth] + Math.floor((players - 1) / 4),
+    hearts: [1, 2, 2][depth] + Math.floor((players - 1) / 2),
+  };
+}
+
+/** Builds a checked cave for one depth. Same seed (and player count), same cave. */
+export function generateCave(seed, depth = 0, players = 1) {
   const rand = seeded((seed * 7919 + depth * 104729 + 12345) >>> 0);
   const { cols, rows } = DEPTHS[depth];
   let best = null;
@@ -353,11 +415,90 @@ export function generateCave(seed, depth = 0) {
     lv.reach = res.reach;
     lv.trapped = res.trapped;
     lv.pathLen = res.pathLen;
-    if (res.trapped === 0) { decorate(lv, res.seen); return lv; }
+    if (res.trapped === 0) {
+      // Also needs a route to the exit (and back from anywhere) without long falls.
+      const safe = checkCave(lv);
+      if (safe.ok) {
+        lv.safe = true;
+        placeDangers(lv, players);
+        const fin = checkCave(lv);
+        decorate(lv, fin.seen, players);
+        return lv;
+      }
+    }
     if (!best || res.trapped < best.trapped) { best = lv; best.seen = res.seen; }
   }
-  decorate(best, best.seen);
+  // Very rare: no fully safe layout. Use the best one, without fixed dangers.
+  best.safe = false;
+  decorate(best, best.seen, players);
   return best;
+}
+
+/** Tries spots for spikes, goo and crumbly floors, keeping each only if checkCave still passes. */
+function placeDangers(lv, players) {
+  const { W, H, grid, rand, depth } = lv;
+  const budget = dangerBudget(depth, players);
+  const ent = lv.entrance, ex = lv.exit;
+  const q = caveQuery(lv, null, { safe: false });
+  const seen = analyseCave(lv, { safe: true }).seen;
+  const nearDoor = (c, r) => (Math.abs(c - ent.c) <= 3 && Math.abs(r - ent.r) <= 2) || (Math.abs(c - ex.c) <= 2 && Math.abs(r - ex.r) <= 2);
+  const floorTile = (tl) => tl === TL.DIRT || tl === TL.ROCK || tl === TL.GOLD;
+  // A cell on plain solid floor with open space above, where players actually walk.
+  const floorSpot = (c, r) => grid[r * W + c] === TL.EMPTY && floorTile(q.at(c, r + 1)) && q.at(c, r - 1) === TL.EMPTY && seen[r * W + c] && !nearDoor(c, r);
+  const shuffled = (list) => { for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } return list; };
+  const all = shuffled(Array.from({ length: W * H }, (_, i) => i));
+  lv.dangers = { spikes: 0, goo: 0, ceiling: 0, crumbs: 0 };
+  // Put a run of `tile` on cells, keep it if the cave still checks out.
+  const tryRun = (cells, tile, key) => {
+    const old = cells.map((i) => grid[i]);
+    for (const i of cells) grid[i] = tile;
+    if (checkCave(lv).ok) { lv.dangers[key]++; return true; }
+    cells.forEach((i, k) => { grid[i] = old[k]; });
+    return false;
+  };
+  const runFrom = (i, len, ok) => {
+    const cells = [];
+    for (let k = 0; k < len; k++) { const j = i + k; if (Math.floor(j / W) !== Math.floor(i / W) || !ok(j % W, Math.floor(j / W))) break; cells.push(j); }
+    return cells;
+  };
+  const spread = (i, list, d) => list.every((j) => Math.abs((j % W) - (i % W)) + Math.abs(Math.floor(j / W) - Math.floor(i / W)) >= d);
+  const placed = [];
+  // Crumbly floors: dirt you walk on with a short drop below it.
+  let left = budget.crumbs;
+  for (const i of all) {
+    if (left <= 0) break;
+    const c = i % W, r = Math.floor(i / W);
+    const crumbOk = (c2, r2) => {
+      if (grid[r2 * W + c2] !== TL.DIRT || r2 >= H - 2 || nearDoor(c2, r2 - 1) || !seen[(r2 - 1) * W + c2] || q.at(c2, r2 - 1) !== TL.EMPTY) return false;
+      if (Math.abs(c2 - ex.c) <= 1 && r2 - ex.r >= 1 && r2 - ex.r <= 2) return false; // the floor by the door
+      // Something to land on 1-4 rows below.
+      for (let k = 1; k <= 4; k++) { if (SOLID[q.at(c2, r2 + k)]) return k > 1; if (!q.pass(c2, r2 + k) || HAZ[q.at(c2, r2 + k)]) return false; }
+      return false;
+    };
+    if (!crumbOk(c, r) || !spread(i, placed, 5)) continue;
+    const cells = runFrom(i, 1 + Math.floor(rand() * 3), crumbOk);
+    if (tryRun(cells, TL.CRUMB, 'crumbs')) { left--; placed.push(i); }
+  }
+  // Hot goo / icy water pools (2-3 wide), then spike patches (1-2 wide).
+  for (const [key, tile, minLen, maxLen] of [['goo', TL.GOO, 2, depth >= 2 ? 3 : 2], ['spikes', TL.SPIKE, 1, 2]]) {
+    left = budget[key];
+    for (const i of all) {
+      if (left <= 0) break;
+      if (!floorSpot(i % W, Math.floor(i / W)) || !spread(i, placed, 4)) continue;
+      const cells = runFrom(i, minLen + Math.floor(rand() * (maxLen - minLen + 1)), floorSpot);
+      if (cells.length < minLen) continue;
+      if (tryRun(cells, tile, key)) { left--; placed.push(i); }
+    }
+  }
+  // Ceiling spikes: under solid rock, with at least two open rows below (so walking under is fine).
+  left = budget.ceiling;
+  const ceilOk = (c, r) => grid[r * W + c] === TL.EMPTY && floorTile(q.at(c, r - 1)) && q.at(c, r + 1) === TL.EMPTY && q.at(c, r + 2) === TL.EMPTY &&
+    (seen[(r + 2) * W + c] || seen[(r + 3) * W + c] || seen[(r + 1) * W + c]) && !nearDoor(c, r) && !nearDoor(c, r + 2);
+  for (const i of all) {
+    if (left <= 0) break;
+    if (!ceilOk(i % W, Math.floor(i / W)) || !spread(i, placed, 4)) continue;
+    if (tryRun(runFrom(i, 1 + Math.floor(rand() * 3), ceilOk), TL.CSPIKE, 'ceiling')) { left--; placed.push(i); }
+  }
 }
 
 function placeEntrance(lv) {

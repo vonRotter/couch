@@ -2,16 +2,37 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { COLORS, toon, basic, sharedGeo } from '../../core/palette.js';
 import { addLights, skyTexture, seeded } from '../../core/world.js';
+import { makeGrumble } from '../../core/critters.js';
 import { t, addStrings } from '../../core/i18n.js';
-import { BossScene } from './boss-common.js';
+import { BossScene, SLIP_TIME, volley } from './boss-common.js';
 
-// Frosty Peaks boss: the Grumble King guards the bells on his snow fort with a big umbrella.
-// Stand in front of a bell and throw snowballs (A or B) to ring it. Snowballs only ever fly
-// at the bells; a blocked one just goes poof on his umbrella and he laughs.
+// Frosty Peaks boss: "He throws back". The Grumble King guards the five bells on his snow fort
+// with a big umbrella and throws snowballs back at the beans.
+// - Beans: [B] throws at the bell straight ahead (the colored ring shows which; it turns grey
+//   when an umbrella covers that bell). [A] hops.
+// - The King lobs snowballs at the beans. A purple ring on the snow shows where each one lands;
+//   a hit makes you slip and drop your snowball for a moment (no harm).
+// - He moves his umbrella to the bell most beans are aiming at (with a short reaction delay),
+//   so the team rings bells by spreading out and switching bells.
+// - Phase 2 (a third of the goal): helper grumbles pop up and guard bells too.
+//   Phase 3 (two thirds): a snowball storm, the helpers throw as well.
+// Scaling with n players: goal 8 + 3n bells (stages.js), throws per volley ceil(n/2) (+1 in
+// phase 3), helpers ceil(n/2) (max 3, so at least one bell is always open), and he walks a bit
+// faster with more beans to watch.
 
 addStrings({
-  en: { 'bossf.hint': 'Stand in front of a bell · [A] or [B] throws a snowball', 'bossf.ha': 'Ha!' },
-  no: { 'bossf.hint': 'Stå foran en bjelle · [A] eller [B] kaster en snøball', 'bossf.ha': 'Ha!' },
+  en: {
+    'bossf.hint': '[B]: throw at the bell in front of you · [A]: hop · step out of the purple rings!',
+    'bossf.ha': 'Ha!',
+    'bossf.p1': 'He calls his helpers! Find a free bell!',
+    'bossf.p2': 'Snowball storm! Keep dodging!',
+  },
+  no: {
+    'bossf.hint': '[B]: kast på bjella foran deg · [A]: hopp · gå ut av de lilla ringene!',
+    'bossf.ha': 'Ha!',
+    'bossf.p1': 'Han roper på hjelperne sine! Finn en ledig bjelle!',
+    'bossf.p2': 'Snøballstorm! Fortsett å unngå!',
+  },
 });
 
 const HW = 10.5; // yard half width
@@ -19,11 +40,21 @@ const Z0 = 0.5, Z1 = 7.5; // yard depth
 const WALL_Z = -2.6;
 const WALL_H = 1.5;
 const BELL_XS = [-8, -4, 0, 4, 8];
+const BELL_Y = WALL_H + 1.95; // middle of a bell
 const KING_Z = -4.2;
-const KING_Y = 0.9; // he stands on a snow step behind the wall
-const BLOCK = 1.75; // umbrella half width
-const THROW_CD = 0.45;
+const KING_Y = 1.25; // he stands on a snow step behind the wall, head and crown above it
+const UMB_Z = WALL_Z + 0.85; // umbrellas are held just in front of the bells
+const COVER = 1.0; // an umbrella this close (in x) to a bell covers it
+const THROW_CD = 0.7; // making a new snowball
 const G = 18;
+const HELPER_COLOR = 0x6fb7ff;
+
+// Per phase: seconds between the King's throws, how long a throw is in the air, how long he
+// takes to notice where the beans are aiming, and how fast he walks.
+const KING_GAP = [2.7, 2.3, 1.9];
+const LOB_TIME = [1.35, 1.2, 1.05];
+const REACT = [1.0, 0.85, 0.7];
+const WALK = [4.2, 4.8, 5.4];
 
 export class BossFrostScene extends BossScene {
   constructor(game, opts) {
@@ -35,20 +66,36 @@ export class BossFrostScene extends BossScene {
     this.buildYard();
     this.buildFort();
 
-    this.k = { x: 0, vx: 0, laugh: 0, wander: 0, goal: 0 };
-    this.king.group.position.set(0, KING_Y, KING_Z);
-    this.buildUmbrella();
+    this.king.group.position.set(1.6, KING_Y, KING_Z);
+    // Guards hold an umbrella in front of one bell each: the King first, helpers later.
+    this.guards = [];
+    this.kingGuard = this.addGuard('king', 2);
+    this.throwT = 2.2; // first throw shortly after the start
+    this.windup = 0;
+    this.targetOrder = [];
+
     const n = this.players.length;
     this.players.forEach((p, i) => {
       const e = this.makeBean(p, n === 1 ? 0 : -7 + (14 * i) / (n - 1), 5);
       e.cd = 0;
       e.reticle = new THREE.Mesh(sharedGeo('bfReticle', () => new THREE.RingGeometry(0.55, 0.72, 28)), basic(p.color));
       e.reticle.visible = false;
+      e.reticleColor = basic(p.color);
       this.scene.add(e.reticle);
+      // The snowball in hand, shown while you have one ready.
+      e.hand = new THREE.Mesh(sharedGeo('bfHand', () => new THREE.SphereGeometry(0.2, 12, 9)), toon(COLORS.white));
+      e.hand.position.set(0.45, 0.62, 0.25);
+      e.ch.group.add(e.hand);
     });
+    // The snowball he lifts over his head before a throw.
+    this.kingBall = new THREE.Mesh(sharedGeo('bfKingBall', () => new THREE.SphereGeometry(0.34, 12, 9)), toon(COLORS.white));
+    this.kingBall.visible = false;
+    this.scene.add(this.kingBall);
     this.haTag = this.game.ui.label('label');
     this.haTag.style.color = '#8a63f0';
     this.haTag.style.display = 'none';
+    this.haT = 0;
+    this.haPos = new THREE.Vector3();
     this.start('platformer');
   }
 
@@ -66,6 +113,18 @@ export class BossFrostScene extends BossScene {
     snow.rotation.x = -Math.PI / 2;
     snow.receiveShadow = true;
     s.add(snow);
+    // The yard the beans play in: a pale blue icy patch with soft snow banks around it.
+    const yard = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2 + 0.6, Z1 - WALL_Z + 0.4), toon(0xe3f1ff));
+    yard.rotation.x = -Math.PI / 2;
+    yard.position.set(0, 0.01, (Z1 + WALL_Z) / 2);
+    yard.receiveShadow = true;
+    s.add(yard);
+    for (let i = 0; i < 9; i++) {
+      const bank = new THREE.Mesh(sharedGeo('bfBank', () => new THREE.SphereGeometry(1, 12, 8)), toon(COLORS.white));
+      bank.position.set(-HW + (i * HW * 2) / 8, -0.35, Z1 + 1.1);
+      bank.scale.set(1.6, 0.7, 0.9);
+      s.add(bank);
+    }
     // Soft snow lumps and little firs at the sides.
     for (let i = 0; i < 26; i++) {
       const lump = new THREE.Mesh(sharedGeo('bfLump', () => new THREE.SphereGeometry(1, 12, 8)), toon(COLORS.white));
@@ -134,7 +193,7 @@ export class BossFrostScene extends BossScene {
       s.add(tower, roof, flag, pole);
     }
     // Bells hanging in little arches on top of the wall.
-    this.bells = BELL_XS.map((x) => {
+    this.bells = BELL_XS.map((x, i) => {
       const g = new THREE.Group();
       g.position.set(x, WALL_H, WALL_Z);
       for (const sx of [-1, 1]) {
@@ -158,27 +217,55 @@ export class BossFrostScene extends BossScene {
       swing.add(bell, clapper);
       g.add(swing);
       this.scene.add(g);
-      return { x, g, swing, wobble: 0, rings: 0, pos: new THREE.Vector3(x, WALL_H + 1.95, WALL_Z + 0.2) };
+      return { i, x, g, swing, wobble: 0, rings: 0, pos: new THREE.Vector3(x, BELL_Y, WALL_Z + 0.2) };
     });
   }
 
-  buildUmbrella() {
-    // A big striped snow umbrella he holds in front of himself.
+  /** A striped umbrella held open toward the beans (dome facing the camera). */
+  makeUmbrella(color, size) {
     const u = new THREE.Group();
-    const top = new THREE.Mesh(sharedGeo('bfUmb', () => new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.6)), toon(0x7fd3ff));
-    top.scale.set(1, 0.55, 1);
-    const stripe = new THREE.Mesh(sharedGeo('bfUmbS', () => new THREE.TorusGeometry(0.82, 0.06, 6, 24)), toon(COLORS.white));
+    const dome = new THREE.Group();
+    const top = new THREE.Mesh(sharedGeo('bfUmb', () => new THREE.SphereGeometry(1, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2.4)), toon(color));
+    top.scale.set(1, 0.5, 1);
+    const stripe = new THREE.Mesh(sharedGeo('bfUmbS', () => new THREE.TorusGeometry(0.8, 0.07, 6, 24)), toon(COLORS.white));
     stripe.rotation.x = Math.PI / 2;
-    stripe.position.y = 0.2;
-    const stick = new THREE.Mesh(sharedGeo('bfUmbStick', () => new THREE.CylinderGeometry(0.04, 0.04, 1.4, 6)), toon(COLORS.ink));
-    stick.position.y = -0.6;
-    u.add(top, stripe, stick);
-    u.rotation.x = 0.9; // held up over his head, tilted toward the bells
-    u.position.set(0, 1.5, 0.3);
-    u.scale.setScalar(0.62);
-    // Parent to the king's inner group so it wobbles with him (and inherits his size).
-    this.king.inner.add(u);
-    this.umbrella = u;
+    stripe.position.y = 0.22;
+    const tip = new THREE.Mesh(sharedGeo('bfUmbTip', () => new THREE.SphereGeometry(0.09, 8, 6)), toon(COLORS.white));
+    tip.position.y = 0.52;
+    dome.add(top, stripe, tip);
+    dome.rotation.x = Math.PI / 2; // dome points toward +z (the beans)
+    const stick = new THREE.Mesh(sharedGeo('bfUmbStick', () => new THREE.CylinderGeometry(0.05, 0.05, 1.3, 6)), toon(COLORS.ink));
+    stick.rotation.x = Math.PI / 2;
+    stick.position.z = -0.65;
+    u.add(dome, stick);
+    u.scale.setScalar(size);
+    u.userData.dome = dome;
+    this.scene.add(u);
+    return u;
+  }
+
+  /** A guard: the King or a helper grumble, each holding an umbrella in front of one bell. */
+  addGuard(kind, bell) {
+    const king = kind === 'king';
+    const x = BELL_XS[bell];
+    const gd = {
+      kind, x, bell, think: king ? 0.5 : 1.2, wobble: 0, pop: king ? 1 : 0, giggle: 0,
+      umb: this.makeUmbrella(king ? 0x7fd3ff : 0xff9fd0, king ? 1.3 : 1.12),
+      throwT: 2.5 + Math.random() * 2,
+    };
+    if (!king) {
+      gd.mesh = makeGrumble(HELPER_COLOR);
+      gd.mesh.scale.setScalar(1.7);
+      this.scene.add(gd.mesh);
+      this.puffs.burst(new THREE.Vector3(x + 1, WALL_H + 1, KING_Z + 0.6), 0xffffff, { count: 16, speed: 4, size: 0.45 });
+    }
+    this.guards.push(gd);
+    return gd;
+  }
+
+  /** Is this bell covered by any umbrella right now? */
+  covered(bell) {
+    return this.guards.some((g) => Math.abs(g.x - bell.x) < COVER && g.pop > 0.6 && !this.finished);
   }
 
   /** The bell a bean is aiming at: the one straight ahead (closest in x). */
@@ -213,66 +300,180 @@ export class BossFrostScene extends BossScene {
       b.t += dt;
       const tt = Math.min(b.t, b.T);
       b.mesh.position.set(b.from.x + b.vx * tt, b.from.y + b.vy * tt - 0.5 * G * tt * tt, b.from.z + b.vz * tt);
-      if (b.t >= b.T) {
-        b.done = true;
-        this.scene.remove(b.mesh);
-        const blocked = Math.abs(this.k.x - b.bell.x) < BLOCK && !this.finished;
-        if (blocked) {
-          this.puffs.burst(b.mesh.position.clone(), 0xffffff, { count: 12, speed: 4, size: 0.35 });
-          this.game.audio.play('splat');
-          this.k.laugh = 1.1;
-          this.king.squash(1.1);
-        } else {
-          this.puffs.burst(b.mesh.position.clone(), 0xffffff, { count: 8, speed: 3, size: 0.25 });
-          b.bell.wobble = 1;
-          b.bell.rings++;
-          this.game.audio.play('coin');
-          this.addPoint(b.e, b.bell.pos.clone().setY(WALL_H + 2.8));
-        }
+      if (b.t < b.T) continue;
+      b.done = true;
+      this.scene.remove(b.mesh);
+      if (this.finished) continue;
+      const guard = this.guards.find((g) => Math.abs(g.x - b.bell.x) < COVER && g.pop > 0.6);
+      if (guard) {
+        // Poof on the umbrella, and a smug "Ha!".
+        this.puffs.burst(new THREE.Vector3(guard.x, BELL_Y, UMB_Z + 0.4), 0xffffff, { count: 12, speed: 4, size: 0.35 });
+        this.game.audio.play('splat');
+        guard.wobble = 1;
+        guard.giggle = 1.1;
+        this.ha(new THREE.Vector3(guard.x, BELL_Y + 1.6, UMB_Z));
+      } else {
+        this.puffs.burst(b.mesh.position.clone(), 0xffffff, { count: 8, speed: 3, size: 0.25 });
+        b.bell.wobble = 1;
+        b.bell.rings++;
+        this.game.audio.play('coin');
+        this.addPoint(b.e, b.bell.pos.clone().setY(WALL_H + 2.8));
       }
     }
     this.balls = this.balls.filter((b) => !b.done);
   }
 
-  updateKing(dt) {
-    const k = this.k;
+  ha(pos) {
+    this.haT = 0.9;
+    this.haPos.copy(pos);
+  }
+
+  /** Helpers join in phase 2; in phase 3 they throw too. */
+  onPhase(p) {
+    if (p === 1) {
+      const count = Math.min(3, Math.ceil(this.n / 2));
+      for (let i = 0; i < count; i++) {
+        const used = new Set(this.guards.map((g) => g.bell));
+        const free = [1, 3, 0, 4, 2].filter((b) => !used.has(b));
+        this.addGuard('helper', free[0]);
+      }
+      this.game.audio.play('trap');
+      this.game.ui.toast(t('bossf.p1'), 2600);
+    } else if (p === 2) {
+      this.game.audio.play('whoosh');
+      this.game.ui.toast(t('bossf.p2'), 2600);
+    }
+  }
+
+  /** Where the beans are aiming: a weight per bell (beans with a snowball ready count more). */
+  aimWeights() {
+    const w = this.bells.map(() => 0);
+    for (const e of this.ents) {
+      if (e.slip > 0) continue;
+      w[this.aimBell(e).i] += e.cd <= 0 ? 1.5 : 1;
+    }
+    return w;
+  }
+
+  /** Each guard picks the busiest bell nobody else is covering, after a short reaction time. */
+  updateGuards(dt) {
     const playing = this.state === 'play' && !this.finished;
-    k.laugh -= dt;
-    if (playing && k.laugh <= 0) {
-      // Rush to the bell with the snowball that lands soonest; otherwise drift toward the beans.
-      let target = null, soon = Infinity;
-      for (const b of this.balls) {
-        const left = b.T - b.t;
-        if (left < soon) { soon = left; target = b.bell.x; }
-      }
-      if (target === null) {
-        k.wander -= dt;
-        if (k.wander <= 0) {
-          const xs = this.ents.map((e) => this.aimBell(e).x);
-          k.goal = xs[Math.floor(Math.random() * xs.length)] ?? 0;
-          k.wander = 1.2 + Math.random();
+    const weights = this.aimWeights();
+    for (const gd of this.guards) {
+      gd.pop = Math.min(1, gd.pop + dt * 2.5);
+      gd.wobble = Math.max(0, gd.wobble - dt * 2.5);
+      gd.giggle -= dt;
+      const king = gd.kind === 'king';
+      if (playing) {
+        gd.think -= dt;
+        if (gd.think <= 0) {
+          gd.think = (king ? REACT[this.phase] : REACT[this.phase] + 0.4) * (0.85 + Math.random() * 0.3);
+          const taken = new Set(this.guards.filter((o) => o !== gd).map((o) => o.bell));
+          let best = gd.bell, bw = -1;
+          for (const b of this.bells) {
+            if (taken.has(b.i)) continue;
+            // Prefer busy bells, then the ones close by.
+            const score = weights[b.i] - Math.abs(b.x - gd.x) * 0.04 + Math.random() * 0.1;
+            if (score > bw) { bw = score; best = b.i; }
+          }
+          gd.bell = best;
         }
-        target = k.goal;
+        const speed = (king ? WALK[this.phase] : WALK[this.phase] - 1.2) + this.n * 0.15;
+        const dx = BELL_XS[gd.bell] - gd.x;
+        gd.vx = THREE.MathUtils.clamp(dx * 5, -speed, speed);
+      } else {
+        gd.vx = (gd.vx || 0) * 0.85;
       }
-      const speed = 3.8 + this.n * 0.3;
-      const dx = target - k.x;
-      k.vx = THREE.MathUtils.clamp(dx * 4, -speed, speed);
-    } else {
-      k.vx *= 0.85;
+      gd.x += (gd.vx || 0) * dt;
+      // Umbrella in front of the bell; the holder stands just to its right.
+      const shake = Math.sin(this.time * 30) * gd.wobble * 0.25;
+      gd.umb.visible = !this.finished;
+      gd.umb.position.set(gd.x, BELL_Y + Math.sin(this.time * 3 + gd.x) * 0.05 - (1 - gd.pop) * 2, UMB_Z);
+      gd.umb.rotation.set(0, shake, shake);
+      if (!king) {
+        const m = gd.mesh;
+        m.position.set(gd.x + 1.05, KING_Y + (gd.pop - 1) * 1.5 + Math.abs(Math.sin(this.time * 10)) * 0.08 * Math.min(1, Math.abs(gd.vx || 0)), KING_Z + 0.5);
+        m.rotation.y = this.finished ? m.rotation.y + dt * 4 : -0.25;
+        m.rotation.z = gd.giggle > 0 || this.finished ? Math.sin(this.time * 16) * 0.12 : 0;
+      }
     }
-    k.x = THREE.MathUtils.clamp(k.x + k.vx * dt, -10, 10);
+  }
+
+  /** Throw a telegraphed snowball from (x, y, z) at one bean. */
+  throwAt(e, from, time) {
+    const mesh = new THREE.Mesh(sharedGeo('bfLob', () => new THREE.SphereGeometry(0.3, 12, 9)), toon(COLORS.white));
+    mesh.castShadow = true;
+    const x = THREE.MathUtils.clamp(e.x + (Math.random() - 0.5) * 0.6, -HW + 0.5, HW - 0.5);
+    const z = THREE.MathUtils.clamp(e.z + (Math.random() - 0.5) * 0.6, Z0 + 0.3, Z1 - 0.3);
+    this.lob({ from, x, z, time, r: 1.05, mesh, arc: 3.2 });
+    this.game.audio.play('whoosh');
+  }
+
+  /** Beans to aim at, round robin so nobody is picked on (beans that are slipping get a break). */
+  nextTargets(count) {
+    const out = [];
+    for (let tries = 0; out.length < count && tries < count * 3 + 6; tries++) {
+      if (!this.targetOrder.length) this.targetOrder = [...this.ents].sort(() => Math.random() - 0.5);
+      const e = this.targetOrder.shift();
+      if (e.slip > 0 && this.ents.length > 1) continue;
+      if (!out.includes(e) || this.ents.length < count) out.push(e);
+    }
+    return out;
+  }
+
+  updateKing(dt) {
+    const k = this.kingGuard;
+    const playing = this.state === 'play' && !this.finished;
     const g = this.king.group;
-    g.position.x = k.x;
-    g.rotation.y = this.finished ? g.rotation.y + dt * 2 : Math.sin(this.time * 2) * 0.15;
-    this.umbrella.visible = !this.finished;
-    this.king.update(dt, { dizzy: this.finished, hop: Math.abs(k.vx) > 0.5 ? 14 : 0 });
-    if (this.finished) this.king.setMood('laugh');
-    else this.king.setMood(k.laugh > 0 ? 'laugh' : 'grumpy');
-    this.haTag.style.display = k.laugh > 0 && !this.finished ? '' : 'none';
-    if (k.laugh > 0) {
-      this.haTag.textContent = t('bossf.ha');
-      this.game.ui.place(this.haTag, new THREE.Vector3(k.x + 1.2, KING_Y + 3.2, KING_Z), this.camera);
+    // The King stands beside his umbrella.
+    g.position.x = THREE.MathUtils.clamp(k.x + 1.6, -10.4, 10.4);
+    if (playing) {
+      this.throwT -= dt;
+      if (this.throwT <= 0 && this.windup <= 0) {
+        this.windup = 0.5; // lift a snowball over his head first
+        this.king.squash(1.2);
+      }
+      if (this.windup > 0) {
+        this.windup -= dt;
+        if (this.windup <= 0) {
+          const targets = this.nextTargets(volley(this.n, this.phase));
+          targets.forEach((e, i) => this.later(i * 0.18, () => {
+            if (this.finished || this.state !== 'play') return;
+            this.throwAt(e, new THREE.Vector3(g.position.x, KING_Y + 3.2, KING_Z + 0.6), LOB_TIME[this.phase]);
+            this.king.squash(0.85);
+          }));
+          this.throwT = KING_GAP[this.phase] * (0.9 + Math.random() * 0.2);
+        }
+      }
+      // Phase 3: helpers throw now and then too.
+      if (this.phase >= 2) {
+        for (const gd of this.guards) {
+          if (gd.kind === 'king') continue;
+          gd.throwT -= dt;
+          if (gd.throwT <= 0) {
+            gd.throwT = 3.8 + Math.random() * 1.6;
+            const [e] = this.nextTargets(1);
+            if (e) this.throwAt(e, new THREE.Vector3(gd.x + 1.05, KING_Y + 1.8, KING_Z + 0.8), 1.3);
+            gd.mesh.scale.setScalar(1.9);
+            this.later(0.15, () => gd.mesh.scale.setScalar(1.7));
+          }
+        }
+      }
+    } else {
+      this.windup = 0;
     }
+    this.kingBall.visible = this.windup > 0 && playing;
+    this.kingBall.position.set(g.position.x, KING_Y + 3.0 + (0.5 - this.windup) * 0.8, KING_Z + 0.4);
+    g.rotation.y = this.finished ? g.rotation.y + dt * 2 : -0.35 + Math.sin(this.time * 2) * 0.1;
+    this.king.update(dt, { dizzy: this.finished, hop: Math.abs(k.vx || 0) > 0.5 ? 14 : 0 });
+    if (this.finished) this.king.setMood('laugh');
+    else this.king.setMood(k.giggle > 0 ? 'laugh' : 'grumpy');
+  }
+
+  onSlip(e) {
+    // Drop the snowball: it plops in the snow, and making a new one waits until you're up again.
+    if (e.cd <= 0) this.puffs.burst(new THREE.Vector3(e.x + 0.3, 0.3, e.z), 0xffffff, { count: 6, speed: 2, size: 0.3 });
+    e.cd = Math.max(e.cd, SLIP_TIME + 0.3);
   }
 
   updateBoss(dt) {
@@ -284,20 +485,24 @@ export class BossFrostScene extends BossScene {
     }
     pos.needsUpdate = true;
 
+    this.updateGuards(dt);
     this.updateKing(dt);
+    const playing = this.state === 'play' && !this.finished;
     for (const e of this.ents) {
-      this.moveBean(e, dt, { x0: -HW, x1: HW, z0: Z0, z1: Z1 }, { jump: false });
+      this.moveBean(e, dt, { x0: -HW, x1: HW, z0: Z0, z1: Z1 });
       e.cd -= dt;
-      const inp = this.input(e.p);
-      if (this.state === 'play' && !this.finished && inp && (inp.aPressed || inp.bPressed) && e.cd <= 0) {
+      const inp = e.slip > 0 ? null : this.input(e.p);
+      if (playing && inp && inp.bPressed && e.cd <= 0) {
         e.cd = THROW_CD;
         this.throwBall(e);
       }
+      e.hand.visible = e.cd <= 0;
       // Beans face the fort while standing still.
-      if (Math.hypot(e.vx, e.vz) < 0.5) e.ch.face(0, -1);
+      if (Math.hypot(e.vx, e.vz) < 0.5 && e.slip <= 0) e.ch.face(0, -1);
       const bell = this.aimBell(e);
-      e.reticle.visible = this.state === 'play' && !this.finished;
-      e.reticle.position.set(bell.x, WALL_H + 1.95, WALL_Z + 0.6);
+      e.reticle.visible = playing;
+      e.reticle.material = this.covered(bell) ? basic(0xb4b0c4) : e.reticleColor;
+      e.reticle.position.set(bell.x, BELL_Y, UMB_Z + 0.75);
       e.reticle.scale.setScalar(0.8 + 0.1 * Math.sin(this.time * 6 + e.x));
     }
     this.separate();
@@ -307,15 +512,22 @@ export class BossFrostScene extends BossScene {
       b.swing.rotation.z = Math.sin(this.time * 18) * b.wobble * 0.6;
       if (this.finished) b.swing.rotation.z = Math.sin(this.time * 14 + b.x) * 0.4;
     }
+    this.haT -= dt;
+    this.haTag.style.display = this.haT > 0 && !this.finished ? '' : 'none';
+    if (this.haT > 0) {
+      this.haTag.textContent = t('bossf.ha');
+      this.game.ui.place(this.haTag, this.haPos, this.camera);
+    }
   }
 
   end() {
-    for (const e of this.ents) e.reticle.visible = false;
+    for (const e of this.ents) { e.reticle.visible = false; e.hand.visible = false; }
+    this.kingBall.visible = false;
     super.end();
   }
 
   onStart() {
-    this.game.ui.toast(t('bossf.hint'), 4000);
+    this.game.ui.toast(t('bossf.hint'), 4500);
   }
 }
 

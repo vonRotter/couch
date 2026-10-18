@@ -141,3 +141,19 @@ export function shuffle(list) {
   }
   return a;
 }
+
+export const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+/**
+ * Draws gen() until ok(value) holds, at most `tries` times; null if nothing matched.
+ * The learning games use it to pick the next task among answers that are already
+ * on the field, keeping the task generator's own mix of easy and hard tasks. If they
+ * spawned the answer fresh instead, the right item would nearly always be the newest.
+ */
+export function drawMatching(gen, ok, tries = 400) {
+  for (let i = 0; i < tries; i++) {
+    const v = gen();
+    if (ok(v)) return v;
+  }
+  return null;
+}

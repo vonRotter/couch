@@ -581,6 +581,15 @@ export class SplashScene extends MiniGame {
     this.arrow.rotation.x = Math.PI;
     this.arrow.visible = false;
     this.scene.add(this.arrow);
+    // A glowing halo behind the bean whose turn it is (own material: its color changes per turn).
+    this.haloMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, depthWrite: false });
+    this.halo = new THREE.Group();
+    const haloFill = new THREE.Mesh(new THREE.CircleGeometry(0.98, 32), this.haloMat);
+    const haloRing = new THREE.Mesh(new THREE.RingGeometry(0.98, 1.12, 40), basic(COLORS.white));
+    this.halo.add(haloFill, haloRing);
+    this.halo.position.z = -0.35;
+    this.halo.visible = false;
+    this.scene.add(this.halo);
     this.dots = [];
     for (let i = 0; i < 9; i++) {
       const dot = new THREE.Mesh(sharedGeo('spDot', () => new THREE.SphereGeometry(0.08, 8, 6)), basic(COLORS.white));
@@ -767,6 +776,7 @@ export class SplashScene extends MiniGame {
     this.lastBeep = 99;
     this.focus = null;
     this.arrow.material = toon(ctrl.color);
+    this.haloMat.color.setHex(ctrl.color);
     for (const d of this.dots) d.material = basic(ctrl.color);
     this.game.audio.play('join');
     this.game.ui.banner(t('splash.turn', { name: ctrl.name }), this.turnNo === this.totalTurns ? t('splash.lastTurn') : '', 1300);
@@ -781,6 +791,7 @@ export class SplashScene extends MiniGame {
         if (this.phaseT <= 0) {
           this.phase = 'aim';
           if (u.ctrl.bot) u.brain = { stage: 'think', t: 0.7 + Math.random() * 0.6, walked: false };
+          else this.floatText(u.x, u.y + u.head + 1.9, esc(t('splash.yourGo')), u.ctrl.css);
         }
         break;
       case 'aim': {
@@ -827,7 +838,6 @@ export class SplashScene extends MiniGame {
       // [C] cycles tools.
       u.ctrl.tool = (u.ctrl.tool + 1) % TOOLS.length;
       this.game.audio.play('select');
-      this.helpSeen = true;
       return;
     }
     const sx = Math.abs(d.x) > 0.3 ? Math.sign(d.x) : 0;
@@ -913,7 +923,7 @@ export class SplashScene extends MiniGame {
     if (y <= lim) {
       // A ledge: step off it, unless only the sea is down there.
       if (!ter.groundBelow(nx, u.y)) { this.cold(u); return false; }
-      if (this.bodyBlocked(nx, u.y + 0.05)) return false;
+      if (this.bodyBlocked(nx, u.y + 0.05, dir)) return false;
       u.x = nx;
       u.grounded = false;
       u.selfAir = true;
@@ -923,7 +933,7 @@ export class SplashScene extends MiniGame {
       return true;
     }
     if (y < SEA_Y + 0.25) { this.cold(u); return false; }
-    if (this.bodyBlocked(nx, y)) return false;
+    if (this.bodyBlocked(nx, y, dir)) return false;
     // Smooth the look of a step: the body glides up instead of snapping.
     if (y - u.y > 0.12) u.visY -= y - u.y;
     u.x = nx;
@@ -937,10 +947,16 @@ export class SplashScene extends MiniGame {
     this.floatText(u.x, u.y + u.head + 0.6, t('splash.cold'), '#1aa7d8');
   }
 
-  bodyBlocked(x, y) {
-    // A slim body: crater rims and crumbs at the feet never count, only real walls and ceilings.
+  /**
+   * Would a bean standing at (x, y) poke into the cookie? A slim body: crumbs at the feet never count.
+   * When walking (dir given) only the side we walk toward and the head matter, so a steep slope
+   * behind us never holds us back.
+   */
+  bodyBlocked(x, y, dir = 0) {
     const s = (ox, oy) => this.terrain.solid(x + ox, y + oy);
-    return s(-0.2, 0.45) || s(0.2, 0.45) || s(-0.2, 0.72) || s(0.2, 0.72) || s(0, 1.0) || s(-0.16, 1.0) || s(0.16, 1.0);
+    const side = (k) => s(k * 0.2, 0.45) || s(k * 0.2, 0.72) || s(k * 0.16, 1.0);
+    if (s(0, 1.0) || s(0, 0.6)) return true;
+    return dir ? side(dir) : side(-1) || side(1);
   }
 
   hitsTerrain(x, y) {
@@ -1219,6 +1235,7 @@ export class SplashScene extends MiniGame {
       u.vx += nx * k;
       u.vy = Math.max(0, u.vy) + ny * k;
       u.grounded = false;
+      u.selfAir = false;
       u.still = 0;
       u.ch.squash(0.6);
       u.lastHitBy = owner.ctrl;
@@ -1243,6 +1260,7 @@ export class SplashScene extends MiniGame {
   bubbleUp(u, p) {
     u.float = { t: 2.4, vx: Math.sign(p.vx || 1) * 1.4 + this.wind * 0.25 };
     u.grounded = false;
+    u.selfAir = false;
     u.vx = u.vy = 0;
     u.lastHitBy = p.owner.ctrl;
     u.soggy += 10;
@@ -1278,9 +1296,14 @@ export class SplashScene extends MiniGame {
           let yy = u.y;
           for (let k = 0; k < 6 && !ter.solid(u.x, yy - 0.04); k++) yy -= 0.03;
           if (ter.solid(u.x, yy - 0.04)) u.y = yy;
-          else { u.grounded = false; u.vx = 0; u.vy = 0; }
+          else { u.grounded = false; u.vx = 0; u.vy = 0; u.selfAir = u === this.active; u.coyote = COYOTE; }
         }
       }
+      u.coyote = Math.max(0, u.coyote - dt);
+      u.jumpBuf = Math.max(0, u.jumpBuf - dt);
+      u.airWant = null;
+      u.visY *= Math.exp(-dt * 18);
+      if (Math.abs(u.visY) < 0.005) u.visY = 0;
       if (!u.rescue && u.y < SEA_Y - 0.5) this.dunk(u);
 
       // Look: soggy beans drip.
@@ -1295,7 +1318,7 @@ export class SplashScene extends MiniGame {
       if (active || u.grounded) u.ch.faceSide(u.facing);
       u.ch.update(dt, { moving: active ? u.walking : 0, grounded: u.grounded && !u.float, vy: u.vy });
       u.walking = 0;
-      u.ch.group.position.set(u.x, u.y, 0);
+      u.ch.group.position.set(u.x, u.y + u.visY, 0);
       u.bubble.visible = !!(u.rescue || u.float);
       if (u.bubble.visible) {
         u.bubble.position.set(u.x, u.y + BEAN_CY + 0.05, 0);
@@ -1310,12 +1333,23 @@ export class SplashScene extends MiniGame {
   updateAir(u, dt) {
     const ter = this.terrain;
     u.vy -= G * dt;
+    // Steering after your own jump or step off a ledge.
+    if (u.selfAir && u.airWant !== null) u.vx += clamp(u.airWant * WALK - u.vx, -AIR_ACC * dt, AIR_ACC * dt);
     const steps = Math.ceil((Math.max(Math.abs(u.vx), Math.abs(u.vy)) * dt) / 0.06) + 1;
     const h = dt / steps;
     const x0 = u.x, y0 = u.y;
     for (let i = 0; i < steps; i++) {
       const nx = u.x + u.vx * h, ny = u.y + u.vy * h;
       if (!this.hitsTerrain(nx, ny)) { u.x = nx; u.y = ny; continue; }
+      if (u.selfAir) {
+        // Own jumps never bounce: slide along walls, land on anything below, bump heads gently.
+        if (!this.hitsTerrain(u.x, ny)) { u.y = ny; u.vx = 0; continue; }
+        if (u.vy <= 0 && this.land(u, true)) return;
+        u.vy = u.vy > 0 ? 0 : u.vy * 0.3;
+        if (!this.hitsTerrain(nx, u.y)) { u.x = nx; continue; }
+        u.vx = 0;
+        continue;
+      }
       const n = ter.normal(nx, ny + BEAN_CY, 0.55);
       const vn = u.vx * n.x + u.vy * n.y;
       if (vn < 0) { u.vx -= 1.35 * vn * n.x; u.vy -= 1.35 * vn * n.y; }
@@ -1329,19 +1363,21 @@ export class SplashScene extends MiniGame {
     // Wedged in a corner with no speed left: find the ground or slide off.
     const moved = Math.hypot(u.x - x0, u.y - y0);
     u.still = moved < 0.01 ? u.still + dt : 0;
-    if (u.still > 0.35) {
+    if (u.still > (u.selfAir ? 0.12 : 0.35)) {
       if (!this.land(u)) { const n = ter.normal(u.x, u.y + BEAN_CY, 0.6); u.x += (n.x || 0.5) * 0.06; }
     }
   }
 
   /** Put the bean on the ground right below it. Returns false if there is none close by. */
-  land(u) {
+  land(u, soft = false) {
     const ter = this.terrain;
     for (let yy = u.y + 0.5; yy > u.y - 0.7; yy -= 0.02) {
       if (!ter.solid(u.x, yy) && ter.solid(u.x, yy - 0.02)) {
+        if (soft && yy - u.y > 0.05) u.visY -= yy - u.y;
         u.y = yy;
         u.vx = u.vy = 0;
         u.grounded = true;
+        u.selfAir = false;
         u.still = 0;
         u.ch.squash(0.8);
         this.game.audio.play('land');
@@ -1382,6 +1418,7 @@ export class SplashScene extends MiniGame {
     u.vx = u.vy = 0;
     u.float = null;
     u.grounded = false;
+    u.selfAir = false;
     u.rescue = { t: 0, x0: u.x, y0: u.y, to: this.respawnSpot(u.team) };
     this.focus = { x: u.x, y: SEA_Y + 2 };
   }
@@ -1421,6 +1458,7 @@ export class SplashScene extends MiniGame {
       u.y = r.to.y + 0.5;
       u.vx = u.vy = 0;
       u.grounded = false;
+      u.selfAir = true; // drops softly onto the spot
       this.popBubble(u.x, u.y + BEAN_CY);
       this.game.audio.play('rescue');
     }
@@ -1500,7 +1538,13 @@ export class SplashScene extends MiniGame {
     const u = this.active;
     const show = this.state === 'play' && u && this.phase === 'aim';
     this.arrow.visible = !!show || (this.state === 'play' && u && this.phase === 'overview');
-    if (this.arrow.visible) this.arrow.position.set(u.x, u.y + u.head + 0.55 + Math.abs(Math.sin(this.time * 5)) * 0.25, 0);
+    if (this.arrow.visible) this.arrow.position.set(u.x, u.y + u.visY + u.head + 0.55 + Math.abs(Math.sin(this.time * 5)) * 0.25, 0);
+    this.halo.visible = this.arrow.visible && !u.rescue;
+    if (this.halo.visible) {
+      this.halo.position.set(u.x, u.y + u.visY + 0.6, -0.35);
+      this.halo.scale.setScalar(1 + Math.sin(this.time * 4) * 0.06);
+      this.haloMat.opacity = 0.35 + Math.sin(this.time * 4) * 0.1;
+    }
     const tool = u ? TOOLS[u.ctrl.tool] : null;
     // Dotted preview for the first part of the throw (gravity only, the wind is up to you).
     const arc = show && (tool === 'balloon' || tool === 'bouncy' || tool === 'bubble');
@@ -1562,11 +1606,18 @@ export class SplashScene extends MiniGame {
     if (u) {
       const tool = TOOLS[u.ctrl.tool];
       const icons = TOOLS.map((k) => `<span style="display:inline-flex;padding:3px;border-radius:50%;background:${k === tool ? '#ffe47a' : 'transparent'};opacity:${k === tool ? 1 : 0.55}">${ICONS[k]}</span>`).join('');
-      const hint = u.ctrl.bot ? '' : `<small style="font-weight:600;opacity:.75">${t(tool === 'girder' ? (this.plankUsed ? 'splash.hint.used' : 'splash.hint.girder') : tool === 'bubble' ? 'splash.hint.bubble' : 'splash.hint.throw')}</small>`;
       const secs = Math.max(0, Math.ceil(this.turnLeft));
       html += '<div style="flex-basis:100%;height:0"></div>'
-        + `<div class="pill" style="border:4px solid ${u.ctrl.css}"><b style="color:${u.ctrl.css}">${esc(t('splash.turnPill', { name: u.ctrl.name }))}</b><span class="big-num" style="font-size:1.5em;color:${secs <= 5 ? '#ff5d73' : '#2b2340'}">${secs}</span></div>`
-        + `<div class="pill">${icons}<b>${t(`splash.tool.${tool}`)}</b>${hint}</div>`;
+        + `<div class="pill" style="border:4px solid ${u.ctrl.css}"><b style="color:${u.ctrl.css}">${esc(t('splash.turnPill', { name: u.ctrl.name }))}</b><span class="big-num" style="font-size:1.5em;color:${secs <= 5 ? '#ff5d73' : '#2b2340'}">${secs}</span></div>`;
+      if (u.ctrl.bot) html += `<div class="pill">${icons}<b>${t(`splash.tool.${tool}`)}</b></div>`;
+      else {
+        // The active player's own keys: what to press right now.
+        const p = u.ctrl.p, key = (k) => esc(tFor(this.game, p, k));
+        const toolHint = tool === 'girder' ? (this.plankUsed ? 'splash.hint.used' : 'splash.hint.girder') : tool === 'bubble' ? 'splash.hint.bubble' : 'splash.hint.throw';
+        const chip = (txt) => `<span style="display:inline-block;padding:1px 8px;margin-left:4px;border-radius:9px;background:#fff3c4;border:2px solid #2b2340;font-size:.85em;font-weight:800">${txt}</span>`;
+        html += `<div class="pill">${icons}<b>${t(`splash.tool.${tool}`)}</b>${chip(key('splash.hint.tool'))}</div>`
+          + `<div class="pill" style="font-weight:700;font-size:.92em">${key('splash.hint.move')} · ${key('splash.hint.aim')} · <b>${key(toolHint)}</b></div>`;
+      }
     }
     this.game.ui.setTop(html);
     this.game.ui.bar(this.players, (p) => {

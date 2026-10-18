@@ -137,10 +137,11 @@ export class SpellingScene extends MiniGame {
     return LEVELS[e.p.eduLevel ?? 0].key;
   }
 
-  nextWord(e) {
+  /** A word for e's level with its hidden letters picked. */
+  makeWord(e) {
     const lv = this.levelKey(e);
-    let pool = WORDS[lv].filter(([w]) => !e.used.has(w));
-    if (!pool.length) { e.used.clear(); pool = WORDS[lv]; }
+    let pool = WORDS[lv].filter(([w]) => !e.used.has(w) && w !== e.word?.word);
+    if (!pool.length) { e.used.clear(); pool = WORDS[lv].filter(([w]) => w !== e.word?.word); }
     const [word, clue] = pool[Math.floor(Math.random() * pool.length)];
     e.used.add(word);
     const letters = word.split('');
@@ -148,8 +149,23 @@ export class SpellingScene extends MiniGame {
     if (lv === 'easy') hidden = [Math.floor(Math.random() * letters.length)];
     else if (lv === 'medium') hidden = shuffle(letters.map((_, i) => i)).slice(0, 2);
     else hidden = letters.map((_, i) => i).slice(1);
-    e.word = { word, clue, letters, open: new Set(hidden) };
+    return { word, clue, letters, open: new Set(hidden) };
+  }
+
+  nextWord(e) {
+    // The next word is picked one word ahead, so its letters can already be floating by
+    // when it starts (see upcoming()).
+    e.word = e.queued || this.makeWord(e);
+    e.queued = this.makeWord(e);
     e.doneT = 0;
+  }
+
+  /** The letters e will need after the current one: rest of this word, then the queued word. */
+  upcoming(e) {
+    if (!e.word) return [];
+    const order = (w) => [...w.open].sort((a, b) => a - b).map((i) => w.letters[i]);
+    const rest = e.doneT > 0 ? [] : order(e.word).slice(1);
+    return e.queued ? rest.concat(order(e.queued)) : rest;
   }
 
   needed(e) {
@@ -205,25 +221,39 @@ export class SpellingScene extends MiniGame {
     return -Math.sign(LANE_VX[lane]) * (HALF_W + 1);
   }
 
+  /**
+   * Spawning. Letters are sent up ahead of time: the letters players will need next (the
+   * rest of their word and their queued word) are kept floating, so when a letter becomes
+   * the one you need, its balloon has usually been drifting for a while among newer ones.
+   * Before, the needed letter was spawned the moment it was needed, so the newest balloon
+   * was nearly always the answer.
+   */
   updateBalloons(dt) {
-    const needs = this.ents.map((e) => this.needed(e)).filter(Boolean);
+    const soon = this.ents.flatMap((e) => this.upcoming(e).slice(0, 4));
+    // A letter "is around" when a balloon with it is on screen in a reachable lane
+    // (with `lasting`, also not about to drift out the far side).
+    const around = (letter, lasting = false) => this.balloons.some((b) => b.letter === letter && b.lane <= 2
+      && Math.abs(b.x) < HALF_W - 1 && (!lasting || Math.abs(b.x) < HALF_W - 6 || Math.sign(b.x) !== Math.sign(b.vx)));
     this.spawnT -= dt;
     if (this.spawnT <= 0 && this.balloons.length < MAX_BALLOONS) {
       this.spawnT = 0.9;
-      const letter = needs.length && Math.random() < 0.55 ? needs[Math.floor(Math.random() * needs.length)] : ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+      const r = Math.random();
+      const letter = soon.length && r < 0.45 ? soon[Math.floor(Math.random() * soon.length)] : ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
       this.spawnBalloon(letter);
     }
-    // Make sure every player's next letter is always somewhere reachable.
     this.ensureT -= dt;
     if (this.ensureT <= 0) {
       this.ensureT = 0.5;
+      // Every player's next letter must always be somewhere reachable (rarely missing now),
+      // and their following letter should be on its way already.
+      const wanted = [];
       for (const e of this.ents) {
         const need = this.needed(e);
-        if (!need) continue;
-        // Count only balloons still on their way across, in a lane this player can reach.
-        const has = this.balloons.some((b) => b.letter === need && b.lane <= 2 && Math.abs(b.x) < HALF_W - 1);
-        if (!has) this.spawnBalloon(need, Math.random() < 0.6 ? 0 : 1);
+        if (need && !around(need)) wanted.push(need);
+        const next = this.upcoming(e)[0];
+        if (next && !around(next, true) && Math.random() < 0.5) wanted.push(next);
       }
+      for (const letter of shuffle(wanted)) this.spawnBalloon(letter, Math.floor(Math.random() * 3));
     }
 
     for (const b of this.balloons) {

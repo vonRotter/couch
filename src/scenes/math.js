@@ -4,7 +4,7 @@ import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeFlower, makeCloud, seeded } from '../core/world.js';
-import { LEVELS, glyphMaterial, fontsReady, speak, chooseLevels } from '../core/edu.js';
+import { LEVELS, glyphMaterial, fontsReady, speak, chooseLevels, drawMatching, shuffle } from '../core/edu.js';
 import { esc } from '../core/ui.js';
 
 // Mattejakt: everyone has their own sum; run to the coin with the answer.
@@ -72,9 +72,11 @@ export class MathScene extends MiniGame {
     this.state = 'pick';
     fontsReady().then(() => chooseLevels(this, 'Mattejakt')).then(() => {
       if (this.game.current !== this) return;
-      for (const e of this.ents) e.problem = makeProblem(this.levelKey(e));
+      // Coins first, then problems picked from answers already lying on the field.
       const n = 10 + this.players.length * 2;
       for (let i = 0; i < n; i++) this.spawnCoin();
+      for (const e of shuffle(this.ents)) this.newProblem(e);
+      this.ensureAnswers();
       this.intro('Mattejakt', 'Løp til mynten med riktig svar!');
     });
   }
@@ -167,11 +169,24 @@ export class MathScene extends MiniGame {
     return this.ents.filter((e) => e.problem && e.doneT <= 0 && !this.coins.some((c) => c.value === e.problem.answer)).map((e) => e.problem.answer);
   }
 
+  /**
+   * The next problem for e. Its answer is drawn from coins already on the field (any age),
+   * keeping makeProblem's mix of sums. Before this, the answer coin was spawned fresh for every
+   * new problem, so the newest coin was nearly always the right one.
+   */
+  newProblem(e) {
+    const lv = this.levelKey(e);
+    const taken = new Set(this.ents.filter((o) => o !== e && o.problem && o.doneT <= 0).map((o) => o.problem.answer));
+    const free = new Set(this.coins.map((c) => c.value).filter((v) => !taken.has(v)));
+    const last = e.problem?.text;
+    e.problem = drawMatching(() => makeProblem(lv), (p) => free.has(p.answer) && p.text !== last) || makeProblem(lv);
+  }
+
   pickValue() {
     const missing = this.missingAnswers();
     if (missing.length) return missing[0];
     const e = this.ents[Math.floor(Math.random() * this.ents.length)];
-    if (!e.problem) return rnd(0, 10);
+    if (!e.problem) return makeProblem(this.levelKey(e)).answer;
     // Near-misses make good practice.
     const near = e.problem.answer + rnd(-3, 3);
     return Math.random() < 0.6 ? THREE.MathUtils.clamp(near, 0, e.problem.max) : rnd(0, e.problem.max);
@@ -203,17 +218,22 @@ export class MathScene extends MiniGame {
     this.coins = this.coins.filter((x) => x !== c);
   }
 
+  /** Rarely needed now (problems come from the field): the answer arrives with two fresh decoys in random order. */
   ensureAnswers() {
     for (const ans of this.missingAnswers()) {
-      // Swap the coin farthest from everyone for the needed answer.
-      let far = null, farD = -1;
-      for (const c of this.coins) {
-        if (this.ents.some((e) => e.problem?.answer === c.value)) continue;
-        const d = Math.min(...this.ents.map((e) => Math.hypot(e.x - c.x, e.z - c.z)));
-        if (d > farD) { farD = d; far = c; }
-      }
-      if (far) this.removeCoin(far);
-      this.spawnCoin(ans);
+      // Swap coins nobody needs, preferring the ones far from everyone.
+      const spare = this.coins.filter((c) => !this.ents.some((e) => e.problem?.answer === c.value));
+      const far = (c) => Math.min(...this.ents.map((e) => Math.hypot(e.x - c.x, e.z - c.z))) * (0.6 + Math.random() * 0.8);
+      spare.sort((a, b) => far(b) - far(a));
+      const batch = spare.slice(0, 3);
+      for (const c of batch) this.removeCoin(c);
+      const decoys = batch.slice(1).map(() => {
+        const e = this.ents[Math.floor(Math.random() * this.ents.length)];
+        let v;
+        do v = THREE.MathUtils.clamp(ans + rnd(-4, 4), 0, e.problem?.max ?? 10); while (v === ans && ans > 0);
+        return v === ans ? ans + 1 : v;
+      });
+      for (const v of shuffle([ans, ...decoys])) this.spawnCoin(v);
     }
   }
 
@@ -235,7 +255,7 @@ export class MathScene extends MiniGame {
       if (e.doneT > 0) {
         e.doneT -= dt;
         if (e.doneT <= 0) {
-          e.problem = makeProblem(this.levelKey(e));
+          this.newProblem(e);
           this.ensureAnswers();
         }
       } else if (playing && e.problem) {

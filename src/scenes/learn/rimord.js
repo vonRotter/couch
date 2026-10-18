@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FieldRound, HD, TILE_COLORS, makeBoard } from './common.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../../core/palette.js';
-import { speak, glyphMaterial } from '../../core/edu.js';
+import { speak, glyphMaterial, pick } from '../../core/edu.js';
 import { t, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 
@@ -101,7 +101,6 @@ const ALL_WORDS = [...END_OF.keys()];
 
 export const rhymes = (a, b) => a !== b && END_OF.get(a) === END_OF.get(b);
 
-const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const vowelOf = (end) => end.match(/[AEIOUYÆØÅ]/)?.[0];
 
 export class RimordRound extends FieldRound {
@@ -141,11 +140,22 @@ export class RimordRound extends FieldRound {
     if (!pool.length) { used.clear(); pool = RHYMES[lv].flatMap((g) => g.words); }
     // Not the same rhyme as the last word.
     const fresh = pool.filter((w) => !e.task || END_OF.get(w) !== END_OF.get(e.task.word));
-    const word = pick(fresh.length ? fresh : pool);
+    // Prefer a word that rhymes with a board already on the field (any age), so the answer
+    // is not simply the newest board. The word itself should not be lying there too.
+    const free = this.freeTiles(e).map((t) => t.value);
+    const onField = new Set(this.tiles.map((t) => t.value));
+    const fits = (w) => !onField.has(w) && free.some((v) => rhymes(w, v));
+    const all = RHYMES[lv].flatMap((g) => g.words);
+    const cands = [fresh, pool, all].map((l) => l.filter(fits)).find((l) => l.length);
+    const word = pick(cands || (fresh.length ? fresh : pool));
     used.add(word);
-    // The partner that is guaranteed to be on the field: prefer one from the same level.
-    const same = RHYMES[lv].find((g) => g.words.includes(word)).words.filter((w) => w !== word);
-    const partner = pick(same.length ? same : [...BY_END.get(END_OF.get(word))].filter((w) => w !== word));
+    let partner;
+    if (cands) partner = pick(free.filter((v) => rhymes(word, v)));
+    else {
+      // Nothing fits: name a partner from the same level; ensure() spawns it among decoys.
+      const same = RHYMES[lv].find((g) => g.words.includes(word)).words.filter((w) => w !== word);
+      partner = pick(same.length ? same : [...BY_END.get(END_OF.get(word))].filter((w) => w !== word));
+    }
     e.task = { word, partner, found: null };
     speak(word);
   }

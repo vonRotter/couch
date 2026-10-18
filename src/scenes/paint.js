@@ -1,10 +1,32 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
-import { t } from '../core/i18n.js';
+import { t, addStrings } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, makeFlower, seeded } from '../core/world.js';
+import { makeGrumble } from '../core/critters.js';
+
+addStrings({
+  en: {
+    'paint.introG': 'Walk to paint · [A]: dash · [B]: paint bomb · Dash into the grumbles so they drop their mud brushes, then paint over the mud!',
+    'paint.more': 'Another grumble sneaks in!',
+    'paint.mudHud': 'Mud {n}%',
+    'paint.grumbles': 'Grumbles',
+    'paint.subMud': 'The floor is {n}% painted · {m}% mud',
+    'paint.muddy': 'The grumbles made a mess!',
+    'paint.bonks': '{n} bonks',
+  },
+  no: {
+    'paint.introG': 'Gå for å male · [A]: spurt · [B]: malingsbombe · Spurt inn i grumlingene så de mister gjørmepenselen, og mal over gjørma!',
+    'paint.more': 'Enda en grumling sniker seg inn!',
+    'paint.mudHud': 'Gjørme {n} %',
+    'paint.grumbles': 'Grumlinger',
+    'paint.subMud': 'Gulvet er {n} % malt · {m} % gjørme',
+    'paint.muddy': 'Grumlingene grisa det til!',
+    'paint.bonks': '{n} dult',
+  },
+});
 
 const HW = 14, HD = 9; // arena half width / depth
 const RES = 6; // paint cells per unit
@@ -13,6 +35,17 @@ const PR = 0.42;
 const SPEED = 6.5;
 const DASH_SPEED = 16;
 const ROUND_TIME = 60;
+
+// Grumble painters: they smear grey-brown mud over the floor. Mud belongs to nobody and
+// has to be painted over. A dash, a Mega Brush bump or a paint bomb makes one dizzy for a bit.
+const MUD = -2; // owner value for mud cells (-1 = clean floor)
+const MUD_RGB = [139, 118, 98];
+const MUD_CSS = '#8b7662';
+const GRUMBLE_COLOR = 0x8f8577;
+const GR = 0.45; // grumble radius
+const MUD_R = 0.62; // mud brush radius
+const DIZZY_TIME = 3.5;
+const JOIN_AT = [40, 20]; // timeLeft when an extra grumble joins
 
 const BUMPERS = [
   { x: -7, z: -3.5, r: 0.9 }, { x: 7, z: -3.5, r: 0.9 },
@@ -40,6 +73,16 @@ export class PaintScene extends MiniGame {
     this.buildArena();
     this.buildPaint();
 
+    // opts.grumbles: false/0 = none, a number = that many at the start, true/undefined = scaled by players.
+    this.grumbleOpt = opts.grumbles;
+    this.grumbles = [];
+    this.mudCount = 0;
+    this.joinIndex = 0;
+    const n = this.players.length;
+    const start = opts.grumbles === false ? 0 : typeof opts.grumbles === 'number' ? Math.max(0, Math.round(opts.grumbles)) : [2, 3, 4, 4, 5, 6][Math.min(6, Math.max(1, n)) - 1];
+    this.grumbleSpeed = 2.3 + 0.12 * (n - 1);
+    for (let i = 0; i < start; i++) this.spawnGrumble((i + 0.5) / start, false);
+
     this.ents = this.players.map((p, i) => {
       const ch = new Character(p.color, { hat: p.hat });
       this.scene.add(ch.group);
@@ -53,7 +96,7 @@ export class PaintScene extends MiniGame {
       return {
         p, ch, ring, index: i, rgb: rgbBytes(p.color),
         x, z, vx: 0, vz: 0, dirX: -x, dirZ: -z,
-        dashT: 0, dashCd: 0, bombCd: 0, mega: 0, stun: 0, count: 0,
+        dashT: 0, dashCd: 0, bombCd: 0, mega: 0, stun: 0, count: 0, bonks: 0,
       };
     });
     for (const e of this.ents) {
@@ -64,7 +107,14 @@ export class PaintScene extends MiniGame {
 
     this.frame();
     game.audio.playMusic('paint');
-    this.intro(t('game.paint'), t('paint.intro'));
+    this.intro(t('game.paint'), t(this.grumbles.length ? 'paint.introG' : 'paint.intro'));
+  }
+
+  /** Free play keeps its grumble setting on retry (a story stage merges its own opts). */
+  retryOptions() {
+    const o = { key: this.key };
+    if (this.grumbleOpt !== undefined) o.grumbles = this.grumbleOpt;
+    return o;
   }
 
   frame() {
@@ -203,6 +253,7 @@ export class PaintScene extends MiniGame {
         if ((c.x - x) ** 2 + (c.z - z) ** 2 > r * r) continue;
         const prev = this.owner[k];
         if (prev >= 0) this.ents[prev].count--;
+        else if (prev === MUD) this.mudCount--;
         this.owner[k] = ent.index;
         ent.count++;
         this.setCell(k, ent.rgb, this.shade[k]);
@@ -210,6 +261,207 @@ export class PaintScene extends MiniGame {
       }
     }
     if (changed) this.tex.needsUpdate = true;
+  }
+
+  /** A grumble's brush: turns any cell (clean or painted) into mud. */
+  mudCircle(x, z, r) {
+    const i0 = Math.max(0, Math.floor((x - r + HW) * RES));
+    const i1 = Math.min(GW - 1, Math.floor((x + r + HW) * RES));
+    const j0 = Math.max(0, Math.floor((HD - z - r) * RES));
+    const j1 = Math.min(GH - 1, Math.floor((HD - z + r) * RES));
+    let changed = false;
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const k = j * GW + i;
+        if (!this.mask[k] || this.owner[k] === MUD) continue;
+        const c = this.cellCenter(i, j);
+        if ((c.x - x) ** 2 + (c.z - z) ** 2 > r * r) continue;
+        const prev = this.owner[k];
+        if (prev >= 0) this.ents[prev].count--;
+        this.owner[k] = MUD;
+        this.mudCount++;
+        // Lumpy mud: a little speckle so it reads as smudges, not a flat color.
+        const speck = ((i * 7 + j * 13) % 5) * 0.035;
+        this.setCell(k, MUD_RGB, this.shade[k] * (0.9 + speck));
+        changed = true;
+      }
+    }
+    if (changed) this.tex.needsUpdate = true;
+  }
+
+  /** Player-painted cells in a 5x5 sample grid around (x, z): how juicy a spot is to mud. */
+  paintAround(x, z) {
+    let n = 0;
+    for (let a = -2; a <= 2; a++) {
+      for (let b = -2; b <= 2; b++) {
+        const i = Math.floor((x + a * 0.55 + HW) * RES), j = Math.floor((HD - z - b * 0.55) * RES);
+        if (i < 0 || j < 0 || i >= GW || j >= GH) continue;
+        if (this.owner[j * GW + i] >= 0) n++;
+      }
+    }
+    return n;
+  }
+
+  spawnGrumble(frac = Math.random(), puff = true) {
+    const mesh = makeGrumble(GRUMBLE_COLOR);
+    // Mud brush held out in front: wooden handle + muddy bristles.
+    const brush = new THREE.Group();
+    const handle = new THREE.Mesh(sharedGeo('pgHandle', () => new THREE.CylinderGeometry(0.045, 0.045, 0.7, 8)), toon(0xa0704a));
+    handle.position.y = 0.35;
+    const bristles = new THREE.Mesh(sharedGeo('pgBristle', () => new THREE.BoxGeometry(0.32, 0.18, 0.14)), toon(0x7a644f));
+    bristles.position.y = 0.04;
+    brush.add(handle, bristles);
+    brush.position.set(0.34, 0.08, 0.42);
+    brush.rotation.x = 0.7;
+    mesh.add(brush);
+    // Dizzy stars (hidden until bonked).
+    const stars = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const st = new THREE.Mesh(sharedGeo('pgStar', () => new THREE.OctahedronGeometry(0.11, 0)), toon(COLORS.gold, { emissive: 0x443300 }));
+      const a = (i / 3) * Math.PI * 2;
+      st.position.set(Math.cos(a) * 0.38, 0, Math.sin(a) * 0.38);
+      stars.add(st);
+    }
+    stars.position.y = 1.1;
+    stars.visible = false;
+    mesh.add(stars);
+    // Start along the fence, spread around the arena.
+    const a = frac * Math.PI * 2 + 0.3;
+    const x = THREE.MathUtils.clamp(Math.cos(a) * HW, -HW + 1, HW - 1);
+    const z = THREE.MathUtils.clamp(Math.sin(a) * HD, -HD + 1, HD - 1);
+    mesh.position.set(x, 0, z);
+    mesh.rotation.y = Math.atan2(-x, -z);
+    this.scene.add(mesh);
+    const g = { mesh, brush, stars, x, z, vx: 0, vz: 0, tx: undefined, tz: undefined, retarget: 0, dizzy: 0, yaw: mesh.rotation.y, phase: Math.random() * 6 };
+    this.grumbles.push(g);
+    if (puff) {
+      this.puffs.burst(new THREE.Vector3(x, 0.6, z), GRUMBLE_COLOR, { count: 14, size: 0.35, life: 0.6 });
+      this.game.audio.play('pop');
+    }
+    return g;
+  }
+
+  pickTarget(g) {
+    let best = null, bestS = -Infinity;
+    for (let k = 0; k < 14; k++) {
+      const x = (Math.random() - 0.5) * (HW * 2 - 2), z = (Math.random() - 0.5) * (HD * 2 - 2);
+      if (BUMPERS.some((b) => Math.hypot(b.x - x, b.z - z) < b.r + 0.7)) continue;
+      // Like fresh paint, dislike being near players and crowding other grumbles.
+      let s = this.paintAround(x, z) + Math.random() * 4 - Math.hypot(g.x - x, g.z - z) * 0.3;
+      for (const e of this.ents) { const d = Math.hypot(e.x - x, e.z - z); if (d < 4) s -= (4 - d) * 2.5; }
+      for (const o of this.grumbles) if (o !== g && o.tx !== undefined) { const d = Math.hypot(o.tx - x, o.tz - z); if (d < 4) s -= (4 - d) * 2; }
+      if (s > bestS) { bestS = s; best = { x, z }; }
+    }
+    if (best) { g.tx = best.x; g.tz = best.z; }
+    g.retarget = 2.5 + Math.random() * 2;
+  }
+
+  /** Bonk! The grumble gets dizzy and drops its brush for a few seconds. */
+  bonk(g, e, nx, nz) {
+    if (g.dizzy > 0.5) return;
+    g.dizzy = DIZZY_TIME;
+    g.vx = nx * 7; g.vz = nz * 7;
+    g.stars.visible = true;
+    // The brush falls to the floor where it is.
+    g.mesh.remove(g.brush);
+    g.brush.position.set(g.x + nx * 0.6, 0.06, g.z + nz * 0.6);
+    g.brush.rotation.set(Math.PI / 2, Math.random() * Math.PI, 0);
+    this.scene.add(g.brush);
+    if (e) e.bonks++;
+    this.game.audio.play('dizzy');
+    this.puffs.burst(new THREE.Vector3(g.x, 0.7, g.z), COLORS.gold, { count: 8, size: 0.25, life: 0.5 });
+  }
+
+  updateGrumbles(dt) {
+    const playing = this.state === 'play';
+    if (playing && this.grumbles.length && this.joinIndex < JOIN_AT.length && this.timeLeft <= JOIN_AT[this.joinIndex]) {
+      this.joinIndex++;
+      this.spawnGrumble();
+      this.game.ui.toast(t('paint.more'));
+    }
+    // They speed up as the match goes on.
+    const progress = 1 - this.timeLeft / ROUND_TIME;
+    const speed = this.grumbleSpeed * (1 + 0.35 * progress);
+    for (const g of this.grumbles) {
+      g.phase += dt;
+      if (g.dizzy > 0) {
+        g.dizzy -= dt;
+        g.vx *= Math.max(0, 1 - dt * 5); g.vz *= Math.max(0, 1 - dt * 5);
+        if (g.dizzy <= 0) {
+          // Pick the brush back up.
+          this.scene.remove(g.brush);
+          g.brush.position.set(0.34, 0.08, 0.42);
+          g.brush.rotation.set(0.7, 0, 0);
+          g.mesh.add(g.brush);
+          g.stars.visible = false;
+          g.retarget = 0;
+        }
+      } else if (playing) {
+        g.retarget -= dt;
+        if (g.tx === undefined || g.retarget <= 0 || Math.hypot(g.tx - g.x, g.tz - g.z) < 0.7) this.pickTarget(g);
+        let dx = g.tx - g.x, dz = g.tz - g.z;
+        const d = Math.hypot(dx, dz) || 1;
+        dx /= d; dz /= d;
+        // A wiggly walk, and shy away from players who come close.
+        const wig = Math.sin(g.phase * 3) * 0.35;
+        let wx = dx - dz * wig, wz = dz + dx * wig;
+        for (const e of this.ents) {
+          const ex = g.x - e.x, ez = g.z - e.z, ed = Math.hypot(ex, ez);
+          if (ed < 2.6 && ed > 1e-3) { const k = (2.6 - ed) / 2.6 * 1.4; wx += (ex / ed) * k; wz += (ez / ed) * k; }
+        }
+        const wl = Math.hypot(wx, wz) || 1;
+        const rate = Math.min(1, dt * 4);
+        g.vx += ((wx / wl) * speed - g.vx) * rate;
+        g.vz += ((wz / wl) * speed - g.vz) * rate;
+      } else {
+        g.vx *= 0.9; g.vz *= 0.9;
+      }
+      g.x += g.vx * dt; g.z += g.vz * dt;
+      g.x = THREE.MathUtils.clamp(g.x, -HW + GR, HW - GR);
+      g.z = THREE.MathUtils.clamp(g.z, -HD + GR, HD - GR);
+      for (const b of BUMPERS) {
+        const bx = g.x - b.x, bz = g.z - b.z, bd = Math.hypot(bx, bz);
+        if (bd < b.r + GR && bd > 1e-4) { g.x = b.x + (bx / bd) * (b.r + GR); g.z = b.z + (bz / bd) * (b.r + GR); }
+      }
+
+      // Players: a plain bump shoves it; a dash, Mega Brush or bomb makes it dizzy.
+      for (const e of this.ents) {
+        const ex = g.x - e.x, ez = g.z - e.z, ed = Math.hypot(ex, ez);
+        if (ed >= PR + GR || ed < 1e-4) continue;
+        const nx = ex / ed, nz = ez / ed;
+        const push = PR + GR - ed;
+        g.x += nx * push * 0.8; g.z += nz * push * 0.8;
+        e.x -= nx * push * 0.2; e.z -= nz * push * 0.2;
+        if (playing && (e.dashT > 0 || e.mega > 0)) this.bonk(g, e, nx, nz);
+      }
+
+      const moving = Math.hypot(g.vx, g.vz);
+      if (playing && g.dizzy <= 0) {
+        const fx = Math.sin(g.yaw), fz = Math.cos(g.yaw);
+        this.mudCircle(g.x + fx * 0.3, g.z + fz * 0.3, MUD_R);
+      }
+      if (moving > 0.3 && g.dizzy <= 0) {
+        const diff = Math.atan2(g.vx, g.vz) - g.yaw;
+        g.yaw += Math.atan2(Math.sin(diff), Math.cos(diff)) * Math.min(1, dt * 8);
+      }
+      g.mesh.position.set(g.x, Math.abs(Math.sin(g.phase * 9)) * 0.08 * Math.min(1, moving), g.z);
+      g.mesh.rotation.y = g.dizzy > 0 ? g.yaw + Math.sin(g.phase * 10) * 0.4 : g.yaw;
+      g.mesh.rotation.z = g.dizzy > 0 ? Math.sin(g.phase * 7) * 0.2 : 0;
+      g.stars.rotation.y += dt * 6;
+      const sq = 1 + Math.sin(g.phase * 9) * 0.05;
+      g.mesh.userData.body.scale.set(1 / sq, sq, 1 / sq);
+    }
+    // Grumbles don't stack on each other.
+    for (let i = 0; i < this.grumbles.length; i++) {
+      for (let j = i + 1; j < this.grumbles.length; j++) {
+        const a = this.grumbles[i], b = this.grumbles[j];
+        const dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz);
+        if (d >= GR * 2 || d < 1e-4) continue;
+        const push = (GR * 2 - d) / 2;
+        a.x -= (dx / d) * push; a.z -= (dz / d) * push;
+        b.x += (dx / d) * push; b.z += (dz / d) * push;
+      }
+    }
   }
 
   throwBomb(e) {
@@ -244,7 +496,7 @@ export class PaintScene extends MiniGame {
         e.vz += THREE.MathUtils.clamp(iz * SPEED - e.vz, -acc, acc);
       }
       if (playing && inp.aPressed && e.dashCd <= 0) {
-        e.dashT = 0.2;
+        e.dashT = 0.24;
         e.dashCd = 0.75;
         e.vx = e.dirX * DASH_SPEED;
         e.vz = e.dirZ * DASH_SPEED;
@@ -324,6 +576,10 @@ export class PaintScene extends MiniGame {
         b.done = true;
         this.scene.remove(b.mesh);
         this.paintCircle(b.tx, b.tz, 2.1, b.e);
+        for (const g of this.grumbles) {
+          const dx = g.x - b.tx, dz = g.z - b.tz, d = Math.hypot(dx, dz);
+          if (d < 2.3) this.bonk(g, b.e, d > 1e-3 ? dx / d : 1, d > 1e-3 ? dz / d : 0);
+        }
         this.game.audio.play('splat');
         this.puffs.burst(new THREE.Vector3(b.tx, 0.3, b.tz), b.e.p.color, { count: 18, speed: 7, up: 4, size: 0.35, life: 0.7 });
       }
@@ -385,13 +641,21 @@ export class PaintScene extends MiniGame {
     const tie = ranked.length > 1 && ranked[1].count === winner.count;
     for (const e of this.ents) e.ring.visible = false;
     this.confettiOrigin = new THREE.Vector3(winner.x, 2, winner.z);
+    const painted = this.ents.reduce((s, e) => s + e.count, 0);
+    const mud = Math.round((this.mudCount / this.paintable) * 100);
+    const muddy = this.grumbles.length && this.mudCount > painted;
+    const rows = ranked.map((e, i) => ({
+      css: e.p.css, name: e.p.name, value: `${pct(e)}%`,
+      detail: [i === 0 ? t('paint.top') : '', e.bonks ? t('paint.bonks', { n: e.bonks }) : ''].filter(Boolean).join(' · '),
+      crown: i === 0 || e.count === winner.count,
+    }));
+    if (this.grumbles.length) rows.push({ css: MUD_CSS, name: t('paint.grumbles'), value: `${mud}%`, detail: '', crown: false });
     this.finish({
-      title: this.ents.length === 1 ? t('paint.solo') : tie ? t('tie') : t('win', { name: winner.p.name }),
-      subtitle: t('paint.sub', { n: Math.round((this.ents.reduce((s, e) => s + e.count, 0) / this.paintable) * 100) }),
-      rows: ranked.map((e, i) => ({
-        css: e.p.css, name: e.p.name, value: `${pct(e)}%`,
-        detail: i === 0 ? t('paint.top') : '', crown: i === 0 || e.count === winner.count,
-      })),
+      title: muddy ? t('paint.muddy') : this.ents.length === 1 ? t('paint.solo') : tie ? t('tie') : t('win', { name: winner.p.name }),
+      subtitle: this.grumbles.length
+        ? t('paint.subMud', { n: Math.round((painted / this.paintable) * 100), m: mud })
+        : t('paint.sub', { n: Math.round((painted / this.paintable) * 100) }),
+      rows,
       stars: 2,
     });
   }
@@ -404,6 +668,7 @@ export class PaintScene extends MiniGame {
       b.g.scale.set(k, 2 - k, k);
     });
     if (this.updateResults(dt)) return;
+    this.updateGrumbles(dt);
     this.updateBlobs(dt);
     this.updatePickup(dt);
 
@@ -423,7 +688,10 @@ export class PaintScene extends MiniGame {
       const bars = this.ents
         .map((e) => `<div class="paint-bar" style="--c:${e.p.css}; height:${Math.min(100, Math.max(8, (e.count / this.paintable) * 300))}%"></div>`)
         .join('');
-      this.game.ui.setTop(`<div class="pill"><span class="big-num">${Math.ceil(this.timeLeft)}</span></div><div class="pill"><div class="paint-bars">${bars}</div></div>`);
+      const mud = this.grumbles.length
+        ? `<div class="pill"><div class="paint-bars"><div class="paint-bar" style="--c:${MUD_CSS}; height:${Math.min(100, Math.max(8, (this.mudCount / this.paintable) * 300))}%"></div></div><b>${t('paint.mudHud', { n: Math.round((this.mudCount / this.paintable) * 100) })}</b></div>`
+        : '';
+      this.game.ui.setTop(`<div class="pill"><span class="big-num">${Math.ceil(this.timeLeft)}</span></div><div class="pill"><div class="paint-bars">${bars}</div></div>${mud}`);
     }
     this.game.ui.bar(this.players, (p) => {
       const e = this.ents.find((x) => x.p === p);

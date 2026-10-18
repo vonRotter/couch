@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FieldRound, HD, textMaterial } from './common.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
-import { speak } from '../../core/edu.js';
+import { speak, pick } from '../../core/edu.js';
 import { t, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 
@@ -20,6 +20,7 @@ addStrings({
     'penger.unit': 'kjøpt',
     'penger.shop': 'BUTIKK',
     'penger.kr': '{n} kr',
+    'penger.levels': 'Lett: 1 og 5 kr · Middels: + 10 kr · Vanskelig: + 20 kr',
   },
   no: {
     'penger.title': 'Pengebutikken',
@@ -32,18 +33,28 @@ addStrings({
     'penger.unit': 'kjøpt',
     'penger.shop': 'BUTIKK',
     'penger.kr': '{n} kr',
+    'penger.levels': 'Lett: 1 og 5 kr · Middels: + 10 kr · Vanskelig: + 20 kr',
   },
 });
 
 const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-const pick = (list) => list[Math.floor(Math.random() * list.length)];
 
-// Coins and price range per level.
-const LEVEL = {
-  easy: { coins: [1, 5], min: 2, max: 10 },
-  medium: { coins: [1, 5, 10], min: 6, max: 20 },
-  hard: { coins: [1, 5, 10, 20], min: 15, max: 50 },
+/**
+ * Real Norwegian coins are 1, 5, 10 and 20 kroner (there is no 2-krone coin). Each level adds
+ * one bigger coin, and most prices are at least that coin's value, so every coin gets used:
+ * easy 2–10 kr with 1 and 5, medium 5–20 kr adds 10, hard 10–50 kr adds 20.
+ * `share` is how much of the field each coin should make up (small coins are needed most often).
+ */
+export const LEVEL = {
+  easy: { coins: [1, 5], min: 2, big: 5, max: 10, share: { 1: 0.55, 5: 0.45 } },
+  medium: { coins: [1, 5, 10], min: 5, big: 10, max: 20, share: { 1: 0.4, 5: 0.3, 10: 0.3 } },
+  hard: { coins: [1, 5, 10, 20], min: 10, big: 20, max: 50, share: { 1: 0.3, 5: 0.2, 10: 0.22, 20: 0.28 } },
 };
+
+/** A price for the level: three of four need the level's biggest coin, the rest are smaller. */
+export function randomPrice(lv) {
+  return Math.random() < 0.75 ? rnd(lv.big, lv.max) : rnd(lv.min, lv.big - 1);
+}
 
 // Norwegian coins: 1 and 5 kroner are silver, 10 and 20 are gold (and bigger).
 const COIN = {
@@ -121,7 +132,8 @@ export class PengerRound extends FieldRound {
 
   howto() {
     const coin = (v) => `<span style="display:inline-block;border-radius:50%;width:1.9em;height:1.9em;line-height:1.9em;text-align:center;font-weight:700;background:${v >= 10 ? '#ffd23f' : '#d9dde8'};border:3px solid ${v >= 10 ? '#e0a100' : '#aab0c2'};margin:0 2px">${v}</span>`;
-    return `<div class="edu-word" style="margin:8px 0">${coin(5)} + ${coin(1)} + ${coin(1)} = 7 kr</div>`;
+    return `<div class="edu-word" style="margin:8px 0">${coin(5)} + ${coin(1)} + ${coin(1)} = 7 kr</div>
+      <div class="party-hint" style="margin-top:4px">${esc(t('penger.levels'))}</div>`;
   }
 
   decorate() {
@@ -162,7 +174,7 @@ export class PengerRound extends FieldRound {
     const lv = LEVEL[this.levelKey(e)];
     let item;
     do item = pick(ITEMS); while (e.task && item === e.task.item);
-    e.task = { item, price: rnd(lv.min, lv.max), paid: [], sum: 0 };
+    e.task = { item, price: randomPrice(lv), paid: [], sum: 0 };
     e.itemHolder.clear();
     e.itemHolder.add(makeItem(item));
   }
@@ -185,11 +197,21 @@ export class PengerRound extends FieldRound {
     return tile.value <= this.left(e);
   }
 
+  /**
+   * Keeps a steady mix of the coins the players' levels use (only those), topping up the
+   * coin that is furthest below its share. The needed coins are then usually lying around
+   * already, instead of the right coin being the one that just appeared.
+   */
   filler() {
-    const e = pick(this.ents);
-    const coins = LEVEL[this.levelKey(e)].coins;
-    // Small coins are useful most often, so there are a few more of them.
-    return Math.random() < 0.35 ? coins[0] : pick(coins);
+    const want = {};
+    for (const e of this.ents) {
+      for (const [c, w] of Object.entries(LEVEL[this.levelKey(e)].share)) want[c] = (want[c] || 0) + w / this.ents.length;
+    }
+    const have = {};
+    for (const t of this.tiles) have[t.value] = (have[t.value] || 0) + 1;
+    const coins = Object.keys(want);
+    const gap = coins.map((c) => Math.max(0, want[c] * this.tileCount - (have[c] || 0)) + 0.15 * Math.random());
+    return Number(coins[gap.indexOf(Math.max(...gap))]);
   }
 
   spawnTile(value) {
