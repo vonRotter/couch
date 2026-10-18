@@ -199,6 +199,14 @@ meter means a nap until a teammate taps you (or a few seconds pass). Find keys, 
 on the stairs; the last floor ends with the Sleepy Sheep, who needs enough bonks on its glowing
 spots to curl up and fall asleep. The team shares coins; 3 stars under 7 minutes.
 
+**Grumble Guides** (co-op puzzle, Lemmings style, 5 levels). Grumbles pop out of a hot-air balloon
+and march along; guide enough of them home. Every player has a cursor ring: A gives the grumble under
+it the current job, C switches job, and holding B runs the game at triple speed. Jobs: Stopper (A
+again lets it go), Bridge, Stairs, Dig down, Tunnel and Umbrella; the job bar shows what is left.
+Grumbles never get hurt: a long fall bounces them back up dizzy, and water floats them back to the
+start in a bubble. 1 to 3 stars per level (goal, halfway to everyone, everyone home); levels unlock in
+order and progress is saved.
+
 **Story** (co-op campaign, next to the hub, not instead of it). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
 the island games with a co-op goal (for example "together, paint a share of the floor" or "everyone reaches the flag") and
@@ -293,6 +301,7 @@ src/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
+    guides.js
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
     learnmix.js  learn/  Læringsmiks and its rounds (klokka, penger, rimord)

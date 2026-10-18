@@ -49,6 +49,7 @@ addStrings({
     'guides.lose': 'So close!',
     'guides.sub': '{name} · {home} of {total} home (goal {goal})',
     'guides.jobs': '{n} jobs',
+    'guides.jobs1': '1 job',
     'guides.cheer': 'cheered them on',
     'guides.next': 'A: next level · B: island',
     'guides.retry': 'A: try again · B: island',
@@ -90,6 +91,7 @@ addStrings({
     'guides.lose': 'Nesten!',
     'guides.sub': '{name} · {home} av {total} hjemme (mål {goal})',
     'guides.jobs': '{n} jobber',
+    'guides.jobs1': '1 jobb',
     'guides.cheer': 'heiet på dem',
     'guides.next': 'A: neste brett · B: øya',
     'guides.retry': 'A: prøv igjen · B: øya',
@@ -1556,6 +1558,8 @@ export class GuidesScene extends MiniGame {
     this.won = won;
     this.hasNext = !this.campaign && won && this.levelIndex + 1 < LEVELS.length;
     const best = Math.max(...this.ents.map((e) => e.total));
+    this.game.ui.barEl.innerHTML = '';
+    this.barCache = '';
     const starText = '★'.repeat(stars) + '☆'.repeat(3 - stars);
     this.finish({
       title: `${won ? t('guides.win') : t('guides.lose')} ${starText}`,
@@ -1563,7 +1567,7 @@ export class GuidesScene extends MiniGame {
       rows: this.ents.map((e) => {
         const top = Object.entries(e.jobs).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).slice(0, 2);
         return {
-          css: e.p.css, name: e.p.name, value: t('guides.jobs', { n: e.total }),
+          css: e.p.css, name: e.p.name, value: e.total === 1 ? t('guides.jobs1') : t('guides.jobs', { n: e.total }),
           detail: top.length ? top.map(([j, n]) => `${t(`guides.job.${j}`)} ×${n}`).join(' · ') : t('guides.cheer'),
           crown: this.ents.length > 1 && e.total === best && best > 0,
         };

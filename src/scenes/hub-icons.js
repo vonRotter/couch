@@ -253,6 +253,23 @@ const ICONS = {
     key.rotation.z = -0.5;
     g.add(key);
   },
+  guides(g) {
+    // A grumble in a yellow hard hat marching home to a little house.
+    g.add(mesh(box('gdHouse', 0.85, 0.7, 0.6, 0.06), toon(COLORS.cream), 0.45, -0.4, -0.25));
+    const roof = mesh(sharedGeo('icon-gdRoof', () => new THREE.ConeGeometry(0.7, 0.5, 4)), toon(0xff7a7a), 0.45, 0.2, -0.25);
+    roof.rotation.y = Math.PI / 4;
+    roof.scale.z = 0.75;
+    g.add(roof);
+    g.add(mesh(box('gdDoor', 0.24, 0.38, 0.06, 0.03), toon(0x8a5a32), 0.45, -0.56, 0.07));
+    g.add(mesh(box('gdWin', 0.18, 0.18, 0.06, 0.02), toon(0xffe47a, { emissive: 0x553300 }), 0.72, -0.28, 0.07));
+    const critter = makeGrumble(0x7b6cf6);
+    critter.scale.setScalar(0.95);
+    critter.position.set(-0.5, -0.75, 0.25);
+    critter.rotation.y = 0.6;
+    critter.add(mesh(sharedGeo('icon-gdHat', () => new THREE.SphereGeometry(0.34, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2)), toon(0xffc93c), 0, 0.74, 0));
+    critter.add(mesh(cyl('gdBrim', 0.44, 0.44, 0.05), toon(0xffc93c), 0, 0.76, 0.04));
+    g.add(critter);
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));
