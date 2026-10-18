@@ -58,7 +58,7 @@ addStrings({
     'castle.bonk': 'BONK!', 'castle.blocked': 'BLOKKERT!',
     'castle.piece.block': 'Trekloss', 'castle.piece.door': 'Lagdør', 'castle.piece.ladder': 'Stige', 'castle.piece.pad': 'Sprettpute',
     'castle.wood': '{n} planker', 'castle.arrows': '{n} piler',
-    'castle.caps': '{n} flagg tatt', 'castle.cap1': '1 flagg tatt',
+    'castle.caps': '{n} flagg', 'castle.cap1': '1 flagg',
     'castle.bonks': '{n} bonk', 'castle.bonk1': '1 bonk',
     'castle.built': '{n} bygget',
     'castle.noWood': 'Tom for planker!', 'castle.noArrows': 'Ingen piler!',
@@ -621,7 +621,7 @@ export class CastleScene extends MiniGame {
       caps: 0, bonks: 0, built: 0,
       // bot brain
       think: 0, mode: 'guard', modeT: 6 + Math.random() * 6, goalX: 0, target: null, react: 0.4,
-      jumpHold: 0, stuckT: 0, lastX: 0, shieldT: 0, hopCd: 0,
+      jumpHold: 0, stuckT: 0, lastX: 0, shieldT: 0, hopCd: 0, engageT: 0, ignore: null, ignoreT: 0,
     };
     this.makeGear(e);
     if (p) {
@@ -918,7 +918,7 @@ export class CastleScene extends MiniGame {
     for (const o of this.ents) {
       if (o.team === e.team || o.state !== 'play') continue;
       const dx = (o.body.x - b.x) * e.facing, dy = o.body.y - b.y;
-      if (dx > -0.3 && dx < reach && Math.abs(dy) < 1.3) this.hit(o, e, { dir: e.facing, big, melee: true });
+      if (dx > -0.3 && dx < reach && Math.abs(dy) < 1.3 && this.hit(o, e, { dir: e.facing, big, melee: true })) e.engageT = 0;
     }
     // Swords knock enemy pieces apart: a few hits, or one big slash.
     const cols = big ? [colOf(b.x + e.facing * 0.9), colOf(b.x + e.facing * 1.9)] : [colOf(b.x + e.facing * 0.9)];
@@ -1317,6 +1317,7 @@ export class CastleScene extends MiniGame {
     for (const o of enemies) {
       const d = Math.hypot(o.body.x - b.x, o.body.y - b.y);
       const nearFlag = Math.abs(o.body.x - own.homeX) < 9;
+      if (o === e.ignore && e.ignoreT > 0) continue;
       if ((d < 4.5 || nearFlag) && d < best) { best = d; threat = o; }
     }
     if (e.carrying) e.goalX = own.homeX;
@@ -1339,8 +1340,15 @@ export class CastleScene extends MiniGame {
     if (Math.abs(dx) > 0.45) inp.x = Math.sign(dx);
     // Swing at a target in reach.
     const tg = e.target;
+    e.ignoreT -= dt;
     if (tg && tg.state === 'play') {
       const tdx = tg.body.x - b.x;
+      // Give up on a target that stays out of reach (up on a tower, say) for a while.
+      if (tg !== e.lastTarget) e.engageT = 0;
+      e.lastTarget = tg;
+      e.engageT += dt;
+      if (e.engageT > 5) { e.ignore = tg; e.ignoreT = 6; e.engageT = 0; e.think = 0; }
+      if (Math.abs(tdx) < 1.6 && tg.body.y - b.y > 1.0 && b.grounded) { inp.aPressed = true; e.jumpHold = 0.35; }
       if (Math.abs(tdx) < 1.4 && Math.abs(tg.body.y - b.y) < 1.2) {
         e.facing = Math.sign(tdx) || e.facing;
         inp.x = Math.abs(tdx) < 0.8 ? 0 : inp.x;
