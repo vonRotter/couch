@@ -117,8 +117,8 @@ const pick = (list, n) => list[Math.min(list.length, Math.max(1, n)) - 1];
 const pct = (v) => Math.round((v || 0) * 100);
 const secs = (v) => Math.round(v || 0);
 
-// Slalom has a gate every 22 m over 470 m (see slalom.js).
-const SLALOM_GATES = 21;
+// Slalom has a gate every 22 m over 470 m (see slalom.js): 20 gates.
+const SLALOM_GATES = 20;
 const GOLF_PAR3 = 8; // par of the first three Bean Golf holes
 const SPACE_RINGS = 15; // rings in one Space Race lap, counting the finish ring
 const BOSS_TIME = 85; // boss time limit in seconds (see boss-common.js)
@@ -127,9 +127,9 @@ const BOSS_FAST = 60;
 /** Boss goal counts by player count (shared with the boss scenes). */
 export const BOSS_GOALS = [
   (n) => 6 + 2 * n, // meadow: head bounces
-  (n) => 8 + 2 * n, // frost: bells rung
-  (n) => 6 + 2 * n, // castle: cakes eaten
-  (n) => 10 + 2 * n, // space: rings
+  (n) => 8 + 3 * n, // frost: bells rung
+  (n) => 6 + 3 * n, // castle: cakes eaten
+  (n) => 10 + 3 * n, // space: rings
 ];
 export { BOSS_TIME };
 
@@ -154,7 +154,7 @@ const bossStage = (id, chapter) => stage(id, `boss${chapter}`, {}, {
   value: (s) => (s.done ? t('story.val.bossDone', { s: secs(s.time) }) : t('story.val.boss', { n: s.count, m: s.goal })),
 });
 
-const PAINT = { two: [30, 40, 45, 50, 50, 50], three: [42, 55, 62, 66, 68, 70] };
+const PAINT = { two: [50, 70, 80, 85, 88, 90], three: [65, 85, 92, 94, 95, 96] }; // random play paints ~55% solo, ~99% with 3
 const COOK = { two: [3, 4, 4, 5, 5, 6], three: [5, 6, 7, 8, 8, 9] };
 
 export const CHAPTERS = [

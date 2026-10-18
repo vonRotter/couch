@@ -14,7 +14,7 @@ addStrings({
   no: { 'bosss.hint': 'Pinnen: fly · A: fart · fly gjennom bobleringene!', 'bosss.gold': 'Gullring! +2' },
 });
 
-const X0 = -14, X1 = 8.5, Y0 = 0.8, Y1 = 12.2;
+const X0 = -14, X1 = 4.5, Y0 = 0.8, Y1 = 12.2;
 const KING_X = 11.5;
 const RING_R = 1.05;
 const FLY = 8;
@@ -72,7 +72,7 @@ export class BossSpaceScene extends BossScene {
     this.stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xfff6c9, size: 0.35 }));
     s.add(this.stars);
     // Planets.
-    const planets = [[-20, 15, -25, 3, 0xff9fd0], [22, 3, -30, 4.5, 0x8fd8ff], [-6, -6, -18, 2.2, 0xffe47a], [8, 18, -35, 2.6, 0x9ff0c8]];
+    const planets = [[-20, 15, -25, 3, 0xff9fd0], [30, 22, -40, 4.5, 0x8fd8ff], [-6, -6, -18, 2.2, 0xffe47a], [8, 18, -35, 2.6, 0x9ff0c8]];
     for (const [x, y, z, r, c] of planets) {
       const p = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 16), toon(c));
       p.position.set(x, y, z);
@@ -205,7 +205,7 @@ export class BossSpaceScene extends BossScene {
       r.mesh.position.set(r.x, r.y, 0);
       r.mesh.scale.setScalar(Math.min(1, 0.2 + r.age * 2.5) * (r.gold ? 1.15 : 1));
       if (r.x < X0 - 2) { r.done = true; continue; }
-      if (this.state !== 'play' || this.finished || r.age < 0.3) continue;
+      if (this.state !== 'play' || this.finished || r.age < 0.6) continue;
       for (const e of this.ents) {
         if (Math.abs(e.x - r.x) < 0.55 && Math.abs(e.y + 0.55 - r.y) < RING_R * 0.85) {
           r.done = true;

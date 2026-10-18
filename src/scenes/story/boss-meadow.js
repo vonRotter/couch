@@ -38,9 +38,9 @@ export class BossMeadowScene extends BossScene {
 
   frame() {
     const tilt = THREE.MathUtils.degToRad(50);
-    const d = this.fitDistance(R * 2 + 1, R * 2 * Math.sin(tilt) + 3);
+    const d = this.fitDistance(R * 2 + 1, R * 2 * Math.sin(tilt) + 6);
     this.camera.position.set(0, Math.sin(tilt) * d, Math.cos(tilt) * d + 0.8);
-    this.camera.lookAt(0, 0.6, 0.8);
+    this.camera.lookAt(0, 0.6, 0.2);
   }
 
   buildMeadow() {

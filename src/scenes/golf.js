@@ -999,7 +999,9 @@ export class GolfScene extends MiniGame {
   /** Story campaign: team strokes against the course par. */
   campaignStats() {
     const par = this.course.reduce((s, h) => s + h.par, 0);
-    return { strokes: this.ents.reduce((s, e) => s + this.total(e), 0), par, players: this.ents.length };
+    // Holes not played yet (ended early) count as the maximum strokes.
+    const strokes = this.ents.reduce((s, e) => s + this.course.reduce((h, _, i) => h + (e.scores[i] ?? MAX_STROKES), 0), 0);
+    return { strokes, par, players: this.ents.length };
   }
 
   end() {

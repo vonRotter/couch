@@ -174,7 +174,7 @@ export class BossFrostScene extends BossScene {
     stick.position.y = -0.6;
     u.add(top, stripe, stick);
     u.rotation.x = 0.9; // held up over his head, tilted toward the bells
-    u.position.set(0, 1.15, 0.35);
+    u.position.set(0, 1.5, 0.3);
     u.scale.setScalar(0.62);
     // Parent to the king's inner group so it wobbles with him (and inherits his size).
     this.king.inner.add(u);
