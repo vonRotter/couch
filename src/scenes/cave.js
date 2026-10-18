@@ -243,7 +243,7 @@ export function caveMoves(q, c, r, emit) {
       for (let i = 1; i <= maxI; i++) {
         const cx = c + dir * i, ry = r - k;
         if (!q.pass(cx, ry)) break;
-        if (i >= 2 && !q.pass(cx, ry - 1)) break; // long hops need head room all the way
+        if (i >= 2 && (!q.pass(cx, ry - 1) || !q.pass(cx - dir, ry - 1))) break; // long hops need head room all the way
         const act = { kind: k === 0 && i === 1 ? 'walk' : 'jump', k, dir, i };
         if (q.stand(cx, ry)) emit(cx, ry, act);
         else fallFrom(cx, ry, act);
@@ -1045,7 +1045,8 @@ export class CaveScene extends MiniGame {
       if (b.grounded) {
         e.peakY = b.y;
         const g = b.ground;
-        if (g?.spring) {
+        if (g?.spring && ctrl.y > -0.5) {
+          // Bouncy mushroom (hold down to land on it softly).
           b.vy = SPRING;
           b.grounded = false;
           e.ch.squash(1.45);

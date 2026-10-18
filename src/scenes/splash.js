@@ -96,7 +96,7 @@ const FULL_HOLD = 0.45; // a full meter throws on its own after this
 const MIN_SPEED = 5, MAX_SPEED = 20;
 const BEAN_CY = 0.52, BEAN_R = 0.42; // collision circle center above the feet, radius
 const HIT_R = 0.62; // projectile vs bean center
-const GIRDER_L = 3.2, GIRDER_T = 0.4, GIRDER_D = 2.1;
+const GIRDER_L = 3.2, GIRDER_T = 0.4, GIRDER_D = 2.5;
 
 const TOOLS = ['balloon', 'bouncy', 'girder', 'bubble'];
 const TOOL = {
@@ -706,7 +706,8 @@ export class SplashScene extends MiniGame {
   // ---------- turns ----------
 
   onStart() {
-    this.nextTurn();
+    // Let the GO! banner clear before the first turn banner.
+    this.later(0.7, () => this.nextTurn());
   }
 
   nextTurn() {
@@ -1010,8 +1011,8 @@ export class SplashScene extends MiniGame {
     // Grumbles are not perfect: a little error on angle and power.
     Object.assign(b, {
       stage: 'aim', tool, dir: best.dir,
-      angle: clamp(best.angle + gauss() * 0.06, AIM_MIN, AIM_MAX),
-      power: clamp(best.power * (1 + gauss() * 0.05), 0.05, 1),
+      angle: clamp(best.angle + gauss() * 0.1, AIM_MIN, AIM_MAX),
+      power: clamp(best.power * (1 + gauss() * 0.09), 0.05, 1),
       planned: best,
     });
     u.ctrl.tool = TOOLS.indexOf(tool);
@@ -1444,6 +1445,7 @@ export class SplashScene extends MiniGame {
   updateLabels() {
     const ui = this.game.ui;
     for (const u of this.units) {
+      if (this.state === 'results') { u.label.style.display = 'none'; continue; }
       const active = u === this.active && this.state === 'play' && (this.phase === 'aim' || this.phase === 'overview');
       const wet = Math.min(100, Math.round(u.soggy));
       const meter = active && u.charging;
