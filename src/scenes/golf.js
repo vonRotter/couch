@@ -85,7 +85,7 @@ const HOLES = [
     par: 3, felt: 0x5fd69a, cake: 0xc9a8ff, stripe: [0x4cc9f0, COLORS.icing],
     tiles: [{ x0: -9, x1: 4.5, z0: 1, z1: 5 }, { x0: 0, x1: 4.5, z0: -6, z1: 1 }],
     walls: [[-9, 1, 0, 1, 0, -6, 4.5, -6, 4.5, 5, -9, 5, -9, 1]],
-    bumpers: [[3.7, 4.2, 0.45], [1.0, -0.8, 0.4], [3.4, -2.6, 0.4], [-3.5, 3.0, 0.35]],
+    bumpers: [[3.7, 4.2, 0.45], [1.0, -0.8, 0.4], [3.4, -2.6, 0.4], [-2.8, 4.2, 0.35]],
     tee: [-7.5, 3], cup: [2.2, -4.6], path: [[2.2, 2.6]],
     decor: [['tree', -5, -1.5], ['lolly', -1.5, -3.5], ['cupcake', 7, 0], ['gum', -8, 7], ['cane', 6.8, -4.5], ['tree', 7.5, 4.5]],
   },
@@ -1267,8 +1267,15 @@ export class GolfScene extends MiniGame {
         const hit = raySeg(x, z, dx, dz, ax, az, bx, bz);
         if (hit && hit.t > 1e-3 && hit.t < bestT) { bestT = hit.t; nrm = hit.n; }
       }
-      // Stop short of the wall by the ball's radius so the line bounces where the ball does.
-      const step = nrm ? Math.max(0, bestT - (BALL_R + WALL_HALF)) : bestT;
+      let step = nrm ? Math.max(0, bestT - (BALL_R + WALL_HALF)) : bestT; // bounce where the ball would
+      // Bumpers: ray against a circle grown by the ball radius.
+      for (const [cx, cz, r] of this.hole.bumpers) {
+        const R = r + BALL_R, fx = x - cx, fz = z - cz;
+        const bb = fx * dx + fz * dz, cc = fx * fx + fz * fz - R * R, disc = bb * bb - cc;
+        if (cc <= 0 || disc < 0) continue;
+        const tt = -bb - Math.sqrt(disc);
+        if (tt > 1e-3 && tt < step) { step = tt; const hx = x + dx * tt - cx, hz = z + dz * tt - cz, hl = Math.hypot(hx, hz); nrm = [hx / hl, hz / hl]; }
+      }
       x += dx * step; z += dz * step;
       pts.push([x, z]);
       left -= step;

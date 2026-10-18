@@ -8,8 +8,8 @@ import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
 import { moveBody, solidAt, approach } from '../core/physics2d.js';
 
 // Rooftop Rush: a side-scrolling speedrun race over the rooftops, shared camera.
-// Moves: run, jump, wall jump, slide (B or down on the ground), air dash (B in the air),
-// grapple (B in the air near a hook balloon, hold to swing).
+// Moves: run, jump (A, also off walls), slide (stick down), dash (B),
+// grapple (C near a hook balloon, hold to swing). C keys also count as B elsewhere, so check C first.
 const P = {
   speed: 10, accel: 55, airAccel: 32, jump: 15, gravity: 40, fallMul: 1.45, maxFall: -22,
   coyote: 0.12, buffer: 0.15, wallSlide: -3.5, wallJumpX: 9, wallJumpY: 14.5,
@@ -263,7 +263,7 @@ export class RunnerScene extends MiniGame {
         const vr = b.vx * nx + b.vy * ny;
         if (vr > 0) { b.vx -= vr * nx; b.vy -= vr * ny; }
       }
-      const release = !inp.b || inp.aPressed || e.t > 4;
+      const release = !inp.c || inp.aPressed || e.t > 4;
       if (release) {
         e.hook = null;
         e.rope.visible = false;
@@ -297,8 +297,8 @@ export class RunnerScene extends MiniGame {
     const wasGrounded = b.grounded;
     if (b.grounded) { e.coyote = P.coyote; e.canDash = true; } else e.coyote -= dt;
 
-    // Slide: B or down on the ground. Keeps (or gives) speed and shrinks the hitbox.
-    const wantSlide = b.grounded && (inp.bPressed || (inp.y < -0.6 && Math.abs(b.vx) > 3 && e.slideT <= 0 && !e.downHeld));
+    // Slide: push the stick down on the ground. Keeps (or gives) speed and shrinks the hitbox.
+    const wantSlide = b.grounded && inp.y < -0.6 && e.slideT <= 0 && !e.downHeld;
     e.downHeld = inp.y < -0.6;
     if (wantSlide && e.slideT <= 0) {
       e.slideT = P.slideTime;
@@ -346,8 +346,8 @@ export class RunnerScene extends MiniGame {
       this.jump(e);
     }
 
-    // B in the air: grapple a nearby hook, otherwise dash.
-    if (!b.grounded && inp.bPressed) {
+    // C in the air: grab a nearby hook balloon and swing while C is held.
+    if (!b.grounded && inp.cPressed) {
       const h = this.nearestHook(b);
       if (h) {
         e.hook = h;
@@ -357,6 +357,9 @@ export class RunnerScene extends MiniGame {
         e.slideT = 0;
         return;
       }
+    }
+    // B: dash (once per jump in the air, any time on the ground).
+    if (inp.bPressed && !inp.cPressed) {
       if (e.canDash) {
         e.canDash = false;
         e.dashT = P.dashTime;

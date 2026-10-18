@@ -1,5 +1,6 @@
 // Unified input: up to 4 keyboard schemes + up to 4 gamepads.
 // Every device exposes the same tiny controller: a stick (x, y), button A and button B.
+// A few games also use button C; its keys also count as B, so games that ignore C keep working.
 // y is +1 for "up".
 
 export const KEYBOARD_SCHEMES = [
@@ -8,32 +9,32 @@ export const KEYBOARD_SCHEMES = [
     label: 'WASD',
     hint: 'WASD · Space · Shift',
     up: ['KeyW'], down: ['KeyS'], left: ['KeyA'], right: ['KeyD'],
-    a: ['Space'], b: ['ShiftLeft', 'KeyE'],
-    aLabel: 'Space', bLabel: 'Shift',
+    a: ['Space'], b: ['ShiftLeft', 'KeyE'], c: ['KeyE'],
+    aLabel: 'Space', bLabel: 'Shift', cLabel: 'E',
   },
   {
     id: 'kb1',
     label: 'Arrows',
     hint: 'Arrows · Enter · R-Shift',
     up: ['ArrowUp'], down: ['ArrowDown'], left: ['ArrowLeft'], right: ['ArrowRight'],
-    a: ['Enter'], b: ['ShiftRight', 'ControlRight'],
-    aLabel: 'Enter', bLabel: 'R-Shift',
+    a: ['Enter'], b: ['ShiftRight', 'ControlRight'], c: ['ControlRight'],
+    aLabel: 'Enter', bLabel: 'R-Shift', cLabel: 'R-Ctrl',
   },
   {
     id: 'kb2',
     label: 'IJKL',
     hint: 'IJKL · U · O',
     up: ['KeyI'], down: ['KeyK'], left: ['KeyJ'], right: ['KeyL'],
-    a: ['KeyU'], b: ['KeyO'],
-    aLabel: 'U', bLabel: 'O',
+    a: ['KeyU'], b: ['KeyO', 'KeyP'], c: ['KeyP'],
+    aLabel: 'U', bLabel: 'O', cLabel: 'P',
   },
   {
     id: 'kb3',
     label: 'Numpad',
     hint: 'Num 8456 · Num 0 · Num .',
     up: ['Numpad8'], down: ['Numpad5', 'Numpad2'], left: ['Numpad4'], right: ['Numpad6'],
-    a: ['Numpad0'], b: ['NumpadDecimal', 'NumpadEnter'],
-    aLabel: 'Num 0', bLabel: 'Num .',
+    a: ['Numpad0'], b: ['NumpadDecimal', 'NumpadEnter'], c: ['NumpadEnter'],
+    aLabel: 'Num 0', bLabel: 'Num .', cLabel: 'Num Enter',
   },
 ];
 
@@ -46,9 +47,9 @@ const DEADZONE = 0.28;
 function makeDevice(id, type, label, hint) {
   return {
     id, type, label, hint,
-    x: 0, y: 0, a: false, b: false,
-    aPressed: false, bPressed: false,
-    prevA: false, prevB: false,
+    x: 0, y: 0, a: false, b: false, c: false,
+    aPressed: false, bPressed: false, cPressed: false,
+    prevA: false, prevB: false, prevC: false,
     connected: type === 'keyboard',
   };
 }
@@ -100,6 +101,10 @@ export class Input {
       d.a = a || d.aPressed;
       d.b = b || d.bPressed;
       d.prevA = a; d.prevB = b;
+      const c = any(s.c);
+      d.cPressed = tapped(s.c) || (c && !d.prevC);
+      d.c = c || d.cPressed;
+      d.prevC = c;
     }
 
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -108,7 +113,7 @@ export class Input {
       const gp = pads[i];
       if (!gp || !gp.connected) {
         d.connected = false;
-        d.x = d.y = 0; d.a = d.b = d.aPressed = d.bPressed = false;
+        d.x = d.y = 0; d.a = d.b = d.c = d.aPressed = d.bPressed = d.cPressed = false;
         d.stepX = d.stepY = 0;
         continue;
       }
@@ -128,11 +133,15 @@ export class Input {
       if (start && !d.prevStart) this.menuPressed = true;
       d.prevStart = start;
       const a = btn(0) || btn(3);
-      const b = btn(1) || btn(2) || btn(5) || btn(7);
+      const b = btn(1) || btn(2) || btn(4) || btn(5) || btn(6) || btn(7);
       d.aPressed = a && !d.prevA;
       d.bPressed = b && !d.prevB;
       d.a = a; d.b = b;
       d.prevA = a; d.prevB = b;
+      const c = btn(2) || btn(4) || btn(6); // X, LB, LT
+      d.cPressed = c && !d.prevC;
+      d.c = c;
+      d.prevC = c;
       if (a || b) this.onActivity?.();
     }
   }
