@@ -4,7 +4,7 @@ import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
-import { addLights, skyTexture, makeTree, makeCloud, seeded, soccerBallTexture } from '../core/world.js';
+import { addLights, skyTexture, makeTree, makeCloud, seeded } from '../core/world.js';
 import { t } from '../core/i18n.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 import { voteLength } from '../core/vote.js';
@@ -18,6 +18,24 @@ const SPEED = 7.5;
 const DASH = 15;
 const MATCH_TIME = 150;
 const OVERTIME = 60;
+
+/** A big striped play ball: six colored wedges with white caps, like a giant beach ball. */
+function makeMegaBall() {
+  const geo = new THREE.SphereGeometry(R, 48, 32);
+  const pos = geo.attributes.position;
+  const colors = [];
+  const wedges = [0xff5d73, 0xffc93c, 0x3ddc97, 0x4cc9f0, 0x9b5de5, 0xff8c42].map((h) => new THREE.Color(h));
+  const white = new THREE.Color(0xffffff);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const c = Math.abs(y) > R * 0.86 ? white : wedges[Math.floor(((Math.atan2(z, x) + Math.PI) / (Math.PI * 2)) * 6) % 6];
+    colors.push(c.r, c.g, c.b);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  const ball = new THREE.Mesh(geo, new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: toon(0xffffff).gradientMap }));
+  ball.castShadow = true;
+  return ball;
+}
 
 export class FootballScene extends MiniGame {
   constructor(game, opts) {
@@ -34,7 +52,7 @@ export class FootballScene extends MiniGame {
     this.lastTouch = null;
 
     this.ball = { x: 0, y: R, z: 0, vx: 0, vy: 0, vz: 0 };
-    this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 32, 20), new THREE.MeshToonMaterial({ map: soccerBallTexture(), gradientMap: toon(0xffffff).gradientMap }));
+    this.ballMesh = makeMegaBall();
     this.ballMesh.castShadow = true;
     this.scene.add(this.ballMesh);
     this.ballMarker = new THREE.Mesh(sharedGeo('ballMark', () => new THREE.RingGeometry(R * 0.85, R, 28)), toon(COLORS.white, { transparent: true, opacity: 0.6 }));
@@ -262,7 +280,7 @@ export class FootballScene extends MiniGame {
       let kx = dx / (d || 1) + e.dirX * 0.8, kz = dz / (d || 1) + e.dirZ * 0.8;
       const kl = Math.hypot(kx, kz) || 1;
       kx /= kl; kz /= kl;
-      const power = e.bot ? 17 : 21;
+      const power = e.bot ? 14 : 21;
       b.vx = kx * power + e.vx * 0.3;
       b.vz = kz * power + e.vz * 0.3;
       b.vy = e.grounded ? 6 : 8;
@@ -295,7 +313,7 @@ export class FootballScene extends MiniGame {
       e.dashT -= dt;
     } else {
       const acc = (e.grounded ? 45 : 22) * dt;
-      const sp = e.bot ? SPEED * 0.85 : SPEED;
+      const sp = e.bot ? SPEED * 0.65 : SPEED;
       e.vx += THREE.MathUtils.clamp(ix * sp - e.vx, -acc, acc);
       e.vz += THREE.MathUtils.clamp(iz * sp - e.vz, -acc, acc);
     }
@@ -336,9 +354,12 @@ export class FootballScene extends MiniGame {
     const side = e.team ? 1 : -1;
     const b = this.ball;
     const homeX = side * (HX - 2.2);
-    const threat = Math.sign(b.x) === side && Math.abs(b.x) > HX - 9;
-    const tx = threat ? THREE.MathUtils.clamp(b.x, side > 0 ? HX - 6 : -HX + 1.2, side > 0 ? HX - 1.2 : -HX + 6) : homeX;
-    const tz = THREE.MathUtils.clamp(b.z, -GOAL_W - 0.5, GOAL_W + 0.5);
+    // A friendly helper, not a wall: it reacts late, covers only the middle of the goal,
+    // and rarely leaves its line, so corner shots go in.
+    const threat = Math.sign(b.x) === side && Math.abs(b.x) > HX - 6;
+    const tx = threat ? THREE.MathUtils.clamp(b.x, side > 0 ? HX - 3.5 : -HX + 1.2, side > 0 ? HX - 1.2 : -HX + 3.5) : homeX;
+    e.trackZ = (e.trackZ ?? 0) * 0.97 + b.z * 0.03;
+    const tz = THREE.MathUtils.clamp(e.trackZ, -GOAL_W * 0.7, GOAL_W * 0.7);
     const dx = tx - e.x, dz = tz - e.z;
     const d = Math.hypot(dx, dz);
     const near = Math.hypot(b.x - e.x, b.z - e.z) < R + 1.5;
@@ -346,8 +367,8 @@ export class FootballScene extends MiniGame {
     return {
       ix: d > 0.3 ? dx / Math.max(d, 1) : 0,
       iz: d > 0.3 ? dz / Math.max(d, 1) : 0,
-      aPressed: near && b.y > 2.6 && Math.random() < 0.2,
-      bPressed: near && Math.random() < 0.25,
+      aPressed: near && b.y > 2.6 && Math.random() < 0.03,
+      bPressed: near && Math.random() < 0.08,
     };
   }
 

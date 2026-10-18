@@ -211,6 +211,15 @@ const ICONS = {
     kr.position.set(0.72, -0.62, 0.42);
     g.add(kr);
   },
+  golf(g) {
+    g.add(mesh(cyl('golfGreen', 0.9, 0.9, 0.18, 24), toon(0x6fd86a), 0, -0.55, 0));
+    g.add(mesh(cyl('golfHole', 0.2, 0.2, 0.02, 16), toon(COLORS.ink), 0.3, -0.45, 0.1));
+    g.add(mesh(cyl('golfPole', 0.04, 0.04, 1.5, 8), toon(COLORS.white), 0.3, 0.3, 0.1));
+    const flag = mesh(sharedGeo('icon-golfFlag', () => new THREE.ConeGeometry(0.28, 0.6, 3)), toon(0xff5d73), 0.58, 0.85, 0.1);
+    flag.rotation.z = -Math.PI / 2;
+    g.add(flag);
+    g.add(mesh(sph(0.2), toon(COLORS.white), -0.35, -0.26, 0.35));
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

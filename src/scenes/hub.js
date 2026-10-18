@@ -40,6 +40,7 @@ const PADS = [
   { key: 'cook', color: 0xff7a59, css: '#e85a35' },
   { key: 'hideseek', color: 0x7ad65a, css: '#3f9a32' },
   { key: 'snowball', color: 0xbfe3ff, css: '#3f8fd6' },
+  { key: 'golf', color: 0x6fd86a, css: '#3fbf5a' },
 ].map((p, i, all) => {
   const a = (i / all.length) * Math.PI * 2;
   return { ...p, angle: a, x: Math.sin(a) * RING_R, z: -Math.cos(a) * RING_R };

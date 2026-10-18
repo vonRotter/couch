@@ -7,6 +7,7 @@ import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo, faceted } from '../core/
 import { addLights, skyTexture, makeCloud, makeTree, seeded } from '../core/world.js';
 import { t, addStrings } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
+import { VotePicker, VOTES } from '../core/vote.js';
 
 // Bean Golf: everyone putts on the same hole at the same time. Six holes on floating candy islands.
 
@@ -170,8 +171,25 @@ export class GolfScene extends MiniGame {
     this.lights = addLights(this.scene, { size: 17, dir: new THREE.Vector3(-0.4, 1, 0.5) });
     this.outlineMat = new THREE.MeshBasicMaterial({ color: COLORS.ink, side: THREE.BackSide });
 
-    // opts.holes picks a shorter round: 3 plays the first three holes.
-    this.holeCount = clamp(Math.round(opts.holes || HOLES.length), 1, HOLES.length);
+    game.audio.playMusic('space');
+    if (opts.holes) {
+      this.setup(opts.holes);
+    } else {
+      // Vote on 3 or 6 holes first.
+      this.state = 'vote';
+      this.camera.position.set(0, 8, 18);
+      this.camera.lookAt(0, 0, 0);
+      this.picker = new VotePicker(this, {
+        title: () => t('game.golf'),
+        vote: VOTES.holes(HOLES.length),
+        onDone: (n) => { this.picker = null; this.setup(n); },
+      });
+    }
+  }
+
+  /** Builds the course. opts.holes picks a shorter round: 3 plays the first three holes. */
+  setup(holes) {
+    this.holeCount = clamp(Math.round(holes || HOLES.length), 1, HOLES.length);
     this.course = HOLES.slice(0, this.holeCount);
     this.holes = this.course.map((def, i) => this.buildHole(def, i));
     this.buildSky();
@@ -182,7 +200,6 @@ export class GolfScene extends MiniGame {
     this.camPos = new THREE.Vector3();
     this.camLook = new THREE.Vector3();
     this.setupHole(0, true);
-    game.audio.playMusic('space');
     this.intro(t('game.golf'), t('golf.intro'));
   }
 
@@ -432,7 +449,7 @@ export class GolfScene extends MiniGame {
       const col = [0xff5d73, 0x3ddc97, 0xffc93c, 0x9b5de5][Math.floor(rand() * 4)];
       const d = add(sharedGeo('golfGum', () => new THREE.SphereGeometry(0.6, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2)), col, 0, 0.05, 0);
       d.scale.set(1, 1.3, 1);
-      const d2 = add(sharedGeo('golfGum', () => null), 0xffffff === col ? col : [0x4cc9f0, 0xff8c42][Math.floor(rand() * 2)], 0.55, 0.05, 0.3);
+      const d2 = add(sharedGeo('golfGum', () => null), [0x4cc9f0, 0xff8c42][Math.floor(rand() * 2)], 0.55, 0.05, 0.3);
       d2.scale.set(0.6, 0.8, 0.6);
     } else if (type === 'cupcake') {
       add(sharedGeo('golfWrap', () => new THREE.CylinderGeometry(0.55, 0.4, 0.6, 14)), 0x8fd8ff, 0, 0.35, 0);
@@ -961,6 +978,7 @@ export class GolfScene extends MiniGame {
   }
 
   onLanguage() {
+    this.picker?.render();
     if (this.cardEl) this.renderCard();
   }
 
@@ -1016,6 +1034,7 @@ export class GolfScene extends MiniGame {
   }
 
   update(dt) {
+    if (this.state === 'vote') { this.picker?.update(dt); return; }
     const H = this.hole;
     this.animateCourse(dt);
     this.updateCamera(dt);

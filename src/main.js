@@ -29,6 +29,7 @@ import { CookScene } from './scenes/cook.js';
 import { HideSeekScene } from './scenes/hideseek.js';
 import { SnowballScene } from './scenes/snowball.js';
 import { LearnMixScene } from './scenes/learnmix.js';
+import { GolfScene } from './scenes/golf.js';
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -47,6 +48,7 @@ export const GAMES = {
   cook: { Scene: CookScene },
   hideseek: { Scene: HideSeekScene },
   snowball: { Scene: SnowballScene },
+  golf: { Scene: GolfScene },
   spelling: { Scene: SpellingScene, edu: true },
   math: { Scene: MathScene, edu: true },
   learnmix: { Scene: LearnMixScene, edu: true },
