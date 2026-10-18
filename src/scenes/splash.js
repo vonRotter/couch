@@ -109,11 +109,17 @@ const SEA_Y = 0;
 const G = 13; // gravity for beans and throws
 const PH = 1 / 120; // fixed physics step for projectiles (the bot solver uses the same one)
 
-const TURN_TIME = 20;
+const TURN_TIME = 22;
 const OVERVIEW_T = 1.6; // zoomed-out look at the island before each turn
-const MATCH_CAP = 330; // seconds; the match ends after the current pair of turns once this passes
-const WALK = 2.3;
-const JUMP_VY = 6.8, JUMP_VX = 3.2;
+const MATCH_CAP = 340; // seconds; the match ends after the current pair of turns once this passes
+const WALK = 3.6;
+const STEP_UP = 0.5; // walking climbs steps and bumps up to this high without a jump
+const STEP_DOWN = 0.6; // and follows the ground down this far before it counts as a ledge
+const HOP_MAX = 1.45; // pushing into a wall up to this high hops onto it by itself
+const HOP_DELAY = 0.12; // seconds of pushing against a wall before the auto hop
+const JUMP_VY = 7.4, JUMP_VX = 3.8;
+const AIR_ACC = 14; // steering in the air after your own jump (not after being splashed)
+const COYOTE = 0.14, JUMP_BUFFER = 0.16;
 const MAX_WIND = 4.5;
 const AIM_MIN = -1.3, AIM_MAX = 1.45, AIM_SPEED = 1.4;
 const CHARGE_T = 1.25; // seconds from empty to full power
@@ -672,6 +678,8 @@ export class SplashScene extends MiniGame {
     const u = {
       ctrl, ch, ring, hold, bubble, label, labelHtml: '',
       x: 0, y: 5, vx: 0, vy: 0, grounded: true, facing: 1, still: 0,
+      // Movement helpers: own jump (steerable, lands softly), coyote time, jump buffer, wall push, step smoothing.
+      selfAir: false, coyote: 0, jumpBuf: 0, pushT: 0, airWant: null, visY: 0,
       aim: 0.6, power: 0, charging: false, fullT: 0, walking: 0,
       soggy: 0, rescue: null, float: null, lastHitBy: null, drip: 0,
       head: ctrl.p ? 1.3 : 1.05,
@@ -816,17 +824,30 @@ export class SplashScene extends MiniGame {
     const d = this.input(u.ctrl.p) || {};
     const tool = TOOLS[u.ctrl.tool];
     if (d.cPressed && !u.charging) {
-      // C cycles tools (C keys also count as B, so check it first).
+      // [C] cycles tools.
       u.ctrl.tool = (u.ctrl.tool + 1) % TOOLS.length;
       this.game.audio.play('select');
+      this.helpSeen = true;
       return;
     }
+    const sx = Math.abs(d.x) > 0.3 ? Math.sign(d.x) : 0;
     if (!u.charging) {
-      if (Math.abs(d.x) > 0.3) {
-        u.facing = Math.sign(d.x);
-        if (u.grounded) u.walking = this.walk(u, u.facing, dt) ? 1 : 0;
+      if (sx) {
+        u.facing = sx;
+        if (u.grounded) {
+          const moved = this.walk(u, sx, dt);
+          u.walking = moved ? 1 : 0;
+          // Pushing into a wall that is not too high: hop up onto it by itself.
+          u.pushT = moved ? 0 : u.pushT + dt;
+          if (!moved && u.pushT > HOP_DELAY && this.autoHop(u, sx)) u.pushT = 0;
+        }
+      } else u.pushT = 0;
+      if (!u.grounded && u.selfAir) u.airWant = sx;
+      if (d.aPressed) {
+        if (u.grounded || (u.selfAir && u.coyote > 0 && u.vy <= 0.5)) this.jump(u, sx);
+        else u.jumpBuf = JUMP_BUFFER; // pressed a moment before landing: jump as soon as we touch down
       }
-      if (d.aPressed && u.grounded) this.jump(u);
+      if (u.jumpBuf > 0 && u.grounded) { u.jumpBuf = 0; this.jump(u, sx); }
     }
     if (Math.abs(d.y) > 0.3) u.aim = clamp(u.aim + Math.sign(d.y) * AIM_SPEED * dt * Math.min(1, Math.abs(d.y) * 1.3), AIM_MIN, AIM_MAX);
 
@@ -844,36 +865,67 @@ export class SplashScene extends MiniGame {
     }
   }
 
-  jump(u) {
+  /** A jump: forward if the stick is held, nearly straight up if not. Steerable in the air. */
+  jump(u, dir = 0) {
     u.grounded = false;
+    u.selfAir = true;
+    u.coyote = 0;
+    u.jumpBuf = 0;
     u.vy = JUMP_VY;
-    u.vx = u.facing * JUMP_VX;
+    u.vx = dir * JUMP_VX;
+    u.airWant = dir;
     u.ch.squash(1.25);
     this.game.audio.play('jump');
+  }
+
+  /** A small automatic hop onto a wall that is in the way (up to HOP_MAX high). */
+  autoHop(u, dir) {
+    const ter = this.terrain;
+    const x = u.x + dir * 0.36;
+    let h = 0;
+    while (h < HOP_MAX && ter.solid(x, u.y + h + 0.02)) h += CELL / 2;
+    if (h < 0.05 || h >= HOP_MAX) return false;
+    // Room above our head for the hop?
+    for (let yy = u.y + 1.0; yy < u.y + h + 1.15; yy += CELL) if (ter.solid(u.x, yy)) return false;
+    // Only the sea on the other side: stay put.
+    if (!ter.groundBelow(x + dir * 0.4, u.y + h + 0.5)) { this.cold(u); return false; }
+    u.grounded = false;
+    u.selfAir = true;
+    u.coyote = 0;
+    u.vy = Math.sqrt(2 * G * (h + 0.6));
+    u.vx = dir * 1.6;
+    u.airWant = dir;
+    u.ch.squash(1.15);
+    this.game.audio.play('jump');
+    return true;
   }
 
   /** Walk one frame along the ground. Returns false when blocked. Walking never takes you into the sea. */
   walk(u, dir, dt) {
     const ter = this.terrain;
-    const dx = dir * WALK * dt;
-    const nx = u.x + dx;
+    const nx = u.x + dir * WALK * dt;
     if (nx < X0 + 1 || nx > X1 - 1) return false;
-    const climb = Math.max(0.05, Math.abs(dx) * 1.6);
-    let y = u.y + climb;
-    if (ter.solid(nx, y)) return false; // too steep
-    const lim = u.y - 0.45;
+    // Ground at nx: anything up to STEP_UP higher is a bump we simply walk up.
+    let y = u.y + STEP_UP;
+    if (ter.solid(nx, y)) return false; // a wall (autoHop deals with it)
+    const lim = u.y - STEP_DOWN;
     while (y > lim && !ter.solid(nx, y - 0.02)) y -= 0.02;
     if (y <= lim) {
-      // A ledge: hop off it, unless only the sea is down there.
+      // A ledge: step off it, unless only the sea is down there.
       if (!ter.groundBelow(nx, u.y)) { this.cold(u); return false; }
+      if (this.bodyBlocked(nx, u.y + 0.05)) return false;
       u.x = nx;
       u.grounded = false;
+      u.selfAir = true;
+      u.coyote = COYOTE;
       u.vx = dir * WALK * 0.8;
       u.vy = 0;
       return true;
     }
     if (y < SEA_Y + 0.25) { this.cold(u); return false; }
     if (this.bodyBlocked(nx, y)) return false;
+    // Smooth the look of a step: the body glides up instead of snapping.
+    if (y - u.y > 0.12) u.visY -= y - u.y;
     u.x = nx;
     u.y = y;
     return true;
@@ -886,8 +938,9 @@ export class SplashScene extends MiniGame {
   }
 
   bodyBlocked(x, y) {
+    // A slim body: crater rims and crumbs at the feet never count, only real walls and ceilings.
     const s = (ox, oy) => this.terrain.solid(x + ox, y + oy);
-    return s(-0.24, 0.38) || s(0.24, 0.38) || s(-0.24, 0.7) || s(0.24, 0.7) || s(0, 1.0) || s(-0.2, 1.0) || s(0.2, 1.0);
+    return s(-0.2, 0.45) || s(0.2, 0.45) || s(-0.2, 0.72) || s(0.2, 0.72) || s(0, 1.0) || s(-0.16, 1.0) || s(0.16, 1.0);
   }
 
   hitsTerrain(x, y) {
@@ -985,11 +1038,16 @@ export class SplashScene extends MiniGame {
         b.t -= dt;
         if (b.t <= 0) this.botPlan(u);
         break;
-      case 'walk':
+      case 'walk': {
         b.t -= dt;
-        u.walking = this.walk(u, b.dir, dt) ? 1 : 0;
-        if (b.t <= 0 || !u.walking) { u.walking = 0; b.stage = 'think'; b.t = 0.3; }
+        u.facing = b.dir;
+        if (!u.grounded) { u.airWant = b.dir; break; } // mid hop
+        const moved = this.walk(u, b.dir, dt);
+        u.walking = moved ? 1 : 0;
+        if (!moved && this.autoHop(u, b.dir)) break;
+        if (b.t <= 0 || !moved) { u.walking = 0; b.stage = 'think'; b.t = 0.3; }
         break;
+      }
       case 'aim': {
         u.facing = b.dir;
         const d = b.angle - u.aim;
