@@ -25,13 +25,14 @@ import { SpotRound } from './party/spot.js';
 import { PaintNumRound } from './party/paintnum.js';
 import { FollowRound } from './party/follow.js';
 import { QuizRound } from './party/quiz.js';
+import { TrailsRound } from './party/trails.js';
 
 // Party Mix: five short random rounds in a row with a running scoreboard.
 export const ROUNDS = [
   CountRound, StatueRound, CushionRound, FruitRound, DanceRound, TugRound, TowerRound,
   PotatoRound, LilyPadRound, BoatsRound, KeepyRound,
   DigRound, DrumsRound, BalloonRound, MirrorRound,
-  SpotRound, PaintNumRound, FollowRound, QuizRound,
+  SpotRound, PaintNumRound, FollowRound, QuizRound, TrailsRound,
 ];
 const PER_MIX = 5;
 const PLACE_POINTS = [4, 3, 2, 1, 1, 1];

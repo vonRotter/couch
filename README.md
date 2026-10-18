@@ -215,6 +215,14 @@ out of the island and push beans; the wetter a bean, the further it slides. A be
 the sea gives the other team 2 points and floats straight back home in a bubble, and walking never
 takes you into the water. Grumble bots even out the teams; solo is you against two bots.
 
+**Crystal Caves** (co-op cave run, Spelunky style, three depths). Every run is a new cave stitched
+from hand-made rooms, and each one is checked to be passable without ropes or bombs before you see it.
+Run, jump (A) and climb ladders, vines and ropes. B shoots a rope up (down+B hangs it over a ledge),
+and C drops a pop bomb that breaks dirt and only bounces players. Collect gold and gems, and carry
+the lost puppy on your head to the exit for a team bonus. Hazards are soft: bouncy mushrooms, mud,
+sticky honey and rolling snowballs; a long fall only makes you dizzy. Stragglers float to the leader
+in a bubble, sparkles show the way after a while, and nobody is ever out.
+
 **Story** (co-op campaign, next to the hub, not instead of it). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
 the island games with a co-op goal (for example "together, paint a share of the floor" or "everyone reaches the flag") and
@@ -223,7 +231,7 @@ snow fort, serve him the right cakes, and fly through his bubble rings. He alway
 giggling, never hurt. Stick left/right picks any unlocked node, A starts it, and hold B to go back
 to the island. Progress is saved; retry from the pause menu keeps the stage settings.
 
-**Party Mix** (3, 5 or 7 short rounds by vote, from a pool of 19). A running scoreboard follows
+**Party Mix** (3, 5 or 7 short rounds by vote, from a pool of 20). A running scoreboard follows
 each round. Before each round a card explains it and everyone taps jump when ready.
 Each round gives placement points (4, 3, 2, then 1 for everyone else, ties share the higher
 number). Nobody is ever knocked out of a round.
@@ -258,6 +266,9 @@ number). Nobody is ever knocked out of a round.
 - **Follow the Leader**: stay on the leader's glowing trail; everyone leads in turn.
 - **Quiz Run**: run to the right answer zone; alternating kids' and grown-up questions,
   in English or Norwegian.
+- **Paint Trails**: steer a paint roller that never stops; its wet stripe fades after a few
+  seconds. Bumping into a stripe or the wall is a splat and a short respawn; points for time on
+  the road and for others splatting into your stripe.
 
 ## Learning games (LÆRING)
 
@@ -309,12 +320,12 @@ src/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
-    guides.js  splash.js
+    guides.js  splash.js  cave.js
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
     learnmix.js  learn/  Læringsmiks and its rounds (klokka, penger, rimord)
     party.js         Party Mix flow: vote, how-to cards, countdown, scoreboard
-    party/           one file per round (19 rounds)
+    party/           one file per round (20 rounds)
 ```
 
 To add a Party Mix round: subclass `Round` from `scenes/party/common.js` (set `done` when it

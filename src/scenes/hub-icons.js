@@ -284,6 +284,18 @@ const ICONS = {
       g.add(d);
     });
   },
+  cave(g) {
+    g.add(mesh(box('caveRock', 1.4, 0.4, 1.0, 0.16), toon(0x9a94b2), 0, -0.62, 0));
+    [[0, 1.3, 0.26, 0x4cc9f0, 0], [-0.4, 0.85, 0.2, 0xff7eb6, 0.35], [0.36, 0.95, 0.2, 0x9ff0c8, -0.3], [0.1, 0.55, 0.15, 0xffd23f, -0.5]].forEach(([x, h, r, c, tilt], i) => {
+      const cr = mesh(cyl(`caveCry${i}`, 0, r, h, 6), toon(c, { emissive: 0x111133 }), x, -0.42 + h / 2, i === 3 ? 0.32 : 0);
+      cr.rotation.z = tilt;
+      g.add(cr);
+    });
+    const coil = mesh(sharedGeo('icon-caveCoil', () => new THREE.TorusGeometry(0.22, 0.07, 8, 18)), toon(0xe8c07a), 0.58, -0.28, 0.36);
+    coil.rotation.y = 0.6;
+    g.add(coil);
+    g.add(mesh(cyl('caveRope', 0.04, 0.04, 0.6, 6), toon(0xe8c07a), 0.78, -0.55, 0.36));
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

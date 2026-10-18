@@ -1455,7 +1455,7 @@ export class CaveScene extends MiniGame {
     }
     if (this.exitTimer === null) {
       this.exitTimer = EXIT_WAIT;
-      if (this.ents.length > 1) this.game.ui.banner(t('cave.exitOpen', { name: e.p.name }), t('cave.everyone'), 1500);
+      if (this.ents.length > 1 && this.ents.some((x) => x.state !== 'done')) this.game.ui.banner(t('cave.exitOpen', { name: e.p.name }), t('cave.everyone'), 1500);
     }
     if (this.ents.every((x) => x.state === 'done')) this.depthCleared();
   }
@@ -1517,7 +1517,7 @@ export class CaveScene extends MiniGame {
       const route = routeToExit(this.lv, from, this.ropeCells);
       for (const step of route) {
         const c = step.idx % this.lv.W, r = Math.floor(step.idx / this.lv.W);
-        const dot = new THREE.Mesh(geo.sph(0.09), basic(0xfff3b0));
+        const dot = new THREE.Mesh(geo.sph(0.14), basic(0xfff3b0));
         dot.position.set(c + 0.5, this.bottomOf(r) + 0.4, 0.6);
         this.levelGroup.add(dot);
         this.hint.dots.push(dot);
