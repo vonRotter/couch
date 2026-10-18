@@ -11,8 +11,8 @@ import { esc } from '../core/ui.js';
 import { glyphMaterial } from '../core/edu.js';
 import { makeGameIcon } from './hub-icons.js';
 
-const ISLAND_R = 41;
-const RING_R = 34;
+const ISLAND_R = 45;
+const RING_R = 38;
 const PAD_R = 2.6;
 const PR = 0.42; // player radius
 const SPEED = 7.5;
@@ -41,6 +41,7 @@ const PADS = [
   { key: 'hideseek', color: 0x7ad65a, css: '#3f9a32' },
   { key: 'snowball', color: 0xbfe3ff, css: '#3f8fd6' },
   { key: 'golf', color: 0x6fd86a, css: '#3fbf5a' },
+  { key: 'castle', color: 0xd9a066, css: '#b8752f' },
   { key: 'story', color: 0xffd23f, css: '#e0a100' },
 ].map((p, i, all) => {
   const a = (i / all.length) * Math.PI * 2;

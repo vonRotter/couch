@@ -521,7 +521,7 @@ export class StoryScene extends BaseScene {
     let look, offset;
     if (this.cards) {
       look = this.cards.focus;
-      offset = new THREE.Vector3(0, 3.1, 8.6);
+      offset = new THREE.Vector3(0, 3.6, 9.6);
     } else {
       const n = this.nodes[this.selected];
       look = new THREE.Vector3(n.pos.x + 2, 0.4, n.pos.z * 0.25);
@@ -550,7 +550,7 @@ export class StoryScene extends BaseScene {
     this.save();
     this.state = 'card';
     this.stateT = 0;
-    const focus = node.pos.clone().add(new THREE.Vector3(0.3, 1.6, -1.1));
+    const focus = node.pos.clone().add(new THREE.Vector3(0.3, 1.0, -1.1));
     this.cards = { id, seq, i: 0, node, done, focus };
     this.nodeLabel.style.display = 'none';
     this.king.group.visible = true;
@@ -947,6 +947,7 @@ export class StoryScene extends BaseScene {
     // Gentle life on the map: bobbing icons, pulsing selected node, drifting clouds.
     for (const n of this.nodes) {
       n.icon.visible = !this.cards && n.i <= this.maxUnlocked();
+      n.lock.visible = !this.cards && n.i > this.maxUnlocked();
       n.icon.rotation.y += dt * (n.i === this.selected ? 2 : 0.6);
       n.icon.position.y = (n.boss ? 1.9 : 2.3) + Math.sin(this.time * 2 + n.i) * 0.15;
       const s = n.i === this.selected && !this.cards ? 1 + Math.sin(this.time * 6) * 0.06 : 1;
@@ -959,11 +960,12 @@ export class StoryScene extends BaseScene {
     this.updateBeans(dt);
     this.updateCamera(dt);
 
-    if (this.state !== 'leaving') this.handleJoins(dt);
     if (this.state === 'map') this.updateMap(dt);
     else if (this.state === 'card') this.updateCards(dt);
     else if (this.state === 'goal') this.updateGoal(dt);
     else if (this.state === 'result') this.updateResult(dt);
+    // Joins last, so a new player's join press doesn't also start a stage this frame.
+    if (this.state !== 'leaving') this.handleJoins(dt);
     this.updateLabels();
   }
 

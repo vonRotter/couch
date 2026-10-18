@@ -220,6 +220,20 @@ const ICONS = {
     g.add(flag);
     g.add(mesh(sph(0.2), toon(COLORS.white), -0.35, -0.26, 0.35));
   },
+  castle(g) {
+    g.add(mesh(box('ktTower', 0.9, 1.3, 0.9), toon(0xd6cfe6), 0, -0.25, 0));
+    for (const [x, z] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]]) g.add(mesh(box('ktMerlon', 0.26, 0.26, 0.26, 0.04), toon(0xd6cfe6), x, 0.53, z));
+    g.add(mesh(box('ktDoor', 0.36, 0.5, 0.06, 0.04), toon(0xffc93c), 0, -0.65, 0.46));
+    g.add(mesh(cyl('ktPole', 0.035, 0.035, 0.9, 6), toon(COLORS.icing), 0, 1.0, 0));
+    g.add(mesh(box('ktFlag', 0.45, 0.28, 0.04, 0.02), toon(0x4cc9f0), 0.24, 1.3, 0));
+    const sword = new THREE.Group();
+    sword.add(mesh(box('ktBlade', 0.14, 0.95, 0.09, 0.05), toon(0xffe47a), 0, 0.45, 0));
+    sword.add(mesh(box('ktGuard', 0.4, 0.08, 0.12, 0.03), toon(0xff5d73), 0, -0.05, 0));
+    sword.add(mesh(cyl('ktGrip', 0.04, 0.04, 0.24, 6), toon(COLORS.trunk), 0, -0.2, 0));
+    sword.position.set(0.7, -0.3, 0.35);
+    sword.rotation.z = -0.5;
+    g.add(sword);
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

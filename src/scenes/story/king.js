@@ -84,7 +84,7 @@ export function makeKing(size = 2.4) {
       const happy = m === 'happy' || m === 'laugh' || m === 'hopeful';
       brows.forEach((b) => {
         const s = Math.sign(b.position.x);
-        b.rotation.z = m === 'grumpy' ? s * -0.35 : s * 0.3;
+        b.rotation.z = m === 'grumpy' ? s * 0.35 : s * -0.3; // grumpy: inner ends down
         b.position.y = m === 'sad' || m === 'hopeful' ? 0.66 : 0.69;
       });
       mouth.rotation.z = happy ? Math.PI : 0;

@@ -51,9 +51,10 @@ export class BossSpaceScene extends BossScene {
   }
 
   frame() {
-    const d = this.fitDistance(X1 - X0 + 9, Y1 - Y0 + 3.5);
-    this.camera.position.set((X0 + KING_X) / 2 + 0.3, (Y0 + Y1) / 2 + 0.3, d);
-    this.camera.lookAt((X0 + KING_X) / 2 + 0.3, (Y0 + Y1) / 2 + 0.3, 0);
+    const cx = (X0 + KING_X) / 2 + 0.6;
+    const d = this.fitDistance(KING_X - X0 + 6, Y1 - Y0 + 3.5);
+    this.camera.position.set(cx, (Y0 + Y1) / 2 + 0.3, d);
+    this.camera.lookAt(cx, (Y0 + Y1) / 2 + 0.3, 0);
   }
 
   buildSpace() {
@@ -125,7 +126,7 @@ export class BossSpaceScene extends BossScene {
       sharedGeo('bsRing', () => new THREE.TorusGeometry(RING_R, 0.13, 10, 28)),
       gold ? toon(COLORS.gold, { emissive: 0x332200 }) : toon(0xbfe9ff, { transparent: true, opacity: 0.75 }),
     );
-    mesh.rotation.y = Math.PI / 2 - 0.6; // seen at an angle so it reads as a ring you fly through
+    mesh.rotation.y = 0.65; // seen at an angle so it reads as a ring you fly through
     const y = k.y + 1.3;
     mesh.position.set(KING_X - 2, y, 0);
     mesh.scale.setScalar(0.2);
@@ -207,6 +208,8 @@ export class BossSpaceScene extends BossScene {
       if (r.x < X0 - 2) { r.done = true; continue; }
       if (this.state !== 'play' || this.finished || r.age < 0.6) continue;
       for (const e of this.ents) {
+        // You have to be flying (not parked) for a ring to count.
+        if (Math.hypot(e.vx, e.vy) < 2 && e.boostT <= 0) continue;
         if (Math.abs(e.x - r.x) < 0.55 && Math.abs(e.y + 0.55 - r.y) < RING_R * 0.85) {
           r.done = true;
           this.confetti.burst(new THREE.Vector3(r.x, r.y, 0), 0, { count: 22, speed: 5, colors: r.gold ? [COLORS.gold, COLORS.white] : [0xbfe9ff, e.p.color, COLORS.white], life: 0.9 });

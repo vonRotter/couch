@@ -30,6 +30,7 @@ import { HideSeekScene } from './scenes/hideseek.js';
 import { SnowballScene } from './scenes/snowball.js';
 import { LearnMixScene } from './scenes/learnmix.js';
 import { GolfScene } from './scenes/golf.js';
+import { CastleScene } from './scenes/castle.js';
 import { StoryScene, STORY_GAMES } from './scenes/story.js';
 
 export const GAMES = {
@@ -50,6 +51,7 @@ export const GAMES = {
   hideseek: { Scene: HideSeekScene },
   snowball: { Scene: SnowballScene },
   golf: { Scene: GolfScene },
+  castle: { Scene: CastleScene },
   story: { Scene: StoryScene },
   ...STORY_GAMES, // the four Grumble King boss games (only reachable from the story map)
   spelling: { Scene: SpellingScene, edu: true },
@@ -125,7 +127,7 @@ class Game {
   /** Called by MiniGame.finish() during a campaign stage. */
   reportStage(scene) {
     if (!this.campaign || this.campaign.stats) return;
-    this.campaign.stats = { ...(scene.campaignStats?.() || {}), n: scene.players.length, time: scene.playTime };
+    this.campaign.stats = { time: scene.playTime, ...(scene.campaignStats?.() || {}), n: scene.players.length };
   }
 
   /** Back to the story map with the stage result (no stats = ended early from the pause menu). */
