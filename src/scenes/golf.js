@@ -51,7 +51,7 @@ const WALL_H = 0.42; // wall height above the felt
 const WALL_HALF = 0.13; // half wall thickness
 const G = 16; // gravity
 const SLOPE_K = 0.6; // how strongly slopes pull a rolling ball
-const FRIC_A = 2.6, FRIC_K = 0.35; // rolling friction: constant + speed-based
+const FRIC_A = 2.6, FRIC_K = 0.25; // rolling friction: constant + speed-based
 const MIN_PUTT = 0.9, MAX_PUTT = 14; // putt speed range
 const CHARGE_T = 1.1; // seconds from empty to full power (the meter then swings back down)
 const WALL_E = 0.62, BALL_E = 0.6, BUMP_E = 1.1;
@@ -99,15 +99,15 @@ const HOLES = [
   },
   { // 4: ramp and jump over a gap (the landing's front wall is low enough to fly over)
     par: 3, felt: 0x7ad65a, cake: 0xff9fd0, stripe: [0x9b5de5, COLORS.icing], tilt: 48,
-    tiles: [{ x0: -8.5, x1: -2, z0: -2.2, z1: 2.2 }, { x0: -2, x1: 1, z0: -1.6, z1: 1.6, h0: 0, h1: 0.7 }, { x0: 2.8, x1: 10, z0: -3, z1: 3, h0: 0.2, h1: 0.2 }],
+    tiles: [{ x0: -8.5, x1: -1, z0: -2.2, z1: 2.2 }, { x0: -1, x1: 1, z0: -1.6, z1: 1.6, h0: 0, h1: 0.6 }, { x0: 2.6, x1: 10, z0: -3, z1: 3, h0: 0, h1: 0 }],
     walls: [
-      [-2, -1.6, -2, -2.2, -8.5, -2.2, -8.5, 2.2, -2, 2.2, -2, 1.6],
-      { p: [-2, -1.6, 1, -1.6], h0: 0, h1: 0.7 }, { p: [-2, 1.6, 1, 1.6], h0: 0, h1: 0.7 },
-      { p: [2.8, -3, 10, -3, 10, 3, 2.8, 3, 2.8, -3], h: 0.2 },
+      [-1, -1.6, -1, -2.2, -8.5, -2.2, -8.5, 2.2, -1, 2.2, -1, 1.6],
+      { p: [-1, -1.6, 1, -1.6], h0: 0, h1: 0.6 }, { p: [-1, 1.6, 1, 1.6], h0: 0, h1: 0.6 },
+      { p: [2.6, -3, 2.6, 3], low: true }, [2.6, 3, 10, 3, 10, -3, 2.6, -3],
     ],
-    bumpers: [[6.5, 0, 0.45]],
-    tee: [-6.3, 0], cup: [8.3, 0], path: [[1, 0]],
-    decor: [['lolly', -5, -4.3], ['cupcake', -5, 4.3], ['gum', 1.9, -3.6], ['tree', 12.2, -1], ['cane', 7, -5], ['gum', 1.9, 3.8]],
+    bumpers: [[6.0, -1.0, 0.4]],
+    tee: [-6.3, 0], cup: [8.3, 1.9], path: [[1, 0]],
+    decor: [['lolly', -5, -4.3], ['cupcake', -5, 4.3], ['gum', 1.8, -3.6], ['tree', 12.2, -1], ['cane', 7, -5], ['gum', 1.8, 3.8]],
   },
   { // 5: sliding marshmallow blocks
     par: 3, felt: 0x5fd69a, cake: 0x8fd8ff, stripe: [0xffc93c, COLORS.icing],
@@ -251,7 +251,7 @@ export class GolfScene extends MiniGame {
       for (let k = 0; k + 3 < pts.length; k += 2) {
         const ax = pts[k], az = pts[k + 1], bx = pts[k + 2], bz = pts[k + 3];
         const ha = hBase ?? wd.h0 ?? 0, hb = hBase ?? wd.h1 ?? 0;
-        H.segs.push([ax, az, bx, bz, ha, hb]);
+        H.segs.push([ax, az, bx, bz, ha, hb, !!wd.low]);
         const L = Math.hypot(bx - ax, bz - az);
         const n = Math.max(1, Math.round(L / 1.1));
         for (let s = 0; s < n; s++) {
@@ -820,7 +820,8 @@ export class GolfScene extends MiniGame {
   startHole() {
     this.phase = 'play';
     const H = this.hole;
-    this.game.ui.banner(`${t('golf.hole', { n: H.index + 1, total: this.holeCount })}: ${t(`golf.name.${H.index}`)}`, t('golf.par', { n: H.par }), 1700);
+    // On the first hole, wait for the countdown's "Go!" to clear.
+    this.later(H.index === 0 ? 0.75 : 0, () => this.game.ui.banner(`${t('golf.hole', { n: H.index + 1, total: this.holeCount })}: ${t(`golf.name.${H.index}`)}`, t('golf.par', { n: H.par }), 1500));
   }
 
   frame() {
@@ -1261,8 +1262,8 @@ export class GolfScene extends MiniGame {
     let left = len;
     for (let bounce = 0; bounce < 3 && left > 0; bounce++) {
       let bestT = left, nrm = null;
-      for (const [ax, az, bx, bz, ha, hb] of this.hole.segs) {
-        if (Math.min(ha, hb) > b.y + 0.1) continue; // raised walls the ball will fly over
+      for (const [ax, az, bx, bz, ha, hb, low] of this.hole.segs) {
+        if (low || Math.min(ha, hb) > b.y + 0.1) continue; // walls the ball will fly over
         const hit = raySeg(x, z, dx, dz, ax, az, bx, bz);
         if (hit && hit.t > 1e-3 && hit.t < bestT) { bestT = hit.t; nrm = hit.n; }
       }

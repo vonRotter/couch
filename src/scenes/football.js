@@ -7,6 +7,7 @@ import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, seeded, soccerBallTexture } from '../core/world.js';
 import { t } from '../core/i18n.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
+import { voteLength } from '../core/vote.js';
 
 // Mega Ball: beans and a giant ball, two teams, Rocket League spirit.
 const HX = 18, HZ = 11; // pitch half size
@@ -44,7 +45,11 @@ export class FootballScene extends MiniGame {
     this.frame();
     game.audio.playMusic('paint');
     this.state = 'teams';
-    this.openTeamPicker();
+    voteLength(this, opts, () => t('game.football'), () => this.openTeamPicker());
+  }
+
+  retryOptions() {
+    return { key: this.key, length: this.matchTime };
   }
 
   makePlayer(p, team) {

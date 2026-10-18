@@ -7,6 +7,7 @@ import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
 import { t, addStrings } from '../core/i18n.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
+import { voteLength } from '../core/vote.js';
 
 addStrings({
   en: {
@@ -123,7 +124,7 @@ export class SnowballScene extends MiniGame {
     this.frame();
     game.audio.playMusic('party');
     this.state = 'teams';
-    this.picker = new TeamPicker(this, {
+    const teams = () => { this.picker = new TeamPicker(this, {
       title: () => t('game.snowball'),
       ents: this.ents,
       setTeam: (e, team) => this.setTeam(e, team),
@@ -136,8 +137,13 @@ export class SnowballScene extends MiniGame {
         this.placeEnts();
         this.intro(t('game.snowball'), t('snowball.intro'));
       },
-    });
+    }); };
+    voteLength(this, opts, () => t('game.snowball'), teams);
     this.placeEnts();
+  }
+
+  retryOptions() {
+    return { key: this.key, length: this.matchTime };
   }
 
   // ---------- players and helper bots ----------

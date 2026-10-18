@@ -7,6 +7,7 @@ import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, seeded } from '../core/world.js';
 import { t } from '../core/i18n.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
+import { voteLength } from '../core/vote.js';
 
 // Ice Hockey: slidey skating, a puck that sticks to your stick, two teams.
 const HX = 14, HZ = 8; // rink half size
@@ -103,7 +104,7 @@ export class HockeyScene extends MiniGame {
     this.frame();
     game.audio.playMusic('paint');
     this.state = 'teams';
-    this.picker = new TeamPicker(this, {
+    const teams = () => { this.picker = new TeamPicker(this, {
       title: () => t('game.hockey'),
       ents: this.ents,
       setTeam: (e, team) => this.setTeam(e, team),
@@ -116,8 +117,13 @@ export class HockeyScene extends MiniGame {
         this.faceoff();
         this.intro(t('game.hockey'), t('hockey.intro'));
       },
-    });
+    }); };
+    voteLength(this, opts, () => t('game.hockey'), teams);
     this.faceoff();
+  }
+
+  retryOptions() {
+    return { key: this.key, length: this.matchTime };
   }
 
   makeSkater(p, team, slot = 0) {

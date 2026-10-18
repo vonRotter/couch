@@ -5,6 +5,7 @@ import { COLORS, toon } from '../core/palette.js';
 import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { shuffle } from '../core/edu.js';
+import { VotePicker, VOTES } from '../core/vote.js';
 import { CountRound } from './party/count.js';
 import { StatueRound } from './party/statue.js';
 import { CushionRound } from './party/cushions.js';
@@ -20,12 +21,17 @@ import { DigRound } from './party/dig.js';
 import { DrumsRound } from './party/drums.js';
 import { BalloonRound } from './party/balloon.js';
 import { MirrorRound } from './party/mirror.js';
+import { SpotRound } from './party/spot.js';
+import { PaintNumRound } from './party/paintnum.js';
+import { FollowRound } from './party/follow.js';
+import { QuizRound } from './party/quiz.js';
 
 // Party Mix: five short random rounds in a row with a running scoreboard.
 export const ROUNDS = [
   CountRound, StatueRound, CushionRound, FruitRound, DanceRound, TugRound, TowerRound,
   PotatoRound, LilyPadRound, BoatsRound, KeepyRound,
   DigRound, DrumsRound, BalloonRound, MirrorRound,
+  SpotRound, PaintNumRound, FollowRound, QuizRound,
 ];
 const PER_MIX = 5;
 const PLACE_POINTS = [4, 3, 2, 1, 1, 1];
@@ -39,18 +45,40 @@ export class PartyScene extends MiniGame {
     this.camera.updateProjectionMatrix();
     this.scene.background = skyTexture('#7fd3ff', '#fff1d6');
     addLights(this.scene, { size: 26, dir: new THREE.Vector3(-0.4, 1, 0.6) });
-    const byKey = Object.fromEntries(ROUNDS.map((R) => [R.key, R]));
-    this.order = (opts.rounds || shuffle(ROUNDS.map((R) => R.key)).slice(0, PER_MIX)).map((k) => byKey[k]).filter(Boolean);
     this.totals = new Map(this.players.map((p) => [p, 0]));
     this.wins = new Map(this.players.map((p) => [p, 0]));
     this.index = -1;
     this.round = null;
     game.audio.playMusic('party');
+    if (opts.rounds || opts.size) {
+      this.startMix(opts.size || PER_MIX, opts.rounds);
+    } else {
+      // Everyone votes on how many rounds to play first.
+      const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 40), toon(COLORS.grass));
+      ground.rotation.x = -Math.PI / 2;
+      this.scene.add(ground);
+      this.voteGround = ground;
+      this.camera.position.set(0, 6, 16);
+      this.camera.lookAt(0, 1, 0);
+      this.state = 'vote';
+      this.picker = new VotePicker(this, {
+        title: () => t('game.party'),
+        vote: VOTES.rounds(PER_MIX),
+        onDone: (n) => { this.picker = null; this.startMix(n); },
+      });
+    }
+  }
+
+  startMix(size, keys = null) {
+    if (this.voteGround) { this.scene.remove(this.voteGround); this.voteGround.geometry.dispose(); this.voteGround = null; }
+    const byKey = Object.fromEntries(ROUNDS.map((R) => [R.key, R]));
+    this.mixSize = size;
+    this.order = (keys || shuffle(ROUNDS.map((R) => R.key)).slice(0, size)).map((k) => byKey[k]).filter(Boolean);
     this.nextRound();
   }
 
   retryOptions() {
-    return { key: this.key };
+    return { key: this.key, size: this.mixSize };
   }
 
   nextRound() {
@@ -182,6 +210,7 @@ export class PartyScene extends MiniGame {
   }
 
   onLanguage() {
+    this.picker?.render();
     if (this.state === 'howto') this.renderHowTo();
     if (this.state === 'scores') this.renderScores();
   }
@@ -192,6 +221,7 @@ export class PartyScene extends MiniGame {
   }
 
   update(dt) {
+    if (this.state === 'vote') { this.picker?.update(dt); return; }
     if (this.updateResults(dt)) return;
     const r = this.round;
     if (!r) return;

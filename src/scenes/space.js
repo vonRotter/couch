@@ -5,12 +5,12 @@ import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo, faceted } from '../core/palette.js';
 import { skyTexture, seeded } from '../core/world.js';
 import { esc } from '../core/ui.js';
+import { VotePicker, VOTES } from '../core/vote.js';
 
 // Star Dash: split-screen space race through ring gates.
 // Flight feel borrowed from Tachyon-style arcade flight: turn rates ease in and out with a
 // little inertia, velocity chases the nose, boost burns a recharging tank, and holding slide
 // keeps your momentum while the nose swings freely.
-const LAPS = 3;
 const GATES = 14;
 const N = 1200; // course samples
 const GATE_R = 7;
@@ -106,7 +106,25 @@ export class SpaceScene extends MiniGame {
     this.overview.position.set(0, 330, 120);
     this.overview.lookAt(0, 0, 0);
     game.audio.playMusic('space');
-    this.intro(t('game.space'), t('space.intro'));
+    this.laps = opts.laps || 3;
+    if (opts.laps) {
+      this.intro(t('game.space'), t('space.intro'));
+    } else {
+      this.state = 'vote';
+      this.picker = new VotePicker(this, {
+        title: () => t('game.space'),
+        vote: VOTES.laps(3),
+        onDone: (n) => { this.picker = null; this.laps = n; this.intro(t('game.space'), t('space.intro')); },
+      });
+    }
+  }
+
+  retryOptions() {
+    return { key: this.key, laps: this.laps };
+  }
+
+  onLanguage() {
+    this.picker?.render();
   }
 
   // ---------- course ----------
@@ -154,19 +172,6 @@ export class SpaceScene extends MiniGame {
       }
       this.gates.push({ i, idx, pos, tan, ring });
     }
-
-    // Boost rings between gates: fly through for a full tank.
-    this.boostRings = [];
-    const bGeo = new THREE.TorusGeometry(3.2, 0.35, 8, 28);
-    for (let i = 0; i < GATES; i += 2) {
-      const idx = Math.round(((i + 0.5) / GATES) * N) % N;
-      const ring = new THREE.Mesh(bGeo, basic(0x7dffcf, { transparent: true, opacity: 0.85 }));
-      const side = new THREE.Vector3().crossVectors(this.tan[idx], UP).normalize();
-      ring.position.copy(this.pts[idx]).addScaledVector(side, (i % 4 ? 1 : -1) * 4.5);
-      ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), this.tan[idx]);
-      this.scene.add(ring);
-      this.boostRings.push({ ring, pos: ring.position, tan: this.tan[idx] });
-    }
   }
 
   buildSpace() {
@@ -212,7 +217,6 @@ export class SpaceScene extends MiniGame {
       const a = rand() * Math.PI * 2;
       const pos = this.pts[idx].clone().addScaledVector(side, Math.cos(a) * offset).addScaledVector(up, Math.sin(a) * offset);
       if (this.gates.some((gt) => gt.pos.distanceTo(pos) < GATE_R + r + 4)) return;
-      if (this.boostRings.some((b) => b.pos.distanceTo(pos) < r + 6)) return;
       const m = new THREE.Mesh(geo, rockMats[Math.floor(rand() * 3)]);
       m.position.copy(pos);
       m.scale.set(r, r * (0.7 + rand() * 0.4), r * (0.8 + rand() * 0.3));
@@ -376,15 +380,6 @@ export class SpaceScene extends MiniGame {
         const dist = s.pos.distanceTo(g.pos);
         if (dist < GATE_R * 2.2) this.passGate(s, g, dist < GATE_R + 0.6);
       }
-      for (const b of this.boostRings) {
-        const b0 = prev.clone().sub(b.pos).dot(b.tan), b1 = s.pos.clone().sub(b.pos).dot(b.tan);
-        if (b0 < 0 && b1 >= 0 && s.pos.distanceTo(b.pos) < 3.6) {
-          s.energy = 1;
-          s.boostLocked = false;
-          s.flash = 0.5;
-          this.game.audio.play('coin');
-        }
-      }
     }
 
     // Wandered off? Float back to the last gate.
@@ -436,7 +431,7 @@ export class SpaceScene extends MiniGame {
     }
     if (g.i === 0 && s.gatesPassed > 1) {
       s.lap++;
-      if (s.lap >= LAPS) this.finishShip(s);
+      if (s.lap >= this.laps) this.finishShip(s);
       else this.game.audio.play('star');
     }
   }
@@ -527,11 +522,11 @@ export class SpaceScene extends MiniGame {
     const cells = this.layout();
     this.ships.forEach((s, i) => {
       const c = cells[i];
-      const lap = Math.min(LAPS, s.lap + 1);
+      const lap = Math.min(this.laps, s.lap + 1);
       const tank = `<div class="space-tank ${s.boostLocked ? 'locked' : ''} ${s.flash > 0 ? 'flash' : ''}"><span style="width:${Math.round(s.energy * 100)}%"></span></div>`;
       const status = s.finished ? `<div class="kart-done">${t('kart.finished', { ord: ord(this.finishOrder.indexOf(s)) })}</div>` : '';
       const gate = `<div class="space-gate">${t('space.gate', { a: s.next + 1, b: GATES })}</div>`;
-      const html = `<div class="kart-place">${ord(s.place)}</div><div class="kart-lap">${esc(s.p.name)} · ${t('kart.lap', { a: lap, b: LAPS })}</div>${s.finished ? '' : gate}${tank}${status}`;
+      const html = `<div class="kart-place">${ord(s.place)}</div><div class="kart-lap">${esc(s.p.name)} · ${t('kart.lap', { a: lap, b: this.laps })}</div>${s.finished ? '' : gate}${tank}${status}`;
       if (html !== s.hudCache) { s.hud.innerHTML = html; s.hudCache = html; }
       s.hud.style.transform = `translate(${c.x}px, ${c.y}px)`;
       s.hud.style.width = `${c.w}px`;
@@ -546,7 +541,7 @@ export class SpaceScene extends MiniGame {
     for (const s of this.ships) s.hud.style.display = 'none';
     this.finish({
       title: this.ships.length === 1 ? t('space.solo') : t('kart.winsRace', { name: ranked[0].p.name }),
-      subtitle: t('space.sub', { n: LAPS, g: GATES }),
+      subtitle: t('space.sub', { n: this.laps, g: GATES }),
       rows: ranked.map((s, i) => ({
         css: s.p.css, name: s.p.name, value: ord(i),
         detail: s.finished ? `${s.finishTime.toFixed(1)} s` : t('space.gates', { n: s.gatesPassed }), crown: i === 0,
@@ -556,11 +551,11 @@ export class SpaceScene extends MiniGame {
   }
 
   update(dt) {
+    if (this.state === 'vote') this.picker?.update(dt);
     if (this.state === 'play') this.raceTime += dt;
     for (const s of this.ships) this.updateShip(s, dt);
     this.separate();
     for (const r of this.rocks) { r.m.rotation.x += r.spin.x * dt; r.m.rotation.y += r.spin.y * dt; }
-    for (const b of this.boostRings) b.ring.rotation.z += dt * 1.5;
     for (const g of this.gates) {
       const isNext = this.ships.some((s) => !s.finished && s.next % GATES === g.i);
       g.ring.scale.setScalar(isNext ? 1 + Math.sin(this.time * 5) * 0.04 : 1);

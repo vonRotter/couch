@@ -6,8 +6,8 @@ import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeBush, seeded } from '../core/world.js';
 import { esc } from '../core/ui.js';
+import { VotePicker, VOTES } from '../core/vote.js';
 
-const LAPS = 3;
 const HW = 6.5; // track half width
 const WALL = HW + 3;
 const N = 900; // track samples
@@ -45,7 +45,25 @@ export class KartScene extends MiniGame {
     for (const k of this.karts) this.snapCamera(k);
 
     game.audio.playMusic('platformer');
-    this.intro(t('game.kart'), t('kart.intro'));
+    this.laps = opts.laps || 3;
+    if (opts.laps) {
+      this.intro(t('game.kart'), t('kart.intro'));
+    } else {
+      this.state = 'vote';
+      this.picker = new VotePicker(this, {
+        title: () => t('game.kart'),
+        vote: VOTES.laps(3),
+        onDone: (n) => { this.picker = null; this.laps = n; this.intro(t('game.kart'), t('kart.intro')); },
+      });
+    }
+  }
+
+  retryOptions() {
+    return { key: this.key, laps: this.laps };
+  }
+
+  onLanguage() {
+    this.picker?.render();
   }
 
   // ---------- track ----------
@@ -397,8 +415,8 @@ export class KartScene extends MiniGame {
       if (k.halfway) {
         k.halfway = false;
         k.lap++;
-        if (k.lap > LAPS && !k.finished) this.finishKart(k);
-        else if (k.lap === LAPS && k.p) this.game.ui.toast(t('kart.final', { name: k.p.name }));
+        if (k.lap > this.laps && !k.finished) this.finishKart(k);
+        else if (k.lap === this.laps && k.p) this.game.ui.toast(t('kart.final', { name: k.p.name }));
       }
     }
     if (prevIdx < N * 0.15 && k.idx > N * 0.85 && !k.finished) {
@@ -607,10 +625,10 @@ export class KartScene extends MiniGame {
     const cells = this.layout();
     this.karts.forEach((k, i) => {
       const c = cells[i];
-      const lap = Math.min(LAPS, Math.max(1, k.lap));
+      const lap = Math.min(this.laps, Math.max(1, k.lap));
       const item = k.rollT > 0 ? '<div class="kart-item rolling">?</div>' : k.item ? `<div class="kart-item" style="--ic:${ITEMS[k.item].css}">${t(`kart.item.${k.item}`)}</div>` : '<div class="kart-item empty"></div>';
       const status = k.finished ? `<div class="kart-done">${t('kart.finished', { ord: ord(this.finishOrder.indexOf(k)) })}</div>` : '';
-      const html = `<div class="kart-place">${ord(k.place)}</div><div class="kart-lap">${esc(k.p.name)} · ${t('kart.lap', { a: lap, b: LAPS })}</div>${item}${status}`;
+      const html = `<div class="kart-place">${ord(k.place)}</div><div class="kart-lap">${esc(k.p.name)} · ${t('kart.lap', { a: lap, b: this.laps })}</div>${item}${status}`;
       if (html !== k.hudCache) { k.hud.innerHTML = html; k.hudCache = html; }
       k.hud.style.transform = `translate(${c.x}px, ${c.y}px)`;
       k.hud.style.width = `${c.w}px`;
@@ -625,16 +643,17 @@ export class KartScene extends MiniGame {
     for (const k of this.karts) k.hud.style.display = 'none';
     this.finish({
       title: this.karts.length === 1 ? t('kart.solo') : t('kart.winsRace', { name: ranked[0].p.name }),
-      subtitle: t('kart.sub', { n: LAPS }),
+      subtitle: t('kart.sub', { n: this.laps }),
       rows: ranked.map((k, i) => ({
         css: k.p.css, name: k.p.name, value: ord(i),
-        detail: k.finished ? `${k.finishTime.toFixed(1)} s` : t('kart.lapShort', { n: Math.max(1, Math.min(LAPS, k.lap)) }), crown: i === 0,
+        detail: k.finished ? `${k.finishTime.toFixed(1)} s` : t('kart.lapShort', { n: Math.max(1, Math.min(this.laps, k.lap)) }), crown: i === 0,
       })),
       stars: 2,
     });
   }
 
   update(dt) {
+    if (this.state === 'vote') this.picker?.update(dt);
     if (this.state === 'play') this.raceTime += dt;
     for (const k of this.karts) this.updateKart(k, dt);
     if (this.updateResults(dt)) return;
