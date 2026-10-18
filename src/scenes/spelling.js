@@ -9,11 +9,17 @@ import { LEVELS, glyphMaterial, fontsReady, speak, chooseLevels, shuffle } from 
 import { WORDS, ALPHABET } from './edu-words.js';
 import { esc } from '../core/ui.js';
 
-// Bokstavballonger: letter balloons float up; touch the next letter your word needs.
+// Bokstavballonger: letter balloons drift slowly across the sky in lanes, coming in from the
+// sides, so every letter can be read long before anyone reaches it. Jump up to the balloon with
+// the next letter your word needs. The lowest lane is above head height, so nothing pops by accident.
 const HALF_W = 13;
 const TOP = 14;
 const ROUND_TIME = 120;
-const MAX_BALLOONS = 18;
+const MAX_BALLOONS = 16;
+const LANES = [2.7, 4.9, 7.3, 9.9]; // reachable from the ground, low clouds, middle cloud, high clouds
+// Each lane drifts one way at one speed, so balloons never overtake or cover each other.
+const LANE_VX = [1.3, -1.1, 1.2, -1.0];
+const GAP = 2.6; // minimum spacing between balloons in a lane
 const BALLOON_COLORS = PLAYER_COLORS.map((c) => c.hex).concat(0xffffff);
 
 const PHYS = {
@@ -50,7 +56,7 @@ export class SpellingScene extends MiniGame {
     fontsReady().then(() => chooseLevels(this, 'Bokstavballonger')).then(() => {
       if (this.game.current !== this) return;
       for (const e of this.ents) this.nextWord(e);
-      this.intro('Bokstavballonger', 'Hopp på ballongen med neste bokstav i ordet ditt!');
+      this.intro('Bokstavballonger', 'Ballongene svever forbi. Hopp opp til ballongen med neste bokstav i ordet ditt!');
     });
   }
 
@@ -167,7 +173,7 @@ export class SpellingScene extends MiniGame {
 
   // ---------- balloons ----------
 
-  spawnBalloon(letter, x = null) {
+  spawnBalloon(letter, lane = null) {
     const g = new THREE.Group();
     const color = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
     const ball = new THREE.Mesh(sharedGeo('lBalloon', () => new THREE.SphereGeometry(0.62, 18, 14)), toon(color));
@@ -181,22 +187,29 @@ export class SpellingScene extends MiniGame {
     face.position.z = 0.66;
     g.add(ball, knot, string, face);
     this.scene.add(g);
+    // Enter from the lane's upwind edge, only where there is room.
+    const free = (li) => !this.balloons.some((o) => o.lane === li && Math.abs(o.x - this.entryX(li)) < GAP);
+    const order = lane === null ? shuffle([0, 1, 2, 3]) : [lane, ...[0, 1, 2, 3].filter((l) => l !== lane)];
+    const li = order.find(free);
+    if (li === undefined) { this.scene.remove(g); return null; }
     const b = {
-      letter, mesh: g,
-      x: x ?? (Math.random() - 0.5) * (HALF_W * 2 - 2), y: -1.2,
-      vx: (Math.random() - 0.5) * 0.6, vy: 1.0 + Math.random() * 0.5,
-      phase: Math.random() * 6, bumpCd: new Map(),
+      letter, mesh: g, lane: li,
+      x: this.entryX(li), y: LANES[li], vx: LANE_VX[li],
+      phase: Math.random() * 6, bumpCd: new Map(), bumpY: 0,
     };
-    b.x = THREE.MathUtils.clamp(b.x, -HALF_W + 0.8, HALF_W - 0.8);
     this.balloons.push(b);
     return b;
+  }
+
+  entryX(lane) {
+    return -Math.sign(LANE_VX[lane]) * (HALF_W + 1);
   }
 
   updateBalloons(dt) {
     const needs = this.ents.map((e) => this.needed(e)).filter(Boolean);
     this.spawnT -= dt;
     if (this.spawnT <= 0 && this.balloons.length < MAX_BALLOONS) {
-      this.spawnT = 0.75;
+      this.spawnT = 0.9;
       const letter = needs.length && Math.random() < 0.55 ? needs[Math.floor(Math.random() * needs.length)] : ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
       this.spawnBalloon(letter);
     }
@@ -207,18 +220,16 @@ export class SpellingScene extends MiniGame {
       for (const e of this.ents) {
         const need = this.needed(e);
         if (!need) continue;
-        const has = this.balloons.some((b) => b.letter === need && b.y < 9);
-        if (!has) this.spawnBalloon(need, e.body.x + (Math.random() - 0.5) * 6);
+        // Count only balloons still on their way across, in a lane this player can reach.
+        const has = this.balloons.some((b) => b.letter === need && b.lane <= 2 && Math.abs(b.x) < HALF_W - 1);
+        if (!has) this.spawnBalloon(need, Math.random() < 0.6 ? 0 : 1);
       }
     }
 
     for (const b of this.balloons) {
-      b.vx += Math.sin(this.time * 1.3 + b.phase) * 0.3 * dt;
-      b.vx *= Math.max(0, 1 - 0.6 * dt);
       b.x += b.vx * dt;
-      b.y += b.vy * dt;
-      if (b.x < -HALF_W + 0.7) { b.x = -HALF_W + 0.7; b.vx = Math.abs(b.vx); }
-      if (b.x > HALF_W - 0.7) { b.x = HALF_W - 0.7; b.vx = -Math.abs(b.vx); }
+      b.bumpY *= Math.max(0, 1 - 4 * dt);
+      b.y = LANES[b.lane] + Math.sin(this.time * 1.6 + b.phase) * 0.22 + b.bumpY;
       for (const [k, v] of b.bumpCd) b.bumpCd.set(k, v - dt);
 
       if (this.state === 'play') {
@@ -234,17 +245,16 @@ export class SpellingScene extends MiniGame {
             e.ch.squash(1.3);
             break;
           } else if ((b.bumpCd.get(e) ?? 0) <= 0) {
+            // Wrong letter: a little bounce, and it keeps drifting.
             b.bumpCd.set(e, 0.6);
-            const d = Math.hypot(dx, dy) || 1;
-            b.vx += (dx / d) * 3;
-            b.y += (dy / d) * 0.3;
+            b.bumpY = dy >= 0 ? 0.6 : -0.6;
             this.game.audio.play('bump');
           }
         }
       }
-      b.mesh.position.set(b.x, b.y, 0);
+      b.mesh.position.set(b.x, b.y, 0.9); // in front of the cloud platforms
       b.mesh.rotation.z = Math.sin(this.time * 2 + b.phase) * 0.08 - b.vx * 0.05;
-      if (b.y > TOP + 1.5) b.popped = true;
+      if (Math.abs(b.x) > HALF_W + 1.5) b.popped = true; // drifted out the other side
       if (b.popped) this.scene.remove(b.mesh);
     }
     this.balloons = this.balloons.filter((b) => !b.popped);
