@@ -72,7 +72,7 @@ export class Grumbles {
   targets() {
     const out = [];
     for (const e of this.scene.heroes) if (e.state === 'play') out.push(e);
-    for (const tr of this.scene.troopers.list) if (this.scene.troopers.active(tr)) out.push(tr);
+    for (const tr of this.scene.troopers.list) if (this.scene.troopers.active(tr) && tr.state !== 'dizzy' && tr.invuln <= 0) out.push(tr);
     return out;
   }
 

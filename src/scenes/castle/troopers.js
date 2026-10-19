@@ -79,7 +79,7 @@ export class Troopers {
     tr.dizzy = dizzy;
     tr.body.vx = dir * power;
     tr.body.vy = 5;
-    tr.invuln = 0.5;
+    tr.invuln = dizzy + 0.8; // time to get back up and walk on before the next push
     tr.ch.squash(0.7);
     this.scene.puffs.burst(new THREE.Vector3(tr.body.x, tr.body.y + 0.7, 0.6), 0xffffff, { count: 5, size: 0.25, life: 0.3 });
     this.scene.game.audio.play('boing');

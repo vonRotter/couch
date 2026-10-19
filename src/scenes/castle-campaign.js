@@ -1024,7 +1024,9 @@ export class CastleCampaignScene extends MiniGame {
       if (b.grounded && b.ground?.ladderTop && inp.y < -0.5) { b.dropTimer = 0.25; e.climbing = true; }
       if (e.climbing) {
         b.vy = inp.y > 0.4 || inp.a ? 5.5 : inp.y < -0.4 ? -5.5 : 0;
-        b.vx = approach(b.vx, inp.x * 3.5, 40 * dt);
+        // Without a sideways push, slide to the middle of the ladder so heads don't catch on ledges.
+        const center = Math.abs(inp.x) < 0.3 ? (Math.floor(b.x) + 0.5 - b.x) * 6 : 0;
+        b.vx = approach(b.vx, inp.x * 3.5 + center, 40 * dt);
         b.grounded = false;
       } else {
         const ctrl = e.bounced && b.vy > 0 ? { ...inp, a: true } : inp;
