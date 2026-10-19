@@ -232,7 +232,11 @@ export function makeDuke(size = 2.2) {
     group, pivot, body: g.userData.body,
     /** happy: brows relax and the body turns pink. */
     setHappy(on) {
-      brows.forEach((b) => { b.rotation.z = (b.position.x < 0 ? 1 : -1) * (on ? -0.3 : 0.35); });
+      // Friendly: flat, raised brows. Grumpy: the usual grumble frown.
+      brows.forEach((b) => {
+        b.rotation.z = on ? 0 : (b.position.x < 0 ? 1 : -1) * 0.35;
+        b.position.y = on ? 0.73 : 0.69;
+      });
       g.userData.body.material = toon(on ? 0xb48cff : 0x6a4fd0, { flat: true });
     },
   };

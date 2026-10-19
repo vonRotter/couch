@@ -31,6 +31,7 @@ import { SnowballScene } from './scenes/snowball.js';
 import { LearnMixScene } from './scenes/learnmix.js';
 import { GolfScene } from './scenes/golf.js';
 import { CastleScene } from './scenes/castle.js';
+import { castleEntry } from './scenes/castle-campaign.js';
 import { KeepScene } from './scenes/keep.js';
 import { GuidesScene } from './scenes/guides.js';
 import { SplashScene } from './scenes/splash.js';
@@ -56,7 +57,7 @@ export const GAMES = {
   hideseek: { Scene: HideSeekScene },
   snowball: { Scene: SnowballScene },
   golf: { Scene: GolfScene },
-  castle: { Scene: CastleScene },
+  castle: { Scene: castleEntry(CastleScene) }, // Versus, or the Golden Bean campaign with opts.mode 'campaign'
   keep: { Scene: KeepScene },
   guides: { Scene: GuidesScene },
   splash: { Scene: SplashScene },
@@ -216,10 +217,10 @@ class Game {
     }
   }
 
-  startGame(key) {
+  startGame(key, opts = {}) {
     const def = GAMES[key];
     if (!def || this.roster.players.length === 0) return;
-    this.transition(() => new def.Scene(this, { key }));
+    this.transition(() => new def.Scene(this, { key, ...opts }));
   }
 
   loop() {

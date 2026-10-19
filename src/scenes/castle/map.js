@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { Character } from '../../core/character.js';
 import { makeGrumble } from '../../core/critters.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../../core/palette.js';
-import { addLights, skyTexture, makeTree, makeCloud, makeBush, makeFlower, makeStar, seeded } from '../../core/world.js';
+import { addLights, skyTexture, makeTree, makeCloud, makeBush, makeFlower, seeded } from '../../core/world.js';
 import { t } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { LEVELS, parseLevel, troopersNeeded } from './levels.js';
@@ -457,7 +457,7 @@ export class CampaignMap {
 
   frame() {
     const cam = this.s.camera;
-    const d = Math.max(15, this.s.fitDistance(18, 9) * 0.9);
+    const d = Math.max(17, this.s.fitDistance(24, 11) * 0.9);
     this.camOff = new THREE.Vector3(0, d * 0.45, d);
     cam.position.set(this.camX, this.camOff.y, this.camOff.z);
     cam.lookAt(this.camX, 1.2, -1);

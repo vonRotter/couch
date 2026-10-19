@@ -64,7 +64,7 @@ export function makeDiff(L, n) {
     swingGap: Math.max(0.45, 0.95 - 0.06 * L - 0.04 * n),
     shield: 0.2 + 0.05 * L,
     dizzy: 1.2 + 0.05 * L,
-    reserves: Math.floor(L / 2) + Math.floor((n - 1) / 2),
+    reserves: 1 + Math.floor(L / 2) + Math.floor((n - 1) / 2),
     respawn: Math.max(6, 14 - L - 0.5 * n),
     archerRate: Math.max(1.6, 3.4 - 0.18 * L - 0.12 * n),
     archerRange: 15 + L,
@@ -1160,11 +1160,15 @@ export class CastleCampaignScene extends MiniGame {
     if (live.length && this.state !== 'classes') {
       const xs = live.map((e) => e.body.x).sort((a, b) => a - b);
       const span = this.halfW * 2 - 6;
-      let best = [0, 0], bestN = 0;
+      // Ties go to the beans closest to the troopers (the ones that need help).
+      const focus = this.troopFocus();
+      let best = [0, 0], bestScore = -1e9;
       for (let i = 0; i < xs.length; i++) {
         let j = i;
         while (j + 1 < xs.length && xs[j + 1] - xs[i] <= span) j++;
-        if (j - i + 1 > bestN || (j - i + 1 === bestN && xs[j] > xs[best[1]])) { bestN = j - i + 1; best = [i, j]; }
+        const mid = (xs[i] + xs[j]) / 2;
+        const score = (j - i + 1) * 1000 - Math.max(0, Math.abs(mid - focus) - span / 2);
+        if (score > bestScore) { bestScore = score; best = [i, j]; }
       }
       const target = (xs[best[0]] + xs[best[1]]) / 2 + 2;
       this.camX += (target - this.camX) * Math.min(1, dt * 2.5);
@@ -1187,6 +1191,17 @@ export class CastleCampaignScene extends MiniGame {
         this.toBubble(e, to ? { x: to.body.x, y: to.body.y } : this.spawnPoint(e), 2);
       }
     }
+  }
+
+  /** Where the troopers need the most attention: the first waiting one, or the middle of the march. */
+  troopFocus() {
+    let front = null, sum = 0, n = 0;
+    for (const tr of this.troopers.list) {
+      if (!this.troopers.active(tr)) continue;
+      sum += tr.body.x; n++;
+      if (tr.state === 'wait' && tr.why !== 'friend' && (!front || tr.body.x < front.body.x)) front = tr;
+    }
+    return front ? front.body.x : n ? sum / n : this.camX;
   }
 
   // ---------- goals ----------
@@ -1232,7 +1247,7 @@ export class CastleCampaignScene extends MiniGame {
       this.goalTime = this.time - this.playStart;
       this.bonusT = BONUS_TIME;
       for (const e of this.heroes) e.holdMode = null;
-      this.game.ui.toast(t('kc.goalDone'), 2600);
+      if (!this.allHome()) this.game.ui.toast(t('kc.goalDone'), 2600);
       this.game.audio.play('fanfare');
       this.confetti.burst(new THREE.Vector3(this.flagPos.x, this.flagPos.y + 3, 0.5), 0, { count: 60, speed: 9, up: 5, colors: [GOLD, COLORS.white], life: 1.6 });
     }

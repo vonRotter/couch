@@ -209,6 +209,16 @@ magic wall. Then grab the other team's flag and carry it to yours. Foam hits onl
 three hits (or one big slash) floats you home in a bubble for 3 seconds. Helper bots even out the
 teams. A builder sees a preview of the piece in their color where it will go; name tags show each player's own keys until they get the hang of it.
 
+**Knights & Builders: The Golden Bean** (co-op campaign; vote Campaign on the Knights & Builders pad).
+All players on one team, each with a class. Bean troopers march toward the Golden Bean Princess on
+their own: build bridges and ladders, pull gate levers, break cages to free captured troopers, stop
+pillow catapults and bonk the grumble knights, archers and builders (builders repair their walls and
+take your ladders apart). Enough troopers must get home, more with more players. Seven levels on a
+level map, each introducing something new: Bridge Meadow, Ladder Cliffs, The Gatehouse, Pillow
+Towers, Busy Builders, The Grand Siege and Castle Grumblegrump, where the princess waits. Up to 3
+stars per level (goal, every trooper home, within par time); progress is saved. Bonked grumbles
+float home and, after a few times, turn friendly; in the end everyone goes to the princess's party.
+
 **Pillow Keep** (co-op dungeon crawl, Gauntlet and Diablo style, five random floors). Everyone picks
 a class: Knight, Archer, Wizard or Bard. Every run builds new floors with rooms, keys and doors,
 pillow nests, chests and elite grumbles: Cushion Hall, Blanket Vaults, Toy Attic (Big Teddy guards
@@ -345,6 +355,7 @@ src/
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
     guides.js  splash.js  cave.js  dogfight.js
+    castle-campaign.js  castle/   The Golden Bean campaign (levels, troopers, grumbles, siege props)
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
     learnmix.js  learn/  Læringsmiks and its rounds (klokka, penger, rimord)

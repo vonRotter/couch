@@ -11,7 +11,7 @@ import { t, addStrings, getLang, keyName, buttonText } from '../core/i18n.js';
 import { PAD_LABELS } from '../core/input.js';
 import { esc } from '../core/ui.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
-import { voteLength } from '../core/vote.js';
+import { voteLength, VotePicker } from '../core/vote.js';
 
 const STRINGS = {
   en: {
@@ -20,6 +20,7 @@ const STRINGS = {
     'castle.hint.knight': '[B] sword · [C] shield',
     'castle.hint.archer': '[B] shoot · [C] rope arrow',
     'castle.buildPill': 'Build: [B] · next piece: [C]',
+    'castle.modeVote': 'How do you want to play?', 'castle.mode.versus': 'Versus: capture the flag', 'castle.mode.campaign': 'Campaign: save the Golden Bean',
     'castle.intro': "Grab the other team's flag and carry it to yours! [A]: jump and climb · [B]: class action · [C]: next piece / shield / rope arrow",
     'castle.bot': 'Grumble Guard',
     'castle.pick': 'Pick a class',
@@ -49,6 +50,7 @@ const STRINGS = {
     'castle.hint.knight': '[B] sverd · [C] skjold',
     'castle.hint.archer': '[B] skyt · [C] taupil',
     'castle.buildPill': 'Bygg: [B] · neste brikke: [C]',
+    'castle.modeVote': 'Hvordan vil dere spille?', 'castle.mode.versus': 'Mot hverandre: ta flagget', 'castle.mode.campaign': 'Kampanje: redd Gullbønna',
     'castle.intro': 'Ta flagget til det andre laget og bær det til deres eget! [A]: hopp og klatre · [B]: klassehandling · [C]: neste brikke / skjold / taupil',
     'castle.bot': 'Grumlevakt',
     'castle.pick': 'Velg klasse',
@@ -262,12 +264,28 @@ export class CastleScene extends MiniGame {
         });
       },
     }); };
-    voteLength(this, opts, () => t('game.castle'), teams);
+    // First: Versus (the flag game) or the co-op Campaign (The Golden Bean). Retry skips this.
+    const versus = () => voteLength(this, opts, () => t('game.castle'), teams);
+    if (opts.mode === 'versus' || opts.length) versus();
+    else {
+      this.picker = new VotePicker(this, {
+        title: () => t('game.castle'),
+        vote: { question: () => t('castle.modeVote'), def: 'versus', options: [
+          { value: 'versus', label: () => t('castle.mode.versus') },
+          { value: 'campaign', label: () => t('castle.mode.campaign') },
+        ] },
+        onDone: (v) => {
+          this.picker = null;
+          if (v === 'campaign') this.game.startGame('castle', { mode: 'campaign' });
+          else versus();
+        },
+      });
+    }
     this.placeEnts();
   }
 
   retryOptions() {
-    return { key: this.key, length: this.matchTime };
+    return { key: this.key, mode: 'versus', length: this.matchTime };
   }
 
   onLanguage() {

@@ -3,7 +3,7 @@ import { moveBody, platformerControl, approach } from '../../core/physics2d.js';
 import { sharedGeo, toon } from '../../core/palette.js';
 import { t } from '../../core/i18n.js';
 import { makeTrooper, mesh, TROOPER_COLOR } from './props.js';
-import { WATER, LADDER, GATE, DOOR, PAD } from './tilemap.js';
+import { WATER, LADDER, GATE, DOOR } from './tilemap.js';
 
 // Bean troopers march to the Golden Bean flag on their own. They hop up 1-tile steps, float down
 // any drop on a leaf parachute, climb ladders, and wait (and call for help) at water, high walls,
@@ -130,6 +130,8 @@ export class Troopers {
     if (tr.state === 'home') { this.updateHome(tr, dt); return; }
     if (tr.state === 'bubble') { this.updateBubble(tr, dt); return; }
 
+    // Walk toward the flag (a trooper pushed or bounced past it turns around).
+    if (b.grounded && tr.state !== 'climb') tr.dir = b.x > this.flag.x + 0.5 ? -1 : 1;
     let inp = NO;
     if (!playing) {
       b.vx = approach(b.vx, 0, 20 * dt);
