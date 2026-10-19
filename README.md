@@ -182,9 +182,15 @@ aims, hold B for fine aim, hold A to charge and let go to putt. Six candy holes:
 bend, windmill, big jump, sliding blocks and a loop. Falling off costs a stroke, 8 strokes puts the
 ball in for you, and once the first ball drops the others get 25 seconds. Obstacles such as the windmill turn see-through when a ball is behind them, and balls show through walls as an outline.
 
-**Snowball Fort** (two teams). Snowballs are thrown at the other team's targets (bells, flags,
-snowman heads), never at players. Tap B to throw (with gentle auto-aim), hold B to scoop snow, and
-A builds a snow wall that blocks the other team's throws. Helper bots even out the teams.
+**Snowball Fort** (two teams; vote on mode, map and length). Modes: Snow Targets (hit the other
+team's bells, flags and snowman heads; a gold target is worth 3), King of the Hill (score while only
+your team stands in the ring; on some maps the hill moves) and Capture the Flag (carry their flag
+to your home pad; first to 3). Maps: Fort Meadow (a gentle hill, rocks and ice blocks), Frosty Creek
+(a creek with two bridges and a see-through ice tunnel) and Glacier Peaks (a central peak, ice walls
+and slippery lanes). Tap B to throw (gentle auto-aim), hold B to scoop snow, A builds a snow wall,
+and C uses a gift: giant snowball, triple throw, speed boots, instant fort or freeze bomb. A hit
+makes a player slip for a moment and drop a flag they carry; nobody is knocked out. Helper bots
+even out the teams and play each objective.
 
 **Garden Hide & Seek** (one seeker per round). While the seeker looks away from the screen for
 9 seconds, everyone else turns into a garden prop (gnome, pumpkin, bush, flower pot, watering can)
