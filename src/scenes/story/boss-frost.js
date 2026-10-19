@@ -4,12 +4,14 @@ import { COLORS, toon, basic, sharedGeo } from '../../core/palette.js';
 import { addLights, skyTexture, seeded } from '../../core/world.js';
 import { makeGrumble } from '../../core/critters.js';
 import { t, addStrings } from '../../core/i18n.js';
-import { BossScene, SLIP_TIME, volley } from './boss-common.js';
+import { BossScene, volley } from './boss-common.js';
 
 // Frosty Peaks boss: "He throws back". The Grumble King guards the five bells on his snow fort
 // with a big umbrella and throws snowballs back at the beans.
-// - Beans: [B] throws at the bell straight ahead (the colored ring shows which; it turns grey
-//   when an umbrella covers that bell). [A] hops.
+// - Beans: hold [B] to pack a snowball (you stand almost still while packing), then tap [B] to
+//   throw it at the bell straight ahead (the colored ring shows which; it turns grey when an
+//   umbrella covers that bell). [A] hops.
+// - A good plan: pack your snowball away from the umbrellas, then run to a free bell and throw.
 // - The King lobs snowballs at the beans. A purple ring on the snow shows where each one lands;
 //   a hit makes you slip and drop your snowball for a moment (no harm).
 // - He moves his umbrella to the bell most beans are aiming at (with a short reaction delay),
@@ -17,18 +19,18 @@ import { BossScene, SLIP_TIME, volley } from './boss-common.js';
 // - Phase 2 (a third of the goal): helper grumbles pop up and guard bells too.
 //   Phase 3 (two thirds): a snowball storm, the helpers throw as well.
 // Scaling with n players: goal 8 + 3n bells (stages.js), throws per volley ceil(n/2) (+1 in
-// phase 3), helpers ceil(n/2) (max 3, so at least one bell is always open), and he walks a bit
-// faster with more beans to watch.
+// phase 3), helpers per helperCount() below (at least one bell is always open), and the guards
+// walk a bit faster with more beans to watch.
 
 addStrings({
   en: {
-    'bossf.hint': '[B]: throw at the bell in front of you · [A]: hop · step out of the purple rings!',
+    'bossf.hint': 'Hold [B] to make a snowball, tap [B] to throw it at the bell in front of you · step out of the purple rings!',
     'bossf.ha': 'Ha!',
     'bossf.p1': 'He calls his helpers! Find a free bell!',
     'bossf.p2': 'Snowball storm! Keep dodging!',
   },
   no: {
-    'bossf.hint': '[B]: kast på bjella foran deg · [A]: hopp · gå ut av de lilla ringene!',
+    'bossf.hint': 'Hold [B] for å lage en snøball, trykk [B] for å kaste den på bjella foran deg · gå ut av de lilla ringene!',
     'bossf.ha': 'Ha!',
     'bossf.p1': 'Han roper på hjelperne sine! Finn en ledig bjelle!',
     'bossf.p2': 'Snøballstorm! Fortsett å unngå!',
@@ -45,9 +47,19 @@ const KING_Z = -4.2;
 const KING_Y = 1.25; // he stands on a snow step behind the wall, head and crown above it
 const UMB_Z = WALL_Z + 0.85; // umbrellas are held just in front of the bells
 const COVER = 1.0; // an umbrella this close (in x) to a bell covers it
-const THROW_CD = 0.7; // making a new snowball
+const PACK_TIME = 0.75; // holding [B] this long packs a snowball
+const PACK_SPEED = 1.8; // walking speed while packing
 const G = 18;
 const HELPER_COLOR = 0x6fb7ff;
+
+/**
+ * Helper grumbles guarding bells, by players and phase: big teams get one from the start, and
+ * from phase 2 there is one per extra bean (at least 1, at most 3, so one bell of five stays open).
+ *   n:       1  2  3  4  5  6
+ *   phase 1: 0  0  1  1  2  2
+ *   phase 2: 1  1  2  3  3  3
+ */
+const helperCount = (n, phase) => (phase === 0 ? Math.floor((n - 1) / 2) : Math.min(3, Math.max(1, n - 1)));
 
 // Per phase: seconds between the King's throws, how long a throw is in the air, how long he
 // takes to notice where the beans are aiming, and how fast he walks.
@@ -70,6 +82,9 @@ export class BossFrostScene extends BossScene {
     // Guards hold an umbrella in front of one bell each: the King first, helpers later.
     this.guards = [];
     this.kingGuard = this.addGuard('king', 2);
+    for (const gd of this.guards) gd.pop = 1;
+    this.addHelpers(helperCount(this.n, 0));
+    for (const gd of this.guards) gd.pop = 1;
     this.throwT = 2.2; // first throw shortly after the start
     this.windup = 0;
     this.targetOrder = [];
@@ -77,7 +92,9 @@ export class BossFrostScene extends BossScene {
     const n = this.players.length;
     this.players.forEach((p, i) => {
       const e = this.makeBean(p, n === 1 ? 0 : -7 + (14 * i) / (n - 1), 5);
-      e.cd = 0;
+      e.ball = false;
+      e.pack = 0;
+      e.held = false; // [B] must be let go between packing and throwing
       e.reticle = new THREE.Mesh(sharedGeo('bfReticle', () => new THREE.RingGeometry(0.55, 0.72, 28)), basic(p.color));
       e.reticle.visible = false;
       e.reticleColor = basic(p.color);
@@ -331,12 +348,7 @@ export class BossFrostScene extends BossScene {
   /** Helpers join in phase 2; in phase 3 they throw too. */
   onPhase(p) {
     if (p === 1) {
-      const count = Math.min(3, Math.ceil(this.n / 2));
-      for (let i = 0; i < count; i++) {
-        const used = new Set(this.guards.map((g) => g.bell));
-        const free = [1, 3, 0, 4, 2].filter((b) => !used.has(b));
-        this.addGuard('helper', free[0]);
-      }
+      this.addHelpers(helperCount(this.n, 1));
       this.game.audio.play('trap');
       this.game.ui.toast(t('bossf.p1'), 2600);
     } else if (p === 2) {
@@ -345,12 +357,21 @@ export class BossFrostScene extends BossScene {
     }
   }
 
+  /** Bring the helper grumbles up to `count`, each on a bell nobody covers yet. */
+  addHelpers(count) {
+    while (this.guards.length - 1 < count) {
+      const used = new Set(this.guards.map((g) => g.bell));
+      const free = [1, 3, 0, 4, 2].filter((b) => !used.has(b));
+      this.addGuard('helper', free[0]);
+    }
+  }
+
   /** Where the beans are aiming: a weight per bell (beans with a snowball ready count more). */
   aimWeights() {
     const w = this.bells.map(() => 0);
     for (const e of this.ents) {
       if (e.slip > 0) continue;
-      w[this.aimBell(e).i] += e.cd <= 0 ? 1.5 : 1;
+      w[this.aimBell(e).i] += e.ball ? 1.5 : 1;
     }
     return w;
   }
@@ -403,8 +424,10 @@ export class BossFrostScene extends BossScene {
   throwAt(e, from, time) {
     const mesh = new THREE.Mesh(sharedGeo('bfLob', () => new THREE.SphereGeometry(0.3, 12, 9)), toon(COLORS.white));
     mesh.castShadow = true;
-    const x = THREE.MathUtils.clamp(e.x + (Math.random() - 0.5) * 0.6, -HW + 0.5, HW - 0.5);
-    const z = THREE.MathUtils.clamp(e.z + (Math.random() - 0.5) * 0.6, Z0 + 0.3, Z1 - 0.3);
+    // He aims a little ahead of a running bean, so you dodge by changing direction, not just by moving.
+    const lead = time * 0.45;
+    const x = THREE.MathUtils.clamp(e.x + e.vx * lead + (Math.random() - 0.5) * 0.6, -HW + 0.5, HW - 0.5);
+    const z = THREE.MathUtils.clamp(e.z + e.vz * lead + (Math.random() - 0.5) * 0.6, Z0 + 0.3, Z1 - 0.3);
     this.lob({ from, x, z, time, r: 1.05, mesh, arc: 3.2 });
     this.game.audio.play('whoosh');
   }
@@ -472,8 +495,9 @@ export class BossFrostScene extends BossScene {
 
   onSlip(e) {
     // Drop the snowball: it plops in the snow, and making a new one waits until you're up again.
-    if (e.cd <= 0) this.puffs.burst(new THREE.Vector3(e.x + 0.3, 0.3, e.z), 0xffffff, { count: 6, speed: 2, size: 0.3 });
-    e.cd = Math.max(e.cd, SLIP_TIME + 0.3);
+    if (e.ball) this.puffs.burst(new THREE.Vector3(e.x + 0.3, 0.3, e.z), 0xffffff, { count: 6, speed: 2, size: 0.3 });
+    e.ball = false;
+    e.pack = 0;
   }
 
   updateBoss(dt) {
@@ -489,14 +513,32 @@ export class BossFrostScene extends BossScene {
     this.updateKing(dt);
     const playing = this.state === 'play' && !this.finished;
     for (const e of this.ents) {
-      this.moveBean(e, dt, { x0: -HW, x1: HW, z0: Z0, z1: Z1 });
-      e.cd -= dt;
-      const inp = e.slip > 0 ? null : this.input(e.p);
-      if (playing && inp && inp.bPressed && e.cd <= 0) {
-        e.cd = THROW_CD;
+      const inp = playing && e.slip <= 0 ? this.input(e.p) : null;
+      const packing = !!inp && inp.b && !e.ball && !e.held;
+      this.moveBean(e, dt, { x0: -HW, x1: HW, z0: Z0, z1: Z1 }, { speed: packing ? PACK_SPEED : undefined });
+      if (packing) {
+        // Scoop and pat: the bean crouches while the snowball grows in its hand.
+        e.pack += dt;
+        e.ch.pivot.rotation.x = 0.35;
+        if (e.pack >= PACK_TIME) {
+          e.ball = true;
+          e.pack = 0;
+          e.held = true;
+          e.ch.squash(1.2);
+          this.game.audio.play('select');
+        }
+      } else {
+        e.pack = Math.max(0, e.pack - dt * 2);
+        e.ch.pivot.rotation.x *= 0.8;
+      }
+      if (inp && !inp.b) e.held = false;
+      if (inp && inp.bPressed && e.ball && !e.held) {
+        e.ball = false;
+        e.held = true;
         this.throwBall(e);
       }
-      e.hand.visible = e.cd <= 0;
+      e.hand.visible = e.ball || e.pack > 0.05;
+      e.hand.scale.setScalar(e.ball ? 1 : Math.min(1, e.pack / PACK_TIME));
       // Beans face the fort while standing still.
       if (Math.hypot(e.vx, e.vz) < 0.5 && e.slip <= 0) e.ch.face(0, -1);
       const bell = this.aimBell(e);

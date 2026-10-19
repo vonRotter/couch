@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FieldRound, HD, TILE_COLORS, makeBoard } from './common.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../../core/palette.js';
-import { speak, glyphMaterial, pick } from '../../core/edu.js';
+import { speak, glyphMaterial, pick, pickByAge } from '../../core/edu.js';
 import { t, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 
@@ -140,17 +140,20 @@ export class RimordRound extends FieldRound {
     if (!pool.length) { used.clear(); pool = RHYMES[lv].flatMap((g) => g.words); }
     // Not the same rhyme as the last word.
     const fresh = pool.filter((w) => !e.task || END_OF.get(w) !== END_OF.get(e.task.word));
-    // Prefer a word that rhymes with a board already on the field (any age), so the answer
-    // is not simply the newest board. The word itself should not be lying there too.
-    const free = this.freeTiles(e).map((t) => t.value);
+    // Prefer a word that rhymes with a board already on the field, picked at a random age,
+    // so the answer is not simply the newest board. The word itself should not be lying there.
     const onField = new Set(this.tiles.map((t) => t.value));
-    const fits = (w) => !onField.has(w) && free.some((v) => rhymes(w, v));
     const all = RHYMES[lv].flatMap((g) => g.words);
-    const cands = [fresh, pool, all].map((l) => l.filter(fits)).find((l) => l.length);
+    let cands = null, tile = null;
+    for (const list of [fresh, pool, all]) {
+      const words = list.filter((w) => !onField.has(w));
+      tile = pickByAge(this.tiles, this.freeTiles(e).filter((t) => words.some((w) => rhymes(w, t.value))));
+      if (tile) { cands = words.filter((w) => rhymes(w, tile.value)); break; }
+    }
     const word = pick(cands || (fresh.length ? fresh : pool));
     used.add(word);
     let partner;
-    if (cands) partner = pick(free.filter((v) => rhymes(word, v)));
+    if (cands) partner = tile.value;
     else {
       // Nothing fits: name a partner from the same level; ensure() spawns it among decoys.
       const same = RHYMES[lv].find((g) => g.words.includes(word)).words.filter((w) => w !== word);

@@ -11,7 +11,14 @@ import { esc } from '../core/ui.js';
 addStrings({
   en: {
     'game.cave': 'Crystal Caves',
-    'cave.intro': 'Dig down to the glowing door together! [A] jump · up/down climb · [B] rope · [C] pop bomb',
+    'cave.intro': 'Dig down to the glowing door together! [A] jump · up/down climb · [B] rope · [C] pop bomb · 3 hearts each: mind the spikes!',
+    'cave.tip': 'Spikes, goo, critters and long falls cost a heart. Hop on critters to make them dizzy, and use ropes to climb down!',
+    'cave.ghost': '{name} is a ghost until the next cave!',
+    'cave.allGhosts': 'Everyone is a ghost!', 'cave.tryAgain': 'A fresh cave and full hearts. Try again!',
+    'cave.revive': 'The ghosts are back with full hearts!',
+    'cave.heart': '{name}: +1 heart',
+    'cave.crateHeart': '{name}: +2 ropes, +2 bombs, +1 heart',
+    'cave.ghosted': 'ghost {n}×',
     'cave.d0': 'Mossy Mine', 'cave.d1': 'Frosty Hollow', 'cave.d2': 'Crystal Heart',
     'cave.depth': 'Depth {n} of {total}',
     'cave.team': 'Team gems',
@@ -22,7 +29,7 @@ addStrings({
     'cave.puppyHud': 'Puppy with {name}',
     'cave.crate': '{name}: +2 ropes, +2 bombs',
     'cave.noRopes': 'No ropes left', 'cave.noBombs': 'No bombs left',
-    'cave.hint': 'Follow the sparkles to the exit!',
+    'cave.hint': 'Follow the sparkles: they show a safe way to the exit!',
     'cave.rescue': 'The cave fairies carry everyone to the exit!',
     'cave.done': 'Cave explorers!',
     'cave.sub': 'Team gems: {gems} · Depth reached: {depth} of {total} · Puppies rescued: {pups}',
@@ -32,7 +39,14 @@ addStrings({
   },
   no: {
     'game.cave': 'Krystallgrottene',
-    'cave.intro': 'Grav dere ned til den lysende døra sammen! [A] hopp · opp/ned klatre · [B] tau · [C] poppbombe',
+    'cave.intro': 'Grav dere ned til den lysende døra sammen! [A] hopp · opp/ned klatre · [B] tau · [C] poppbombe · 3 hjerter hver: pass dere for piggene!',
+    'cave.tip': 'Pigger, slim, kryp og lange fall koster et hjerte. Hopp på krypene så blir de svimle, og bruk tau for å klatre ned!',
+    'cave.ghost': '{name} er et spøkelse til neste grotte!',
+    'cave.allGhosts': 'Alle er spøkelser!', 'cave.tryAgain': 'Ny grotte og fulle hjerter. Prøv igjen!',
+    'cave.revive': 'Spøkelsene er tilbake med fulle hjerter!',
+    'cave.heart': '{name}: +1 hjerte',
+    'cave.crateHeart': '{name}: +2 tau, +2 bomber, +1 hjerte',
+    'cave.ghosted': 'spøkelse {n}×',
     'cave.d0': 'Mosegruva', 'cave.d1': 'Frosthulen', 'cave.d2': 'Krystallhjertet',
     'cave.depth': 'Dybde {n} av {total}',
     'cave.team': 'Lagets edelsteiner',
@@ -43,7 +57,7 @@ addStrings({
     'cave.puppyHud': 'Valpen er med {name}',
     'cave.crate': '{name}: +2 tau, +2 bomber',
     'cave.noRopes': 'Tomt for tau', 'cave.noBombs': 'Tomt for bomber',
-    'cave.hint': 'Følg glitteret til utgangen!',
+    'cave.hint': 'Følg glitteret: det viser en trygg vei til utgangen!',
     'cave.rescue': 'Grottefeene bærer alle til utgangen!',
     'cave.done': 'Grotteforskere!',
     'cave.sub': 'Lagets edelsteiner: {gems} · Dybde nådd: {depth} av {total} · Valper reddet: {pups}',
@@ -518,8 +532,8 @@ function placeEntrance(lv) {
   return true;
 }
 
-/** Treasure, crates, snowballs and the lost puppy, placed only where players can get. */
-function decorate(lv, seen) {
+/** Treasure, crates, boulders, the lost puppy, hearts and critters, placed only where players can get. */
+function decorate(lv, seen, players = 1) {
   const q = caveQuery(lv);
   const { W, rand } = lv;
   const ent = lv.entrance, ex = lv.exit;
@@ -567,6 +581,94 @@ function decorate(lv, seen) {
   const roomOf = (i) => lv.need[Math.floor((Math.floor(i / W) - 1) / RH)]?.[Math.floor(((i % W) - 1) / RW)];
   const side = far.filter((i) => roomOf(i) === null);
   lv.puppy = take(side.length && rand() < 0.7 ? side : far.length ? far : free);
+  placeCritters(lv, seen, players, used, free, take);
+}
+
+/** Hearts to pick up and the moving dangers: stalactites, bats, grumbles and pea plants. */
+function placeCritters(lv, seen, players, used, free, take) {
+  const { W, H, rand, depth } = lv;
+  const q = caveQuery(lv, null, { safe: false });
+  const budget = dangerBudget(depth, players);
+  const ent = lv.entrance, ex = lv.exit;
+  const nearEnt = (c, r, d) => Math.abs(c - ent.c) <= d && Math.abs(r - ent.r) <= d;
+  const nearExit = (c, r, d) => Math.abs(c - ex.c) <= d && Math.abs(r - ex.r) <= d;
+  const rock = (c, r) => { const tl = q.at(c, r); return tl === TL.DIRT || tl === TL.ROCK || tl === TL.GOLD; };
+  const open = (c, r) => q.at(c, r) === TL.EMPTY;
+  const seenBelow = (c, r, n) => { for (let k = 0; k <= n; k++) if (r + k < H && seen[(r + k) * W + c]) return true; return false; };
+  const cells = [];
+  for (let r = 1; r < H - 1; r++) for (let c = 1; c < W - 1; c++) cells.push(r * W + c);
+  const shuffled = (list) => { for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } return list; };
+  const far = (i, list, d) => list.every((o) => Math.abs(o.c - (i % W)) + Math.abs(o.r - Math.floor(i / W)) >= d);
+
+  // Hearts lie on safe floor away from the entrance.
+  lv.hearts = [];
+  const heartSpots = free.filter((i) => !used.has(i) && !nearEnt(i % W, Math.floor(i / W), 6));
+  for (let k = 0; k < budget.hearts; k++) { const s = take(heartSpots); if (s) lv.hearts.push(s); }
+
+  // Stalactites: under rock, above a clear drop with no ladders, over places people walk.
+  lv.stalactites = [];
+  for (const i of shuffled(cells.slice())) {
+    if (lv.stalactites.length >= budget.stalactites) break;
+    const c = i % W, r = Math.floor(i / W);
+    if (!open(c, r) || !rock(c, r - 1) || !open(c, r + 1) || nearEnt(c, r, 3) || nearExit(c, r, 2)) continue;
+    let ok = false;
+    for (let k = 1; k <= 8; k++) {
+      const tl = q.at(c, r + k);
+      if (CLIMBY[tl] || HAZ[tl] || tl === TL.PLAT) break;
+      if (SOLID[tl]) { ok = k >= 3 && seen[(r + k - 1) * W + c]; break; }
+    }
+    if (ok && far(i, lv.stalactites, 3)) lv.stalactites.push({ c, r });
+  }
+
+  // Bats roost under rock with room to swoop below.
+  lv.bats = [];
+  for (const i of shuffled(cells.slice())) {
+    if (lv.bats.length >= budget.bats) break;
+    const c = i % W, r = Math.floor(i / W);
+    if (!rock(c, r - 1) || nearEnt(c, r, 5) || nearExit(c, r, 2)) continue;
+    let roomy = true;
+    for (let dr = 0; dr <= 2 && roomy; dr++) for (let dc = -1; dc <= 1; dc++) if (!q.pass(c + dc, r + dr) || HAZ[q.at(c + dc, r + dr)]) roomy = false;
+    if (roomy && seenBelow(c, r + 1, 5) && far(i, lv.bats, 8)) lv.bats.push({ c, r });
+  }
+
+  // Grumbles patrol flat floors with room to jump over them (two open rows above the floor).
+  lv.grumbles = [];
+  const walkable = (c, r) => open(c, r) && rock(c, r + 1) && q.pass(c, r - 1) && q.pass(c, r - 2) && !HAZ[q.at(c, r - 1)] && !HAZ[q.at(c, r - 2)] && seen[r * W + c];
+  const runs = [];
+  for (let r = 1; r < H - 1; r++) {
+    for (let c = 1; c < W - 1; c++) {
+      if (!walkable(c, r) || walkable(c - 1, r)) continue;
+      let c1 = c;
+      while (walkable(c1 + 1, r)) c1++;
+      if (c1 - c + 1 >= 4 && !(r === ent.r && ent.c >= c - 5 && ent.c <= c1 + 5) && !nearEnt(c, r, 5) && !nearEnt(c1, r, 5)) runs.push({ c0: c, c1, r });
+    }
+  }
+  for (const run of shuffled(runs)) {
+    if (lv.grumbles.length >= budget.grumbles) break;
+    if (lv.grumbles.some((g) => Math.abs(g.r - run.r) < 3 && Math.abs((g.c0 + g.c1) / 2 - (run.c0 + run.c1) / 2) < 8)) continue;
+    lv.grumbles.push({ c0: run.c0, c1: run.c1, r: run.r });
+  }
+
+  // Pea plants grow out of a wall and spit along a floor lane you can hop over.
+  lv.plants = [];
+  for (const i of shuffled(cells.slice())) {
+    if (lv.plants.length >= budget.plants) break;
+    const c = i % W, r = Math.floor(i / W);
+    if (!rock(c, r) || c <= 1 || c >= W - 2) continue;
+    for (const dir of [-1, 1]) {
+      const fc = c + dir;
+      if (!open(fc, r) || !rock(fc, r + 1) || !seen[r * W + fc] || !q.pass(fc, r - 1)) continue;
+      let len = 0;
+      for (let k = 1; k <= 9; k++) {
+        const lc = c + dir * k;
+        if (!q.pass(lc, r) || HAZ[q.at(lc, r)] || CLIMBY[q.at(lc, r)]) break;
+        if (q.support(lc, r) && !q.pass(lc, r - 1)) break; // needs room to hop over the peas
+        if (nearEnt(lc, r, 2)) { len = 0; break; }
+        len = k;
+      }
+      if (len >= 4 && !nearExit(fc, r, 2) && lv.plants.every((p) => p.r !== r || Math.abs(p.c - c) > 6) && far(i, lv.plants, 6)) { lv.plants.push({ c, r, dir, len }); break; }
+    }
+  }
 }
 
 // ---------- look and feel ----------
@@ -596,6 +698,23 @@ const RESCUE_TIME = 180; // seconds into a depth before everyone floats to the e
 const PUPPY_BONUS = 15;
 const GEM_COLORS = PLAYER_COLORS.map((c) => c.hex);
 const NO_INPUT = { x: 0, y: 0, a: false, b: false, c: false, aPressed: false, bPressed: false, cPressed: false };
+// Dangers. Everything is a little faster and meaner in each deeper cave.
+const MAX_HEARTS = 3;
+const HURT_FALL = 11.5; // tiles: falls this long cost a heart (the model only uses falls of SAFE_DROP + jump height)
+const HURT_INVULN = 1.6; // seconds of blinking after a hit
+const CRUMB_TIME = 0.55, CRUMB_BACK = 4.5;
+const STAL_WARN = [0.8, 0.7, 0.6];
+const BAT_SPEED = [5, 5.8, 6.6];
+const GRUMBLE_SPEED = [1.6, 2.1, 2.6];
+const PLANT_PERIOD = [3.4, 2.9, 2.4], PEA_SPEED = [4.5, 5.2, 6];
+const BOULDER_SPEED = [3.4, 3.9, 4.4];
+const GOO_COLORS = [0xff7a3d, 0x4fb6ff, 0xff4f9a]; // hot goo, icy water, hot pink goo
+const PEA_COLORS = [0x7ad65a, 0xffffff, 0xff7eb6];
+const GRUMBLE_COLORS = [0x7b6cf6, 0x4f7bd8, 0xd64f9a];
+const STAL_COLORS = [0x9d93b5, 0xd8f0ff, 0xe0a8ff];
+const HEART_PATH = 'M5 8.6C2 6.4 0.4 4.8 0.4 3A2.3 2.3 0 0 1 5 1.9A2.3 2.3 0 0 1 9.6 3C9.6 4.8 8 6.4 5 8.6Z';
+const heartSvg = (fill) => `<svg viewBox="0 0 10 9" style="width:0.82em;height:0.74em;vertical-align:-0.04em;margin-right:0.06em"><path d="${HEART_PATH}" fill="${fill}"/></svg>`;
+const GHOST_SVG = '<svg viewBox="0 0 10 10" style="width:1em;height:1em;vertical-align:-0.12em;margin-right:0.15em"><path d="M1.5 9.5V4.6a3.5 3.5 0 0 1 7 0v4.9l-1.15-.9-1.15.9-1.2-.9-1.2.9-1.15-.9z" fill="#fff" opacity="0.9"/><circle cx="3.9" cy="4.7" r="0.75" fill="#2b2140"/><circle cx="6.1" cy="4.7" r="0.75" fill="#2b2140"/></svg>';
 
 const geo = {
   box: () => sharedGeo('caveBox', () => new THREE.BoxGeometry(1, 1, 2)),
@@ -644,13 +763,97 @@ function makePuppy() {
   return g;
 }
 
-function makeHeart() {
+function makeHeart(color = 0xff5d73, emissive = 0x330011) {
   const g = new THREE.Group();
-  const m = toon(0xff5d73, { emissive: 0x330011 });
+  const m = toon(color, { emissive });
   part(g, geo.sph(0.13), m, -0.09, 0.05, 0);
   part(g, geo.sph(0.13), m, 0.09, 0.05, 0);
   const tip = part(g, geo.cone('heartTip', 0.17, 0.22, 12), m, 0, -0.1, 0);
   tip.rotation.z = Math.PI;
+  return g;
+}
+
+/** A player who ran out of hearts: see-through bean under a little white sheet. */
+function makeGhost(color) {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  g.add(inner);
+  part(inner, sharedGeo('beanBody', () => new THREE.CapsuleGeometry(0.42, 0.36, 8, 18)), toon(color, { transparent: true, opacity: 0.45 }), 0, 0.6, 0);
+  const sheet = toon(0xffffff, { transparent: true, opacity: 0.62 });
+  part(inner, sharedGeo('caveGhostDome', () => new THREE.SphereGeometry(0.5, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2)), sheet, 0, 0.84, 0);
+  part(inner, sharedGeo('caveGhostSkirt', () => new THREE.CylinderGeometry(0.5, 0.54, 0.44, 18, 1, true)), sheet, 0, 0.62, 0);
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * Math.PI * 2;
+    part(inner, geo.sph(0.1, 8, 6), sheet, Math.sin(a) * 0.5, 0.4, Math.cos(a) * 0.5);
+  }
+  for (const s of [-1, 1]) {
+    const eye = part(inner, geo.sph(0.075, 10, 8), toon(COLORS.ink), s * 0.16, 0.92, 0.46);
+    eye.scale.set(0.8, 1.25, 0.5);
+    const arm = part(inner, geo.sph(0.12, 8, 6), sheet, s * 0.56, 0.7, 0.05);
+    arm.scale.set(0.7, 1.2, 0.7);
+  }
+  part(inner, geo.sph(0.05, 8, 6), toon(COLORS.ink), 0, 0.76, 0.48).scale.set(1, 0.7, 0.5);
+  g.userData.inner = inner;
+  g.scale.setScalar(BEAN_SCALE);
+  return g;
+}
+
+/** A small cave bat (harmless looking until it swoops). */
+function makeBat() {
+  const g = new THREE.Group();
+  const fur = toon(0x5b3f8c), wingM = toon(0x7a5aa8);
+  part(g, geo.sph(0.24), fur, 0, 0, 0).castShadow = true;
+  part(g, geo.sph(0.15), toon(0x8f73c4), 0, -0.06, 0.12).scale.set(1, 0.9, 0.6);
+  for (const s of [-1, 1]) {
+    const ear = part(g, geo.cone('batEar', 0.08, 0.2, 5), fur, s * 0.12, 0.24, 0);
+    ear.rotation.z = -s * 0.3;
+    part(g, geo.sph(0.06, 8, 6), toon(COLORS.white), s * 0.08, 0.05, 0.2);
+    part(g, geo.sph(0.03, 6, 4), toon(COLORS.ink), s * 0.08, 0.05, 0.25);
+    const wing = new THREE.Group();
+    wing.position.set(s * 0.18, 0.03, 0);
+    const w = part(wing, geo.sph(0.2, 10, 6), wingM, s * 0.22, 0, 0);
+    w.scale.set(1.3, 0.55, 0.15);
+    g.add(wing);
+    g.userData[s < 0 ? 'wl' : 'wr'] = wing;
+  }
+  return g;
+}
+
+/** A pea plant growing out of a wall, facing dir. */
+function makePlant(dir, color, peaColor) {
+  const g = new THREE.Group();
+  const leaf = toon(0x3f9a32);
+  part(g, geo.cyl('plantStem', 0.07, 0.09, 0.3, 6), leaf, -dir * 0.05, 0, 0).rotation.z = Math.PI / 2;
+  const head = new THREE.Group();
+  head.position.x = dir * 0.22;
+  part(head, geo.sph(0.27), toon(color), 0, 0, 0).castShadow = true;
+  const mouth = part(head, geo.cyl('plantMouth', 0.13, 0.1, 0.26, 10), toon(color), dir * 0.27, 0, 0);
+  mouth.rotation.z = Math.PI / 2;
+  part(head, geo.sph(0.085, 10, 8), toon(COLORS.ink), dir * 0.4, 0, 0).scale.set(0.4, 1, 1);
+  part(head, geo.sph(0.07, 8, 6), toon(peaColor), dir * 0.36, 0, 0.02);
+  for (const s of [-1, 1]) {
+    part(head, geo.sph(0.06, 8, 6), toon(COLORS.white), dir * 0.08, 0.18, s * 0.12);
+    part(head, geo.sph(0.03, 6, 4), toon(COLORS.ink), dir * 0.11, 0.2, s * 0.12 + 0.03);
+    const lf = part(g, geo.sph(0.14), leaf, -dir * 0.02, -0.2, s * 0.18);
+    lf.scale.set(1.4, 0.45, 0.7);
+    lf.rotation.y = s * 0.5;
+  }
+  g.add(head);
+  g.userData.head = head;
+  return g;
+}
+
+/** A patch of cartoon spikes (pointing up, or down when hanging from a ceiling). */
+function makeSpikes(down) {
+  const g = new THREE.Group();
+  part(g, geo.rbox('spikeBase', 1.0, 0.08, 1.6, 0.03), toon(0x6d6a80), 0, 0.04, 0);
+  for (const z of [-0.4, 0.4]) {
+    for (const x of [-0.3, 0, 0.3]) {
+      const sp = part(g, geo.cone('spike', 0.14, 0.42, 7), toon(0xe6eaf5), x, 0.27, z + (x === 0 ? 0.08 : 0));
+      sp.castShadow = true;
+    }
+  }
+  if (down) g.rotation.z = Math.PI;
   return g;
 }
 

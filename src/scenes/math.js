@@ -4,7 +4,7 @@ import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeFlower, makeCloud, seeded } from '../core/world.js';
-import { LEVELS, glyphMaterial, fontsReady, speak, chooseLevels, drawMatching, shuffle } from '../core/edu.js';
+import { LEVELS, glyphMaterial, fontsReady, speak, chooseLevels, shuffle, pickByAge, nextSeq } from '../core/edu.js';
 import { esc } from '../core/ui.js';
 
 // Mattejakt: everyone has their own sum; run to the coin with the answer.
@@ -177,9 +177,18 @@ export class MathScene extends MiniGame {
   newProblem(e) {
     const lv = this.levelKey(e);
     const taken = new Set(this.ents.filter((o) => o !== e && o.problem && o.doneT <= 0).map((o) => o.problem.answer));
-    const free = new Set(this.coins.map((c) => c.value).filter((v) => !taken.has(v)));
     const last = e.problem?.text;
-    e.problem = drawMatching(() => makeProblem(lv), (p) => free.has(p.answer) && p.text !== last) || makeProblem(lv);
+    // Problems the level can ask, by answer; then a free coin with one of those answers at a random age.
+    const byAnswer = new Map();
+    for (let i = 0; i < 400; i++) {
+      const p = makeProblem(lv);
+      if (p.text === last || taken.has(p.answer)) continue;
+      if (!byAnswer.has(p.answer)) byAnswer.set(p.answer, []);
+      byAnswer.get(p.answer).push(p);
+    }
+    const coin = pickByAge(this.coins, this.coins.filter((c) => byAnswer.has(c.value)));
+    if (coin) { const list = byAnswer.get(coin.value); e.problem = list[Math.floor(Math.random() * list.length)]; }
+    else e.problem = makeProblem(lv);
   }
 
   pickValue() {
@@ -208,7 +217,7 @@ export class MathScene extends MiniGame {
     g.position.set(spot.x, 0.5, spot.z);
     g.scale.setScalar(0.01);
     this.scene.add(g);
-    const c = { value, mesh: g, x: spot.x, z: spot.z, hop: 0, phase: Math.random() * 6 };
+    const c = { value, mesh: g, x: spot.x, z: spot.z, hop: 0, phase: Math.random() * 6, seq: nextSeq() };
     this.coins.push(c);
     return c;
   }

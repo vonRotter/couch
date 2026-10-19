@@ -198,9 +198,9 @@ export class PengerRound extends FieldRound {
   }
 
   /**
-   * Keeps a steady mix of the coins the players' levels use (only those), topping up the
-   * coin that is furthest below its share. The needed coins are then usually lying around
-   * already, instead of the right coin being the one that just appeared.
+   * Keeps a steady mix of the coins the players' levels use (only those): mostly random by
+   * share, nudged toward coins that are running low. The needed coins are then usually lying
+   * around already, instead of the right coin being the one that just appeared.
    */
   filler() {
     const want = {};
@@ -210,8 +210,10 @@ export class PengerRound extends FieldRound {
     const have = {};
     for (const t of this.tiles) have[t.value] = (have[t.value] || 0) + 1;
     const coins = Object.keys(want);
-    const gap = coins.map((c) => Math.max(0, want[c] * this.tileCount - (have[c] || 0)) + 0.15 * Math.random());
-    return Number(coins[gap.indexOf(Math.max(...gap))]);
+    const weight = coins.map((c) => want[c] + 0.5 * Math.max(0, want[c] * this.tileCount - (have[c] || 0)));
+    let r = Math.random() * weight.reduce((s, w) => s + w, 0);
+    for (let i = 0; i < coins.length; i++) if ((r -= weight[i]) <= 0) return Number(coins[i]);
+    return Number(coins[0]);
   }
 
   spawnTile(value) {

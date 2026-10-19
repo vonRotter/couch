@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FieldRound, HD, TILE_COLORS, makeBoard, splitPhrase } from './common.js';
 import { COLORS, toon, basic, sharedGeo } from '../../core/palette.js';
-import { speak, drawMatching } from '../../core/edu.js';
+import { speak, pickByAge } from '../../core/edu.js';
 import { t, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 
@@ -202,11 +202,15 @@ export class KlokkaRound extends FieldRound {
   newTask(e) {
     const lv = this.levelKey(e);
     const last = e.task?.key;
-    // Pick a time whose board is already on the field (any age), so the answer is not
-    // simply the newest board. Fall back to a fresh time (ensure() then spawns it among decoys).
-    const free = new Set(this.freeTiles(e).map((t) => t.value));
-    let tm = drawMatching(() => randomTime(lv), (x) => free.has(keyOf(x.h, x.m)) && keyOf(x.h, x.m) !== last);
-    if (!tm) do tm = randomTime(lv); while (keyOf(tm.h, tm.m) === last);
+    // Pick a time whose board is already on the field, at a random age, so the answer is
+    // not simply the newest board. Times the level can ask come from randomTime() itself.
+    // Fall back to a fresh time (ensure() then spawns it among decoys).
+    const ok = new Set();
+    for (let i = 0; i < 300; i++) { const x = randomTime(lv); ok.add(keyOf(x.h, x.m)); }
+    const tile = pickByAge(this.tiles, this.freeTiles(e).filter((t) => ok.has(t.value) && t.value !== last));
+    let tm;
+    if (tile) { const [h, m] = parse(tile.value); tm = { h, m }; }
+    else do tm = randomTime(lv); while (keyOf(tm.h, tm.m) === last);
     e.task = { ...tm, key: keyOf(tm.h, tm.m), phrase: timePhrase(tm.h, tm.m) };
     e.clock.set(tm.h, tm.m);
     e.clock.group.visible = true;

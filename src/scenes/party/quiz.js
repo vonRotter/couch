@@ -6,6 +6,7 @@ import { makeTree, makeFlower, makeCloud, seeded } from '../../core/world.js';
 import { glyphMaterial, shuffle } from '../../core/edu.js';
 import { esc } from '../../core/ui.js';
 import { t, addStrings } from '../../core/i18n.js';
+import { PICTURE_PUZZLES, buildPuzzle, pickPuzzles, modeIcon, sayAloud, stopSpeaking } from './quiz-pictures.js';
 
 // Question bank. Each entry: [question, correct answer, wrong, wrong, wrong] in both languages.
 // The correct answer is always written first here; answers are shuffled when asked.
@@ -118,23 +119,41 @@ addStrings({
   en: {
     ...bank.en,
     'quiz.title': 'Quiz Run',
-    'quiz.hint': 'Read the question and run to the colored zone with the right answer before time runs out! Press [A] to lock in early.',
-    'quiz.kid': "Kids' question", 'quiz.grown': 'Grown-up question', 'quiz.q': 'Question {n} of {total}',
-    'quiz.answer': 'Answer: {a}', 'quiz.n': '{n} correct',
+    'quiz.hint': 'First walk to the quiz you want and press [A]. Then run to the zone with the right answer before time runs out! Picture puzzles are read aloud: press [B] to hear one again.',
+    'quiz.kid': "Kids' question", 'quiz.grown': 'Grown-up question', 'quiz.pic': 'Picture puzzle', 'quiz.q': 'Question {n} of {total}',
+    'quiz.again': '[B] hear it again', 'quiz.answer': 'Answer: {a}', 'quiz.n': '{n} correct',
+    'quiz.vote': 'Which quiz? Walk to one!',
+    'quiz.voteSay': 'Which quiz do you want? Pictures, mixed, classic or grown-up?',
+    'quiz.mode.pics': 'Pictures', 'quiz.mode.picsSub': 'no reading needed',
+    'quiz.mode.mixed': 'Mixed', 'quiz.mode.mixedSub': 'pictures + questions',
+    'quiz.mode.classic': 'Classic', 'quiz.mode.classicSub': 'kids + grown-ups',
+    'quiz.mode.grown': 'Grown-up', 'quiz.mode.grownSub': 'hard questions',
+    'quiz.picked': "Let's play: {x}!",
   },
   no: {
     ...bank.no,
     'quiz.title': 'Quizløpet',
-    'quiz.hint': 'Les spørsmålet og løp til fargefeltet med riktig svar før tiden er ute! Trykk [A] for å låse svaret tidlig.',
-    'quiz.kid': 'Barnespørsmål', 'quiz.grown': 'Voksenspørsmål', 'quiz.q': 'Spørsmål {n} av {total}',
-    'quiz.answer': 'Svar: {a}', 'quiz.n': '{n} riktige',
+    'quiz.hint': 'Gå først til quizen du vil ha og trykk [A]. Løp så til feltet med riktig svar før tiden er ute! Bildeoppgaver blir lest opp: trykk [B] for å høre igjen.',
+    'quiz.kid': 'Barnespørsmål', 'quiz.grown': 'Voksenspørsmål', 'quiz.pic': 'Bildeoppgave', 'quiz.q': 'Spørsmål {n} av {total}',
+    'quiz.again': '[B] hør igjen', 'quiz.answer': 'Svar: {a}', 'quiz.n': '{n} riktige',
+    'quiz.vote': 'Hvilken quiz? Gå til en!',
+    'quiz.voteSay': 'Hvilken quiz vil dere ha? Bilder, blandet, klassisk eller voksen?',
+    'quiz.mode.pics': 'Bilder', 'quiz.mode.picsSub': 'ingen lesing',
+    'quiz.mode.mixed': 'Blandet', 'quiz.mode.mixedSub': 'bilder + spørsmål',
+    'quiz.mode.classic': 'Klassisk', 'quiz.mode.classicSub': 'barn + voksne',
+    'quiz.mode.grown': 'Voksen', 'quiz.mode.grownSub': 'vanskelige spørsmål',
+    'quiz.picked': 'Vi spiller: {x}!',
   },
 });
 
 // Quiz Run: four answer zones on the floor; stand in the right one when time runs out.
-const QUESTIONS = 8;
+// The round opens with a vote (stand in a zone): picture puzzles for small children, mixed, classic or grown-up.
+const MODES = ['pics', 'mixed', 'classic', 'grown'];
+const VOTE_TIME = 9;
+const CHOSEN = 1.6;
 const KID_TIME = 6;
 const GROWN_TIME = 7;
+const PIC_TIME = 8;
 const REVEAL = 1.6;
 const ZW = 6.2;
 const ZD = 4.2;
@@ -149,10 +168,25 @@ const ZONES = [
   { letter: 'C', color: 0xffc23d, sx: -1, sz: 1 },
   { letter: 'D', color: 0x45d18a, sx: 1, sz: 1 },
 ];
+// Picture cards lean back toward the camera so the models read like pictures.
+const TILT = -0.6;
+const CARD_W = 3.3;
+const CARD_H = 2.4;
+const CARD_SCALE = 1.6;
+const BOARD_SCALE = 1.15;
+const BOARD_Z = -HALF_Z - 1.1;
 
 function dim(hex) {
   return new THREE.Color(hex).lerp(new THREE.Color(0xb9b4c8), 0.65).getHex();
 }
+
+/** Zone order for a text question: order[zone] = answer index, with the right answer (0) in zone `right`. */
+function orderFor(right) {
+  const rest = shuffle([1, 2, 3]);
+  return [0, 1, 2, 3].map((z) => (z === right ? 0 : rest.pop()));
+}
+
+const easeBack = (x) => { const c = 1.7; return 1 + (c + 1) * (x - 1) ** 3 + c * (x - 1) ** 2; };
 
 export class QuizRound extends Round {
   static key = 'quiz';
@@ -160,17 +194,15 @@ export class QuizRound extends Round {
   constructor(party) {
     super(party);
     this.build();
-    // Alternate kid / grown-up questions, drawn at random without repeats.
-    const kids = shuffle(KID.map((_, i) => `quiz.k${i}`));
-    const grown = shuffle(ADULT.map((_, i) => `quiz.g${i}`));
+    this.pics = new THREE.Group();
+    this.group.add(this.pics);
     this.questions = [];
-    for (let i = 0; i < QUESTIONS; i++) {
-      const key = i % 2 === 0 ? kids[i / 2] : grown[(i - 1) / 2];
-      this.questions.push({ key, kid: i % 2 === 0, order: shuffle([0, 1, 2, 3]) });
-    }
+    this.mode = null;
     this.qi = -1;
     this.phase = 'idle';
     this.phaseT = 0;
+    this.sayT = -9;
+    this.said = 0;
     this.card = this.label('');
     this.card.style.cssText = 'position:absolute;left:50%;top:clamp(56px,9vh,84px);transform:translateX(-50%);width:min(980px,90vw);text-align:center;'
       + 'background:rgba(255,255,255,0.95);border-radius:22px;padding:8px 22px 12px;box-shadow:0 5px 0 rgba(43,35,64,0.18);font-weight:700;'
@@ -233,7 +265,7 @@ export class QuizRound extends Round {
   }
 
   frame() {
-    // Leave room at the top for the question card.
+    // Leave room at the top for the question card / picture board.
     const d = this.party.fitDistance(HALF_X * 2 + 2, HALF_Z * 2 + 5.5);
     this.camera.position.set(0, d * 0.86, d * 0.52);
     this.camera.lookAt(0, 0, -1.1);
@@ -241,29 +273,155 @@ export class QuizRound extends Round {
 
   get q() { return this.questions[this.qi]; }
 
-  /** [question, answers in display order, index of the correct zone] in the current language. */
+  /** Question text, answers in zone order (null for pictures) and the right zone, in the current language. */
   parts() {
-    const f = t(this.q.key).split('|');
-    const answers = this.q.order.map((k) => f[1 + k]);
-    return { text: f[0], answers, right: this.q.order.indexOf(0) };
+    const q = this.q;
+    if (q.kind === 'pic') return { text: t(q.puzzle.key), answers: null, right: q.right };
+    const f = t(q.key).split('|');
+    return { text: f[0], answers: q.order.map((k) => f[1 + k]), right: q.right };
   }
 
-  start() {
-    this.nextQuestion();
+  /** Reads text aloud (if the device can) and remembers it for tests. */
+  say(text) {
+    this.sayT = this.time;
+    this.said++;
+    this.lastSaid = text;
+    sayAloud(text);
   }
+
+  // ---------- mode vote ----------
+
+  start() {
+    this.phase = 'vote';
+    this.phaseT = VOTE_TIME;
+    this.askT = 0;
+    this.clearPictures();
+    this.zones.forEach((z, i) => this.showCard(i, modeIcon(MODES[i])));
+    this.say(t('quiz.voteSay'));
+    this.game.audio.play('select');
+  }
+
+  endVote() {
+    const counts = [0, 0, 0, 0];
+    for (const e of this.ents) {
+      const i = this.zoneAt(e.x, e.z);
+      if (i >= 0) counts[i]++;
+    }
+    const best = Math.max(...counts);
+    // Nobody voted: mixed. Tie: random among the tied modes.
+    const top = best === 0 ? [1] : [0, 1, 2, 3].filter((i) => counts[i] === best);
+    const win = top[Math.floor(Math.random() * top.length)];
+    this.mode = MODES[win];
+    this.phase = 'chosen';
+    this.phaseT = CHOSEN;
+    this.zones.forEach((z, i) => { z.mesh.material = i === win ? toon(z.color, { emissive: 0x555555 }) : toon(dim(z.color)); });
+    for (const h of this.pics.children) h.userData.state = h.userData.zone === win ? 'right' : 'wrong';
+    for (const e of this.ents) e.locked = true;
+    const name = t(`quiz.mode.${this.mode}`);
+    this.game.ui.toast(t('quiz.picked', { x: name }), 1800);
+    this.say(t('quiz.picked', { x: name }));
+    this.game.audio.play('star');
+    this.buildQuestions(this.mode);
+  }
+
+  /** Lays out the question list for a mode. The right zone is random but never the same three times running. */
+  buildQuestions(mode) {
+    const kinds = {
+      pics: ['pic', 'pic', 'pic', 'pic', 'pic', 'pic', 'pic'],
+      mixed: ['pic', 'kid', 'pic', 'grown', 'pic', 'kid', 'pic', 'grown'],
+      classic: ['kid', 'grown', 'kid', 'grown', 'kid', 'grown', 'kid', 'grown'],
+      grown: ['grown', 'grown', 'grown', 'grown', 'grown', 'grown', 'grown', 'grown'],
+    }[mode];
+    const kids = shuffle(KID.map((_, i) => `quiz.k${i}`));
+    const grown = shuffle(ADULT.map((_, i) => `quiz.g${i}`));
+    const pics = pickPuzzles(kinds.filter((k) => k === 'pic').length);
+    const rights = [];
+    this.questions = kinds.map((kind) => {
+      let right;
+      do right = Math.floor(Math.random() * 4);
+      while (rights.length >= 2 && rights.at(-1) === right && rights.at(-2) === right);
+      rights.push(right);
+      if (kind === 'pic') return { kind, puzzle: pics.pop(), right };
+      return { kind, key: kind === 'kid' ? kids.pop() : grown.pop(), right, order: orderFor(right) };
+    });
+  }
+
+  // ---------- pictures ----------
+
+  clearPictures() {
+    // Everything in a picture is shared geometry/material, so removing is enough.
+    for (const h of [...this.pics.children]) this.pics.remove(h);
+  }
+
+  /** A tilted white card with a picture on it, popping up from the floor. */
+  card3d(obj, x, z, w, h) {
+    const holder = new THREE.Group();
+    holder.position.set(x, 0.2, z);
+    holder.rotation.x = TILT;
+    const card = new THREE.Mesh(sharedGeo(`quizCard${w}x${h}`, () => new RoundedBoxGeometry(w, h, 0.16, 3, 0.07)), toon(COLORS.white));
+    card.position.set(0, h / 2, -0.1);
+    card.castShadow = true;
+    card.receiveShadow = true;
+    holder.add(card, obj);
+    holder.scale.setScalar(0.01);
+    holder.userData = { pop: 0, state: 'show' };
+    this.pics.add(holder);
+    return holder;
+  }
+
+  showCard(zone, obj) {
+    const zn = this.zones[zone];
+    obj.scale.multiplyScalar(CARD_SCALE);
+    obj.position.y += 0.22;
+    obj.position.z += 0.1;
+    const h = this.card3d(obj, zn.x, zn.z - 0.3, CARD_W, CARD_H);
+    h.userData.zone = zone;
+    return h;
+  }
+
+  showBoard(items) {
+    const step = 1.25 * BOARD_SCALE;
+    const w = Math.round(items.length * step + 0.8);
+    const holder = new THREE.Group();
+    items.forEach((obj, i) => {
+      obj.scale.multiplyScalar(BOARD_SCALE);
+      obj.position.x += (i - (items.length - 1) / 2) * step;
+      obj.position.y += 0.15;
+      obj.position.z += 0.1;
+      holder.add(obj);
+    });
+    const b = this.card3d(holder, 0, BOARD_Z, w, 2.1);
+    b.userData.zone = -1;
+  }
+
+  showPictures() {
+    const q = this.q;
+    const { prompt, answers } = buildPuzzle(q.puzzle);
+    const wrong = shuffle(answers.slice(1));
+    for (let i = 0; i < 4; i++) this.showCard(i, i === q.right ? answers[0] : wrong.pop());
+    if (prompt) this.showBoard(prompt);
+  }
+
+  // ---------- questions ----------
 
   nextQuestion() {
     this.qi++;
-    if (this.qi >= QUESTIONS) {
+    this.clearPictures();
+    if (this.qi >= this.questions.length) {
       this.phase = 'over';
       this.done = true;
+      stopSpeaking();
       return;
     }
     this.phase = 'ask';
-    this.phaseT = this.q.kid ? KID_TIME : GROWN_TIME;
+    this.phaseT = { pic: PIC_TIME, kid: KID_TIME, grown: GROWN_TIME }[this.q.kind];
     this.askT = 0;
     for (const z of this.zones) { z.mesh.material = toon(z.color); z.mesh.scale.y = 1; }
     for (const e of this.ents) e.locked = false;
+    if (this.q.kind === 'pic') {
+      this.showPictures();
+      this.say(this.parts().text);
+    } else stopSpeaking();
     this.game.audio.play('select');
   }
 
@@ -282,6 +440,7 @@ export class QuizRound extends Round {
     this.zones.forEach((z, i) => {
       z.mesh.material = i === right ? toon(z.color, { emissive: 0x555555 }) : toon(dim(z.color));
     });
+    for (const h of this.pics.children) if (h.userData.zone >= 0) h.userData.state = h.userData.zone === right ? 'right' : 'wrong';
     let any = false;
     for (const e of this.ents) {
       e.locked = true;
@@ -298,36 +457,49 @@ export class QuizRound extends Round {
 
   update(dt, playing) {
     this.time += dt;
-    if (playing && this.phase !== 'over') {
+    if (playing && this.phase !== 'over' && this.phase !== 'idle') {
       this.phaseT -= dt;
-      if (this.phase === 'ask') {
+      if (this.phase === 'ask' || this.phase === 'vote') {
         this.askT += dt;
         // Everyone locked in: skip ahead.
         if (this.askT > 0.6 && this.ents.every((e) => e.locked)) this.phaseT = Math.min(this.phaseT, 0.3);
-        if (this.phaseT <= 0) this.reveal();
-      } else if (this.phase === 'reveal' && this.phaseT <= 0) this.nextQuestion();
+        if (this.phaseT <= 0) { if (this.phase === 'vote') this.endVote(); else this.reveal(); }
+      } else if ((this.phase === 'reveal' || this.phase === 'chosen') && this.phaseT <= 0) this.nextQuestion();
     }
 
-    const asking = playing && this.phase === 'ask';
-    const show = this.qi >= 0 && this.phase !== 'over';
+    const asking = playing && (this.phase === 'ask' || this.phase === 'vote');
+    const voting = this.phase === 'vote' || this.phase === 'chosen';
+    const show = this.qi >= 0 && this.phase !== 'over' && !voting;
     const parts = show ? this.parts() : null;
+    const pic = show && this.q.kind === 'pic';
 
-    // Question card + answer labels.
-    this.card.style.display = show ? '' : 'none';
-    if (show) {
-      const badge = `<span style="color:${this.q.kid ? '#ff4f9a' : '#6b4fd8'}">${this.q.kid ? t('quiz.kid') : t('quiz.grown')}</span> · ${t('quiz.q', { n: this.qi + 1, total: QUESTIONS })}`;
-      const ans = this.phase === 'reveal' ? `<div style="color:#14a865;margin-top:2px">✓ ${esc(t('quiz.answer', { a: parts.answers[parts.right] }))}</div>` : '';
-      const html = `<div style="font-size:0.55em;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9">${badge}</div><div>${esc(parts.text)}</div>${ans}`;
-      if (this.card.dataset.html !== html) { this.card.innerHTML = html; this.card.dataset.html = html; }
+    // [B]: hear the question again.
+    if (asking && this.time - this.sayT > 0.8 && this.ents.some((e) => this.input(e.p).bPressed)) {
+      this.say(voting ? t('quiz.voteSay') : parts.text);
     }
+
+    this.updateCard(show, parts, pic, voting);
     this.zones.forEach((z, i) => {
-      z.label.style.display = show ? '' : 'none';
+      if (voting) {
+        const key = `quiz.mode.${MODES[i]}`;
+        const dimmed = this.phase === 'chosen' && MODES[i] !== this.mode;
+        z.label.style.display = '';
+        this.setLabel(z.label, `${esc(t(key))}<small>${esc(t(`${key}Sub`))}</small>`, new THREE.Vector3(z.x, 0.3, z.z + 1.25), dimmed ? '#9a94b2' : '#2b2340');
+        return;
+      }
+      z.label.style.display = show && !pic ? '' : 'none';
       if (!show) return;
       const right = this.phase === 'reveal' && i === parts.right;
+      if (right) z.mesh.scale.y = 1 + Math.abs(Math.sin(this.time * 8)) * 0.8;
+      if (pic) return;
       const text = `<span style="font-size:0.8em;opacity:0.75">${z.letter}</span> ${esc(parts.answers[i])}${right ? ' ✓' : ''}`;
       this.setLabel(z.label, text, new THREE.Vector3(z.x, 0.3, z.z + 0.5), this.phase === 'reveal' && !right ? '#9a94b2' : '#2b2340');
-      if (right) z.mesh.scale.y = 1 + Math.abs(Math.sin(this.time * 8)) * 0.8;
     });
+    if (this.phase === 'chosen') {
+      const z = this.zones[MODES.indexOf(this.mode)];
+      z.mesh.scale.y = 1 + Math.abs(Math.sin(this.time * 8)) * 0.8;
+    }
+    this.animatePictures(dt);
 
     for (const e of this.ents) {
       const d = asking ? this.input(e.p) : { x: 0, y: 0 };
@@ -366,8 +538,44 @@ export class QuizRound extends Round {
     }
   }
 
+  /** The HTML question card: big text for text questions, a slim strip for picture puzzles. */
+  updateCard(show, parts, pic, voting) {
+    let html = '';
+    if (voting) {
+      html = `<div>${esc(t('quiz.vote'))}</div>`;
+    } else if (show) {
+      const kind = this.q.kind;
+      const color = { kid: '#ff4f9a', grown: '#6b4fd8', pic: '#14a865' }[kind];
+      const badge = `<span style="color:${color}">${t(`quiz.${kind}`)}</span> · ${t('quiz.q', { n: this.qi + 1, total: this.questions.length })}`;
+      if (pic) {
+        const done = this.phase === 'reveal' ? ' <span style="color:#14a865">✓</span>' : '';
+        html = `<div style="font-size:0.5em;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9">${badge} · ${esc(t('quiz.again'))}</div>`
+          + `<div style="font-size:0.72em">🔊 ${esc(parts.text)}${done}</div>`;
+      } else {
+        const ans = this.phase === 'reveal' ? `<div style="color:#14a865;margin-top:2px">✓ ${esc(t('quiz.answer', { a: parts.answers[parts.right] }))}</div>` : '';
+        html = `<div style="font-size:0.55em;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9">${badge}</div><div>${esc(parts.text)}</div>${ans}`;
+      }
+    }
+    this.card.style.display = html ? '' : 'none';
+    this.card.style.padding = pic ? '4px 18px 6px' : '8px 22px 12px';
+    if (html && this.card.dataset.html !== html) { this.card.innerHTML = html; this.card.dataset.html = html; }
+  }
+
+  /** Cards pop up, the right one bounces at the reveal, the others shrink back. */
+  animatePictures(dt) {
+    for (const h of this.pics.children) {
+      const u = h.userData;
+      u.pop += dt;
+      let s = easeBack(Math.min(1, u.pop / 0.35));
+      if (u.state === 'right') s *= 1 + Math.abs(Math.sin(this.time * 7)) * 0.12;
+      if (u.state === 'wrong') { u.fade = Math.min(1, (u.fade || 0) + dt * 4); s *= 1 - u.fade * 0.3; }
+      h.scale.setScalar(Math.max(0.01, s));
+    }
+  }
+
   hud() {
-    return clock(this.phase === 'ask' ? this.phaseT : this.phase === 'idle' ? KID_TIME : 0);
+    const tt = this.phase === 'ask' || this.phase === 'vote' ? this.phaseT : this.phase === 'idle' ? VOTE_TIME : 0;
+    return clock(tt);
   }
 
   score(p) {
@@ -377,7 +585,12 @@ export class QuizRound extends Round {
   detail(p) {
     return t('quiz.n', { n: this.score(p) });
   }
+
+  dispose() {
+    stopSpeaking();
+    super.dispose();
+  }
 }
 
 // Exposed for checks: how many questions of each kind the bank holds.
-export const QUIZ_BANK_SIZE = { kid: KID.length, grown: ADULT.length };
+export const QUIZ_BANK_SIZE = { kid: KID.length, grown: ADULT.length, pictures: PICTURE_PUZZLES.length };

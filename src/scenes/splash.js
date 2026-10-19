@@ -959,6 +959,12 @@ export class SplashScene extends MiniGame {
     return dir ? side(dir) : side(-1) || side(1);
   }
 
+  /** The slim walking body (feet, sides, head) used for own jumps, so walls we stand against never trap us. */
+  hitsSlim(x, y) {
+    const s = (ox, oy) => this.terrain.solid(x + ox, y + oy);
+    return s(0, 0.03) || s(-0.2, 0.5) || s(0.2, 0.5) || s(-0.2, 0.8) || s(0.2, 0.8) || s(0, 1.02) || s(-0.14, 0.96) || s(0.14, 0.96);
+  }
+
   hitsTerrain(x, y) {
     for (let k = 0; k < 8; k++) {
       const a = (k / 8) * Math.PI * 2;
@@ -1340,16 +1346,18 @@ export class SplashScene extends MiniGame {
     const x0 = u.x, y0 = u.y;
     for (let i = 0; i < steps; i++) {
       const nx = u.x + u.vx * h, ny = u.y + u.vy * h;
-      if (!this.hitsTerrain(nx, ny)) { u.x = nx; u.y = ny; continue; }
       if (u.selfAir) {
         // Own jumps never bounce: slide along walls, land on anything below, bump heads gently.
-        if (!this.hitsTerrain(u.x, ny)) { u.y = ny; u.vx = 0; continue; }
+        if (!this.hitsSlim(nx, ny)) { u.x = nx; u.y = ny; continue; }
+        // Slide up/down along a wall (also frees a bean that starts a hop tucked into a slope).
+        if (!this.hitsSlim(u.x, ny) || (u.vy > 0 && this.hitsSlim(u.x, u.y))) { u.y = ny; u.vx = 0; continue; }
         if (u.vy <= 0 && this.land(u, true)) return;
         u.vy = u.vy > 0 ? 0 : u.vy * 0.3;
-        if (!this.hitsTerrain(nx, u.y)) { u.x = nx; continue; }
+        if (!this.hitsSlim(nx, u.y)) { u.x = nx; continue; }
         u.vx = 0;
         continue;
       }
+      if (!this.hitsTerrain(nx, ny)) { u.x = nx; u.y = ny; continue; }
       const n = ter.normal(nx, ny + BEAN_CY, 0.55);
       const vn = u.vx * n.x + u.vy * n.y;
       if (vn < 0) { u.vx -= 1.35 * vn * n.x; u.vy -= 1.35 * vn * n.y; }

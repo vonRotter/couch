@@ -153,19 +153,21 @@ export class SpellingScene extends MiniGame {
   }
 
   nextWord(e) {
-    // The next word is picked one word ahead, so its letters can already be floating by
-    // when it starts (see upcoming()).
-    e.word = e.queued || this.makeWord(e);
-    e.queued = this.makeWord(e);
+    // Words are picked a few ahead, so their letters can already be floating by when they
+    // start (see upcoming()).
+    e.queue = e.queue || [];
+    while (e.queue.length < 4) e.queue.push(this.makeWord(e));
+    e.word = e.queue.shift();
+    e.queue.push(this.makeWord(e));
     e.doneT = 0;
   }
 
-  /** The letters e will need after the current one: rest of this word, then the queued word. */
+  /** The letters e will need after the current one: rest of this word, then the queued words. */
   upcoming(e) {
     if (!e.word) return [];
     const order = (w) => [...w.open].sort((a, b) => a - b).map((i) => w.letters[i]);
     const rest = e.doneT > 0 ? [] : order(e.word).slice(1);
-    return e.queued ? rest.concat(order(e.queued)) : rest;
+    return rest.concat(...e.queue.map(order));
   }
 
   needed(e) {
@@ -229,17 +231,19 @@ export class SpellingScene extends MiniGame {
    * was nearly always the answer.
    */
   updateBalloons(dt) {
-    const soon = this.ents.flatMap((e) => this.upcoming(e).slice(0, 4));
     // A letter "is around" when a balloon with it is on screen in a reachable lane
     // (with `lasting`, also not about to drift out the far side).
     const around = (letter, lasting = false) => this.balloons.some((b) => b.letter === letter && b.lane <= 2
       && Math.abs(b.x) < HALF_W - 1 && (!lasting || Math.abs(b.x) < HALF_W - 6 || Math.sign(b.x) !== Math.sign(b.vx)));
+    // Letters coming up in the next ~20 seconds (a balloon takes about that long to cross).
+    const ahead = Math.max(3, Math.round(12 / this.ents.length));
+    const soon = this.ents.flatMap((e) => this.upcoming(e).slice(0, ahead)).filter((l) => !around(l, true));
     this.spawnT -= dt;
     if (this.spawnT <= 0 && this.balloons.length < MAX_BALLOONS) {
       this.spawnT = 0.9;
       const r = Math.random();
-      const letter = soon.length && r < 0.45 ? soon[Math.floor(Math.random() * soon.length)] : ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-      this.spawnBalloon(letter);
+      if (soon.length && r < 0.6) this.spawnBalloon(soon[Math.floor(Math.random() * soon.length)], Math.floor(Math.random() * 3));
+      else this.spawnBalloon(ALPHABET[Math.floor(Math.random() * ALPHABET.length)]);
     }
     this.ensureT -= dt;
     if (this.ensureT <= 0) {

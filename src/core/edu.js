@@ -157,3 +157,25 @@ export function drawMatching(gen, ok, tries = 400) {
   }
   return null;
 }
+
+/**
+ * Picks one of `cands` (a subset of `all`; every item has a `seq` spawn number) so that
+ * its age among all the items is about uniformly random: draw a random rank and take
+ * the candidate closest to it. Candidates that get used up quickly would otherwise tend
+ * to be the freshest ones, and kids learn that the newest item is the answer.
+ */
+export function pickByAge(all, cands) {
+  if (!cands.length) return null;
+  const rank = new Map([...all].sort((a, b) => a.seq - b.seq).map((it, i) => [it, i]));
+  const target = Math.random() * (all.length - 1);
+  let best = null, bd = Infinity;
+  for (const c of shuffle(cands)) {
+    const d = Math.abs((rank.get(c) ?? all.length) - target);
+    if (d < bd) { bd = d; best = c; }
+  }
+  return best;
+}
+
+let seqCounter = 0;
+/** Spawn numbers for pickByAge. */
+export const nextSeq = () => seqCounter++;

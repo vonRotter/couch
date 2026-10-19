@@ -2,238 +2,151 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
 import { t, addStrings } from '../core/i18n.js';
+import { esc } from '../core/ui.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
-import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo, faceted } from '../core/palette.js';
+import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeBush, makeFlower, seeded } from '../core/world.js';
+import { ING, DISHES, pickMenu } from './cook/data.js';
+import { makeKitchen } from './cook/layout.js';
+import { H, sph, cyl, rbox, dome, mesh, wholeMesh, choppedMesh, partMesh, plateMesh, boardProp, knifeProp, panProp, potProp, iconImg } from './cook/models.js';
 
-// Cook-Off: a forgiving co-op kitchen. Grab ingredients, chop them on boards, cook soup in
-// pots, plate it up and serve it at the hatch before the customer gets bored. Nothing burns,
-// expired orders just leave, and the team shares one coin score.
+// Cook-Off: a forgiving co-op kitchen with a new menu and a new kitchen every match.
+// Each match picks 3–4 ingredients and a small menu of dishes made from them; parts are
+// chopped on boards, fried in pans or boiled into soup in pots, plated and served at the
+// hatch. Nothing burns, expired orders just leave, and the team shares one coin score.
+// Dishes unlock one by one from easiest to hardest, so there is something to learn.
 
 addStrings({
   en: {
     'game.cook': 'Cook-Off',
-    'cook.intro': '[A] picks up and puts down. Hold [B] at a board to chop. Cook soup in the pots and serve at the hatch!',
-    'cook.r.salad': 'Salad', 'cook.r.soupT': 'Tomato Soup', 'cook.r.soupM': 'Mushroom Soup',
+    'cook.intro': '[A] picks up and puts down. Hold [B] at a board to chop. Fry in pans, boil soup in pots, plate it and serve at the hatch!',
+    'cook.menu': "Today's menu",
+    'cook.crates': "Today's crates",
+    'cook.l.chop': 'chop: hold [B]', 'cook.l.fry': 'fry in a pan', 'cook.l.pot': '3 in a pot = soup', 'cook.l.serve': 'plate it, serve at the hatch',
+    'cook.readyUp': 'Press [A] when you know the menu',
+    'cook.new': 'New on the menu: {d}!',
     'cook.served': '{n} served',
-    'cook.detail': '{c} chopped · {k} into pots',
+    'cook.detail': '{c} chopped · {k} cooked',
     'cook.ready': 'Ready!',
     'cook.left': 'Oh no, the {r} customer left',
     'cook.ten': '10 seconds left!',
     'cook.hint.chop': 'Chop it first! Hold [B] at a board',
+    'cook.hint.fry': 'Fry it in a pan first',
+    'cook.hint.pot': 'That goes in a soup pot',
     'cook.hint.plate': 'Bring a plate!',
-    'cook.hint.notPot': 'Salad stuff goes on a plate',
+    'cook.hint.clean': 'Use an empty plate',
     'cook.hint.same': 'One kind per pot',
     'cook.hint.order': 'Nobody ordered that',
-    'cook.hint.pot': 'That goes in a pot',
+    'cook.hint.mix': "That doesn't go together",
     'cook.hint.busy': 'Wait for the soup',
+    'cook.hint.frying': 'Still frying...',
+    'cook.hint.full': 'The pan is busy',
+    'cook.hint.noChop': 'No chopping needed',
+    'cook.hint.noFry': "That doesn't go in the pan",
+    'cook.hint.noPot': "That's not a soup today",
     'cook.t3': 'Master chefs!', 'cook.t2': 'Yummy work!', 'cook.t1': 'Nice cooking!', 'cook.t0': 'Kitchen practice!',
     'cook.sub': '{coins} coins from {n} orders · stars at {a} / {b} / {c}',
   },
   no: {
     'game.cook': 'Kokkekamp',
-    'cook.intro': '[A] tar opp og setter fra deg. Hold [B] ved en fjøl for å kutte. Kok suppe i grytene og server i luka!',
-    'cook.r.salad': 'Salat', 'cook.r.soupT': 'Tomatsuppe', 'cook.r.soupM': 'Soppsuppe',
+    'cook.intro': '[A] tar opp og setter fra deg. Hold [B] ved en fjøl for å kutte. Stek i panna, kok suppe i gryta, legg på tallerken og server i luka!',
+    'cook.menu': 'Dagens meny',
+    'cook.crates': 'Dagens råvarer',
+    'cook.l.chop': 'kutt: hold [B]', 'cook.l.fry': 'stek i panna', 'cook.l.pot': '3 i gryta = suppe', 'cook.l.serve': 'legg på tallerken, server i luka',
+    'cook.readyUp': 'Trykk [A] når dere kan menyen',
+    'cook.new': 'Nytt på menyen: {d}!',
     'cook.served': '{n} servert',
-    'cook.detail': '{c} kuttet · {k} i gryta',
+    'cook.detail': '{c} kuttet · {k} kokt',
     'cook.ready': 'Ferdig!',
     'cook.left': 'Å nei, gjesten med {r} gikk',
     'cook.ten': '10 sekunder igjen!',
     'cook.hint.chop': 'Kutt den først! Hold [B] ved fjøla',
+    'cook.hint.fry': 'Stek den i panna først',
+    'cook.hint.pot': 'Den skal i suppegryta',
     'cook.hint.plate': 'Hent en tallerken!',
-    'cook.hint.notPot': 'Salat skal på tallerken',
+    'cook.hint.clean': 'Bruk en tom tallerken',
     'cook.hint.same': 'Bare én sort i gryta',
     'cook.hint.order': 'Ingen har bestilt det',
-    'cook.hint.pot': 'Den skal i gryta',
+    'cook.hint.mix': 'Det passer ikke sammen',
     'cook.hint.busy': 'Vent på suppa',
+    'cook.hint.frying': 'Steker fortsatt ...',
+    'cook.hint.full': 'Panna er opptatt',
+    'cook.hint.noChop': 'Den trenger ikke kuttes',
+    'cook.hint.noFry': 'Den skal ikke i panna',
+    'cook.hint.noPot': 'Det er ikke suppe i dag',
     'cook.t3': 'Mesterkokker!', 'cook.t2': 'Nam, godt jobbet!', 'cook.t1': 'Fin matlaging!', 'cook.t0': 'Kjøkkentrening!',
     'cook.sub': '{coins} mynter fra {n} bestillinger · stjerner ved {a} / {b} / {c}',
   },
 });
 
 const CELL = 1.4;      // grid cell size
-const H = 0.72;        // counter height (items rest on top)
 const PR = 0.38;       // player radius
 const SPEED = 5.4;
 const ROUND_TIME = 180;
-const POT_NEED = 3;    // chopped ingredients per soup
+const POT_NEED = 3;    // chopped pieces per soup
+const MENU_MAX = 30;   // seconds the menu card waits for everyone before starting anyway
 
-// Kitchens by player count. . floor, C counter, B chopping board, P pot on a stove,
-// S plate stack, H serving hatch, X compost bin, T/L/M tomato/lettuce/mushroom crates.
-const LAYOUTS = [
-  [ // 1–2 players
-    'CCTLMCPPC',
-    'B.......C',
-    'B.......H',
-    'C..CCC..H',
-    'C.......C',
-    'X.......S',
-    'CCBCCCCCC',
-  ],
-  [ // 3–4 players
-    'CCTLMCCPPPC',
-    'B.........C',
-    'B.........H',
-    'C..CBBC...H',
-    'C..CCCC...C',
-    'X.........S',
-    'C.........S',
-    'CCBBCTLMCCC',
-  ],
-  [ // 5–6 players
-    'CCTLMCCCPPPPC',
-    'B...........C',
-    'B...........H',
-    'C...CBBBC...H',
-    'C...CCCCC...C',
-    'X...........S',
-    'B...........S',
-    'C...........C',
-    'CCBBCTLMCCBCC',
-  ],
-];
-const TYPES = { C: 'counter', B: 'board', P: 'pot', S: 'plates', H: 'hatch', X: 'bin', T: 'crate', L: 'crate', M: 'crate' };
-const CRATE_ING = { T: 'tomato', L: 'lettuce', M: 'mushroom' };
-
-const ING = {
-  tomato: { color: 0xff4f4f, css: '#ff4f4f', soup: 0xff6a3d, soupCss: '#ff6a3d' },
-  lettuce: { color: 0x6cc94a, css: '#6cc94a' },
-  mushroom: { color: 0xc8865a, css: '#c8865a', soup: 0xdcae7c, soupCss: '#dcae7c' },
-};
-const RECIPES = {
-  salad: { coins: 15, time: 65, needs: ['lettuce', 'tomato'] },
-  soupT: { coins: 20, time: 85, soup: 'tomato' },
-  soupM: { coins: 20, time: 85, soup: 'mushroom' },
-};
 const CUSTOMER_COLORS = [0x7b6cf6, 0xff8fc8, 0x4cc9f0, 0xffb347, 0x3ddc97, 0xb08bff];
 const CUSTOMER_CSS = ['#7b6cf6', '#ff8fc8', '#4cc9f0', '#ffb347', '#3ddc97', '#b08bff'];
 
 const clamp = THREE.MathUtils.clamp;
 /** Pale version of a color for counter tops. */
 const tint = (hex) => new THREE.Color(hex).lerp(new THREE.Color(0xffffff), 0.72).getHex();
+const partOf = (item) => `${item.kind}:${item.state}`;
 
-// ---------- shared geometry helpers ----------
-const sph = (r, w = 14, h = 10) => sharedGeo(`ck-sph${r}|${w}`, () => new THREE.SphereGeometry(r, w, h));
-const ico = (r) => sharedGeo(`ck-ico${r}`, () => faceted(new THREE.IcosahedronGeometry(r, 1)));
-const cyl = (key, rt, rb, h, seg = 16) => sharedGeo(`ck-${key}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
-const rbox = (key, w, h, d, r = 0.05) => sharedGeo(`ck-${key}`, () => new RoundedBoxGeometry(w, h, d, 2, r));
-const dome = (key, r) => sharedGeo(`ck-${key}`, () => new THREE.SphereGeometry(r, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2));
-
-function mesh(geo, mat, x = 0, y = 0, z = 0) {
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(x, y, z);
-  m.castShadow = true;
+/** Count map of a list of parts. */
+function counts(list) {
+  const m = new Map();
+  for (const p of list) m.set(p, (m.get(p) || 0) + 1);
   return m;
 }
-
-/** A whole (raw) ingredient, sitting on y = 0. */
-function wholeMesh(kind) {
-  const g = new THREE.Group();
-  if (kind === 'tomato') {
-    const b = mesh(sph(0.24), toon(ING.tomato.color), 0, 0.21, 0);
-    b.scale.y = 0.85;
-    g.add(b, mesh(cyl('tleaf', 0.13, 0.13, 0.03, 5), toon(COLORS.leaf), 0, 0.41, 0), mesh(cyl('tstem', 0.025, 0.03, 0.1, 6), toon(COLORS.grassDark), 0, 0.45, 0));
-  } else if (kind === 'lettuce') {
-    g.add(mesh(ico(0.26), toon(ING.lettuce.color, { flat: true }), 0, 0.24, 0));
-    g.add(mesh(ico(0.17), toon(0x9be27a, { flat: true }), 0.1, 0.36, 0.08));
-    g.add(mesh(ico(0.15), toon(0x9be27a, { flat: true }), -0.12, 0.33, -0.04));
-  } else {
-    g.add(mesh(cyl('mstem', 0.09, 0.12, 0.24, 10), toon(COLORS.icing), 0, 0.12, 0));
-    const cap = mesh(dome('mcap', 0.25), toon(ING.mushroom.color), 0, 0.2, 0);
-    cap.scale.y = 0.8;
-    g.add(cap);
-    for (let i = 0; i < 3; i++) {
-      const a = i * 2.1;
-      const d = mesh(sph(0.045, 8, 6), toon(COLORS.white), Math.cos(a) * 0.14, 0.36, Math.sin(a) * 0.14);
-      d.scale.y = 0.5;
-      g.add(d);
-    }
-  }
-  return g;
+/** Is multiset a contained in multiset b? */
+function within(a, b) {
+  const cb = counts(b);
+  for (const [k, v] of counts(a)) if ((cb.get(k) || 0) < v) return false;
+  return true;
 }
 
-/** A small pile of chopped pieces. */
-function choppedMesh(kind) {
-  const g = new THREE.Group();
-  const n = kind === 'lettuce' ? 4 : 3;
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + 0.4;
-    const x = Math.cos(a) * 0.13, z = Math.sin(a) * 0.13;
-    if (kind === 'tomato') {
-      const s = mesh(cyl('tslice', 0.12, 0.12, 0.06, 14), toon(ING.tomato.color), x, 0.03, z);
-      s.add(mesh(cyl('tslicein', 0.09, 0.09, 0.07, 14), toon(0xff9a8a)));
-      s.rotation.set(0.25, a, 0.2);
-      g.add(s);
-    } else if (kind === 'lettuce') {
-      const l = mesh(ico(0.12), toon(i % 2 ? 0x9be27a : ING.lettuce.color, { flat: true }), x, 0.05, z);
-      l.scale.y = 0.45;
-      g.add(l);
-    } else {
-      const c = mesh(dome('mslice', 0.11), toon(ING.mushroom.color), x, 0.04, z);
-      c.scale.y = 0.55;
-      c.add(mesh(rbox('mbit', 0.07, 0.1, 0.07, 0.02), toon(COLORS.icing), 0, -0.04, 0));
-      g.add(c);
-    }
-  }
-  return g;
-}
-
-/** Plate with whatever is on it (soup bowl or salad bits). */
-function plateMesh(item) {
-  const g = new THREE.Group();
-  g.add(mesh(cyl('plate', 0.42, 0.34, 0.07, 24), toon(COLORS.white), 0, 0.035, 0));
-  g.add(mesh(cyl('plateIn', 0.3, 0.3, 0.075, 24), toon(0xe9f4ff), 0, 0.036, 0));
-  if (item.soup) {
-    g.add(mesh(cyl('bowl', 0.3, 0.2, 0.24, 20), toon(COLORS.cream), 0, 0.19, 0));
-    g.add(mesh(cyl('soupTop', 0.26, 0.26, 0.03, 20), toon(ING[item.soup].soup), 0, 0.3, 0));
-    g.add(mesh(sph(0.05, 8, 6), toon(COLORS.leaf), 0.07, 0.32, -0.04));
-  }
-  item.contents.forEach((k, i) => {
-    const c = choppedMesh(k);
-    c.scale.setScalar(0.85);
-    c.position.set(item.contents.length > 1 ? (i ? 0.12 : -0.12) : 0, 0.06, 0);
-    g.add(c);
-  });
-  return g;
-}
-
-function itemMesh(item) {
-  if (item.kind === 'plate') return plateMesh(item);
-  return item.chopped ? choppedMesh(item.kind) : wholeMesh(item.kind);
-}
-
-/** Small inline-styled icons for the order cards (no extra CSS needed). */
-const dot = (css) => `<span style="display:inline-block;width:.85em;height:.85em;border-radius:50%;background:${css};border:2px solid #fff;box-shadow:0 0 0 1px rgba(43,35,64,.25)"></span>`;
-const bowl = (css) => `<span style="display:inline-block;width:1.5em;height:.8em;border-radius:0 0 .8em .8em;background:${css};border-top:.22em solid #fff3dc;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(43,35,64,.25)"></span>`;
-const coin = '<span style="display:inline-block;width:1em;height:1em;border-radius:50%;background:#ffd23f;border:3px solid #f0a020;box-sizing:border-box"></span>';
-
-function recipeIcons(key) {
-  const r = RECIPES[key];
-  if (r.soup) return `${bowl(ING[r.soup].soupCss)} <span style="font-size:.8em">3×</span>${dot(ING[r.soup].css)}`;
-  return r.needs.map((k) => dot(ING[k].css)).join('');
-}
+const coin = '<span style="display:inline-block;width:1em;height:1em;border-radius:50%;background:#ffd23f;border:3px solid #f0a020;box-sizing:border-box;vertical-align:middle"></span>';
+const arrow = '<span style="opacity:.45;font-size:.8em;margin:0 1px">▸</span>';
 
 export class CookScene extends MiniGame {
-  constructor(game, opts) {
+  constructor(game, opts = {}) {
     super(game, opts);
     this.camera.fov = 38;
     this.scene.background = skyTexture('#bfe8ff', '#fff1d6');
     const n = Math.max(1, this.players.length);
+    this.n = n;
     this.solo = n === 1;
-    this.layout = LAYOUTS[n <= 2 ? 0 : n <= 4 ? 1 : 2];
-    this.D = this.layout.length;
-    this.W = this.layout[0].length;
+
+    // A fresh menu and kitchen every match (opts.seed repeats one, for testing).
+    this.seed = opts.seed ?? Math.floor(Math.random() * 1e9);
+    const rand = seeded(this.seed);
+    const { ings, menu } = pickMenu(rand, { n, campaign: this.campaign });
+    this.ings = ings;
+    this.menu = menu;
+    this.needs = new Set(menu.flatMap((d) => [...d.stations]));
+    this.kitchen = makeKitchen(rand, { n, ings, needs: this.needs });
+    this.W = this.kitchen.W;
+    this.D = this.kitchen.D;
+    this.side = this.kitchen.hatchSide; // +1: hatch in the right wall, -1: left
+    this.theme = this.kitchen.theme;
     addLights(this.scene, { size: this.W * CELL * 0.7, dir: new THREE.Vector3(-0.35, 1, 0.55) });
 
-    // Tuning: solo play is a bit faster and calmer, bigger teams get more orders at once.
+    // Tuning: solo play is a bit faster and calmer, bigger teams get more orders at once,
+    // see new dishes sooner and need more coins for the stars.
     this.chopTime = this.solo ? 1.2 : 1.6;
     this.cookTime = this.solo ? 5 : 7;
+    this.fryTime = this.solo ? 3.5 : 4.5;
     this.orderTimeScale = this.solo ? 1.25 : 1;
     this.orderCap = [2, 3, 3, 3, 4, 4][n - 1] || 4;
-    const scale = [1, 1.4, 1.7, 2, 2.2, 2.4][n - 1] || 2.4;
     this.spawnGap = [9, 7, 6, 5, 4.5, 4][n - 1] || 4; // seconds between new orders while below the cap
-    this.thresholds = [25, 70, 135].map((v) => Math.round((v * scale) / 5) * 5);
+    this.unlockTime = [50, 45, 40, 36, 32, 30][n - 1] || 30;
+    this.unlockServe = n <= 3 ? 2 : 3;
+    const scale = [1, 1.4, 1.7, 2, 2.2, 2.4][n - 1] || 2.4;
+    const avg = menu.reduce((s, d) => s + d.coins, 0) / menu.length + 4; // a typical order with tip
+    this.thresholds = [1.1, 3, 5.8].map((v) => Math.max(5, Math.round((v * avg * scale) / 5) * 5));
 
     this.timeLeft = ROUND_TIME;
     this.coins = 0;
@@ -241,6 +154,8 @@ export class CookScene extends MiniGame {
     this.orders = [];
     this.orderId = 0;
     this.spawnT = 1;
+    this.unlocked = 1;
+    this.introduce = null;
     this.customers = [];
     this.floats = [];
     this.lastBeep = 99;
@@ -251,7 +166,88 @@ export class CookScene extends MiniGame {
 
     this.frame();
     game.audio.playMusic('party');
-    this.intro(t('game.cook'), t('cook.intro'));
+    this.showMenu();
+  }
+
+  /** Same game again from the pause menu: a new menu and kitchen. */
+  retryOptions() {
+    return { key: this.key };
+  }
+
+  // ---------- menu card ----------
+  icon(key, em, extra) {
+    return iconImg(this.game.renderer, key, em, extra);
+  }
+
+  /** The steps for one part, as pictures: raw ingredient ▸ board ▸ pan. */
+  partSteps(part, em) {
+    const [k, s] = part.split(':');
+    let html = this.icon(`part:${k}:raw`, em);
+    if (s !== 'raw' && ING[k].chop && !(s === 'fried' && ING[k].fry === 'raw')) html += arrow + this.icon('board', em * 0.8);
+    if (s === 'fried') html += arrow + this.icon('pan', em * 0.8);
+    return `<span style="white-space:nowrap">${html}</span>`;
+  }
+
+  recipeSteps(d, em = 1.6) {
+    if (d.soup) return `<span style="white-space:nowrap"><b style="font-size:.85em">3×</b>${this.icon(`part:${d.soup}:raw`, em)}${arrow}${this.icon('board', em * 0.8)}${arrow}${this.icon('pot', em * 0.8)}</span>`;
+    return d.parts.map((p) => this.partSteps(p, em)).join('<span style="opacity:.5;margin:0 3px">+</span>');
+  }
+
+  dishIcon(d, em) {
+    if (d.soup) return this.icon(`soup:${d.soup}`, em);
+    return this.icon(`plate:${d.parts.map((p) => p.replace(':', '.')).join(',')}`, em);
+  }
+
+  showMenu() {
+    this.state = 'menu';
+    this.menuT = 0;
+    this.ready = new Map(this.players.map((p) => [p, false]));
+    this.panelEl = this.game.ui.panel('', 'panel picker');
+    const cards = this.menu.map((d, i) => `
+      <div style="background:#fff;border:4px solid ${['#3ddc97', '#4cc9f0', '#ffb347', '#ff5d73'][i]};border-radius:22px;padding:8px 12px 10px;min-width:9em;box-shadow:0 5px 0 rgba(43,35,64,.12)">
+        <div>${this.dishIcon(d, 4.2)}</div>
+        <div style="font-weight:700;font-size:1.1em">${esc(t(`cook.d.${d.id}`))}</div>
+        <div style="margin-top:4px">${this.recipeSteps(d, 1.7)}</div>
+        <div style="margin-top:4px;font-size:.85em;opacity:.75">${coin} ${d.coins}</div>
+      </div>`).join('');
+    const crates = this.ings.map((k) => `<span style="white-space:nowrap;margin:0 6px">${this.icon(`part:${k}:raw`, 2)} ${esc(t(`cook.i.${k}`))}</span>`).join('');
+    const legend = [
+      this.needs.has('board') && `${this.icon('board', 1.6)} ${esc(t('cook.l.chop'))}`,
+      this.needs.has('pan') && `${this.icon('pan', 1.6)} ${esc(t('cook.l.fry'))}`,
+      this.needs.has('pot') && `${this.icon('pot', 1.6)} ${esc(t('cook.l.pot'))}`,
+      `${this.icon('plate:', 1.6)} ${esc(t('cook.l.serve'))}`,
+    ].filter(Boolean).map((s) => `<span style="white-space:nowrap;margin:0 8px">${s}</span>`).join('');
+    this.menuStatic = `
+      <div class="results-title">${esc(t('cook.menu'))}</div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:8px 0 10px;font-size:clamp(13px,1.35vw,20px)">${cards}</div>
+      <div style="font-size:clamp(13px,1.3vw,19px);font-weight:600"><span style="opacity:.6">${esc(t('cook.crates'))}:</span> ${crates}</div>
+      <div style="font-size:clamp(12px,1.15vw,17px);font-weight:600;margin-top:6px;opacity:.85">${legend}</div>`;
+    this.renderMenu();
+  }
+
+  renderMenu() {
+    const chips = this.players.map((p) => {
+      const ok = this.ready.get(p);
+      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${p.css}">${esc(p.name)}${ok ? ' ✓' : ''}</div>`;
+    }).join('');
+    this.panelEl.innerHTML = `${this.menuStatic}
+      <div class="party-ready" style="margin:10px 0 2px">${chips}</div>
+      <div class="results-footer blink">${esc(t('cook.readyUp'))}</div>`;
+  }
+
+  updateMenu(dt) {
+    this.menuT += dt;
+    if (this.menuT < 0.8) return; // ignore the press that started the game
+    let changed = false;
+    for (const p of this.players) {
+      if (this.input(p)?.aPressed && !this.ready.get(p)) { this.ready.set(p, true); this.game.audio.play('join'); changed = true; }
+    }
+    if (changed) this.renderMenu();
+    if ([...this.ready.values()].every(Boolean) || this.menuT > MENU_MAX) {
+      this.panelEl.remove();
+      this.panelEl = null;
+      this.intro(t('game.cook'), t('cook.intro'));
+    }
   }
 
   // ---------- layout helpers ----------
@@ -281,17 +277,20 @@ export class CookScene extends MiniGame {
     this.frame();
   }
 
-  counterColor(r, c) {
-    if (r === 0) return COLORS.candyBlue;
-    if (r === this.D - 1) return COLORS.candyYellow;
-    if (c === 0) return COLORS.candyPink;
-    if (c === this.W - 1) return COLORS.candyMint;
-    return COLORS.candyLilac;
+  counterColor(st) {
+    const th = this.theme;
+    if (st.island) return th.island;
+    if (st.r === 0) return th.back;
+    if (st.r === this.D - 1) return th.front;
+    if (st.c === 0) return th.left;
+    if (st.c === this.W - 1) return th.right;
+    return th.island;
   }
 
   buildKitchen() {
     const s = this.scene;
     const kw = this.W * CELL, kd = this.D * CELL;
+    const th = this.theme;
 
     // Checkered tile floor (two tiles per cell), drawn into a tiny canvas.
     const cv = document.createElement('canvas');
@@ -299,7 +298,7 @@ export class CookScene extends MiniGame {
     const g2 = cv.getContext('2d');
     for (let j = 0; j < cv.height; j++) {
       for (let i = 0; i < cv.width; i++) {
-        g2.fillStyle = (i + j) % 2 ? '#ffe3c2' : '#fff7ea';
+        g2.fillStyle = th.floor[(i + j) % 2];
         g2.fillRect(i, j, 1, 1);
       }
     }
@@ -320,10 +319,10 @@ export class CookScene extends MiniGame {
 
     // Back wall with windows and a tiled band.
     const wallZ = this.cz(0) - CELL / 2 - 0.2;
-    const wall = mesh(new RoundedBoxGeometry(kw + 0.8, 2.8, 0.4, 2, 0.12), toon(0xfff3dc), 0, 1.4, wallZ);
+    const wall = mesh(new RoundedBoxGeometry(kw + 0.8, 2.8, 0.4, 2, 0.12), toon(th.wall), 0, 1.4, wallZ);
     wall.receiveShadow = true;
     s.add(wall);
-    s.add(mesh(new THREE.BoxGeometry(kw + 0.82, 0.5, 0.42), toon(COLORS.candyBlue), 0, 1.15, wallZ));
+    s.add(mesh(new THREE.BoxGeometry(kw + 0.82, 0.5, 0.42), toon(th.band), 0, 1.15, wallZ));
     s.add(mesh(new THREE.BoxGeometry(kw + 0.84, 0.18, 0.44), toon(COLORS.candyPink), 0, 2.7, wallZ));
     for (let i = 0; i < 3; i++) {
       const x = (i - 1) * kw * 0.3;
@@ -334,43 +333,43 @@ export class CookScene extends MiniGame {
     }
     // Low side walls.
     for (const sd of [-1, 1]) {
-      s.add(mesh(new RoundedBoxGeometry(0.4, 0.55, kd + 0.8, 2, 0.12), toon(0xfff3dc), sd * (kw / 2 + 0.2), 0.27, 0));
+      s.add(mesh(new RoundedBoxGeometry(0.4, 0.55, kd + 0.8, 2, 0.12), toon(th.wall), sd * (kw / 2 + 0.2), 0.27, 0));
     }
 
     this.grid = [];
     this.stations = [];
     this.pots = [];
+    this.pans = [];
     this.hatches = [];
     for (let r = 0; r < this.D; r++) {
       const row = [];
       for (let c = 0; c < this.W; c++) {
-        const ch = this.layout[r][c];
-        if (ch === '.') { row.push(null); continue; }
-        const st = { r, c, x: this.cx(c), z: this.cz(r), type: TYPES[ch], item: null, surf: H, chopping: false };
-        if (CRATE_ING[ch]) st.ing = CRATE_ING[ch];
+        const cell = this.kitchen.cells[r][c];
+        if (!cell) { row.push(null); continue; }
+        const st = { r, c, x: this.cx(c), z: this.cz(r), type: cell.type, ing: cell.ing, island: !!cell.island, item: null, surf: H, chopping: false };
         this.buildStation(st);
         row.push(st);
         this.stations.push(st);
       }
       this.grid.push(row);
     }
-    // One awning over each run of hatch cells, and a bell on the first one.
+    // One awning over the hatch cells, and a wooden deck outside where customers queue.
+    const sd = this.side;
     const hz = this.hatches.map((h) => h.z);
     const hx = this.hatches[0].x;
     const zMin = Math.min(...hz) - CELL / 2, zMax = Math.max(...hz) + CELL / 2;
     const stripes = Math.round((zMax - zMin) / 0.4);
     for (let i = 0; i < stripes; i++) {
-      const st = mesh(new THREE.BoxGeometry(0.85, 0.08, (zMax - zMin) / stripes), toon(i % 2 ? COLORS.white : 0xff5d73), hx + 0.3, 1.85, zMin + (i + 0.5) * ((zMax - zMin) / stripes));
-      st.rotation.z = -0.35;
+      const st = mesh(new THREE.BoxGeometry(0.85, 0.08, (zMax - zMin) / stripes), toon(i % 2 ? COLORS.white : 0xff5d73), hx + 0.3 * sd, 1.85, zMin + (i + 0.5) * ((zMax - zMin) / stripes));
+      st.rotation.z = -0.35 * sd;
       this.scene.add(st);
     }
-    for (const z of [zMin + 0.08, zMax - 0.08]) this.scene.add(mesh(cyl('post', 0.06, 0.06, 1.8, 8), toon(COLORS.white), hx + 0.68, 0.9, z));
+    for (const z of [zMin + 0.08, zMax - 0.08]) this.scene.add(mesh(cyl('post', 0.06, 0.06, 1.8, 8), toon(COLORS.white), hx + 0.68 * sd, 0.9, z));
     this.hatchZ = (zMin + zMax) / 2;
-    // Wooden deck outside the hatch where the customers queue.
-    const deck = mesh(new RoundedBoxGeometry(3.6, 0.3, zMax - zMin + 4.2, 2, 0.1), toon(0xd9a066), kw / 2 + 2.2, -0.15, this.hatchZ + 1.4);
+    const deck = mesh(new RoundedBoxGeometry(3.6, 0.3, zMax - zMin + 4.2, 2, 0.1), toon(0xd9a066), sd * (kw / 2 + 2.2), -0.15, this.hatchZ + 1.4);
     deck.receiveShadow = true;
     this.scene.add(deck);
-    for (let i = 1; i < 6; i++) this.scene.add(mesh(new THREE.BoxGeometry(0.04, 0.02, zMax - zMin + 4), toon(0xb87a48), kw / 2 + 0.4 + i * 0.6, 0.005, this.hatchZ + 1.4));
+    for (let i = 1; i < 6; i++) this.scene.add(mesh(new THREE.BoxGeometry(0.04, 0.02, zMax - zMin + 4), toon(0xb87a48), sd * (kw / 2 + 0.4 + i * 0.6), 0.005, this.hatchZ + 1.4));
   }
 
   /** Counter body + top slab in the given colors. */
@@ -386,16 +385,27 @@ export class CookScene extends MiniGame {
     return g;
   }
 
+  /** Dark stove counter with a burner ring and a glow ring shown while cooking. */
+  stove(st) {
+    const g = this.counter(st, 0x5d5778, 0x8d88a6);
+    g.add(mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 24).rotateX(Math.PI / 2), toon(0x3d3852), 0, H + 0.02, 0));
+    const glow = mesh(new THREE.TorusGeometry(0.34, 0.05, 8, 24).rotateX(Math.PI / 2), toon(0xff8c42, { emissive: 0xff5a1f }), 0, H + 0.03, 0);
+    glow.visible = false;
+    g.add(glow);
+    return { g, glow };
+  }
+
   buildStation(st) {
-    const col = this.counterColor(st.r, st.c);
+    const col = this.counterColor(st);
     switch (st.type) {
       case 'counter':
         this.counter(st, col);
         break;
       case 'board': {
         const g = this.counter(st, col);
-        g.add(mesh(rbox('board', 1.0, 0.07, 0.8, 0.03), toon(0xf3d39b), 0, H + 0.035, 0));
-        g.add(mesh(rbox('boardGroove', 0.85, 0.075, 0.03, 0.01), toon(0xd9ae6c), 0, H + 0.036, 0.32));
+        const b = boardProp();
+        b.position.y = H;
+        g.add(b);
         st.surf = H + 0.07;
         break;
       }
@@ -422,18 +432,11 @@ export class CookScene extends MiniGame {
         break;
       }
       case 'pot': {
-        const g = this.counter(st, 0x5d5778, 0x8d88a6);
-        g.add(mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 24).rotateX(Math.PI / 2), toon(0x3d3852), 0, H + 0.02, 0));
-        const glow = mesh(new THREE.TorusGeometry(0.34, 0.05, 8, 24).rotateX(Math.PI / 2), toon(0xff8c42, { emissive: 0xff5a1f }), 0, H + 0.03, 0);
-        glow.visible = false;
-        g.add(glow);
-        const potMat = new THREE.MeshToonMaterial({ color: 0xb9c3d6, gradientMap: toon(0xffffff).gradientMap, side: THREE.DoubleSide });
-        const pot = mesh(new THREE.CylinderGeometry(0.46, 0.4, 0.46, 24, 1, true), potMat, 0, H + 0.27, 0);
+        const { g, glow } = this.stove(st);
+        const pot = potProp();
+        pot.position.y = H;
         g.add(pot);
-        g.add(mesh(cyl('potBottom', 0.4, 0.4, 0.04, 24), toon(0x6d7488), 0, H + 0.06, 0));
-        g.add(mesh(new THREE.TorusGeometry(0.46, 0.04, 8, 28).rotateX(Math.PI / 2), toon(0xdfe6f2), 0, H + 0.5, 0));
-        for (const sd of [-1, 1]) g.add(mesh(rbox('handle', 0.18, 0.06, 0.16, 0.03), toon(0x3d3852), sd * 0.55, H + 0.42, 0));
-        const fill = mesh(cyl('fill', 0.42, 0.42, 0.05, 24), toon(ING.tomato.soup), 0, H + 0.1, 0);
+        const fill = mesh(cyl('fill', 0.42, 0.42, 0.05, 24), toon(0xff6a3d), 0, H + 0.1, 0);
         fill.visible = false;
         g.add(fill);
         // Floating chopped bits so you can see what is in the pot.
@@ -441,6 +444,18 @@ export class CookScene extends MiniGame {
         g.add(bits);
         st.pot = { kind: null, count: 0, cook: 0, ready: false, glow, fill, bits, steamT: 0, g };
         this.pots.push(st);
+        break;
+      }
+      case 'pan': {
+        const { g, glow } = this.stove(st);
+        const pan = panProp();
+        pan.position.y = H + 0.02;
+        pan.rotation.y = this.side > 0 ? Math.PI * 0.85 : Math.PI * 0.15;
+        g.add(pan);
+        st.surf = H + 0.1;
+        st.glow = glow;
+        st.sizzleT = 0;
+        this.pans.push(st);
         break;
       }
       case 'plates': {
@@ -452,7 +467,7 @@ export class CookScene extends MiniGame {
         const g = this.counter(st, COLORS.gold, 0x8a5a3a);
         g.add(mesh(new THREE.BoxGeometry(0.9, 0.02, CELL - 0.3), toon(0xa86c45), 0, H + 0.005, 0));
         if (!this.hatches.length) {
-          const bell = mesh(dome('bell', 0.17), toon(COLORS.gold, { emissive: 0x332200 }), 0.4, H, -0.45);
+          const bell = mesh(dome('bell', 0.17), toon(COLORS.gold, { emissive: 0x332200 }), 0.4 * this.side, H, -0.45);
           bell.add(mesh(sph(0.04, 8, 6), toon(COLORS.ink), 0, 0.19, 0));
           g.add(bell);
         }
@@ -479,7 +494,7 @@ export class CookScene extends MiniGame {
     ground.position.y = -0.4;
     ground.receiveShadow = true;
     s.add(ground);
-    const rand = seeded(77);
+    const rand = seeded(this.seed + 77);
     const kw = this.W * CELL, kd = this.D * CELL;
     for (let i = 0; i < 22; i++) {
       const x = (rand() - 0.5) * (kw + 26);
@@ -492,13 +507,14 @@ export class CookScene extends MiniGame {
       const sd = i % 2 ? 1 : -1;
       const b = makeBush(rand, 0.9 + rand() * 0.5);
       b.position.set(sd * (kw / 2 + 4 + rand() * 6), -0.4, (rand() - 0.5) * kd);
+      if (sd === this.side && Math.abs(b.position.z - this.hatchZ - 1.4) < 4 && Math.abs(b.position.x) < kw / 2 + 5.5) continue;
       s.add(b);
     }
     for (let i = 0; i < 40; i++) {
       const f = makeFlower(rand);
       const sd = rand() < 0.5 ? 1 : -1;
       f.position.set(sd * (kw / 2 + 1.2 + rand() * 8), -0.4, (rand() - 0.5) * (kd + 6));
-      if (sd > 0 && Math.abs(f.position.z - 0) < 4 && f.position.x < kw / 2 + 3) continue; // keep the customer queue clear
+      if (sd === this.side && Math.abs(f.position.z - this.hatchZ - 1.4) < 4 && Math.abs(f.position.x) < kw / 2 + 4.2) continue; // keep the queue clear
       s.add(f);
     }
   }
@@ -531,9 +547,7 @@ export class CookScene extends MiniGame {
       for (const sd of [-1, 1]) hands.add(mesh(sph(0.1), toon(p.color), sd * 0.36, 1.48, 0.05));
       hands.visible = false;
       ch.pivot.add(hands);
-      const knife = new THREE.Group();
-      knife.add(mesh(rbox('kHandle', 0.07, 0.07, 0.2, 0.02), toon(COLORS.trunk), 0, 0, 0));
-      knife.add(mesh(rbox('kBlade', 0.03, 0.12, 0.3, 0.015), toon(0xdfe6f2), 0, -0.02, 0.24));
+      const knife = knifeProp();
       knife.position.set(0.32, 0.75, 0.38);
       knife.visible = false;
       ch.pivot.add(knife);
@@ -551,23 +565,30 @@ export class CookScene extends MiniGame {
         p, ch, carry, hands, knife, ring, hl, hint, hintT: 0,
         x, z, vx: 0, vz: 0, fx: 0, fz: 1,
         held: null, target: null, chopping: false, chopSfx: 0,
-        served: 0, chopped: 0, potted: 0,
+        served: 0, chopped: 0, cooked: 0,
       };
     });
   }
 
   // ---------- items ----------
   newItem(kind) {
-    const item = { kind, chopped: false, chop: 0, contents: [], soup: null, mesh: null };
-    item.mesh = itemMesh(item);
+    const item = kind === 'plate'
+      ? { kind, parts: [], soup: null, mesh: null }
+      : { kind, state: 'raw', chop: 0, fry: 0, mesh: null };
+    item.mesh = this.itemMesh(item);
     return item;
+  }
+
+  itemMesh(item) {
+    return item.kind === 'plate' ? plateMesh(item) : partMesh(item.kind, item.state);
   }
 
   /** Rebuild an item's mesh after it changed, keeping it where it was. */
   refresh(item) {
     const old = item.mesh;
-    item.mesh = itemMesh(item);
+    item.mesh = this.itemMesh(item);
     item.mesh.position.copy(old.position);
+    item.mesh.scale.copy(old.scale);
     old.parent?.add(item.mesh);
     old.parent?.remove(old);
   }
@@ -591,17 +612,36 @@ export class CookScene extends MiniGame {
     item.mesh.parent?.remove(item.mesh);
   }
 
-  /** Which finished recipe is on this plate, if any. */
+  // ---------- recipe rules ----------
+  /** Which menu dish is on this plate, if any. */
   dishOf(item) {
     if (!item || item.kind !== 'plate') return null;
-    if (item.soup === 'tomato') return 'soupT';
-    if (item.soup === 'mushroom') return 'soupM';
-    if (item.contents.length === 2) return 'salad';
-    return null;
+    if (item.soup) return this.menu.find((d) => d.soup === item.soup)?.id || null;
+    if (!item.parts.length) return null;
+    const d = this.menu.find((m) => !m.soup && m.parts.length === item.parts.length && within(item.parts, m.parts));
+    return d ? d.id : null;
   }
 
-  canPlate(plate, ing) {
-    return !plate.soup && ing.chopped && (ing.kind === 'lettuce' || ing.kind === 'tomato') && !plate.contents.includes(ing.kind);
+  /** Can this part go on the plate (on the way to some dish on today's menu)? */
+  fits(plate, part) {
+    if (plate.soup) return false;
+    const want = [...plate.parts, part];
+    return this.menu.some((d) => !d.soup && within(want, d.parts));
+  }
+
+  /** Hint for a loose item that can't go on the plate. */
+  whyNot(item) {
+    const wants = new Set(this.menu.filter((d) => !d.soup).flatMap((d) => d.parts.filter((p) => p.startsWith(`${item.kind}:`)).map((p) => p.split(':')[1])));
+    if (!wants.size) return this.menu.some((d) => d.soup === item.kind) ? 'cook.hint.pot' : 'cook.hint.order';
+    if (wants.has(item.state)) return 'cook.hint.mix';
+    if (wants.has('chopped') && item.state === 'raw') return 'cook.hint.chop';
+    if (wants.has('fried')) return ING[item.kind].fry === 'chopped' && item.state === 'raw' ? 'cook.hint.chop' : 'cook.hint.fry';
+    return 'cook.hint.order';
+  }
+
+  /** Does today's menu fry this kind? */
+  friesToday(kind) {
+    return this.menu.some((d) => !d.soup && d.parts.includes(`${kind}:fried`));
   }
 
   hint(e, key) {
@@ -632,73 +672,110 @@ export class CookScene extends MiniGame {
     return best;
   }
 
+  /** Put the held item onto a plate (or a held plate takes the item); returns true if it worked. */
+  addToPlate(plate, item) {
+    if (!this.fits(plate, partOf(item))) return false;
+    plate.parts.push(partOf(item));
+    this.refresh(plate);
+    this.game.audio.play('pop');
+    return true;
+  }
+
   interact(e, st) {
     const audio = this.game.audio;
     const h = e.held;
     switch (st.type) {
       case 'crate':
         if (!h) { this.give(e, this.newItem(st.ing)); audio.play('pop'); }
-        else if (h.kind === st.ing && !h.chopped) { this.drop(h); e.held = null; audio.play('select'); }
+        else if (h.kind === st.ing && h.state === 'raw' && !h.chop) { this.drop(h); e.held = null; audio.play('select'); }
+        else if (h.kind === 'plate' && this.fits(h, `${st.ing}:raw`)) { h.parts.push(`${st.ing}:raw`); this.refresh(h); audio.play('pop'); }
+        else if (h.kind === 'plate') this.hint(e, this.whyNot({ kind: st.ing, state: 'raw' }));
         else this.hint(e, 'cook.hint.order');
         break;
       case 'plates':
         if (!h) { this.give(e, this.newItem('plate')); audio.play('select'); }
-        else if (h.kind === 'plate' && !h.soup && !h.contents.length) { this.drop(h); e.held = null; audio.play('select'); }
+        else if (h.kind === 'plate' && !h.soup && !h.parts.length) { this.drop(h); e.held = null; audio.play('select'); }
         else audio.play('bump');
         break;
       case 'bin':
         if (!h) break;
         this.puffs.burst(new THREE.Vector3(st.x, H + 0.3, st.z), COLORS.leaf, { count: 8, size: 0.25, speed: 2, life: 0.5 });
         audio.play('splat');
-        if (h.kind === 'plate') { h.soup = null; h.contents = []; this.refresh(h); }
+        if (h.kind === 'plate') { h.soup = null; h.parts = []; this.refresh(h); }
         else { this.drop(h); e.held = null; }
         break;
       case 'hatch':
         if (h && this.dishOf(h)) this.serve(e, st);
-        else this.hint(e, 'cook.hint.order');
+        else this.hint(e, h && h.kind !== 'plate' ? 'cook.hint.plate' : 'cook.hint.order');
         break;
       case 'pot': this.usePot(e, st); break;
+      case 'pan': this.usePan(e, st); break;
       default: // counter or board
         if (!h) {
           if (st.item) { const it = st.item; st.item = null; this.drop(it); this.give(e, it); audio.play('select'); }
         } else if (!st.item) {
           this.drop(h); e.held = null; this.place(st, h); audio.play('land');
         } else if (h.kind === 'plate' && st.item.kind !== 'plate') {
-          // Scoop the chopped thing on the counter onto the held plate.
-          if (this.canPlate(h, st.item)) { h.contents.push(st.item.kind); this.drop(st.item); st.item = null; this.refresh(h); audio.play('pop'); }
-          else this.hint(e, st.item.chopped ? 'cook.hint.pot' : 'cook.hint.chop');
+          // Scoop the thing on the counter onto the held plate.
+          const it = st.item;
+          if (this.addToPlate(h, it)) { this.drop(it); st.item = null; }
+          else this.hint(e, h.soup ? 'cook.hint.order' : this.whyNot(it));
         } else if (h.kind !== 'plate' && st.item.kind === 'plate') {
-          if (this.canPlate(st.item, h)) { st.item.contents.push(h.kind); this.drop(h); e.held = null; this.refresh(st.item); audio.play('pop'); }
-          else this.hint(e, !h.chopped ? 'cook.hint.chop' : h.kind === 'mushroom' ? 'cook.hint.pot' : 'cook.hint.order');
+          if (this.addToPlate(st.item, h)) { this.drop(h); e.held = null; }
+          else this.hint(e, st.item.soup ? 'cook.hint.order' : this.whyNot(h));
         } else audio.play('bump');
     }
+  }
+
+  usePan(e, st) {
+    const h = e.held, it = st.item, audio = this.game.audio;
+    if (!h) {
+      if (it) { st.item = null; this.drop(it); this.give(e, it); audio.play('select'); }
+      return;
+    }
+    if (h.kind === 'plate') {
+      if (!it) return audio.play('bump');
+      if (it.state !== 'fried') return this.hint(e, 'cook.hint.frying');
+      if (this.addToPlate(h, it)) { this.drop(it); st.item = null; }
+      else this.hint(e, h.soup ? 'cook.hint.order' : 'cook.hint.mix');
+      return;
+    }
+    if (it) return this.hint(e, 'cook.hint.full');
+    const fry = ING[h.kind].fry;
+    if (!fry || !this.friesToday(h.kind)) return this.hint(e, 'cook.hint.noFry');
+    if (fry === 'chopped' && h.state === 'raw') return this.hint(e, 'cook.hint.chop');
+    this.drop(h);
+    e.held = null;
+    this.place(st, h);
+    audio.play('land');
   }
 
   usePot(e, st) {
     const pot = st.pot, h = e.held, audio = this.game.audio;
     if (!h) { if (pot.ready) this.hint(e, 'cook.hint.plate'); return; }
     if (h.kind === 'plate') {
-      if (pot.ready && !h.soup && !h.contents.length) {
+      if (pot.ready && !h.soup && !h.parts.length) {
         h.soup = pot.kind;
         this.refresh(h);
         pot.kind = null; pot.count = 0; pot.cook = 0; pot.ready = false;
         this.updatePotLook(st);
         audio.play('pop');
         this.puffs.burst(new THREE.Vector3(st.x, H + 0.7, st.z), COLORS.white, { count: 10, size: 0.3, speed: 1.5, up: 2, gravity: 2, life: 0.8 });
-      } else if (pot.ready) this.hint(e, 'cook.hint.order');
+      } else if (pot.ready) this.hint(e, 'cook.hint.clean');
       else if (pot.count) this.hint(e, 'cook.hint.busy');
       else audio.play('bump');
       return;
     }
-    if (!h.chopped) return this.hint(e, 'cook.hint.chop');
-    if (h.kind === 'lettuce') return this.hint(e, 'cook.hint.notPot');
+    if (!this.menu.some((d) => d.soup === h.kind)) return this.hint(e, 'cook.hint.noPot');
+    if (h.state === 'raw') return this.hint(e, 'cook.hint.chop');
+    if (h.state !== 'chopped') return this.hint(e, 'cook.hint.noPot');
     if (pot.count >= POT_NEED) return this.hint(e, 'cook.hint.busy');
     if (pot.kind && pot.kind !== h.kind) return this.hint(e, 'cook.hint.same');
     pot.kind = h.kind;
     pot.count++;
     this.drop(h);
     e.held = null;
-    e.potted++;
+    e.cooked++;
     audio.play('bubble');
     this.puffs.burst(new THREE.Vector3(st.x, H + 0.55, st.z), ING[pot.kind].color, { count: 6, size: 0.18, speed: 2, up: 3, life: 0.5 });
     this.updatePotLook(st);
@@ -724,11 +801,11 @@ export class CookScene extends MiniGame {
   serve(e, st) {
     const dish = this.dishOf(e.held);
     // Most urgent matching order gets it.
-    const matches = this.orders.filter((o) => o.recipe === dish).sort((a, b) => a.time - b.time);
+    const matches = this.orders.filter((o) => o.dish === dish).sort((a, b) => a.time - b.time);
     if (!matches.length) return this.hint(e, 'cook.hint.order');
     const o = matches[0];
     const tip = Math.round(8 * clamp(o.time / o.total, 0, 1));
-    const gain = RECIPES[dish].coins + tip;
+    const gain = DISHES[dish].coins + tip;
     this.coins += gain;
     this.servedCount++;
     e.served++;
@@ -759,41 +836,58 @@ export class CookScene extends MiniGame {
     return Math.min(this.orderCap, want);
   }
 
-  spawnOrder() {
-    let recipe;
-    if (this.orderId === 0) recipe = 'salad';
-    else if (this.orderId === 1) recipe = 'soupT';
-    else {
-      const keys = Object.keys(RECIPES);
-      // Avoid three of the same at once.
-      const ok = keys.filter((k) => this.orders.filter((o) => o.recipe === k).length < 2);
-      recipe = ok[Math.floor(Math.random() * ok.length)] || 'salad';
+  /** Unlock the next (harder) dish after a while or after enough serves. */
+  checkUnlock() {
+    if (this.unlocked >= this.menu.length) return;
+    const el = ROUND_TIME - this.timeLeft;
+    if (el >= this.unlocked * this.unlockTime || this.servedCount >= this.unlocked * this.unlockServe) {
+      const d = this.menu[this.unlocked++];
+      this.introduce = d.id;
+      this.game.ui.toast(t('cook.new', { d: t(`cook.d.${d.id}`) }), 2400);
+      this.game.audio.play('star');
+      this.spawnT = Math.min(this.spawnT, 2);
     }
-    const total = RECIPES[recipe].time * this.orderTimeScale;
+  }
+
+  spawnOrder() {
+    let dish;
+    const open = this.menu.slice(0, this.unlocked);
+    if (this.introduce) { dish = this.introduce; this.introduce = null; }
+    else {
+      // Avoid three of the same at once; the newest dish turns up a bit more often.
+      const ok = open.filter((d) => this.orders.filter((o) => o.dish === d.id).length < 2);
+      const pool = ok.length ? ok : open;
+      const w = pool.map((d) => (d === open[open.length - 1] && open.length > 1 ? 1.6 : 1));
+      let r = Math.random() * w.reduce((s, v) => s + v, 0);
+      dish = pool[pool.length - 1].id;
+      for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r <= 0) { dish = pool[i].id; break; } }
+    }
+    const total = DISHES[dish].time * this.orderTimeScale;
     const used = new Set(this.orders.map((o) => o.colorIndex));
     let colorIndex = this.orderId % CUSTOMER_COLORS.length;
     while (used.has(colorIndex) && used.size < CUSTOMER_COLORS.length) colorIndex = (colorIndex + 1) % CUSTOMER_COLORS.length;
-    const o = { id: this.orderId++, recipe, time: total, total, colorIndex };
+    const o = { id: this.orderId++, dish, time: total, total, colorIndex };
     this.orders.push(o);
     this.game.audio.play('join');
 
     // A customer walks up to the hatch window.
     const g = makeGrumble(CUSTOMER_COLORS[colorIndex]);
     g.scale.setScalar(1.3);
-    const x0 = this.hatches[0].x + 3;
+    const x0 = this.hatches[0].x + 3 * this.side;
     g.position.set(x0, 0, this.hatchZ + 4.5);
     this.scene.add(g);
     this.customers.push({ g, order: o, state: 'come', t: 0, x: x0, z: this.hatchZ + 4.5 });
   }
 
   updateOrders(dt) {
+    this.checkUnlock();
     for (const o of this.orders) o.time -= dt;
     const expired = this.orders.filter((o) => o.time <= 0);
     if (expired.length) {
       this.orders = this.orders.filter((o) => o.time > 0);
       for (const o of expired) {
         this.game.audio.play('leave');
-        this.game.ui.toast(t('cook.left', { r: t(`cook.r.${o.recipe}`) }));
+        this.game.ui.toast(t('cook.left', { r: t(`cook.d.${o.dish}`) }));
         const cu = this.customers.find((c) => c.order === o);
         if (cu) { cu.state = 'sad'; cu.t = 0; }
       }
@@ -810,32 +904,33 @@ export class CookScene extends MiniGame {
 
   updateCustomers(dt) {
     const waiting = this.customers.filter((c) => c.state === 'come' || c.state === 'wait');
-    const baseX = this.hatches[0].x + 2.1;
+    const sd = this.side;
+    const baseX = this.hatches[0].x + 2.1 * sd;
     for (const cu of this.customers) {
       cu.t += dt;
       const g = cu.g;
       if (cu.state === 'come' || cu.state === 'wait') {
         const i = waiting.indexOf(cu);
-        const tx = baseX + (i % 2) * 0.9 + Math.floor(i / 2) * 0.25, tz = this.hatchZ - 0.6 + i * 0.95;
+        const tx = baseX + sd * ((i % 2) * 0.9 + Math.floor(i / 2) * 0.25), tz = this.hatchZ - 0.6 + i * 0.95;
         const dx = tx - cu.x, dz = tz - cu.z, d = Math.hypot(dx, dz);
         const step = Math.min(d, dt * 4);
         if (d > 0.01) { cu.x += (dx / d) * step; cu.z += (dz / d) * step; }
         const moving = d > 0.05;
         g.position.set(cu.x, (moving ? Math.abs(Math.sin(cu.t * 12)) * 0.15 : 0), cu.z);
-        g.rotation.y = moving ? Math.atan2(dx, dz) : -Math.PI / 2;
+        g.rotation.y = moving ? Math.atan2(dx, dz) : -sd * Math.PI / 2;
         // Gets a little wobbly when the order is nearly out of time.
         const urgent = cu.order.time / cu.order.total < 0.25;
         g.userData.body.rotation.z = urgent ? Math.sin(cu.t * 14) * 0.15 : Math.sin(cu.t * 2) * 0.05;
       } else if (cu.state === 'happy') {
         // Hop, spin and skip away.
-        cu.x += dt * 3; cu.z += dt * 4;
+        cu.x += dt * 3 * sd; cu.z += dt * 4;
         g.position.set(cu.x, Math.abs(Math.sin(cu.t * 9)) * 0.7, cu.z);
         g.rotation.y += dt * 10;
         if (cu.t > 2.5) cu.gone = true;
       } else {
-        cu.x += dt * 1.6; cu.z += dt * 0.6;
+        cu.x += dt * 1.6 * sd; cu.z += dt * 0.6;
         g.position.set(cu.x, 0, cu.z);
-        g.rotation.y = Math.atan2(1.6, 0.6);
+        g.rotation.y = Math.atan2(1.6 * sd, 0.6);
         g.scale.setScalar(Math.max(0.01, 1.3 - Math.max(0, cu.t - 2) * 0.9));
         if (cu.t > 3.3) cu.gone = true;
       }
@@ -862,13 +957,17 @@ export class CookScene extends MiniGame {
       // Hold B at a board to chop (holding a raw ingredient at an empty board puts it down first).
       e.chopping = false;
       if (st && st.type === 'board' && inp.b) {
-        if (!st.item && e.held && e.held.kind !== 'plate' && !e.held.chopped) {
+        const choppable = (it) => it && it.kind !== 'plate' && it.state === 'raw' && ING[it.kind].chop;
+        if (!st.item && choppable(e.held)) {
           const it = e.held;
           e.held = null;
           this.drop(it);
           this.place(st, it);
         }
-        if (st.item && st.item.kind !== 'plate' && !st.item.chopped) e.chopping = true;
+        if (choppable(st.item)) e.chopping = true;
+        else if (inp.bPressed && ((st.item && st.item.kind !== 'plate' && st.item.state === 'raw') || (!st.item && e.held && e.held.kind !== 'plate' && e.held.state === 'raw'))) {
+          this.hint(e, 'cook.hint.noChop');
+        }
       }
       if (e.chopping) {
         ix = 0; iz = 0;
@@ -878,7 +977,7 @@ export class CookScene extends MiniGame {
         e.chopSfx -= dt;
         if (e.chopSfx <= 0) { e.chopSfx = 0.22; audio.play('land'); e.ch.squash(0.88); }
         if (it.chop >= 1) {
-          it.chopped = true;
+          it.state = 'chopped';
           this.refresh(it);
           audio.play('pop');
           this.puffs.burst(new THREE.Vector3(st.x, st.surf + 0.2, st.z), ING[it.kind].color, { count: 8, size: 0.16, speed: 3, up: 3, life: 0.5 });
@@ -963,10 +1062,11 @@ export class CookScene extends MiniGame {
 
   // ---------- stations ----------
   updateStations(dt) {
+    const playing = this.state === 'play';
     for (const st of this.pots) {
       const pot = st.pot;
       const cooking = pot.count >= POT_NEED && !pot.ready;
-      if (cooking) {
+      if (cooking && playing) {
         pot.cook += dt / this.cookTime;
         if (pot.cook >= 1) {
           pot.ready = true;
@@ -989,16 +1089,41 @@ export class CookScene extends MiniGame {
       if (pot.fill.visible) pot.fill.position.y = H + 0.12 + pot.count * 0.09 + (cooking || pot.ready ? Math.sin(this.time * 8) * 0.015 : 0);
       pot.bits.rotation.y += dt * (cooking ? 1.5 : 0.3);
     }
-    // Progress labels for boards and pots.
+    // Pans fry whatever sits in them; done food just waits (nothing burns).
+    for (const st of this.pans) {
+      const it = st.item;
+      const frying = !!it && it.state !== 'fried';
+      if (frying && playing) {
+        it.fry += dt / this.fryTime;
+        st.sizzleT -= dt;
+        if (st.sizzleT <= 0) {
+          st.sizzleT = 0.18;
+          this.puffs.burst(new THREE.Vector3(st.x + (Math.random() - 0.5) * 0.5, st.surf + 0.15, st.z + (Math.random() - 0.5) * 0.5), 0xfff3dc, { count: 1, size: 0.16, speed: 1.2, up: 2, gravity: 3, life: 0.4 });
+        }
+        if (it.fry >= 1) {
+          it.state = 'fried';
+          this.refresh(it);
+          for (const e of this.ents) if (e.target === st) e.cooked++;
+          this.game.audio.play('rescue');
+          this.puffs.burst(new THREE.Vector3(st.x, st.surf + 0.3, st.z), 0xffd27a, { count: 10, size: 0.22, speed: 2, up: 2, gravity: 2, life: 0.7 });
+        }
+      }
+      st.glow.visible = frying;
+      if (frying) st.glow.scale.setScalar(1 + Math.sin(this.time * 12) * 0.05);
+      if (it?.mesh) it.mesh.position.y = st.surf + (frying ? Math.abs(Math.sin(this.time * 9)) * 0.03 : 0);
+    }
+    // Progress labels for boards, pans and pots.
     for (const st of this.stations) {
       let html = '';
-      if (st.type === 'board' && st.item && st.item.kind !== 'plate' && !st.item.chopped && st.item.chop > 0) {
+      if (st.type === 'board' && st.item && st.item.kind !== 'plate' && st.item.state === 'raw' && st.item.chop > 0) {
         html = this.barHtml(st.item.chop, '#3ddc97');
+      } else if (st.type === 'pan' && st.item) {
+        html = st.item.state === 'fried' ? `<span style="color:#3ddc97">${t('cook.ready')}</span>` : this.barHtml(st.item.fry, '#ff8c42');
       } else if (st.type === 'pot' && st.pot.count > 0) {
         const pot = st.pot;
         if (pot.ready) html = `<span style="color:#3ddc97">${t('cook.ready')}</span>`;
         else {
-          const dots = Array.from({ length: POT_NEED }, (_, i) => dot(i < pot.count ? ING[pot.kind].css : '#d8d2e6')).join(' ');
+          const dots = Array.from({ length: POT_NEED }, (_, i) => `<span style="display:inline-block;width:.85em;height:.85em;border-radius:50%;background:${i < pot.count ? ING[pot.kind].css : '#d8d2e6'};border:2px solid #fff;box-shadow:0 0 0 1px rgba(43,35,64,.25)"></span>`).join(' ');
           html = `<div style="display:flex;gap:3px;justify-content:center">${dots}</div>${pot.count >= POT_NEED ? this.barHtml(pot.cook, '#ffc93c') : ''}`;
         }
       }
@@ -1023,12 +1148,15 @@ export class CookScene extends MiniGame {
   hud() {
     const secs = Math.max(0, Math.ceil(this.timeLeft));
     const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+    const many = this.orders.length >= 4;
     const cards = [...this.orders].sort((a, b) => a.id - b.id).map((o) => {
+      const d = DISHES[o.dish];
       const k = clamp(o.time / o.total, 0, 1);
       const pct = Math.round(k * 25) * 4;
       const col = k > 0.5 ? '#3ddc97' : k > 0.25 ? '#ffc93c' : '#ff5d73';
-      return `<div class="pill" style="flex-direction:column;align-items:stretch;gap:3px;padding:5px 14px 7px;border:3px solid ${CUSTOMER_CSS[o.colorIndex]}">
-        <div style="display:flex;gap:6px;align-items:center;justify-content:center">${recipeIcons(o.recipe)}<b>${t(`cook.r.${o.recipe}`)}</b></div>
+      return `<div class="pill" style="flex-direction:column;align-items:stretch;gap:2px;padding:4px 12px 7px;border:3px solid ${CUSTOMER_CSS[o.colorIndex]};border-radius:22px">
+        <div style="display:flex;gap:6px;align-items:center;justify-content:center">${this.dishIcon(d, 2)}<b style="white-space:nowrap">${esc(t(`cook.d.${o.dish}`))}</b></div>
+        <div style="text-align:center;line-height:1">${this.recipeSteps(d, many ? 1.05 : 1.2)}</div>
         <div style="height:.5em;border-radius:.3em;background:#ece6f5;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col}"></div></div></div>`;
     }).join('');
     const n = this.stars();
@@ -1045,7 +1173,7 @@ export class CookScene extends MiniGame {
     for (const e of this.ents) { e.hl.visible = false; e.ring.visible = false; e.hint.style.display = 'none'; }
     for (const st of this.stations) if (st.label) st.label.style.display = 'none';
     const n = this.stars();
-    const work = (e) => e.served * 3 + e.chopped + e.potted;
+    const work = (e) => e.served * 3 + e.chopped + e.cooked;
     const ranked = [...this.ents].sort((a, b) => work(b) - work(a));
     const top = ranked.length ? work(ranked[0]) : 0;
     const [a, b, c] = this.thresholds;
@@ -1055,13 +1183,14 @@ export class CookScene extends MiniGame {
       subtitle: t('cook.sub', { coins: this.coins, n: this.servedCount, a, b, c }),
       rows: ranked.map((e) => ({
         css: e.p.css, name: e.p.name, value: t('cook.served', { n: e.served }),
-        detail: t('cook.detail', { c: e.chopped, k: e.potted }), crown: top > 0 && work(e) === top,
+        detail: t('cook.detail', { c: e.chopped, k: e.cooked }), crown: top > 0 && work(e) === top,
       })),
       stars: Math.max(1, n),
     });
   }
 
   update(dt) {
+    if (this.state === 'menu') { this.updateMenu(dt); this.updatePlayers(dt); return; }
     this.updatePlayers(dt);
     this.updateCustomers(dt);
     for (const f of this.floats) {

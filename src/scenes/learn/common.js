@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { Round } from '../party/common.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeTree, makeFlower, makeCloud, seeded } from '../../core/world.js';
-import { LEVELS, shuffle } from '../../core/edu.js';
+import { LEVELS, shuffle, nextSeq } from '../../core/edu.js';
 import { esc } from '../../core/ui.js';
 
 // Shared pieces for the Læringsmiks rounds: a fenced top-down field where every
@@ -244,7 +244,7 @@ export class FieldRound extends Round {
     mesh.position.set(spot.x, y, spot.z);
     mesh.scale.setScalar(0.01);
     this.group.add(mesh);
-    const tile = { value, mesh, w, d, y, x: spot.x, z: spot.z, hop: 0, phase: Math.random() * 6 };
+    const tile = { value, mesh, w, d, y, x: spot.x, z: spot.z, hop: 0, phase: Math.random() * 6, seq: nextSeq() };
     this.tiles.push(tile);
     return tile;
   }

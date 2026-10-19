@@ -79,7 +79,9 @@ export class PaintScene extends MiniGame {
     this.mudCount = 0;
     this.joinIndex = 0;
     const n = this.players.length;
-    const start = opts.grumbles === false ? 0 : typeof opts.grumbles === 'number' ? Math.max(0, Math.round(opts.grumbles)) : [2, 3, 4, 4, 5, 6][Math.min(6, Math.max(1, n)) - 1];
+    const start = opts.grumbles === false ? 0 : typeof opts.grumbles === 'number' ? Math.max(0, Math.round(opts.grumbles)) : [2, 3, 4, 5, 6, 7][Math.min(6, Math.max(1, n)) - 1];
+    // More players: grumbles are a bit quicker and shake off a bonk sooner.
+    this.dizzyTime = DIZZY_TIME - 0.2 * Math.max(0, n - 1);
     this.grumbleSpeed = 2.3 + 0.12 * (n - 1);
     for (let i = 0; i < start; i++) this.spawnGrumble((i + 0.5) / start, false);
 
@@ -359,7 +361,7 @@ export class PaintScene extends MiniGame {
   /** Bonk! The grumble gets dizzy and drops its brush for a few seconds. */
   bonk(g, e, nx, nz) {
     if (g.dizzy > 0.5) return;
-    g.dizzy = DIZZY_TIME;
+    g.dizzy = this.dizzyTime;
     g.vx = nx * 7; g.vz = nz * 7;
     g.stars.visible = true;
     // The brush falls to the floor where it is.
