@@ -1352,6 +1352,9 @@ export class SplashScene extends MiniGame {
         // Slide up/down along a wall (also frees a bean that starts a hop tucked into a slope).
         if (!this.hitsSlim(u.x, ny) || (u.vy > 0 && this.hitsSlim(u.x, u.y))) { u.y = ny; u.vx = 0; continue; }
         if (u.vy <= 0 && this.land(u, true)) return;
+        // Rising under a little overhang: lean back out from under the lip and keep going up.
+        const away = u.x - Math.sign(u.airWant || u.facing) * 0.07;
+        if (u.vy > 0 && !this.hitsSlim(away, ny)) { u.x = away; u.y = ny; continue; }
         u.vy = u.vy > 0 ? 0 : u.vy * 0.3;
         if (!this.hitsSlim(nx, u.y)) { u.x = nx; continue; }
         u.vx = 0;
@@ -1551,7 +1554,7 @@ export class SplashScene extends MiniGame {
     if (this.halo.visible) {
       this.halo.position.set(u.x, u.y + u.visY + 0.6, -0.35);
       this.halo.scale.setScalar(1 + Math.sin(this.time * 4) * 0.06);
-      this.haloMat.opacity = 0.35 + Math.sin(this.time * 4) * 0.1;
+      this.haloMat.opacity = 0.5 + Math.sin(this.time * 4) * 0.1;
     }
     const tool = u ? TOOLS[u.ctrl.tool] : null;
     // Dotted preview for the first part of the throw (gravity only, the wind is up to you).

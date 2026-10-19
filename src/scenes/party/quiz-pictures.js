@@ -368,8 +368,9 @@ function cheese() {
   for (const [a, r, s] of [[0.3, 0.25, 0.06], [0.8, 0.42, 0.05], [0.55, 0.15, 0.04], [1.0, 0.25, 0.045]]) {
     p(c, 'sph', 0xe0a820, [Math.sin(a) * r, 0.42, Math.cos(a) * r], [s, 0.012, s]);
   }
-  c.rotation.y = Math.PI - 0.65;
-  c.position.set(0, 0, -0.05);
+  // Point the tip at the card and the round rind at the camera.
+  c.rotation.y = -Math.PI / 4.8;
+  c.position.set(0, 0, -0.3);
   g.add(c);
   return g;
 }
@@ -425,14 +426,14 @@ function star(color = COLORS.gold) {
   const g = group();
   const s = makeStar(color);
   s.position.y = 0.5;
-  s.scale.setScalar(1.6);
+  s.scale.setScalar(1.2);
   g.add(s);
   return g;
 }
 
 function heart(color = 0xff5d9e) {
   const g = group();
-  p(g, 'heart', color, [0, 0.48, 0], 1.25);
+  p(g, 'heart', color, [0, 0.45, 0], 0.95);
   return g;
 }
 
@@ -588,7 +589,7 @@ function sized(make, biggest) {
 }
 
 function colored(make, name) {
-  return () => ({ prompt: [paintBlob(COLORS7[name])], answers: [make(COLORS7[name]), ...otherColors(name).map(make)] });
+  return () => ({ prompt: [paintBlob(COLORS7[name])], answers: [make(COLORS7[name]), ...otherColors(name).map((c) => make(c))] });
 }
 
 function sound(name) {

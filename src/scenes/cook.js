@@ -180,22 +180,29 @@ export class CookScene extends MiniGame {
   }
 
   /** The steps for one part, as pictures: raw ingredient ▸ board ▸ pan. */
+  /** Station picture on a soft chip so pale props (the board) still stand out. */
+  stepIcon(key, em) {
+    return this.icon(key, em * 0.85, 'background:#ece4f7;border-radius:30%');
+  }
+
   partSteps(part, em) {
     const [k, s] = part.split(':');
     let html = this.icon(`part:${k}:raw`, em);
-    if (s !== 'raw' && ING[k].chop && !(s === 'fried' && ING[k].fry === 'raw')) html += arrow + this.icon('board', em * 0.8);
-    if (s === 'fried') html += arrow + this.icon('pan', em * 0.8);
+    if (s !== 'raw' && ING[k].chop && !(s === 'fried' && ING[k].fry === 'raw')) html += arrow + this.stepIcon('board', em);
+    if (s === 'fried') html += arrow + this.stepIcon('pan', em);
     return `<span style="white-space:nowrap">${html}</span>`;
   }
 
   recipeSteps(d, em = 1.6) {
-    if (d.soup) return `<span style="white-space:nowrap"><b style="font-size:.85em">3×</b>${this.icon(`part:${d.soup}:raw`, em)}${arrow}${this.icon('board', em * 0.8)}${arrow}${this.icon('pot', em * 0.8)}</span>`;
+    if (d.soup) return `<span style="white-space:nowrap"><b style="font-size:.85em">3×</b>${this.icon(`part:${d.soup}:raw`, em)}${arrow}${this.stepIcon('board', em)}${arrow}${this.stepIcon('pot', em)}</span>`;
     return d.parts.map((p) => this.partSteps(p, em)).join('<span style="opacity:.5;margin:0 3px">+</span>');
   }
 
+  /** Picture of a finished dish on a soft round backdrop (white plates vanish on white cards). */
   dishIcon(d, em) {
-    if (d.soup) return this.icon(`soup:${d.soup}`, em);
-    return this.icon(`plate:${d.parts.map((p) => p.replace(':', '.')).join(',')}`, em);
+    const bg = 'background:radial-gradient(circle,#e6dcf7 0 62%,transparent 64%);border-radius:50%';
+    if (d.soup) return this.icon(`soup:${d.soup}`, em, bg);
+    return this.icon(`plate:${d.parts.map((p) => p.replace(':', '.')).join(',')}`, em, bg);
   }
 
   showMenu() {
@@ -212,10 +219,10 @@ export class CookScene extends MiniGame {
       </div>`).join('');
     const crates = this.ings.map((k) => `<span style="white-space:nowrap;margin:0 6px">${this.icon(`part:${k}:raw`, 2)} ${esc(t(`cook.i.${k}`))}</span>`).join('');
     const legend = [
-      this.needs.has('board') && `${this.icon('board', 1.6)} ${esc(t('cook.l.chop'))}`,
-      this.needs.has('pan') && `${this.icon('pan', 1.6)} ${esc(t('cook.l.fry'))}`,
-      this.needs.has('pot') && `${this.icon('pot', 1.6)} ${esc(t('cook.l.pot'))}`,
-      `${this.icon('plate:', 1.6)} ${esc(t('cook.l.serve'))}`,
+      this.needs.has('board') && `${this.stepIcon('board', 1.9)} ${esc(t('cook.l.chop'))}`,
+      this.needs.has('pan') && `${this.stepIcon('pan', 1.9)} ${esc(t('cook.l.fry'))}`,
+      this.needs.has('pot') && `${this.stepIcon('pot', 1.9)} ${esc(t('cook.l.pot'))}`,
+      `${this.icon('plate:', 1.6, 'background:radial-gradient(circle,#e6dcf7 0 62%,transparent 64%)')} ${esc(t('cook.l.serve'))}`,
     ].filter(Boolean).map((s) => `<span style="white-space:nowrap;margin:0 8px">${s}</span>`).join('');
     this.menuStatic = `
       <div class="results-title">${esc(t('cook.menu'))}</div>
@@ -1148,7 +1155,7 @@ export class CookScene extends MiniGame {
   hud() {
     const secs = Math.max(0, Math.ceil(this.timeLeft));
     const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-    const many = this.orders.length >= 4;
+    const em = [1.45, 1.45, 1.4, 1.25, 1.05][this.orders.length] || 1.05; // smaller icons when the bar fills up
     const cards = [...this.orders].sort((a, b) => a.id - b.id).map((o) => {
       const d = DISHES[o.dish];
       const k = clamp(o.time / o.total, 0, 1);
@@ -1156,7 +1163,7 @@ export class CookScene extends MiniGame {
       const col = k > 0.5 ? '#3ddc97' : k > 0.25 ? '#ffc93c' : '#ff5d73';
       return `<div class="pill" style="flex-direction:column;align-items:stretch;gap:2px;padding:4px 12px 7px;border:3px solid ${CUSTOMER_CSS[o.colorIndex]};border-radius:22px">
         <div style="display:flex;gap:6px;align-items:center;justify-content:center">${this.dishIcon(d, 2)}<b style="white-space:nowrap">${esc(t(`cook.d.${o.dish}`))}</b></div>
-        <div style="text-align:center;line-height:1">${this.recipeSteps(d, many ? 1.05 : 1.2)}</div>
+        <div style="text-align:center;line-height:1">${this.recipeSteps(d, em)}</div>
         <div style="height:.5em;border-radius:.3em;background:#ece6f5;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col}"></div></div></div>`;
     }).join('');
     const n = this.stars();

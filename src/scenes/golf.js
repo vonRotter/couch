@@ -215,7 +215,7 @@ export class GolfScene extends MiniGame {
   // ---------- building ----------
 
   buildHole(def, index) {
-    const H = { ...def, index, bumpers: def.bumpers || [], movers: def.movers || [], path: def.path || [] };
+    const H = { ...def, index, bumpers: def.bumpers || [], movers: def.movers || [], path: def.path || [], faders: [] };
     H.origin = new THREE.Vector3(index * HOLE_SPACING, 0, 0);
     H.tiles = def.tiles.map((tl) => ({ ...tl, h0: tl.h0 ?? 0, h1: tl.h1 ?? tl.h0 ?? 0 }));
     const group = new THREE.Group();
@@ -355,8 +355,8 @@ export class GolfScene extends MiniGame {
     if (H.windmill) this.buildWindmill(H, group);
     if (H.loop) this.buildLoop(H, group, batch);
 
-    // Decorations on little floating cookie islands.
-    for (const [type, x, z] of def.decor || []) this.buildDecor(group, type, x, z, def.cake, rand);
+    // Decorations on little floating cookie islands (they fade too if they ever hide a ball).
+    for (const [type, x, z] of def.decor || []) this.makeFader(H, this.buildDecor(group, type, x, z, def.cake, rand));
 
     batch.build(group);
 
@@ -399,6 +399,28 @@ export class GolfScene extends MiniGame {
     }
     mill.add(hub);
     group.add(mill);
+    // The mill hides the far half of the hole: it fades out whenever a ball or bean is behind it.
+    this.makeFader(H, mill, W.len * 0.7);
+  }
+
+  /**
+   * Lets a tall object fade out while it stands between the camera and a ball or bean.
+   * Uses its own cloned materials, so the shared toon materials are never touched.
+   */
+  makeFader(H, obj, pad = 0.1) {
+    const mats = [];
+    obj.traverse((o) => {
+      if (!o.isMesh) return;
+      const m = o.material.clone();
+      m.userData = {};
+      m.transparent = true;
+      o.material = m;
+      mats.push(m);
+    });
+    obj.updateWorldMatrix(true, true);
+    const box = new THREE.Box3().setFromObject(obj);
+    box.min.x -= pad; box.max.x += pad;
+    H.faders.push({ mats, box, opacity: 1 });
   }
 
   buildLoop(H, group, batch) {
@@ -406,12 +428,15 @@ export class GolfScene extends MiniGame {
     const h = this.groundAtHole(H, L.x, L.z);
     const cy = h + BALL_R + L.r;
     const tor = sharedGeo(`golfLoop${L.r}`, () => new THREE.TorusGeometry(L.r + BALL_R + 0.03, 0.07, 8, 40));
+    const rails = new THREE.Group();
     for (const s of [-1, 1]) {
       const rail = new THREE.Mesh(tor, toon(0xff8c42));
       rail.position.set(L.x, cy, L.z + s * 0.36);
       rail.castShadow = true;
-      group.add(rail);
+      rails.add(rail);
     }
+    group.add(rails);
+    this.makeFader(H, rails);
     // Cross ties around the loop and two posts.
     for (let k = 1; k < 16; k++) {
       const a = (k / 16) * Math.PI * 2;
@@ -466,6 +491,7 @@ export class GolfScene extends MiniGame {
       g.add(tr);
     }
     group.add(g);
+    return g;
   }
 
   buildSky() {
@@ -499,6 +525,14 @@ export class GolfScene extends MiniGame {
     const outline = new THREE.Mesh(sharedGeo('golfBall', () => null), this.outlineMat);
     outline.scale.setScalar(1.16);
     mesh.add(outline);
+    // X-ray ghost: only drawn where something stands in front of the ball (GreaterDepth),
+    // so a ball behind a wall, a tree or the windmill still shows as a bright see-through dot.
+    const ghost = new THREE.Mesh(sharedGeo('golfBall', () => null), new THREE.MeshBasicMaterial({
+      color: p.color, transparent: true, opacity: 0.75, depthWrite: false, depthFunc: THREE.GreaterDepth,
+    }));
+    ghost.scale.setScalar(1.35);
+    ghost.renderOrder = 20;
+    mesh.add(ghost);
     this.scene.add(mesh);
 
     const ring = new THREE.Mesh(sharedGeo('golfReady', () => new THREE.RingGeometry(0.3, 0.4, 24)), basic(p.color));
@@ -1190,8 +1224,37 @@ export class GolfScene extends MiniGame {
     this.camera.lookAt(this.camLook);
   }
 
+  /** Fade every fader that stands between the camera and a ball, bean or the cup. */
+  updateFaders(dt) {
+    const H = this.hole;
+    if (!H?.faders.length) return;
+    const cam = this.camera.position;
+    const pts = [this.worldPos(H.cup[0], H.cupH + 0.3, H.cup[1])];
+    for (const e of this.ents) {
+      const b = e.ball;
+      if (b.state !== 'in') pts.push(this.worldPos(b.x, b.y + BALL_R, b.z));
+      pts.push(e.ch.group.position.clone().add(new THREE.Vector3(0, 0.45, 0)));
+    }
+    const ray = this._ray || (this._ray = new THREE.Ray());
+    const hit = this._hit || (this._hit = new THREE.Vector3());
+    for (const f of H.faders) {
+      let hide = false;
+      for (const p of pts) {
+        ray.origin.copy(cam);
+        ray.direction.copy(p).sub(cam).normalize();
+        if (ray.intersectBox(f.box, hit) && hit.distanceTo(cam) < p.distanceTo(cam) - 0.05) { hide = true; break; }
+      }
+      const goal = hide ? 0.22 : 1;
+      if (Math.abs(goal - f.opacity) < 0.002) continue;
+      f.opacity += (goal - f.opacity) * Math.min(1, dt * 10);
+      if (Math.abs(goal - f.opacity) < 0.01) f.opacity = goal;
+      for (const m of f.mats) { m.opacity = f.opacity; m.depthWrite = f.opacity > 0.98; }
+    }
+  }
+
   updateVisuals(dt) {
     const H = this.hole;
+    this.updateFaders(dt);
     const showAim = this.state !== 'results' && (this.phase === 'play' || this.phase === 'intro');
     this.ents.forEach((e, idx) => {
       const b = e.ball;

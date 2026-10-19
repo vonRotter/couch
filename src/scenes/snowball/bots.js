@@ -1,4 +1,4 @@
-import { HX, HZ } from './maps.js';
+import { HZ } from './maps.js';
 
 // Helper bots for Snowball Fort. They understand each mode at a basic level:
 //   Snow Targets      stand in their half, lob at the other team's targets (gold ones first), wall up
@@ -236,7 +236,7 @@ function planFlag(S, e, s, set) {
     if (theirs.state === 'carried') {
       // Escort our carrier: walk a little ahead of them toward home.
       const c = theirs.carrier;
-      set(c.x - s * -1.5, clamp(c.z + (e.slot ? 1.4 : -1.4), -HZ + 1, HZ - 1), 0.8);
+      set(c.x + s * 1.5, clamp(c.z + (e.slot ? 1.4 : -1.4), -HZ + 1, HZ - 1), 0.8);
     } else {
       set(theirs.x, theirs.z, 0.2);
     }
@@ -259,4 +259,3 @@ function planFlag(S, e, s, set) {
   }
 }
 
-export const BOT_LIMITS = { HX };

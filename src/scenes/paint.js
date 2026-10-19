@@ -15,7 +15,7 @@ addStrings({
     'paint.grumbles': 'Grumbles',
     'paint.subMud': 'The floor is {n}% painted · {m}% mud',
     'paint.muddy': 'The grumbles made a mess!',
-    'paint.bonks': '{n} bonks',
+    'paint.bonks': 'Bonks: {n}',
   },
   no: {
     'paint.introG': 'Gå for å male · [A]: spurt · [B]: malingsbombe · Spurt inn i grumlingene så de mister gjørmepenselen, og mal over gjørma!',
@@ -24,7 +24,7 @@ addStrings({
     'paint.grumbles': 'Grumlinger',
     'paint.subMud': 'Gulvet er {n} % malt · {m} % gjørme',
     'paint.muddy': 'Grumlingene grisa det til!',
-    'paint.bonks': '{n} dult',
+    'paint.bonks': 'Dult: {n}',
   },
 });
 
@@ -41,8 +41,8 @@ const ROUND_TIME = 60;
 const MUD = -2; // owner value for mud cells (-1 = clean floor)
 const MUD_RGB = [139, 118, 98];
 const MUD_CSS = '#8b7662';
-const GRUMBLE_COLOR = 0x8f8577;
-const GR = 0.45; // grumble radius
+const GRUMBLE_COLOR = 0x6f6680;
+const GR = 0.56; // grumble radius (model scaled up so they read on the big floor)
 const MUD_R = 0.62; // mud brush radius
 const DIZZY_TIME = 3.5;
 const JOIN_AT = [40, 20]; // timeLeft when an extra grumble joins
@@ -332,6 +332,7 @@ export class PaintScene extends MiniGame {
     const x = THREE.MathUtils.clamp(Math.cos(a) * HW, -HW + 1, HW - 1);
     const z = THREE.MathUtils.clamp(Math.sin(a) * HD, -HD + 1, HD - 1);
     mesh.position.set(x, 0, z);
+    mesh.scale.setScalar(1.25);
     mesh.rotation.y = Math.atan2(-x, -z);
     this.scene.add(mesh);
     const g = { mesh, brush, stars, x, z, vx: 0, vz: 0, tx: undefined, tz: undefined, retarget: 0, dizzy: 0, yaw: mesh.rotation.y, phase: Math.random() * 6 };

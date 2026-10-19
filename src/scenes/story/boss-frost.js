@@ -20,7 +20,7 @@ import { BossScene, volley } from './boss-common.js';
 //   Phase 3 (two thirds): a snowball storm, the helpers throw as well.
 // Scaling with n players: goal 8 + 3n bells (stages.js), throws per volley ceil(n/2) (+1 in
 // phase 3), helpers per helperCount() below (at least one bell is always open), and the guards
-// walk a bit faster with more beans to watch.
+// react faster and walk faster with more beans to watch (solo gets a slower King).
 
 addStrings({
   en: {
@@ -388,7 +388,8 @@ export class BossFrostScene extends BossScene {
       if (playing) {
         gd.think -= dt;
         if (gd.think <= 0) {
-          gd.think = (king ? REACT[this.phase] : REACT[this.phase] + 0.4) * (0.85 + Math.random() * 0.3);
+          // Slower to react when there are few beans to watch (solo is fair), sharp with a crowd.
+          gd.think = (REACT[this.phase] + 0.9 / this.n - 0.15 + (king ? 0 : 0.4)) * (0.85 + Math.random() * 0.3);
           const taken = new Set(this.guards.filter((o) => o !== gd).map((o) => o.bell));
           let best = gd.bell, bw = -1;
           for (const b of this.bells) {
@@ -399,7 +400,7 @@ export class BossFrostScene extends BossScene {
           }
           gd.bell = best;
         }
-        const speed = (king ? WALK[this.phase] : WALK[this.phase] - 1.2) + this.n * 0.15;
+        const speed = (king ? WALK[this.phase] : WALK[this.phase] - 1.2) - 0.8 + this.n * 0.3;
         const dx = BELL_XS[gd.bell] - gd.x;
         gd.vx = THREE.MathUtils.clamp(dx * 5, -speed, speed);
       } else {

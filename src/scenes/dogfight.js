@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { MiniGame } from '../core/minigame.js';
-import { COLORS, PLAYER_COLORS } from '../core/palette.js';
+import { COLORS, PLAYER_COLORS, toon } from '../core/palette.js';
 import { addLights, skyTexture } from '../core/world.js';
 import { t, addStrings } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 import { VotePicker, voteLength } from '../core/vote.js';
 import { makePlane, makeBlimp, makeChute, makePellet, addSplat, buildWorld, tint, XW, SEA_X, RUNWAY } from './dogfight/models.js';
-import { FLY, makeFlight, flightStep, botControl, noseSpeed, pitchOf, clamp } from './dogfight/flight.js';
+import { FLY, makeFlight, flightStep, botControl, pitchOf, clamp } from './dogfight/flight.js';
 
 // Paint Pilots: side-view biplane dogfights (Triplane Turmoil / Luftrausers spirit) on one shared
 // screen. The stick points the nose, [A] boosts, [B] fires paint pellets, [C] does a barrel roll.
@@ -113,6 +113,9 @@ const ptsText = (n) => (n === 1 ? t('dogfight.pt1') : t('dogfight.pts', { n }));
 export class DogfightScene extends MiniGame {
   constructor(game, opts = {}) {
     super(game, opts);
+    this.camera.fov = 26; // narrow lens: a flatter, more side-on look
+    this.camera.far = 600;
+    this.camera.updateProjectionMatrix();
     this.scene.background = skyTexture('#5fbfff', '#fff1d6');
     addLights(this.scene, { size: 60, target: new THREE.Vector3(0, 12, 0), dir: new THREE.Vector3(-0.35, 1, 0.7) });
     this.world = buildWorld(this.scene);
@@ -272,15 +275,7 @@ export class DogfightScene extends MiniGame {
   recolor(e) {
     if (e.kind !== 'player') return;
     const wing = this.mode === 'teams' ? TEAM_COLORS[e.team] : tint(e.color, 0.45);
-    const geo = e.m.wings[0].geometry;
-    for (const w of e.m.wings) w.material = (this.recolorMat ??= new Map()).get(wing) || this.wingMat(wing);
-    void geo;
-  }
-
-  wingMat(hex) {
-    const mat = e2m(hex);
-    this.recolorMat.set(hex, mat);
-    return mat;
+    for (const w of e.m.wings) w.material = toon(wing);
   }
 
   /** Lines everyone up on the runway. Teams take off away from each other. */
@@ -295,7 +290,7 @@ export class DogfightScene extends MiniGame {
     const place = (e, x, dir) => {
       e.fl = makeFlight(x, FLY.groundY, dir, 0, true);
       if (e.skill) e.fl.turnMul = e.skill.turn;
-      e.roll = dir > 0 ? 0.35 : Math.PI - 0.35;
+      e.roll = dir > 0 ? 0.25 : Math.PI - 0.25;
       e.state = 'fly';
       this.updateModel(e, 0);
     };
@@ -333,7 +328,7 @@ export class DogfightScene extends MiniGame {
     const e = this.makeEnt({ kind: 'enemy', team: 1, type });
     e.fl = makeFlight(side * (XW - 1), 18 + Math.random() * 14, -side, 15);
     e.fl.turnMul = e.skill.turn;
-    e.roll = -side > 0 ? 0.35 : Math.PI - 0.35;
+    e.roll = -side > 0 ? 0.25 : Math.PI - 0.25;
     e.invuln = 0.8;
     this.ents.push(e);
   }
@@ -349,6 +344,8 @@ export class DogfightScene extends MiniGame {
     const b = {
       m, boss, size, hp, maxHp: hp, x: side * (XW + 4 * size), y, baseY: y, dir: -side,
       speed: boss ? 2.2 : 3, fireT: 2 + Math.random() * 2, t: Math.random() * 6, flash: 0, splats: 0,
+      // Blimps own their goo balls, so they keep the same score fields as a plane.
+      team: 1, color: GOO, css: '#8a45e0', points: 0, stat: { hits: 0, pops: 0, chutes: 0, crashes: 0 },
     };
     b.tag = this.game.ui.label('label player-tag');
     b.tagHtml = '';
@@ -653,7 +650,7 @@ export class DogfightScene extends MiniGame {
     const dir = best.x < 0 ? 1 : best.x > 0 ? -1 : (Math.random() < 0.5 ? 1 : -1);
     e.fl = makeFlight(best.x, best.y, dir, 15);
     if (e.skill) e.fl.turnMul = e.skill.turn;
-    e.roll = dir > 0 ? 0.35 : Math.PI - 0.35;
+    e.roll = dir > 0 ? 0.25 : Math.PI - 0.25;
     e.state = 'fly';
     e.hits = 0; e.heat = 0; e.jam = false;
     e.invuln = INVULN;
@@ -868,7 +865,7 @@ export class DogfightScene extends MiniGame {
     const f = e.fl;
     const m = e.m;
     // Show the top of the wings a little, flip upright when flying left, spin in a barrel roll.
-    const target = f.facing > 0 ? 0.35 : Math.PI - 0.35;
+    const target = f.facing > 0 ? 0.25 : Math.PI - 0.25;
     e.roll += clamp(target - e.roll, -6 * dt, 6 * dt);
     if (dt === 0) e.roll = target;
     let r = e.roll;
@@ -955,7 +952,7 @@ export class DogfightScene extends MiniGame {
     this.cam.x += (cx - this.cam.x) * k;
     this.cam.y += (cy - this.cam.y) * k;
     this.cam.d += (d - this.cam.d) * k;
-    this.camera.position.set(this.cam.x, this.cam.y + 2.5, this.cam.d);
+    this.camera.position.set(this.cam.x, this.cam.y + 1.2, this.cam.d);
     this.camera.lookAt(this.cam.x, this.cam.y, 0);
     this.confettiOrigin = new THREE.Vector3(this.cam.x, this.cam.y + 2, 0);
   }
@@ -1076,18 +1073,4 @@ export class DogfightScene extends MiniGame {
       return e ? `${e.points}` : '';
     });
   }
-}
-
-/** Fresh toon material for recolored wings (shared toon() materials are never mutated). */
-function e2m(hex) {
-  return new THREE.MeshToonMaterial({ color: hex, gradientMap: GRADIENT() });
-}
-let gradient = null;
-function GRADIENT() {
-  if (!gradient) gradient = toonGradient();
-  return gradient;
-}
-import { toon as toonMat } from '../core/palette.js';
-function toonGradient() {
-  return toonMat(0xffffff).gradientMap;
 }

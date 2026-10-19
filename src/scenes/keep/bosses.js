@@ -296,7 +296,7 @@ export class TeddyBoss extends Boss {
         const a = Math.random() * Math.PI * 2;
         const x = clamp(e.x + Math.cos(a) * off * Math.random(), s.arena.x0 + 1, s.arena.x1 - 1);
         const z = clamp(e.z + Math.sin(a) * off * Math.random(), s.arena.z0 + 1, s.arena.z1 - 1);
-        s.later(i * 0.18, () => { if (this.awake) H.add({ shape: 'circle', x, z, r: 1.35, warn: 1.3, drop: true, dropColor: [COLORS.candyPink, COLORS.candyBlue, COLORS.candyYellow][i % 3], yawn: 0.26 }); });
+        s.later(i * 0.18, () => { if (this.state === 'fight') H.add({ shape: 'circle', x, z, r: 1.35, warn: 1.3, drop: true, dropColor: [COLORS.candyPink, COLORS.candyBlue, COLORS.candyYellow][i % 3], yawn: 0.26 }); });
       }
       s.game.audio.play('whoosh');
     } else if (name === 'summon') {
@@ -489,7 +489,7 @@ export class SheepBoss extends Boss {
         const near = i < L.length;
         const a = Math.random() * Math.PI * 2, d = near ? 0 : 1.5 + Math.random() * 5;
         const x = clamp(e.x + Math.cos(a) * d, s.arena.x0 + 1, s.arena.x1 - 1), z = clamp(e.z + Math.sin(a) * d, s.arena.z0 + 1, s.arena.z1 - 1);
-        s.later(i * 0.14, () => { if (this.awake) H.add({ shape: 'circle', x, z, r: 1.4, warn: 1.35, drop: true, dropColor: [COLORS.candyLilac, COLORS.candyBlue, COLORS.candyPink][i % 3], yawn: 0.26 }); });
+        s.later(i * 0.14, () => { if (this.state === 'fight') H.add({ shape: 'circle', x, z, r: 1.4, warn: 1.35, drop: true, dropColor: [COLORS.candyLilac, COLORS.candyBlue, COLORS.candyPink][i % 3], yawn: 0.26 }); });
       }
       dur = 1.2 + n * 0.14 + 0.8;
       s.game.audio.play('whoosh');
@@ -514,7 +514,7 @@ export class SheepBoss extends Boss {
       dur = 4.2;
       if (P >= 2) {
         const gaps2 = gaps.map((g) => g + Math.PI / gapsN);
-        s.later(1.6, () => { if (this.awake) H.add({ shape: 'wave', x: this.x, z: this.z, gaps: gaps2, gapHalf: 0.4, speed: 6.5, rMax: 20, warn: 1.4, yawn: 0.3 }); });
+        s.later(1.6, () => { if (this.state === 'fight') H.add({ shape: 'wave', x: this.x, z: this.z, gaps: gaps2, gapHalf: 0.4, speed: 6.5, rMax: 20, warn: 1.4, yawn: 0.3 }); });
         dur = 5.6;
       }
     } else if (name === 'beam') {
@@ -524,7 +524,7 @@ export class SheepBoss extends Boss {
       const yaw = Math.atan2(e.x - this.x, e.z - this.z) + Math.PI * 0.6;
       const spin = (Math.random() < 0.5 ? -1 : 1) * (0.75 + 0.15 * P);
       H.add({ shape: 'beam', follow: () => ({ x: this.x, z: this.z }), yaw, spin, len: 15, width: 1.3, count, warn: 1.5, life: 4.2, yawn: 0.28 });
-      if (P >= 2) this.s.later(1.2, () => { if (this.awake) this.rainLight(); });
+      if (P >= 2) this.s.later(1.2, () => { if (this.state === 'fight') this.rainLight(); });
       dur = 6;
       this.act.still = true;
     } else if (name === 'summon') {

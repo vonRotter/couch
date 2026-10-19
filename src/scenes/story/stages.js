@@ -127,7 +127,7 @@ const BOSS_FAST = 60;
 /** Boss goal counts by player count (shared with the boss scenes). */
 export const BOSS_GOALS = [
   (n) => 6 + 2 * n, // meadow: head bounces
-  (n) => 8 + 3 * n, // frost: bells rung
+  (n) => 6 + 4 * n, // frost: bells rung (10, 14, 18, 22, 26, 30)
   (n) => 6 + 3 * n, // castle: cakes eaten
   (n) => 10 + 3 * n, // space: rings
 ];

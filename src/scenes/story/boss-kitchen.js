@@ -3,20 +3,32 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { addLights, skyTexture } from '../../core/world.js';
 import { t, addStrings } from '../../core/i18n.js';
-import { BossScene } from './boss-common.js';
+import { makeGrumble } from '../../core/critters.js';
+import { BossScene, volley } from './boss-common.js';
 
 // Castle Kitchen boss: the hungry Grumble King sits at his table and thinks about cake.
 // Walk into a cake stand to pick up that cake, then walk to his table to serve it.
 // The right cake: munch munch! The wrong one: he shakes his head and you keep it.
+//
+// Opposition (harmless, telegraphed): he flings wobbly jelly at the beans, mostly at the ones
+// carrying cake. A purple ring shows where it lands; a hit makes you slip and drop your cake.
+// Phase 2 (a third of the goal): grumble waiters march back and forth across the kitchen;
+// bumping into one also makes you slip. Phase 3: more waiters and more jelly.
+// Scaling with n players: goal 6 + 3n cakes (stages.js), wishes at once 1/2/2/3 (more beans can
+// work in parallel), jelly per volley ceil(n/2) (+1 in phase 3), waiters ceil(n/2) (+1 in phase 3).
 
 addStrings({
   en: {
-    'bossk.hint': 'Walk into a cake stand to grab a cake · bring him the one in his thought bubble',
+    'bossk.hint': 'Walk into a cake stand to grab a cake · bring him the one in his thought bubble · dodge the jelly!',
+    'bossk.p1': 'His waiters are coming! Don\'t bump into them!',
+    'bossk.p2': 'Jelly time! Watch the purple rings!',
     'bossk.no': 'Not that one!', 'bossk.yum': 'Yum!',
     'bossk.c0': 'strawberry', 'bossk.c1': 'chocolate', 'bossk.c2': 'lemon', 'bossk.c3': 'blueberry',
   },
   no: {
-    'bossk.hint': 'Gå inn i et kakefat for å ta en kake · kom med den han tenker på',
+    'bossk.hint': 'Gå inn i et kakefat for å ta en kake · kom med den han tenker på · unngå geléen!',
+    'bossk.p1': 'Kelnerne hans kommer! Ikke dult borti dem!',
+    'bossk.p2': 'Gelétid! Se etter de lilla ringene!',
     'bossk.no': 'Ikke den!', 'bossk.yum': 'Nam!',
     'bossk.c0': 'jordbær', 'bossk.c1': 'sjokolade', 'bossk.c2': 'sitron', 'bossk.c3': 'blåbær',
   },
@@ -34,6 +46,10 @@ const CAKES = [
 ];
 const STAND_XS = [-7.5, -2.6, 2.6, 7.5];
 const STAND_Z = 4.4;
+// Per phase: seconds between jelly throws and how long a throw is in the air.
+const JELLY_GAP = [2.8, 2.3, 1.9];
+const JELLY_TIME = [1.3, 1.15, 1.0];
+const WAITER_LANES = [1.0, 2.6, 0.2, 3.3]; // z of each waiter's path across the kitchen
 
 /** A small layered cake (about 0.7 wide). */
 function makeCake(type, scale = 1) {
@@ -80,6 +96,10 @@ export class BossKitchenScene extends BossScene {
     this.sayTag = this.game.ui.label('label');
     this.sayTag.style.display = 'none';
     this.sayT = 0;
+    this.throwT = 2.5;
+    this.windup = 0;
+    this.waiters = [];
+    this.helpers = this.waiters; // (test bots look for scene.helpers)
     this.start('party');
   }
 
@@ -271,7 +291,108 @@ export class BossKitchenScene extends BossScene {
     e.serveCd = 0.6;
   }
 
+  onPhase(p) {
+    const want = Math.min(WAITER_LANES.length, Math.ceil(this.n / 2) + (p >= 2 ? 1 : 0));
+    while (this.waiters.length < want) this.addWaiter();
+    this.game.audio.play(p === 1 ? 'trap' : 'whoosh');
+    this.game.ui.toast(t(`bossk.p${p}`), 2600);
+  }
+
+  /** A grumble waiter with a tray, marching left and right along one lane. */
+  addWaiter() {
+    const i = this.waiters.length;
+    const g = new THREE.Group();
+    const body = makeGrumble(0x4cc9f0);
+    body.scale.setScalar(1.25);
+    g.add(body);
+    const tray = new THREE.Mesh(sharedGeo('bkTray', () => new THREE.CylinderGeometry(0.45, 0.45, 0.06, 18)), toon(0xd8dbe8));
+    tray.position.set(0, 1.3, 0);
+    g.add(tray);
+    const dome = new THREE.Mesh(sharedGeo('bkCloche', () => new THREE.SphereGeometry(0.3, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), toon(0xd8dbe8));
+    dome.position.set(0, 1.33, 0);
+    g.add(dome);
+    const dir = i % 2 ? -1 : 1;
+    const w = { g, x: -dir * (HW + 1.5), z: WAITER_LANES[i], dir, pause: 0, bumpCd: 0 };
+    g.position.set(w.x, 0, w.z);
+    this.scene.add(g);
+    this.waiters.push(w);
+  }
+
+  updateWaiters(dt) {
+    const playing = this.state === 'play' && !this.finished;
+    const speed = 2.6 + this.phase * 0.4;
+    for (const w of this.waiters) {
+      w.bumpCd -= dt;
+      if (playing) {
+        if (w.pause > 0) w.pause -= dt;
+        else {
+          w.x += w.dir * speed * dt;
+          // Turn around at the walls, with a little pause to show where they'll go next.
+          if (Math.abs(w.x) > HW - 0.6 && Math.sign(w.x) === w.dir) { w.dir = -w.dir; w.pause = 0.6; }
+        }
+      }
+      const moving = playing && w.pause <= 0;
+      w.g.position.set(w.x, moving ? Math.abs(Math.sin(this.time * 11 + w.z)) * 0.1 : 0, w.z);
+      w.g.rotation.y = this.finished ? w.g.rotation.y + dt * 4 : w.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+      if (!playing) continue;
+      for (const e of this.ents) {
+        if (w.bumpCd <= 0 && Math.hypot(e.x - w.x, e.z - w.z) < 0.95 && this.slip(e, w.x, w.z, 6)) w.bumpCd = 0.8;
+      }
+    }
+  }
+
+  /** Jelly goes mostly to beans carrying cake (they have something to drop). */
+  pickTargets(count) {
+    const pool = [...this.ents].filter((e) => e.slip <= 0 || this.ents.length === 1)
+      .sort((a, b) => (b.carry !== null) - (a.carry !== null) || Math.random() - 0.5);
+    const out = pool.slice(0, count);
+    while (out.length < count && pool.length) out.push(pool[Math.floor(Math.random() * pool.length)]);
+    return out;
+  }
+
+  throwJelly(e) {
+    const k = this.king.group.position;
+    const mesh = new THREE.Group();
+    const blob = new THREE.Mesh(sharedGeo('bkJelly', () => new THREE.SphereGeometry(0.32, 14, 10)), toon(0x7ee08a));
+    blob.scale.set(1, 0.8, 1);
+    const cream = new THREE.Mesh(sharedGeo('bkJellyTop', () => new THREE.SphereGeometry(0.16, 10, 8)), toon(COLORS.white));
+    cream.position.y = 0.24;
+    mesh.add(blob, cream);
+    const time = JELLY_TIME[this.phase];
+    const lead = time * 0.4;
+    const x = THREE.MathUtils.clamp(e.x + e.vx * lead + (Math.random() - 0.5) * 0.6, -HW + 0.5, HW - 0.5);
+    const z = THREE.MathUtils.clamp(e.z + e.vz * lead + (Math.random() - 0.5) * 0.6, Z0 + 0.3, Z1 - 0.3);
+    this.lob({ from: new THREE.Vector3(k.x + 0.8, 3.2, k.z + 0.8), x, z, time, r: 1.0, mesh, color: 0x7ee08a, arc: 3 });
+    this.game.audio.play('whoosh');
+  }
+
+  updateThrows(dt) {
+    if (this.state !== 'play' || this.finished) { this.windup = 0; return; }
+    this.throwT -= dt;
+    if (this.throwT <= 0 && this.windup <= 0) { this.windup = 0.45; this.king.squash(1.2); }
+    if (this.windup > 0) {
+      this.windup -= dt;
+      if (this.windup <= 0) {
+        this.pickTargets(volley(this.n, this.phase)).forEach((e, i) => this.later(i * 0.18, () => {
+          if (this.finished || this.state !== 'play') return;
+          this.throwJelly(e);
+          this.king.squash(0.85);
+        }));
+        this.throwT = JELLY_GAP[this.phase] * (0.9 + Math.random() * 0.2);
+      }
+    }
+  }
+
+  onSlip(e) {
+    // The cake tumbles off and goes splat (the stands always have more).
+    if (e.carry === null) return;
+    this.puffs.burst(new THREE.Vector3(e.x, 0.4, e.z), CAKES[e.carry].top, { count: 12, speed: 3.5, size: 0.3 });
+    this.carry(e, null);
+  }
+
   updateBoss(dt) {
+    this.updateThrows(dt);
+    this.updateWaiters(dt);
     const ks = this.kingState;
     ks.chew = Math.max(0, ks.chew - dt);
     ks.shake = Math.max(0, ks.shake - dt);
@@ -281,6 +402,7 @@ export class BossKitchenScene extends BossScene {
     this.king.update(dt, { dizzy: this.finished, hop: this.finished ? 10 : 0 });
     if (this.finished) this.king.setMood('laugh');
     else this.king.setMood(ks.chew > 0 ? 'happy' : 'grumpy');
+    if (this.windup > 0) this.king.inner.rotation.z = Math.sin(this.time * 30) * 0.08; // wind-up wiggle
     this.bubble.visible = !this.finished;
     this.bubble.position.y = 3.6 + Math.sin(this.time * 2) * 0.12;
     for (const w of this.wishes) w.mesh.rotation.y += dt * 1.5;
@@ -294,7 +416,7 @@ export class BossKitchenScene extends BossScene {
     for (const e of this.ents) {
       this.moveBean(e, dt, { x0: -HW, x1: HW, z0: Z0, z1: Z1 });
       e.serveCd -= dt;
-      if (this.state !== 'play' || this.finished) continue;
+      if (this.state !== 'play' || this.finished || e.slip > 0) continue;
       // Grab (or swap) a cake by walking into a stand.
       for (const st of this.stands) {
         if (Math.hypot(e.x - st.x, e.z - STAND_Z) < 1.2 && e.carry !== st.type) {

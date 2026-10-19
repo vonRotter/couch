@@ -171,7 +171,11 @@ export class RimordRound extends FieldRound {
     return rhymes(e.task.word, tile.value);
   }
 
-  /** Practice words; harder levels get close distractors (same vowel or same last letter). */
+  /**
+   * Practice words; harder levels get close distractors (same vowel or same last letter).
+   * Distractors come from the player's own level when possible: they are wrong now, but can
+   * be the answer to a later word, so the field always holds answers of every age.
+   */
   filler() {
     const e = pick(this.ents);
     const lv = this.levelKey(e);
@@ -180,7 +184,9 @@ export class RimordRound extends FieldRound {
     let pool;
     if (base && lv !== 'easy' && Math.random() < 0.6) {
       const end = END_OF.get(base);
-      pool = ALL_WORDS.filter((w) => END_OF.get(w) !== end && (vowelOf(END_OF.get(w)) === vowelOf(end) || w.at(-1) === base.at(-1)));
+      const close = (w) => END_OF.get(w) !== end && (vowelOf(END_OF.get(w)) === vowelOf(end) || w.at(-1) === base.at(-1));
+      pool = RHYMES[lv].flatMap((g) => g.words).filter(close);
+      if (pool.length < 3) pool = ALL_WORDS.filter(close);
     }
     if (!pool?.length) pool = RHYMES[lv].flatMap((g) => g.words);
     pool = pool.filter((w) => !own.includes(w));

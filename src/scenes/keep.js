@@ -1,238 +1,58 @@
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
-import { makeGrumble } from '../core/critters.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeStar } from '../core/world.js';
-import { t, addStrings } from '../core/i18n.js';
+import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
+import './keep/strings.js';
+import { CELL, WALL_H, PR, GR, SPEED, CLASSES, GLYPH, clamp, angDiff, clock, mesh, sph, rbox, bx, cyl, fadeMat, disposeTree } from './keep/common.js';
+import { generateFloor, FLOOR_PLAN } from './keep/dungeon.js';
+import { Hazards } from './keep/hazards.js';
+import { TeddyBoss, SheepBoss } from './keep/bosses.js';
+import { FoeMixin } from './keep/foes.js';
+import { LootMixin, BASE, starterWeapon, itemName } from './keep/loot.js';
 
-addStrings({
-  en: {
-    'game.keep': 'Pillow Keep',
-    'keep.intro': 'Fluff the grumble nests, find the keys and reach the stairs together! [A]: action · [B]: special · [C]: open / use key',
-    'keep.pick': 'Pick a class',
-    'keep.pickHint': 'Stick left/right to choose · [A] to lock in (the same class twice is fine!)',
-    'keep.buttons': '[A]: action · [B]: special (recharges) · [C]: open chests and doors, wake friends',
-    'keep.cls.knight': 'Knight', 'keep.cls.archer': 'Archer', 'keep.cls.wizard': 'Wizard', 'keep.cls.bard': 'Bard',
-    'keep.desc.knight': '[A]: wide pillow swing · [B]: pillow spin · gets sleepy slowly',
-    'keep.desc.archer': '[A]: foam dart where you aim · [B]: fan of darts',
-    'keep.desc.wizard': '[A]: bubble spell traps grumbles, pop them later · [B]: bubble ring',
-    'keep.desc.bard': '[A]: bonk note · [B]: lullaby puts grumbles to sleep and speeds up friends',
-    'keep.floor': 'Floor {n}/{total}',
-    'keep.floorTitle': 'Floor {n}',
-    'keep.name.0': 'The Cushion Hall', 'keep.name.1': 'The Blanket Vaults', 'keep.name.2': "The Sheep's Bedroom",
-    'keep.coins': '{n} coins', 'keep.coin1': '1 coin',
-    'keep.goal.key': 'Find a key for the locked door',
-    'keep.goal.door': 'Unlock the door ([C])',
-    'keep.goal.stairs': 'Everyone to the stairs!',
-    'keep.goal.sheep': 'Something sleepy waits upstairs...',
-    'keep.waiting': 'At the stairs: {n}/{total}',
-    'keep.float': 'Floating everyone to the stairs!',
-    'keep.gotKey': '{name} found a key!',
-    'keep.unlock': 'Unlocked!',
-    'keep.needKey': 'Locked! Find a key',
-    'keep.chest': 'Treasure!',
-    'keep.snack': 'Yum!',
-    'keep.nest': 'Nest fluffed!',
-    'keep.woke': '{name} woke up {other}!',
-    'keep.c.open': '[C]: open', 'keep.c.unlock': '[C]: unlock', 'keep.c.wake': '[C]: wake up',
-    'keep.boss': 'Sleepy Sheep',
-    'keep.bossWake': 'The Sleepy Sheep woke up!',
-    'keep.bossSub': 'Bonk its glowing spots!',
-    'keep.bossDone': 'The Sleepy Sheep fell asleep!',
-    'keep.fog': 'The sheep is guarding the stairs',
-    'keep.yawn': 'Baa-yawn!',
-    'keep.title': 'The keep is cozy again!',
-    'keep.sub': 'Team coins: {coins} · Time {time}',
-    'keep.detail': '{cls} · nests: {nests} · woke: {woken}',
-  },
-  no: {
-    'game.keep': 'Puteborgen',
-    'keep.intro': 'Rusk opp grumlereirene, finn nøklene og nå trappa sammen! [A]: handling · [B]: spesial · [C]: åpne / bruk nøkkel',
-    'keep.pick': 'Velg klasse',
-    'keep.pickHint': 'Pinnen venstre/høyre for å velge · [A] for å låse (flere kan velge det samme!)',
-    'keep.buttons': '[A]: handling · [B]: spesial (lades opp) · [C]: åpne kister og dører, vekk venner',
-    'keep.cls.knight': 'Ridder', 'keep.cls.archer': 'Bueskytter', 'keep.cls.wizard': 'Trollmann', 'keep.cls.bard': 'Spillemann',
-    'keep.desc.knight': '[A]: bredt putesving · [B]: putevirvel · blir sakte trøtt',
-    'keep.desc.archer': '[A]: skumpil dit du sikter · [B]: vifte av piler',
-    'keep.desc.wizard': '[A]: bobletrylling fanger grumlinger, sprett dem etterpå · [B]: boblering',
-    'keep.desc.bard': '[A]: bonke-tone · [B]: vuggesang får grumlinger til å sovne og gjør venner raske',
-    'keep.floor': 'Etasje {n}/{total}',
-    'keep.floorTitle': 'Etasje {n}',
-    'keep.name.0': 'Putesalen', 'keep.name.1': 'Dynekjelleren', 'keep.name.2': 'Sauens soverom',
-    'keep.coins': '{n} mynter', 'keep.coin1': '1 mynt',
-    'keep.goal.key': 'Finn en nøkkel til den låste døra',
-    'keep.goal.door': 'Lås opp døra ([C])',
-    'keep.goal.stairs': 'Alle til trappa!',
-    'keep.goal.sheep': 'Noe søvnig venter der oppe ...',
-    'keep.waiting': 'Ved trappa: {n}/{total}',
-    'keep.float': 'Alle svever bort til trappa!',
-    'keep.gotKey': '{name} fant en nøkkel!',
-    'keep.unlock': 'Låst opp!',
-    'keep.needKey': 'Låst! Finn en nøkkel',
-    'keep.chest': 'Skatt!',
-    'keep.snack': 'Nam!',
-    'keep.nest': 'Reiret er rusket opp!',
-    'keep.woke': '{name} vekket {other}!',
-    'keep.c.open': '[C]: åpne', 'keep.c.unlock': '[C]: lås opp', 'keep.c.wake': '[C]: vekk',
-    'keep.boss': 'Søvnige Sau',
-    'keep.bossWake': 'Søvnige Sau har våknet!',
-    'keep.bossSub': 'Bonk de lysende flekkene!',
-    'keep.bossDone': 'Søvnige Sau sovnet!',
-    'keep.fog': 'Sauen passer på trappa',
-    'keep.yawn': 'Bææ-gjesp!',
-    'keep.title': 'Puteborgen er koselig igjen!',
-    'keep.sub': 'Lagets mynter: {coins} · Tid {time}',
-    'keep.detail': '{cls} · reir: {nests} · vekket: {woken}',
-  },
-});
+// Pillow Keep: a co-op, non-violent dungeon crawl (Gauntlet meets a cozy Diablo). 1-6 players go
+// five random floors deep on one shared, angled top-down camera. Grumbles of several kinds pour
+// out of pillow-pile nests and snooze in rooms; a grumble touch fills your yawn meter, and a full
+// meter means a nap until a teammate taps you (or you wake on your own). Keys open locked doors,
+// chests and elites drop gear that is put on automatically when it is better, the team levels up
+// together and every class learns new skills. Big Teddy guards floor 3, the Sleepy Sheep floor 5;
+// both attack only with pink floor telegraphs that can be dodged.
+//
+// Code: keep/dungeon.js (random floors), keep/foes.js (grumbles and nests), keep/loot.js (gear),
+// keep/hazards.js (floor telegraphs), keep/bosses.js (Big Teddy, Sleepy Sheep), keep/strings.js.
 
-// Pillow Keep: a co-op, non-violent take on Gauntlet. 1-6 players crawl through three cozy
-// castle floors on one shared, angled top-down camera. Grumbles pour out of pillow-pile nests
-// until the nest is fluffed apart; a grumble that touches you makes you yawn, and a fully sleepy
-// player naps until a teammate taps them (or wakes up on their own). Keys open locked doors,
-// chests spill coins and snacks, and each floor ends when everyone stands on the stairs.
-// The last floor has the Sleepy Sheep, a friendly ghost put to sleep by bonking its glowing spots.
-
-// Map legend: #  wall          .  floor        (space) nothing
-//             S  start         >  stairs (a 2x2 block)
-//             K  key           D  locked door (touching D tiles form one door)
-//             N  grumble nest  C  treasure chest
-//             r  rug (decor)   B  Sleepy Sheep
-const FLOORS = [
-  {
-    map: [
-      '##########################',
-      '#.........#####..........#',
-      '#...N.....#####...>>.....#',
-      '#.........#####...>>.....#',
-      '#....r........D..........#',
-      '#.............D....N.....#',
-      '#..K......#####..........#',
-      '####..#########......C...#',
-      '   #..#      #############',
-      '   #..#',
-      '####..##########',
-      '#..............#',
-      '#.SS...........#',
-      '#.SS....r...C..#',
-      '#..............#',
-      '################',
-    ],
-  },
-  {
-    map: [
-      '##############################',
-      '#........#####...............#',
-      '#..>>....#####...N...........#',
-      '#..>>....#####.........r.....#',
-      '#............D...............#',
-      '#............D.......C.......#',
-      '#........#####...........N...#',
-      '#........#####...............#',
-      '################..#######..###',
-      '               #DD#     #..#',
-      '############   #..#  ####..###',
-      '#..........#####..####.......#',
-      '#...N......#.........#...K...#',
-      '#..........#.SS..r...#.......#',
-      '#..K.................#...N...#',
-      '#....................#.......#',
-      '#..........#.SS...C..#.......#',
-      '#..........#.........#########',
-      '######################',
-    ],
-  },
-  {
-    arenaRow: 10, // rows above this are the Sleepy Sheep's bedroom
-    map: [
-      '############################',
-      '#########..........#########',
-      '#########....>>....#########',
-      '#########....>>....#########',
-      '#####..................#####',
-      '#####..................#####',
-      '#####.........B........#####',
-      '#####.......r..........#####',
-      '#####..................#####',
-      '#####..................#####',
-      '############DDDD############',
-      '      #..............#',
-      '#######..N.......N...#######',
-      '#..........................#',
-      '#..K....#..........#....C..#',
-      '#.......#####..#####.......#',
-      '#..N....#   #..#   #...N...#',
-      '#.......#   #..#   #.......#',
-      '#########   #..#   #########',
-      '        ####....####',
-      '        #..SS..SS..#',
-      '        #....C.....#',
-      '        ############',
-    ],
-  },
-];
-
-// Per-floor colors: warm wood hall, blue stone vaults, lavender bedroom.
+const FLOORS = FLOOR_PLAN.length;
+// Per-floor colors: warm wood hall, blue vaults, peach toy attic, mint library, lavender bedroom.
 const THEMES = [
-  { floorA: 0xf2d2a4, floorB: 0xe6c291, wall: 0xb79fd6, cap: 0xd3c3ea, rug: 0xe0566f, rugIn: 0xff8fa8, grumble: 0x7b6cf6 },
-  { floorA: 0xe4dccb, floorB: 0xd6ccb8, wall: 0x8faed8, cap: 0xbcd0ec, rug: 0x3f8fd6, rugIn: 0x8fd8ff, grumble: 0x3fae9a },
-  { floorA: 0xd6c6ec, floorB: 0xc8b5e2, wall: 0x8a76c4, cap: 0xb3a5e0, rug: 0x8a45e0, rugIn: 0xc9a8ff, grumble: 0xd9549a },
+  { floorA: 0xf2d2a4, floorB: 0xe6c291, wall: 0xb79fd6, cap: 0xd3c3ea, rug: 0xe0566f, rugIn: 0xff8fa8, grumble: 0x7b6cf6, sky: ['#2a1d45', '#6b4a7e'] },
+  { floorA: 0xe4dccb, floorB: 0xd6ccb8, wall: 0x8faed8, cap: 0xbcd0ec, rug: 0x3f8fd6, rugIn: 0x8fd8ff, grumble: 0x8a6cf0, sky: ['#1d2a45', '#4a6b7e'] },
+  { floorA: 0xf6d8c4, floorB: 0xecc8b0, wall: 0xe59a7a, cap: 0xf5c4a8, rug: 0x3fae9a, rugIn: 0x9ff0c8, grumble: 0xb05ad9, sky: ['#3a1d35', '#7e4a6b'] },
+  { floorA: 0xd8ead8, floorB: 0xc8dcc6, wall: 0x6fae9a, cap: 0xa8d8c4, rug: 0x7a5ad0, rugIn: 0xc9a8ff, grumble: 0x6c7bf6, sky: ['#14303a', '#3e6b6b'] },
+  { floorA: 0xd6c6ec, floorB: 0xc8b5e2, wall: 0x8a76c4, cap: 0xb3a5e0, rug: 0x8a45e0, rugIn: 0xc9a8ff, grumble: 0xd9549a, sky: ['#2a1d45', '#6b4a7e'] },
 ];
 
-const CELL = 2;
-const WALL_H = 1.5;
-const PR = 0.42; // player radius
-const GR = 0.4; // grumble radius
-const SPEED = 6;
+// Skills each class learns automatically: [level, key].
+const SKILLS = {
+  knight: [[3, 'bigSpin'], [5, 'wave'], [8, 'armor']],
+  archer: [[3, 'wideFan'], [5, 'pierce'], [8, 'double']],
+  wizard: [[3, 'storm'], [5, 'splash'], [8, 'homing']],
+  bard: [[3, 'longSong'], [5, 'wakeTune'], [8, 'echo']],
+};
+const SHOTS = { dart: { speed: 18, life: 0.7 }, bubble: { speed: 10, life: 1.1 }, note: { speed: 13, life: 0.55 }, feather: { speed: 13, life: 0.38 } };
 const TILT = 1.0; // camera pitch (radians above the floor)
-const CLASSES = ['knight', 'archer', 'wizard', 'bard'];
-const GLYPH = { knight: '♜', archer: '➶', wizard: '✦', bard: '♪' };
-const CD_A = { knight: 0.42, archer: 0.3, wizard: 0.5, bard: 0.4 };
-const CD_B = { knight: 3.5, archer: 3, wizard: 5, bard: 6 };
-const SHOTS = { dart: { speed: 18, life: 0.7 }, bubble: { speed: 10, life: 1.1 }, note: { speed: 13, life: 0.55 } };
 const NAP_SOLO = 3; // nap length when nobody can tap you awake
 const NAP_MAX = 6; // with teammates: a tap wakes you sooner
 const STRAY_X = 12, STRAY_Z = 8; // how far from the others before the bubble pulls you along
 const STAIRS_WAIT = 8; // once half the team is on the stairs, the rest float over after this
-const SHEEP_SCALE = 1.3;
 const SNACK_COLORS = [0xd9a066, 0xffffff];
 const NO_INPUT = { x: 0, y: 0, a: false, b: false, c: false, aPressed: false, bPressed: false, cPressed: false, stepX: 0, stepY: 0 };
 const COIN = '<span style="display:inline-block;width:.85em;height:.85em;border-radius:50%;background:#ffd23f;box-shadow:inset 0 0 0 .14em #e0a100;vertical-align:-.08em"></span>';
 
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const clock = (s) => {
-  const secs = Math.max(0, Math.floor(s));
-  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-};
-const angDiff = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
-
-const sph = (r, w = 14, h = 10) => sharedGeo(`kSph${r}|${w}`, () => new THREE.SphereGeometry(r, w, h));
-const rbox = (key, w, h, d, r = 0.08) => sharedGeo(`k-${key}`, () => new RoundedBoxGeometry(w, h, d, 2, r));
-const bx = (key, w, h, d) => sharedGeo(`kb-${key}`, () => new THREE.BoxGeometry(w, h, d));
-const cyl = (key, rt, rb, h, seg = 14) => sharedGeo(`kc-${key}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
-
-function mesh(geo, mat, x = 0, y = 0, z = 0, shadow = true) {
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(x, y, z);
-  m.castShadow = shadow;
-  return m;
-}
-
-/** A fresh (unshared) see-through material for effects that fade out. */
-function fadeMat(color, opacity = 0.6) {
-  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
-}
-
-function disposeTree(obj) {
-  obj.traverse((o) => {
-    if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
-    const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
-    for (const m of mats) if (!m.userData.shared) m.dispose();
-  });
-}
+/** XP needed to go from level L to L+1. */
+const xpNeed = (L) => 30 + 25 * (L - 1);
 
 function makeKey() {
   const g = new THREE.Group();
@@ -262,8 +82,10 @@ class ClassPicker {
         const ok = this.locked.get(e);
         return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.p.css}">${esc(e.p.name)}${ok ? ' ✓' : ''}</div>`;
       }).join('');
+      const learns = t('keep.learns', { list: SKILLS[cls].map(([lv, k]) => `${t(`keep.skill.${k}`)} (${lv})`).join(', ') });
       return `<div class="vote-opt" style="width:clamp(130px,19vw,250px)"><div class="vote-label">${GLYPH[cls]} ${esc(t(`keep.cls.${cls}`))}</div>
-        <div style="font-size:clamp(11px,1vw,16px);font-weight:600;text-align:center;opacity:.75;margin-bottom:6px">${esc(t(`keep.desc.${cls}`))}</div>${chips}</div>`;
+        <div style="font-size:clamp(11px,1vw,16px);font-weight:600;text-align:center;opacity:.75;margin-bottom:4px">${esc(t(`keep.desc.${cls}`))}</div>
+        <div style="font-size:clamp(10px,.85vw,14px);font-weight:600;text-align:center;opacity:.6;margin-bottom:6px">${esc(learns)}</div>${chips}</div>`;
     }).join('');
     this.el.innerHTML = `<div class="results-title">${esc(t('game.keep'))}</div>
       <div class="results-sub">${esc(t('keep.pick'))}</div>
@@ -303,10 +125,9 @@ class ClassPicker {
 }
 
 export class KeepScene extends MiniGame {
-  constructor(game, opts) {
+  constructor(game, opts = {}) {
     super(game, opts);
     this.camera.fov = 40;
-    this.scene.background = skyTexture('#2a1d45', '#6b4a7e');
     const L = addLights(this.scene, { size: 24, dir: new THREE.Vector3(-0.35, 1, 0.55) });
     this.sun = L.sun;
     this.sunDir = new THREE.Vector3(-0.35, 1, 0.55).normalize().multiplyScalar(40);
@@ -323,6 +144,8 @@ export class KeepScene extends MiniGame {
     }
     this.lampT = 0;
 
+    // Each run is a new dungeon (opts.seed makes it repeatable for tests).
+    this.seed = (opts.seed ?? Math.floor(Math.random() * 1e9)) >>> 0;
     this.floorIndex = 0;
     this.floorT = 0;
     this.floorTimes = [];
@@ -331,16 +154,23 @@ export class KeepScene extends MiniGame {
     this.toastCd = 0;
     this.camCenter = new THREE.Vector3();
     this.camDist = 20;
+    this.teamLevel = 1;
+    this.xp = 0;
+    this.naps = 0;
 
     this.ents = this.players.map((p, i) => this.makeEnt(p, i));
     this.loadFloor(opts.floor || 0);
     game.audio.playMusic('bubble');
 
-    this.state = 'pick';
-    this.picker = new ClassPicker(this, this.ents, () => {
-      this.picker = null;
+    if (this.campaign) {
       this.intro(t('game.keep'), t('keep.intro'));
-    });
+    } else {
+      this.state = 'pick';
+      this.picker = new ClassPicker(this, this.ents, () => {
+        this.picker = null;
+        this.intro(t('game.keep'), t('keep.intro'));
+      });
+    }
   }
 
   onLanguage() {
@@ -360,6 +190,9 @@ export class KeepScene extends MiniGame {
     const hand = new THREE.Group();
     hand.position.set(0, 0.5, 0);
     ch.pivot.add(hand);
+    const capeSlot = new THREE.Group();
+    capeSlot.position.set(0, 0.5, 0);
+    ch.pivot.add(capeSlot);
     const bubble = mesh(sph(0.95, 20, 14), toon(p.color, { transparent: true, opacity: 0.35 }), 0, 0, 0, false);
     bubble.visible = false;
     this.scene.add(bubble);
@@ -379,47 +212,55 @@ export class KeepScene extends MiniGame {
     this.scene.add(aimPivot);
     const label = this.game.ui.label('label player-tag');
     const e = {
-      p, i, ch, hand, bubble, keyMesh, ring, aimPivot, label, labelHtml: '',
-      cls: CLASSES[i % CLASSES.length],
+      p, i, ch, hand, capeSlot, bubble, keyMesh, ring, aimPivot, label, labelHtml: '',
+      cls: CLASSES[i % CLASSES.length], level: 1, gear: {}, st: null, best: null, found: 0,
       x: 0, y: 0, z: 0, vx: 0, vz: 0, fx: 0, fz: -1,
-      state: 'walk', yawn: 0, napT: 0, inv: 0, calm: 0, boost: 0, cdA: 0, cdB: 0,
+      state: 'walk', yawn: 0, napT: 0, inv: 0, calm: 0, boost: 0, cdA: 0, cdB: 0, shotN: 0,
       hasKey: false, swingT: 0, swingDir: 1, spinT: 0, bubbleTo: null, bubbleCd: 0,
-      coins: 0, nests: 0, woken: 0,
+      coins: 0, nests: 0, woken: 0, fluffed: 0, naps: 0,
     };
     this.setClass(e, e.cls);
     return e;
   }
 
-  /** Swap the prop in the bean's hand: pillow, dart blaster, wand or lute. */
+  /** Changing class (in the picker) swaps in that class's starter weapon. */
   setClass(e, cls) {
     e.cls = cls;
-    e.hand.clear();
-    const h = e.hand;
-    if (cls === 'knight') {
-      const pillow = mesh(rbox('pillow', 0.85, 0.26, 0.58, 0.12), toon(0xfff3f8), 0.42, 0.05, 0.42);
-      pillow.add(mesh(bx('pillowStripe', 0.87, 0.06, 0.6), toon(0xff9fd0), 0, 0, 0, false));
-      pillow.rotation.y = 0.5;
-      h.add(pillow);
-    } else if (cls === 'archer') {
-      const tube = mesh(cyl('blaster', 0.1, 0.1, 0.62), toon(0xff8c42), 0.42, 0, 0.3);
-      tube.rotation.x = Math.PI / 2;
-      h.add(tube, mesh(sph(0.12), toon(0x4cc9f0), 0.42, 0, 0.64), mesh(bx('grip', 0.1, 0.24, 0.12), toon(0x9b5de5), 0.42, -0.14, 0.12));
-    } else if (cls === 'wizard') {
-      const wand = mesh(cyl('wand', 0.03, 0.035, 0.75, 8), toon(0x8a5a3a), 0.45, 0.15, 0.25);
-      wand.rotation.x = 0.7;
-      const tip = mesh(sharedGeo('kWandTip', () => new THREE.OctahedronGeometry(0.13)), toon(COLORS.gold, { emissive: 0x664400 }), 0.45, 0.45, 0.5);
-      h.add(wand, tip);
-      // Little starry cape.
-      const cape = mesh(rbox('cape', 0.7, 0.75, 0.08, 0.04), toon(0x5a3fd0), 0, 0.2, -0.42);
-      h.add(cape, mesh(sph(0.06), toon(COLORS.gold), 0.15, 0.35, -0.47, false));
-    } else {
-      const body = mesh(sph(0.27), toon(0xd9955a), 0.15, -0.05, 0.42);
-      body.scale.set(1, 1.2, 0.45);
-      const hole = mesh(sph(0.08), toon(COLORS.ink), 0.15, 0.0, 0.53, false);
-      hole.scale.z = 0.3;
-      const neck = mesh(bx('luteNeck', 0.08, 0.55, 0.06), toon(0x8a5a3a), 0.33, 0.3, 0.44);
-      neck.rotation.z = -0.6;
-      h.add(body, hole, neck);
+    e.gear.weapon = starterWeapon(cls);
+    this.recomputeStats(e);
+    this.applyLook(e);
+  }
+
+  hasSkill(e, key) {
+    const s = SKILLS[e.cls].find(([, k]) => k === key);
+    return !!s && e.level >= s[0];
+  }
+
+  /** Team XP: everyone shares it, so the whole team levels up together. */
+  gainXp(amount, x, z) {
+    const n = this.ents.length;
+    this.xp += amount / (1 + 0.25 * (n - 1));
+    while (this.xp >= xpNeed(this.teamLevel)) {
+      this.xp -= xpNeed(this.teamLevel);
+      this.levelUp();
+    }
+  }
+
+  levelUp() {
+    this.teamLevel++;
+    this.game.audio.play('fanfare');
+    this.game.ui.toast(`${t('keep.level', { n: this.teamLevel })} ${t('keep.skillUp')}`, 2000);
+    for (const e of this.ents) {
+      e.level = this.teamLevel;
+      this.recomputeStats(e);
+      // A level-up is a fresh start: the yawn meter empties (Diablo refills your health).
+      if (e.state === 'nap') this.wake(e, null);
+      e.yawn = 0;
+      const learned = SKILLS[e.cls].find(([lv]) => lv === this.teamLevel);
+      const at = new THREE.Vector3(e.x, 2.4, e.z);
+      this.floater(learned ? t('keep.newSkill', { skill: t(`keep.skill.${learned[1]}`) }) : t('keep.level', { n: this.teamLevel }), at, learned ? '#ffb400' : e.p.css, learned ? 2.4 : 1.4, true);
+      this.confetti.burst(new THREE.Vector3(e.x, 0.3, e.z), 0, { count: 24, speed: 3, up: 7, colors: [COLORS.gold, 0xffffff, e.p.color], life: 1, gravity: -4, size: 0.13 });
+      this.addFx('ring', e.x, e.z, { color: COLORS.gold, from: 0.4, to: 2.4, life: 0.6 });
     }
   }
 
@@ -427,14 +268,19 @@ export class KeepScene extends MiniGame {
 
   loadFloor(index) {
     if (this.level) {
+      for (const it of this.items) it.label?.remove();
+      for (const g of this.grumbles) g.label?.remove();
       this.scene.remove(this.level);
       disposeTree(this.level);
     }
     this.floorIndex = index;
-    this.floorDef = FLOORS[index];
+    this.floorDef = generateFloor(index, (this.seed + index * 1013) >>> 0);
     this.theme = THEMES[index];
+    this.scene.background?.dispose?.();
+    this.scene.background = skyTexture(...this.theme.sky);
     this.level = new THREE.Group();
     this.scene.add(this.level);
+    this.hazards = new Hazards(this, this.level);
     this.grumbles = [];
     this.items = [];
     this.shots = [];
@@ -443,8 +289,9 @@ export class KeepScene extends MiniGame {
     this.chests = [];
     this.doors = [];
     this.torches = [];
-    this.sheep = null;
+    this.boss = null;
     this.fog = null;
+    this.arena = null;
     this.stairsT = 0;
     this.floatingAll = false;
     this.onStairs = 0;
@@ -457,7 +304,7 @@ export class KeepScene extends MiniGame {
     // Cell kinds: 0 nothing, 1 wall, 2 floor, 3 door, 4 stairs.
     this.cells = new Uint8Array(W * H);
     this.doorAt = new Map();
-    this.flow = new Int16Array(W * H);
+    this.flow = new Int16Array(W * H).fill(-1);
     const starts = [], marks = [];
     for (let r = 0; r < H; r++) {
       for (let c = 0; c < W; c++) {
@@ -469,23 +316,30 @@ export class KeepScene extends MiniGame {
         else if (ch === '>') k = 4;
         this.cells[r * W + c] = k;
         if (ch === 'S') starts.push([c, r]);
-        if ('KNCrB'.includes(ch)) marks.push([ch, c, r]);
+        if ('KNCrBEg'.includes(ch)) marks.push([ch, c, r]);
       }
+    }
+    // The boss bedroom: every walkable tile above the arena row.
+    if (this.floorDef.arenaRow) {
+      let c0 = W, c1 = 0, r0 = H, r1 = 0;
+      for (let r = 0; r < this.floorDef.arenaRow; r++) for (let c = 0; c < W; c++) if (this.cells[r * W + c] >= 2) { c0 = Math.min(c0, c); c1 = Math.max(c1, c); r0 = Math.min(r0, r); r1 = Math.max(r1, r); }
+      this.arena = { x0: (c0 - W / 2) * CELL, x1: (c1 + 1 - W / 2) * CELL, z0: (r0 - H / 2) * CELL, z1: (r1 + 1 - H / 2) * CELL };
     }
     this.buildTiles();
     this.buildDoors();
     this.buildStairs();
     this.buildDecor(marks);
 
-    const n = this.ents.length;
     for (const [ch, c, r] of marks) {
       const x = this.cx(c), z = this.cz(r);
       if (ch === 'K') this.spawnItem('key', x, z);
-      else if (ch === 'N') this.makeNest(x, z, n);
+      else if (ch === 'N') this.makeNest(x, z);
       else if (ch === 'C') this.makeChest(x, z);
-      else if (ch === 'B') this.makeSheep(x, z);
+      else if (ch === 'E') this.spawnPack(x, z, true);
+      else if (ch === 'g') this.spawnPack(x, z, false);
+      else if (ch === 'B') this.makeBoss(x, z);
     }
-    for (const nest of this.nests) this.spawnGrumble(nest.x, nest.z, nest);
+    for (const nest of this.nests) this.spawnGrumble(nest.x, nest.z, nest, 'basic');
 
     // Place everyone on the start tiles (two per tile when there are more players than tiles).
     this.ents.forEach((e, i) => {
@@ -502,7 +356,38 @@ export class KeepScene extends MiniGame {
       e.bubble.visible = false;
       e.ch.pivot.rotation.x = 0;
     });
+    this.updateFlow();
     this.updateCamera(0, true);
+  }
+
+  makeBoss(x, z) {
+    this.boss = this.floorDef.boss === 'teddy' ? new TeddyBoss(this, x, z) : new SheepBoss(this, x, z);
+    // Dreamy clouds sit on the stairs until the boss is asleep.
+    const fog = new THREE.Group();
+    const cloud = toon(0xf4eaff, { transparent: true, opacity: 0.92 });
+    for (let i = 0; i < 9; i++) {
+      const a = i * 2.4;
+      fog.add(mesh(sph(0.75 + (i % 3) * 0.2, 14, 10), cloud, this.stairs.x + Math.cos(a) * (0.4 + (i % 4) * 0.4), 0.4 + (i % 2) * 0.35, this.stairs.z + Math.sin(a) * (0.3 + (i % 3) * 0.35), false));
+    }
+    this.level.add(fog);
+    this.fog = fog;
+  }
+
+  /** Called by a boss when it has fallen asleep and poofed. */
+  onBossDefeated(boss) {
+    const n = this.ents.length;
+    for (let i = 0; i < 10 + 2 * n; i++) this.spawnItem('coin', boss.x, boss.z, true);
+    for (let i = 0; i < 2; i++) this.spawnItem('snack', boss.x, boss.z, true);
+    // Big Teddy leaves one upgrade for every player.
+    if (boss instanceof TeddyBoss) for (const e of this.ents) this.dropLoot(boss.x, boss.z, 'boss', 1, e);
+    this.gainXp(boss instanceof TeddyBoss ? 120 : 200, boss.x, boss.z);
+    for (const g of [...this.grumbles]) this.fluffGrumble(g, undefined);
+    if (this.fog) {
+      for (const c of this.fog.children) this.puffs.burst(c.getWorldPosition(new THREE.Vector3()), 0xf4eaff, { count: 4, size: 0.8, life: 1, speed: 2 });
+      this.level.remove(this.fog);
+      this.fog = null;
+    }
+    this.bossDone = (this.bossDone || 0) + 1;
   }
 
   cx(c) { return (c + 0.5 - this.W / 2) * CELL; }
@@ -524,7 +409,6 @@ export class KeepScene extends MiniGame {
         const k = this.cell(c, r);
         if (k === 2 || k === 3) floorTiles.push([c, r]);
         if (k !== 1) continue;
-        // Only walls that touch a walkable tile are drawn.
         let near = false;
         for (let dr = -1; dr <= 1 && !near; dr++) for (let dc = -1; dc <= 1; dc++) { const nk = this.cell(c + dc, r + dr); if (nk >= 2) { near = true; break; } }
         if (near) wallTiles.push([c, r]);
@@ -541,16 +425,27 @@ export class KeepScene extends MiniGame {
     floor.receiveShadow = true;
     this.level.add(floor);
 
-    const walls = new THREE.InstancedMesh(rbox('wall', CELL, WALL_H, CELL, 0.07), toon(theme.wall), wallTiles.length);
-    const caps = new THREE.InstancedMesh(rbox('wallCap', CELL * 0.86, 0.14, CELL * 0.86, 0.05), toon(theme.cap), wallTiles.length);
-    wallTiles.forEach(([c, r], i) => {
-      m.makeTranslation(this.cx(c), WALL_H / 2 - 0.05, this.cz(r));
-      walls.setMatrixAt(i, m);
-      m.makeTranslation(this.cx(c), WALL_H - 0.02, this.cz(r));
-      caps.setMatrixAt(i, m);
-    });
-    walls.castShadow = walls.receiveShadow = true;
-    this.level.add(walls, caps);
+    // Walls are instanced in chunks so the camera (and the shadow pass) can skip far-away ones.
+    const CH = 8, chunks = new Map();
+    for (const [c, r] of wallTiles) {
+      const k = `${Math.floor(c / CH)},${Math.floor(r / CH)}`;
+      if (!chunks.has(k)) chunks.set(k, []);
+      chunks.get(k).push([c, r]);
+    }
+    for (const list of chunks.values()) {
+      const walls = new THREE.InstancedMesh(rbox('wall', CELL, WALL_H, CELL, 0.07), toon(theme.wall), list.length);
+      const caps = new THREE.InstancedMesh(rbox('wallCap', CELL * 0.86, 0.14, CELL * 0.86, 0.05), toon(theme.cap), list.length);
+      list.forEach(([c, r], i) => {
+        m.makeTranslation(this.cx(c), WALL_H / 2 - 0.05, this.cz(r));
+        walls.setMatrixAt(i, m);
+        m.makeTranslation(this.cx(c), WALL_H - 0.02, this.cz(r));
+        caps.setMatrixAt(i, m);
+      });
+      walls.computeBoundingSphere();
+      caps.computeBoundingSphere();
+      walls.castShadow = walls.receiveShadow = true;
+      this.level.add(walls, caps);
+    }
     this.wallTiles = wallTiles;
   }
 
@@ -559,7 +454,6 @@ export class KeepScene extends MiniGame {
     const seen = new Set();
     for (let i = 0; i < this.cells.length; i++) {
       if (this.cells[i] !== 3 || seen.has(i)) continue;
-      // Flood-fill touching door tiles into one door.
       const door = { tiles: [], meshes: [], open: false, sink: 0, lean: 0 };
       const stack = [i];
       seen.add(i);
@@ -600,24 +494,21 @@ export class KeepScene extends MiniGame {
   buildStairs() {
     const tiles = [];
     for (let i = 0; i < this.cells.length; i++) if (this.cells[i] === 4) tiles.push([i % this.W, Math.floor(i / this.W)]);
-    const c0 = Math.min(...tiles.map((t) => t[0])), c1 = Math.max(...tiles.map((t) => t[0]));
-    const r0 = Math.min(...tiles.map((t) => t[1])), r1 = Math.max(...tiles.map((t) => t[1]));
+    const c0 = Math.min(...tiles.map((q) => q[0])), c1 = Math.max(...tiles.map((q) => q[0]));
+    const r0 = Math.min(...tiles.map((q) => q[1])), r1 = Math.max(...tiles.map((q) => q[1]));
     const x0 = (c0 - this.W / 2) * CELL, x1 = (c1 + 1 - this.W / 2) * CELL;
     const z0 = (r0 - this.H / 2) * CELL, z1 = (r1 + 1 - this.H / 2) * CELL;
     this.stairs = { x0, x1, z0, z1, x: (x0 + x1) / 2, z: (z0 + z1) / 2 };
     const g = new THREE.Group();
     const w = x1 - x0, d = z1 - z0;
-    // Pit walls (the near side is hidden from the camera anyway).
     const pit = toon(0x5a4a7a);
     g.add(mesh(new THREE.BoxGeometry(w, 1.4, 0.12), pit, this.stairs.x, -0.7, z0 + 0.06, false));
     for (const x of [x0 + 0.06, x1 - 0.06]) g.add(mesh(new THREE.BoxGeometry(0.12, 1.4, d), pit, x, -0.7, this.stairs.z, false));
-    // Four steps going down toward the far wall, with a red runner.
     for (let k = 0; k < 4; k++) {
       const zs = z1 - (k + 0.5) * (d / 4), top = -0.18 - 0.2 * k, h = 1.4 + top;
       g.add(mesh(new THREE.BoxGeometry(w - 0.24, h, d / 4), toon(k % 2 ? 0xd8c4a8 : 0xeedcc0), this.stairs.x, top - h / 2, zs, false));
       g.add(mesh(new THREE.BoxGeometry(w * 0.4, 0.04, d / 4 * 0.98), toon(0xd94f6b), this.stairs.x, top + 0.02, zs, false));
     }
-    // Golden arrow bobbing over the stairs.
     const arrow = mesh(sharedGeo('kArrow', () => new THREE.ConeGeometry(0.45, 0.8, 4)), toon(COLORS.gold, { emissive: 0x664400 }), this.stairs.x, 3, this.stairs.z, false);
     arrow.rotation.x = Math.PI;
     g.add(arrow);
@@ -684,7 +575,9 @@ export class KeepScene extends MiniGame {
       for (let c = 0; c < this.W; c++) {
         if (this.cell(c, r) !== 2 || occupied.has(`${c},${r}`) || this.cell(c, r - 1) !== 1) continue;
         const side = this.cell(c - 1, r) === 1 ? -1 : this.cell(c + 1, r) === 1 ? 1 : 0;
-        if (!side || this.cell(c - side, r) !== 2) continue;
+        if (!side || this.cell(c - side, r) !== 2 || this.cell(c, r + 1) !== 2) continue;
+        // Not in corridors (both neighbors across must be open floor for a room corner).
+        if (this.cell(c - side * 2, r) !== 2) continue;
         const x = this.cx(c) + side * 0.35, z = this.cz(r) - 0.35;
         const cush = mesh(rbox('cushion', 0.95, 0.32, 0.95, 0.15), toon(cushionColors[n % 5]), x, 0.16, z);
         cush.rotation.y = 0.3 * side;
@@ -698,30 +591,6 @@ export class KeepScene extends MiniGame {
         n++;
       }
     }
-  }
-
-  makeNest(x, z, players) {
-    const g = new THREE.Group();
-    g.position.set(x, 0, z);
-    const cols = [COLORS.candyPink, COLORS.candyBlue, COLORS.candyYellow, COLORS.candyLilac, COLORS.candyMint, COLORS.cream];
-    const pillows = [
-      [-0.5, 0.2, 0.0, 0.3], [0.5, 0.2, -0.1, -0.4], [0.0, 0.2, -0.55, 1.4], [0.05, 0.2, 0.45, 0.1],
-      [-0.25, 0.55, -0.15, 0.9], [0.3, 0.55, 0.05, -0.2], [0.0, 0.88, -0.05, 0.5],
-    ];
-    const pieces = pillows.map(([px, py, pz, ry], i) => {
-      const p = mesh(rbox('nestPillow', 0.95, 0.38, 0.68, 0.17), toon(cols[i % cols.length]), px, py, pz);
-      p.rotation.set((i % 3 - 1) * 0.12, ry, (i % 2 ? 0.1 : -0.12));
-      g.add(p);
-      return p;
-    });
-    // A dark doorway with grumpy eyes peeking out says "grumbles live here".
-    const hole = mesh(sph(0.3), toon(0x2b2340), 0, 0.32, 0.72, false);
-    hole.scale.set(1.1, 0.8, 0.35);
-    g.add(hole);
-    for (const s of [-1, 1]) g.add(mesh(sph(0.06, 8, 6), toon(0xfff1a8, { emissive: 0x665500 }), s * 0.1, 0.34, 0.82, false));
-    this.level.add(g);
-    const hp = 10 + 2 * players;
-    this.nests.push({ x, z, g, pieces, hp, max: hp, done: false, alive: 0, spawnT: 1.5, wob: 0, r: 1.15 });
   }
 
   makeChest(x, z) {
@@ -739,234 +608,10 @@ export class KeepScene extends MiniGame {
     this.chests.push({ x, z, g, lid, open: false, lean: 0, r: 0.75 });
   }
 
-  // ---------- Sleepy Sheep (mini-boss) ----------
+  // ---------- items: coins, snacks, keys, gear ----------
 
-  makeSheep(x, z) {
-    const g = new THREE.Group();
-    const wool = toon(0xffffff, { transparent: true, opacity: 0.9 });
-    const puffs = [[0, 0, 0, 0.75], [0.55, 0.1, 0.1, 0.55], [-0.55, 0.1, 0.1, 0.55], [0.3, 0.4, -0.3, 0.55], [-0.3, 0.4, -0.3, 0.55],
-      [0, 0.5, 0.2, 0.55], [0.4, -0.2, -0.4, 0.5], [-0.4, -0.2, -0.4, 0.5], [0, 0.1, -0.6, 0.55]];
-    for (const [px, py, pz, r] of puffs) g.add(mesh(sph(r, 14, 10), wool, px, py, pz));
-    // Ghostly wisps instead of legs.
-    for (const [px, pz] of [[-0.35, -0.2], [0.35, -0.2], [0, -0.5]]) {
-      const w = mesh(sharedGeo('kWisp', () => new THREE.ConeGeometry(0.22, 0.7, 10)), wool, px, -0.75, pz, false);
-      w.rotation.x = Math.PI;
-      g.add(w);
-    }
-    const head = new THREE.Group();
-    head.position.set(0, 0.25, 0.85);
-    const face = mesh(sph(0.42), toon(0x8c79b8), 0, 0, 0);
-    face.scale.set(0.95, 0.9, 0.9);
-    head.add(face);
-    for (const s of [-1, 1]) {
-      const ear = mesh(sph(0.16), toon(0x8c79b8), s * 0.45, 0.1, -0.05);
-      ear.scale.set(1.6, 0.5, 0.8);
-      ear.rotation.z = s * -0.4;
-      // Sleepy closed eyes: little curved lids.
-      const lid = mesh(sharedGeo('kLid', () => new THREE.TorusGeometry(0.09, 0.025, 6, 12, Math.PI)), toon(0x2b2340), s * 0.16, 0.05, 0.36, false);
-      lid.rotation.z = Math.PI;
-      const blush = mesh(sph(0.07), toon(COLORS.blush), s * 0.26, -0.08, 0.32, false);
-      blush.scale.set(1, 0.6, 0.4);
-      head.add(ear, lid, blush);
-    }
-    head.add(mesh(sph(0.05), toon(0x2b2340), 0, -0.14, 0.38, false));
-    // Striped nightcap with a pom-pom.
-    const cap = mesh(sharedGeo('kNightcap', () => new THREE.ConeGeometry(0.34, 0.9, 14)), toon(0x4cc9f0), 0.1, 0.55, -0.05);
-    cap.rotation.z = -0.5;
-    const capBand = mesh(cyl('capBand', 0.36, 0.36, 0.1, 14), toon(COLORS.white), 0.0, 0.32, -0.05, false);
-    capBand.rotation.z = -0.5;
-    const pom = mesh(sph(0.12), toon(COLORS.white), 0.48, 0.85, -0.05, false);
-    head.add(cap, capBand, pom);
-    g.add(head);
-    // Glowing spots circle the sheep; bonk them to make it sleepier.
-    const ring = new THREE.Group();
-    g.add(ring);
-    const n = this.ents.length;
-    const count = n <= 2 ? 4 : n <= 4 ? 5 : 6;
-    const spots = [];
-    for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2;
-      const m = mesh(sph(0.22), toon(0xffd23f, { emissive: 0xffa000 }), Math.sin(a) * 1.15, 0.05, Math.cos(a) * 1.15, false);
-      ring.add(m);
-      spots.push({ mesh: m, a, dim: 0 });
-    }
-    g.scale.setScalar(SHEEP_SCALE);
-    this.level.add(g);
-    const wave = mesh(sharedGeo('kRing', () => new THREE.RingGeometry(0.85, 1, 48)), fadeMat(0xc9a8ff, 0.55), x, 0.1, z, false);
-    wave.rotation.x = -Math.PI / 2;
-    wave.visible = false;
-    this.level.add(wave);
-    this.sheep = {
-      x, z, y: 1.2, g, ring, spots, head, wave, sleep: 0, need: 10 + 3 * n, state: 'idle',
-      t: 0, t2: 0, spin: 0, yawnT: 5, summonT: 7, retarget: 0, tx: x, tz: z, waveR: 0, waveHit: new Set(), gone: false,
-    };
-    // Dreamy clouds sit on the stairs until the sheep is asleep.
-    const fog = new THREE.Group();
-    const cloud = toon(0xf4eaff, { transparent: true, opacity: 0.92 });
-    for (let i = 0; i < 9; i++) {
-      const a = i * 2.4;
-      fog.add(mesh(sph(0.75 + (i % 3) * 0.2, 14, 10), cloud, this.stairs.x + Math.cos(a) * (0.4 + (i % 4) * 0.4), 0.4 + (i % 2) * 0.35, this.stairs.z + Math.sin(a) * (0.3 + (i % 3) * 0.35), false));
-    }
-    this.level.add(fog);
-    this.fog = fog;
-  }
-
-  wakeSheep() {
-    const s = this.sheep;
-    s.state = 'awake';
-    s.yawnT = 5;
-    s.summonT = 6;
-    this.game.ui.banner(t('keep.bossWake'), t('keep.bossSub'), 1800);
-    this.game.audio.play('boing');
-    this.game.audio.playMusic('space');
-  }
-
-  spotPos(s, spot) {
-    const a = spot.a + s.spin, R = 1.15 * SHEEP_SCALE;
-    return { x: s.x + Math.sin(a) * R, z: s.z + Math.cos(a) * R };
-  }
-
-  sheepAwake() {
-    const s = this.sheep;
-    return s && (s.state === 'awake' || s.state === 'yawn');
-  }
-
-  /** Bonk a lit spot (spot = null for the Bard's lullaby). */
-  bonkSheep(amount, by, spot) {
-    const s = this.sheep;
-    if (!this.sheepAwake()) return false;
-    if (spot) {
-      if (spot.dim > 0) return false;
-      spot.dim = 4;
-      spot.mesh.material = toon(0x9aa0c8);
-      const p = this.spotPos(s, spot);
-      this.confetti.burst(new THREE.Vector3(p.x, s.y, p.z), 0, { count: 14, speed: 5, colors: [COLORS.gold, 0xffffff], life: 0.7, size: 0.14 });
-    }
-    s.sleep = Math.min(s.need, s.sleep + amount);
-    s.hit = 0.25;
-    this.game.audio.play('boing');
-    this.floater('Zz', new THREE.Vector3(s.x, s.y + 2.2, s.z), '#9b5de5', 0.9);
-    if (s.sleep >= s.need) {
-      s.state = 'asleep';
-      s.t2 = 0;
-      s.wave.visible = false;
-      this.game.ui.banner(t('keep.bossDone'), '', 1600);
-      this.game.audio.play('dizzy');
-    }
-    return true;
-  }
-
-  updateSheep(dt, active) {
-    const s = this.sheep;
-    if (!s || s.gone) return;
-    s.t += dt;
-    s.spin += dt * 0.7;
-    s.hit = Math.max(0, (s.hit || 0) - dt);
-    let y = 1.2 + Math.sin(s.t * 1.6) * 0.22;
-    let scale = SHEEP_SCALE * (1 + s.hit * 0.6);
-    if (s.state === 'idle') {
-      if (active && this.ents.some((e) => e.state !== 'bubble' && this.tileR(e.z) < this.floorDef.arenaRow)) this.wakeSheep();
-    } else if (s.state === 'awake' && active) {
-      s.retarget -= dt;
-      if (s.retarget <= 0) {
-        s.retarget = 2.5 + Math.random() * 1.5;
-        const awake = this.ents.filter((e) => e.state === 'walk');
-        if (awake.length && Math.random() < 0.6) {
-          const e = awake[Math.floor(Math.random() * awake.length)];
-          s.tx = e.x; s.tz = e.z;
-        } else {
-          s.tx = this.cx(7 + Math.random() * 14); s.tz = this.cz(4.5 + Math.random() * 4.5);
-        }
-      }
-      // Keep it in its bedroom.
-      s.tx = clamp(s.tx, this.cx(6), this.cx(21)); s.tz = clamp(s.tz, this.cz(4.5), this.cz(8.5));
-      const sp = 2.1 * (1 - 0.35 * s.sleep / s.need);
-      const dx = s.tx - s.x, dz = s.tz - s.z, d = Math.hypot(dx, dz);
-      if (d > 0.1) { s.x += dx / d * Math.min(d, sp * dt); s.z += dz / d * Math.min(d, sp * dt); }
-      s.yawnT -= dt;
-      if (s.yawnT <= 0) {
-        s.state = 'yawn';
-        s.t2 = 0;
-        s.waveHit.clear();
-        this.floater(t('keep.yawn'), new THREE.Vector3(s.x, s.y + 2.6, s.z), '#8a45e0', 1.3);
-      }
-      s.summonT -= dt;
-      if (s.summonT <= 0) {
-        s.summonT = 9;
-        const cap = 2 + this.ents.length;
-        for (let i = 0; i < 2 && this.grumbles.length < cap; i++) this.spawnGrumble(s.x + (i ? 1.2 : -1.2), s.z + 0.8, null);
-      }
-    } else if (s.state === 'yawn' && active) {
-      s.t2 += dt;
-      if (s.t2 < 1.1) {
-        // Wind-up: the sheep puffs up before the big yawn.
-        scale *= 1 + Math.sin(s.t2 / 1.1 * Math.PI) * 0.18;
-        s.head.rotation.x = -s.t2 * 0.4;
-      } else {
-        s.head.rotation.x *= 0.9;
-        s.waveR = (s.t2 - 1.1) * 5.5;
-        s.wave.visible = true;
-        s.wave.position.set(s.x, 0.12, s.z);
-        s.wave.scale.setScalar(Math.max(0.01, s.waveR));
-        s.wave.material.opacity = 0.55 * (1 - s.waveR / 7);
-        for (const e of this.ents) {
-          if (e.state !== 'walk' || s.waveHit.has(e)) continue;
-          const d = Math.hypot(e.x - s.x, e.z - s.z);
-          if (Math.abs(d - s.waveR) < 0.7) { s.waveHit.add(e); this.addYawn(e, 0.22); }
-        }
-        if (s.waveR > 6.5) { s.wave.visible = false; s.state = 'awake'; s.yawnT = 6 + Math.random() * 2; }
-      }
-    } else if (s.state === 'asleep') {
-      s.t2 += dt;
-      y = 1.2 - Math.min(1, s.t2 / 1.5) * 0.6;
-      s.g.rotation.z = Math.min(1, s.t2) * 0.35;
-      if (Math.random() < dt * 4) this.puffs.burst(new THREE.Vector3(s.x + 0.6, y + 1.6, s.z), 0xc9a8ff, { count: 1, size: 0.3, life: 1.2, speed: 0.5 });
-      if (s.t2 > 2.2) this.poofSheep();
-    }
-    // Touching the ghost is a little sleepy too.
-    if (this.sheepAwake() && active) {
-      for (const e of this.ents) if (e.state === 'walk' && Math.hypot(e.x - s.x, e.z - s.z) < 1.5) this.addYawn(e, 0.18);
-    }
-    for (const spot of s.spots) {
-      if (spot.dim > 0) {
-        spot.dim -= dt;
-        if (spot.dim <= 0) spot.mesh.material = toon(0xffd23f, { emissive: 0xffa000 });
-      }
-      spot.mesh.scale.setScalar(spot.dim > 0 ? 0.7 : 1 + Math.sin(s.t * 6 + spot.a) * 0.12);
-    }
-    s.y = y;
-    if (!s.gone) {
-      s.g.position.set(s.x, y, s.z);
-      s.g.scale.setScalar(scale);
-      s.ring.rotation.y = s.spin;
-    }
-  }
-
-  poofSheep() {
-    const s = this.sheep;
-    s.gone = true;
-    this.level.remove(s.g);
-    const at = new THREE.Vector3(s.x, 1.2, s.z);
-    this.confetti.burst(at, 0, { count: 120, speed: 10, up: 6, colors: PLAYER_COLORS.map((c) => c.hex).concat(COLORS.gold), life: 1.8, gravity: -8, size: 0.2 });
-    this.puffs.burst(at, 0xffffff, { count: 20, size: 0.9, life: 1.2, speed: 4 });
-    for (let i = 0; i < 6; i++) this.spawnStarFx(s.x, 1.5, s.z);
-    for (let i = 0; i < 12; i++) this.spawnItem('coin', s.x, s.z, true);
-    for (let i = 0; i < 2; i++) this.spawnItem('snack', s.x, s.z, true);
-    // Every leftover grumble drifts off to sleep too.
-    for (const g of [...this.grumbles]) this.fluffGrumble(g, null);
-    if (this.fog) {
-      for (const c of this.fog.children) this.puffs.burst(c.getWorldPosition(new THREE.Vector3()), 0xf4eaff, { count: 4, size: 0.8, life: 1, speed: 2 });
-      this.level.remove(this.fog);
-      this.fog = null;
-    }
-    this.game.audio.play('star');
-    this.game.audio.playMusic('bubble');
-  }
-
-  // ---------- items: coins, snacks, keys ----------
-
-  spawnItem(kind, x, z, pop = false) {
-    let m;
+  spawnItem(kind, x, z, pop = false, custom = null) {
+    let m = custom;
     if (kind === 'coin') {
       m = new THREE.Group();
       const disc = mesh(cyl('coin', 0.24, 0.24, 0.07, 16), toon(COLORS.gold, { emissive: 0x4a3000 }), 0, 0, 0, true);
@@ -975,18 +620,15 @@ export class KeepScene extends MiniGame {
     } else if (kind === 'snack') {
       m = new THREE.Group();
       if (Math.random() < 0.5) {
-        // Cookie with chocolate chips.
         m.add(mesh(cyl('cookie', 0.3, 0.3, 0.1, 16), toon(SNACK_COLORS[0]), 0, 0, 0));
         for (const [cx, cz] of [[0.1, 0.08], [-0.12, 0.02], [0.02, -0.13]]) m.add(mesh(sph(0.045, 6, 4), toon(0x6b3f22), cx, 0.06, cz, false));
         m.rotation.x = 0.6;
       } else {
-        // Mug of warm milk.
         m.add(mesh(cyl('mug', 0.2, 0.18, 0.38, 14), toon(0x4cc9f0), 0, 0, 0));
         m.add(mesh(cyl('milk', 0.17, 0.17, 0.02, 14), toon(SNACK_COLORS[1]), 0, 0.19, 0, false));
-        const handle = mesh(sharedGeo('kHandle', () => new THREE.TorusGeometry(0.1, 0.035, 6, 12)), toon(0x4cc9f0), 0.22, 0, 0, false);
-        m.add(handle);
+        m.add(mesh(sharedGeo('kHandle', () => new THREE.TorusGeometry(0.1, 0.035, 6, 12)), toon(0x4cc9f0), 0.22, 0, 0, false));
       }
-    } else {
+    } else if (kind === 'key') {
       m = makeKey();
     }
     this.level.add(m);
@@ -1011,8 +653,9 @@ export class KeepScene extends MiniGame {
         it.vx *= f; it.vz *= f;
         if (Math.abs(it.vx) + Math.abs(it.vz) < 0.05) it.vx = it.vz = 0;
       }
-      if (active && it.t > 0.4) {
-        // Find the closest player who can take it.
+      if (it.kind === 'gear') {
+        this.updateGear(it, dt, active);
+      } else if (active && it.t > 0.4) {
         let best = null, bd = it.kind === 'coin' ? 2.2 : 0.9;
         for (const e of this.ents) {
           if (e.state !== 'walk') continue;
@@ -1023,7 +666,6 @@ export class KeepScene extends MiniGame {
         }
         if (best) {
           if (it.kind === 'coin' && bd > 0.55) {
-            // Coins drift toward nearby players.
             const k = Math.min(1, dt * 9 / bd);
             it.x += (best.x - it.x) * k; it.z += (best.z - it.z) * k;
           } else {
@@ -1031,9 +673,10 @@ export class KeepScene extends MiniGame {
           }
         }
       }
+      if (it.taken) continue;
       const bob = it.kind === 'coin' ? 0 : Math.sin(this.time * 3 + it.phase) * 0.12;
       it.mesh.position.set(it.x, it.y + bob + (it.kind === 'key' ? 0.3 : 0), it.z);
-      it.mesh.rotation.y += dt * (it.kind === 'key' ? 2 : 4);
+      it.mesh.rotation.y += dt * (it.kind === 'key' ? 2 : it.kind === 'gear' ? 1.5 : 4);
     }
     this.items = this.items.filter((it) => !it.taken);
   }
@@ -1057,244 +700,6 @@ export class KeepScene extends MiniGame {
       this.game.audio.play('rescue');
       this.game.ui.toast(t('keep.gotKey', { name: e.p.name }), 1800);
       this.confetti.burst(at, COLORS.gold, { count: 20, speed: 5, life: 0.8, size: 0.14 });
-    }
-  }
-
-  // ---------- grumbles and nests ----------
-
-  spawnGrumble(x, z, nest) {
-    const big = this.floorIndex >= 1 && Math.random() < 0.15 + this.floorIndex * 0.1;
-    const g = makeGrumble(big ? 0xff8c42 : this.theme.grumble);
-    const bubble = mesh(sph(0.72, 18, 12), toon(0xbfe9ff, { transparent: true, opacity: 0.45 }), 0, 0.45, 0, false);
-    bubble.add(mesh(sph(0.12), toon(COLORS.white), -0.3, 0.3, 0.45, false));
-    bubble.visible = false;
-    g.add(bubble);
-    // Step out of the pile toward an open neighbor tile.
-    let sx = x, sz = z;
-    for (let tries = 0; tries < 8; tries++) {
-      const a = Math.random() * Math.PI * 2;
-      const px = x + Math.sin(a) * 1.3, pz = z + Math.cos(a) * 1.3;
-      if (this.walkableAt(px, pz)) { sx = px; sz = pz; break; }
-    }
-    this.level.add(g);
-    const gr = {
-      g, bubble, x: sx, z: sz, vx: 0, vz: 0, kx: 0, kz: 0, state: 'pop', t: 0, hp: big ? 2 : 1, size: big ? 1.3 : 1,
-      nest, hitCd: 0.6, wx: sx, wz: sz, wanderT: 0, y: 0, phase: Math.random() * 6,
-    };
-    g.position.set(sx, 0, sz);
-    g.scale.setScalar(0.01);
-    this.grumbles.push(gr);
-    if (nest) nest.alive++;
-    this.puffs.burst(new THREE.Vector3(sx, 0.5, sz), 0xffffff, { count: 6, size: 0.35, life: 0.5, speed: 2 });
-    return gr;
-  }
-
-  updateNests(dt, active) {
-    const n = this.ents.length;
-    const interval = Math.max(2.4, 3.6 - 0.25 * (n - 1));
-    const perNest = 2 + Math.floor((n + 1) / 2);
-    const cap = 6 + 2 * n;
-    for (const nest of this.nests) {
-      if (nest.done) continue;
-      nest.wob = Math.max(0, nest.wob - dt * 3);
-      const s = 1.25 * (0.6 + 0.4 * nest.hp / nest.max);
-      nest.g.scale.set(s * (1 + Math.sin(this.time * 30) * nest.wob * 0.15), s * (1 - nest.wob * 0.2), s);
-      if (!active) continue;
-      const near = this.ents.some((e) => e.state === 'walk' && Math.hypot(e.x - nest.x, e.z - nest.z) < 18);
-      if (!near) continue;
-      nest.spawnT -= dt;
-      if (nest.spawnT <= 0) {
-        nest.spawnT = interval * (0.8 + Math.random() * 0.4);
-        if (nest.alive < perNest && this.grumbles.length < cap) this.spawnGrumble(nest.x, nest.z, nest);
-      }
-    }
-  }
-
-  damageNest(nest, dmg, by) {
-    if (nest.done) return;
-    nest.hp -= dmg;
-    nest.wob = 1;
-    this.puffs.burst(new THREE.Vector3(nest.x, 0.9, nest.z), 0xffffff, { count: 5, size: 0.25, life: 0.6, speed: 3 });
-    this.game.audio.play('bump');
-    if (nest.hp > 0) return;
-    nest.done = true;
-    if (by) by.nests++;
-    this.level.remove(nest.g);
-    // The pillows tumble apart in a burst of feathers, confetti and stars.
-    for (const p of nest.pieces) {
-      const wp = p.getWorldPosition(new THREE.Vector3());
-      const piece = mesh(p.geometry, p.material, wp.x, wp.y, wp.z);
-      piece.rotation.copy(p.rotation);
-      this.level.add(piece);
-      const a = Math.random() * Math.PI * 2;
-      this.fx.push({ kind: 'piece', obj: piece, life: 1.1, max: 1.1, vx: Math.cos(a) * 4, vy: 5 + Math.random() * 3, vz: Math.sin(a) * 4, spin: (Math.random() - 0.5) * 10 });
-    }
-    const at = new THREE.Vector3(nest.x, 1, nest.z);
-    this.confetti.burst(at, 0, { count: 50, speed: 8, up: 5, colors: [COLORS.candyPink, COLORS.candyBlue, COLORS.candyYellow, COLORS.white], life: 1.3, gravity: -9, size: 0.18 });
-    this.puffs.burst(at, 0xffffff, { count: 14, size: 0.5, life: 1, speed: 4 });
-    for (let i = 0; i < 3; i++) this.spawnStarFx(nest.x, 1, nest.z);
-    for (let i = 0; i < 5; i++) this.spawnItem('coin', nest.x, nest.z, true);
-    if (Math.random() < 0.5) this.spawnItem('snack', nest.x, nest.z, true);
-    this.floater(t('keep.nest'), new THREE.Vector3(nest.x, 2.2, nest.z), by ? by.p.css : '#ff4f9a', 1.2);
-    this.game.audio.play('star');
-  }
-
-  hitGrumble(g, dmg, by, kx = 0, kz = 0) {
-    if (g.dead) return;
-    if (g.state === 'bubble') { this.fluffGrumble(g, by); return; }
-    g.hp -= dmg;
-    g.kx += kx; g.kz += kz;
-    if (g.hp <= 0) this.fluffGrumble(g, by);
-    else { this.game.audio.play('bump'); g.flash = 0.2; }
-  }
-
-  trapGrumble(g) {
-    if (g.dead) return;
-    if (g.state === 'bubble') { this.fluffGrumble(g, null); return; }
-    g.state = 'bubble';
-    g.t = 6;
-    g.bubble.visible = true;
-    this.game.audio.play('trap');
-  }
-
-  /** A fluffed grumble poofs into confetti and stars and leaves a coin. */
-  fluffGrumble(g, by) {
-    if (g.dead) return;
-    g.dead = true;
-    this.level.remove(g.g);
-    if (g.nest) g.nest.alive--;
-    const at = new THREE.Vector3(g.x, 0.6 + g.y, g.z);
-    this.confetti.burst(at, 0, { count: 18, speed: 6, up: 3, colors: [this.theme.grumble, COLORS.gold, COLORS.white, COLORS.candyPink], life: 0.9, size: 0.14 });
-    this.puffs.burst(at, 0xffffff, { count: 5, size: 0.35, life: 0.5 });
-    this.spawnStarFx(g.x, 0.8, g.z);
-    this.game.audio.play('pop');
-    if (by !== undefined) {
-      const coins = Math.random() < 0.5 ? 2 : 1;
-      for (let i = 0; i < coins; i++) this.spawnItem('coin', g.x, g.z, true);
-    }
-  }
-
-  updateFlow() {
-    // Multi-source BFS from every awake player: grumbles walk downhill on this field.
-    const { W, flow } = this;
-    flow.fill(-1);
-    const q = [];
-    for (const e of this.ents) {
-      if (e.state !== 'walk') continue;
-      const c = this.tileC(e.x), r = this.tileR(e.z), i = r * W + c;
-      if (this.walkable(c, r) && flow[i] < 0) { flow[i] = 0; q.push(i); }
-    }
-    for (let h = 0; h < q.length; h++) {
-      const i = q[h], c = i % W, r = (i - c) / W, d = flow[i];
-      if (d >= 14) continue;
-      for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const nc = c + dc, nr = r + dr, j = nr * W + nc;
-        if (this.walkable(nc, nr) && flow[j] < 0) { flow[j] = d + 1; q.push(j); }
-      }
-    }
-  }
-
-  flowAt(c, r) { return this.walkable(c, r) ? this.flow[r * this.W + c] : -1; }
-
-  updateGrumbles(dt, active) {
-    const speed = 2.5 + this.floorIndex * 0.25;
-    for (const g of this.grumbles) {
-      if (g.dead) continue;
-      g.hitCd -= dt;
-      g.flash = Math.max(0, (g.flash || 0) - dt);
-      let mvx = 0, mvz = 0;
-      if (g.state === 'pop') {
-        g.t += dt;
-        if (g.t > 0.35) g.state = 'walk';
-      } else if (g.state === 'bubble') {
-        g.t -= dt;
-        g.y += (0.7 - g.y) * Math.min(1, dt * 4);
-        if (g.t <= 0) { g.state = 'walk'; g.bubble.visible = false; }
-        // Walking into a trapped grumble pops it.
-        for (const e of this.ents) {
-          if (e.state === 'walk' && Math.hypot(e.x - g.x, e.z - g.z) < PR + 0.75) { this.fluffGrumble(g, e); break; }
-        }
-      } else if (g.state === 'sleep') {
-        g.t -= dt;
-        if (Math.random() < dt * 1.5) this.puffs.burst(new THREE.Vector3(g.x + 0.2, 1.3, g.z), 0xc9a8ff, { count: 1, size: 0.2, life: 1, speed: 0.4 });
-        if (g.t <= 0) g.state = 'walk';
-      } else if (g.state === 'walk' && active) {
-        const c = this.tileC(g.x), r = this.tileR(g.z), here = this.flowAt(c, r);
-        let tx = null, tz = null;
-        if (here >= 0 && here <= 1) {
-          let bd = Infinity;
-          for (const e of this.ents) {
-            if (e.state !== 'walk') continue;
-            const d = Math.hypot(e.x - g.x, e.z - g.z);
-            if (d < bd) { bd = d; tx = e.x; tz = e.z; }
-          }
-        } else if (here > 1 && here <= 9) {
-          let best = here;
-          for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-            if (dc && dr && (!this.walkable(c + dc, r) || !this.walkable(c, r + dr))) continue;
-            const f = this.flowAt(c + dc, r + dr);
-            if (f >= 0 && f < best) { best = f; tx = this.cx(c + dc); tz = this.cz(r + dr); }
-          }
-        }
-        let sp = speed / (g.size > 1 ? 1.15 : 1);
-        if (tx === null) {
-          // Nobody close: potter around the nest.
-          g.wanderT -= dt;
-          if (g.wanderT <= 0) {
-            g.wanderT = 2 + Math.random() * 2;
-            const hx = g.nest ? g.nest.x : g.x, hz = g.nest ? g.nest.z : g.z;
-            const px = hx + (Math.random() - 0.5) * 6, pz = hz + (Math.random() - 0.5) * 6;
-            if (this.walkableAt(px, pz)) { g.wx = px; g.wz = pz; }
-          }
-          tx = g.wx; tz = g.wz; sp *= 0.4;
-        }
-        const dx = tx - g.x, dz = tz - g.z, d = Math.hypot(dx, dz);
-        if (d > 0.05) { mvx = dx / d * sp; mvz = dz / d * sp; }
-        // Touching a player makes them yawn; the grumble bounces off.
-        for (const e of this.ents) {
-          if (e.state !== 'walk' || g.hitCd > 0) continue;
-          const ex = g.x - e.x, ez = g.z - e.z, ed = Math.hypot(ex, ez);
-          if (ed < PR + GR * g.size) {
-            g.hitCd = 1.2;
-            g.kx += ex / (ed || 1) * 7; g.kz += ez / (ed || 1) * 7;
-            this.addYawn(e, g.size > 1 ? 0.3 : 0.24);
-          }
-        }
-      }
-      g.vx += (mvx - g.vx) * Math.min(1, dt * 8);
-      g.vz += (mvz - g.vz) * Math.min(1, dt * 8);
-      const decay = Math.max(0, 1 - dt * 6);
-      g.kx *= decay; g.kz *= decay;
-      if (g.state !== 'bubble') {
-        this.moveCircle(g, (g.vx + g.kx) * dt, (g.vz + g.kz) * dt, GR * g.size);
-        if (g.state !== 'walk') g.vx = g.vz = 0;
-      }
-    }
-    // Keep grumbles from piling into one spot.
-    const L = this.grumbles;
-    for (let i = 0; i < L.length; i++) {
-      for (let j = i + 1; j < L.length; j++) {
-        const a = L[i], b = L[j];
-        if (a.dead || b.dead || a.state === 'bubble' || b.state === 'bubble') continue;
-        const dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz), min = 0.8;
-        if (d < min && d > 0.001) {
-          const push = (min - d) / 2;
-          a.x -= dx / d * push; a.z -= dz / d * push;
-          b.x += dx / d * push; b.z += dz / d * push;
-        }
-      }
-    }
-    this.grumbles = this.grumbles.filter((g) => !g.dead);
-    for (const g of this.grumbles) {
-      const grow = g.state === 'pop' ? Math.min(1, g.t / 0.35) : 1;
-      const breathe = g.state === 'sleep' ? 1 + Math.sin(this.time * 3 + g.phase) * 0.06 : 1;
-      g.g.scale.set(g.size * grow, g.size * grow * breathe * (g.flash > 0 ? 0.7 : 1), g.size * grow);
-      g.g.position.set(g.x, g.state === 'bubble' ? g.y + Math.sin(this.time * 3 + g.phase) * 0.08 : (g.y = Math.max(0, g.y - dt * 3)), g.z);
-      g.g.rotation.z = g.state === 'sleep' ? 0.35 : 0;
-      if (g.state === 'walk' && Math.abs(g.vx) + Math.abs(g.vz) > 0.1) {
-        g.g.rotation.y = Math.atan2(g.vx, g.vz);
-        g.g.position.y = Math.abs(Math.sin(this.time * 12 + g.phase)) * 0.12;
-      }
     }
   }
 
@@ -1324,7 +729,6 @@ export class KeepScene extends MiniGame {
           const d = Math.sqrt(d2);
           o.x += dx / d * (rad - d); o.z += dz / d * (rad - d);
         } else {
-          // Center inside the tile: leave by the nearest side.
           const opts = [[o.x - x0 + rad, -1, 0], [x0 + CELL - o.x + rad, 1, 0], [o.z - z0 + rad, 0, -1], [z0 + CELL - o.z + rad, 0, 1]];
           opts.sort((a, b) => a[0] - b[0]);
           o.x += opts[0][1] * opts[0][0]; o.z += opts[0][2] * opts[0][0];
@@ -1342,13 +746,13 @@ export class KeepScene extends MiniGame {
 
   addYawn(e, amount) {
     if (e.state !== 'walk' || e.inv > 0) return false;
-    e.yawn = Math.min(1, e.yawn + amount * (e.cls === 'knight' ? 0.6 : 1));
+    e.yawn = Math.min(e.st.maxYawn, e.yawn + amount * (this.hasSkill(e, 'armor') ? 0.7 : 1));
     e.inv = 0.9;
     e.calm = 0;
     e.ch.squash(0.72);
     this.game.audio.play('bump');
     this.puffs.burst(new THREE.Vector3(e.x, 1.2, e.z), 0xc9a8ff, { count: 4, size: 0.3, life: 0.6, speed: 1.5 });
-    if (e.yawn >= 1) this.nap(e);
+    if (e.yawn >= e.st.maxYawn - 1e-6) this.nap(e);
     return true;
   }
 
@@ -1356,13 +760,15 @@ export class KeepScene extends MiniGame {
     e.state = 'nap';
     e.napT = 0;
     e.vx = e.vz = 0;
+    e.naps++;
+    this.naps++;
     this.game.audio.play('dizzy');
   }
 
   wake(e, by) {
     if (e.state !== 'nap') return;
     e.state = 'walk';
-    e.yawn = 0.3;
+    e.yawn = e.st.maxYawn * 0.3;
     e.inv = 1.6;
     e.calm = 0;
     e.ch.squash(1.4);
@@ -1375,44 +781,66 @@ export class KeepScene extends MiniGame {
   }
 
   mainAction(e) {
-    e.cdA = CD_A[e.cls];
+    e.cdA = BASE[e.cls].cdA / e.st.rate;
     e.swingT = 0.22;
     e.swingDir = -e.swingDir;
+    e.shotN++;
+    const dmg = e.st.dmg;
     if (e.cls === 'knight') {
-      this.swing(e, 2.4, 1.25, 2);
+      this.swing(e, 2.4, 1.25, dmg);
+      // Feather Wave: every other swing also sends a feather wave forward.
+      if (this.hasSkill(e, 'wave') && e.shotN % 2 === 0) this.shoot(e, 'feather', 0, dmg * 0.7, { pierce: 3 });
       this.game.audio.play('whoosh');
     } else if (e.cls === 'archer') {
-      this.shoot(e, 'dart', 0);
+      const pierce = this.hasSkill(e, 'pierce') ? 2 : 0;
+      if (this.hasSkill(e, 'double')) { this.shoot(e, 'dart', -0.07, dmg, { pierce }); this.shoot(e, 'dart', 0.07, dmg, { pierce }); }
+      else this.shoot(e, 'dart', 0, dmg, { pierce });
       this.game.audio.play('dash');
     } else if (e.cls === 'wizard') {
-      this.shoot(e, 'bubble', 0);
+      this.shoot(e, 'bubble', 0, dmg);
       this.game.audio.play('bubble');
     } else {
-      this.shoot(e, 'note', 0);
+      if (this.hasSkill(e, 'echo')) for (const a of [-0.22, 0, 0.22]) this.shoot(e, 'note', a, dmg * 0.75);
+      else this.shoot(e, 'note', 0, dmg);
       this.game.audio.play('select');
     }
   }
 
   special(e) {
-    e.cdB = CD_B[e.cls];
+    e.cdB = BASE[e.cls].cdB * (1 - e.st.cdr);
+    const dmg = e.st.dmg;
     if (e.cls === 'knight') {
       e.spinT = 0.4;
-      this.swing(e, 3.2, Math.PI, 2, 9);
+      this.swing(e, this.hasSkill(e, 'bigSpin') ? 4.2 : 3.2, Math.PI, dmg * 1.5, 9);
       this.game.audio.play('whoosh');
     } else if (e.cls === 'archer') {
-      for (let k = -2; k <= 2; k++) this.shoot(e, 'dart', k * 0.22);
+      const n = this.hasSkill(e, 'wideFan') ? 4 : 2;
+      const pierce = this.hasSkill(e, 'pierce') ? 2 : 0;
+      for (let k = -n; k <= n; k++) this.shoot(e, 'dart', k * (n === 2 ? 0.22 : 0.15), dmg, { pierce });
       this.game.audio.play('dash');
     } else if (e.cls === 'wizard') {
-      for (let k = 0; k < 8; k++) this.shoot(e, 'bubble', (k / 8) * Math.PI * 2, 0.5);
+      const n = this.hasSkill(e, 'storm') ? 14 : 8;
+      for (let k = 0; k < n; k++) this.shoot(e, 'bubble', (k / n) * Math.PI * 2, dmg, { life: this.hasSkill(e, 'storm') ? 0.75 : 0.5 });
       this.game.audio.play('trap');
     } else {
-      // Lullaby: nearby grumbles nod off, teammates get a speed boost.
-      const R = 5.5;
+      // Lullaby: nearby grumbles nod off, bosses get drowsy, teammates speed up.
+      const long = this.hasSkill(e, 'longSong');
+      const R = long ? 7.5 : 5.5, nap = long ? 7 : 5;
       for (const g of this.grumbles) {
-        if (g.state !== 'bubble' && Math.hypot(g.x - e.x, g.z - e.z) < R) { g.state = 'sleep'; g.t = 5; g.vx = g.vz = 0; }
+        if (g.state === 'bubble' || g.state === 'idle' || Math.hypot(g.x - e.x, g.z - e.z) > R) continue;
+        g.state = 'sleep'; g.t = g.elite ? nap * 0.5 : nap; g.vx = g.vz = 0;
       }
-      for (const o of this.ents) if (o.state === 'walk' && Math.hypot(o.x - e.x, o.z - e.z) < R) o.boost = 4;
-      if (this.sheep && Math.hypot(this.sheep.x - e.x, this.sheep.z - e.z) < R + 1.5) this.bonkSheep(3, e, null);
+      for (const o of this.ents) {
+        if (Math.hypot(o.x - e.x, o.z - e.z) > R) continue;
+        if (o.state === 'walk') o.boost = 4;
+        // Wake-up Tune: friends feel fresh and nappers wake.
+        if (this.hasSkill(e, 'wakeTune')) {
+          if (o.state === 'nap' && o !== e) this.wake(o, e);
+          else if (o.state === 'walk') o.yawn = Math.max(0, o.yawn - 0.4);
+        }
+      }
+      const b = this.boss;
+      if (b?.awake && Math.hypot(b.x - e.x, b.z - e.z) < R + b.r) { b.drowsy = long ? 5 : 3.5; b.damage(dmg * 2, e); }
       this.addFx('ring', e.x, e.z, { color: 0xffd23f, from: 0.5, to: R, life: 0.6 });
       this.confetti.burst(new THREE.Vector3(e.x, 1.2, e.z), 0, { count: 24, speed: 6, up: 2, colors: [0xffd23f, 0xc9a8ff, 0xffffff], life: 1, gravity: -2, size: 0.14 });
       this.game.audio.play('star');
@@ -1427,24 +855,20 @@ export class KeepScene extends MiniGame {
   }
 
   /** Knight pillow swing: everything in the arc gets bonked. */
-  swing(e, rad, half, nestDmg, push = 5) {
+  swing(e, rad, half, dmg, push = 5) {
+    const spin = half >= Math.PI;
     for (const g of [...this.grumbles]) {
-      if (!this.inArc(e, g.x, g.z, rad + GR, half)) continue;
+      if (!this.inArc(e, g.x, g.z, rad + GR * g.size, half)) continue;
       const dx = g.x - e.x, dz = g.z - e.z, d = Math.hypot(dx, dz) || 1;
-      this.hitGrumble(g, 1, e, dx / d * push, dz / d * push);
+      this.hitGrumble(g, dmg, e, dx / d * push, dz / d * push, spin ? null : e);
     }
-    for (const n of this.nests) if (!n.done && this.inArc(e, n.x, n.z, rad + n.r, half)) this.damageNest(n, nestDmg, e);
-    const s = this.sheep;
-    if (this.sheepAwake()) {
-      for (const spot of s.spots) {
-        const p = this.spotPos(s, spot);
-        if (this.inArc(e, p.x, p.z, rad + 0.5, half)) { this.bonkSheep(1, e, spot); break; }
-      }
-    }
+    for (const n of this.nests) if (!n.done && this.inArc(e, n.x, n.z, rad + n.r, half)) this.damageNest(n, dmg * 1.6, e);
+    const b = this.boss;
+    if (b?.awake && b.y < 2.5 && this.inArc(e, b.x, b.z, rad + b.r, half)) { b.damage(dmg, e); this.game.audio.play('boing'); }
     this.addFx('arc', e.x, e.z, { yaw: Math.atan2(e.fx, e.fz), half, rad, life: 0.2 });
   }
 
-  shoot(e, kind, angOff, lifeScale = 1) {
+  shoot(e, kind, angOff, dmg, { pierce = 0, life = 1 } = {}) {
     const a = Math.atan2(e.fx, e.fz) + angOff;
     const dx = Math.sin(a), dz = Math.cos(a);
     const S = SHOTS[kind];
@@ -1458,6 +882,10 @@ export class KeepScene extends MiniGame {
     } else if (kind === 'bubble') {
       m = mesh(sph(0.36, 16, 12), toon(0xbfe9ff, { transparent: true, opacity: 0.55 }), 0, 0, 0, false);
       m.add(mesh(sph(0.08), toon(COLORS.white), -0.14, 0.14, 0.24, false));
+    } else if (kind === 'feather') {
+      m = new THREE.Mesh(sharedGeo('kFeatherArc', () => new THREE.RingGeometry(0.6, 1.0, 16, 1, -Math.PI / 2 - 0.8, 1.6)), basic(0xffffff, { transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide }));
+      m.rotation.order = 'YXZ';
+      m.rotation.set(-Math.PI / 2, a, 0);
     } else {
       m = new THREE.Group();
       const head = mesh(sph(0.14, 10, 8), toon(0x9b5de5), 0, 0, 0, false);
@@ -1465,46 +893,59 @@ export class KeepScene extends MiniGame {
       m.add(head, mesh(bx('noteStem', 0.05, 0.4, 0.05), toon(0x9b5de5), 0.14, 0.2, 0, false));
     }
     this.level.add(m);
-    this.shots.push({ kind, x: e.x + dx * 0.5, z: e.z + dz * 0.5, vx: dx * S.speed, vz: dz * S.speed, life: S.life * lifeScale, owner: e, mesh: m, t: 0 });
+    this.shots.push({ kind, x: e.x + dx * 0.5, z: e.z + dz * 0.5, vx: dx * S.speed, vz: dz * S.speed, life: S.life * life, owner: e, mesh: m, t: 0, dmg, pierce, hits: new Set(), homing: kind === 'bubble' && this.hasSkill(e, 'homing') });
   }
 
   updateShots(dt) {
-    const s = this.sheep;
+    const b = this.boss;
     for (const sh of this.shots) {
       sh.life -= dt;
       sh.t += dt;
+      if (sh.homing) {
+        // Homing Bubbles curve toward the nearest grumble ahead.
+        let best = null, bd = 5;
+        for (const g of this.grumbles) { if (g.state === 'bubble' || g.dead) continue; const d = Math.hypot(g.x - sh.x, g.z - sh.z); if (d < bd) { bd = d; best = g; } }
+        if (best) {
+          const sp = Math.hypot(sh.vx, sh.vz), tx = (best.x - sh.x) / bd * sp, tz = (best.z - sh.z) / bd * sp;
+          const k = Math.min(1, dt * 5);
+          sh.vx += (tx - sh.vx) * k; sh.vz += (tz - sh.vz) * k;
+        }
+      }
       sh.x += sh.vx * dt;
       sh.z += sh.vz * dt;
+      const from = { x: sh.x - sh.vx, z: sh.z - sh.vz };
       let hit = sh.life <= 0 || !this.walkableAt(sh.x, sh.z);
       if (!hit) {
         for (const n of this.nests) {
-          if (!n.done && Math.hypot(n.x - sh.x, n.z - sh.z) < n.r + 0.15) { this.damageNest(n, 1, sh.owner); hit = true; break; }
+          if (!n.done && Math.hypot(n.x - sh.x, n.z - sh.z) < n.r + 0.15) { this.damageNest(n, sh.dmg, sh.owner); hit = true; break; }
         }
       }
       if (!hit) {
         for (const g of this.grumbles) {
-          if (g.dead || Math.hypot(g.x - sh.x, g.z - sh.z) > 0.55 + 0.25 * g.size) continue;
-          if (sh.kind === 'bubble') this.trapGrumble(g);
-          else this.hitGrumble(g, 1, sh.owner, sh.vx * 0.3, sh.vz * 0.3);
-          hit = true;
+          if (g.dead || sh.hits.has(g) || Math.hypot(g.x - sh.x, g.z - sh.z) > 0.55 + 0.25 * g.size) continue;
+          sh.hits.add(g);
+          if (sh.kind === 'bubble') {
+            if (this.blocks(g, from.x, from.z)) this.blockFx(g);
+            else this.trapGrumble(g, sh.owner);
+            hit = true;
+          } else {
+            const landed = this.hitGrumble(g, sh.dmg, sh.owner, sh.vx * 0.3, sh.vz * 0.3, from);
+            if (!landed || sh.pierce-- <= 0) hit = true;
+          }
           break;
         }
       }
-      if (!hit && this.sheepAwake()) {
-        for (const spot of s.spots) {
-          const p = this.spotPos(s, spot);
-          if (Math.hypot(p.x - sh.x, p.z - sh.z) < 0.75 && spot.dim <= 0) { this.bonkSheep(1, sh.owner, spot); hit = true; break; }
-        }
-        if (!hit && Math.hypot(s.x - sh.x, s.z - sh.z) < 1.1) hit = true; // fizzles on the fluffy body
+      if (!hit && b?.awake && b.y < 2.5 && Math.hypot(b.x - sh.x, b.z - sh.z) < b.r + 0.3) {
+        b.damage(sh.kind === 'bubble' ? sh.dmg * 1.5 : sh.dmg, sh.owner);
+        hit = true;
       }
       if (hit) {
         sh.dead = true;
         this.level.remove(sh.mesh);
-        disposeTree(sh.mesh);
         this.puffs.burst(new THREE.Vector3(sh.x, 0.8, sh.z), sh.kind === 'bubble' ? 0xbfe9ff : 0xffffff, { count: 3, size: 0.2, life: 0.3, speed: 1.5 });
         continue;
       }
-      const y = 0.8 + (sh.kind === 'note' ? Math.sin(sh.t * 20) * 0.15 : 0);
+      const y = sh.kind === 'feather' ? 0.4 : 0.8 + (sh.kind === 'note' ? Math.sin(sh.t * 20) * 0.15 : 0);
       sh.mesh.position.set(sh.x, y, sh.z);
       if (sh.kind === 'bubble') sh.mesh.scale.setScalar(1 + Math.sin(sh.t * 18) * 0.06);
     }
@@ -1555,6 +996,7 @@ export class KeepScene extends MiniGame {
     this.game.audio.play('fanfare');
     this.game.ui.toast(t('keep.unlock'), 1400);
     this.confetti.burst(new THREE.Vector3(door.x, 1.2, door.z), 0, { count: 40, speed: 7, up: 4, colors: [COLORS.gold, 0xffffff, e.p.color], life: 1.1, size: 0.16 });
+    this.updateFlow();
   }
 
   openChest(chest, e) {
@@ -1563,8 +1005,10 @@ export class KeepScene extends MiniGame {
     this.floater(t('keep.chest'), new THREE.Vector3(chest.x, 2.2, chest.z), e.p.css, 1.2);
     this.confetti.burst(new THREE.Vector3(chest.x, 1, chest.z), COLORS.gold, { count: 24, speed: 5, up: 5, life: 0.9, size: 0.14 });
     const n = this.ents.length;
-    for (let i = 0; i < 6 + n; i++) this.spawnItem('coin', chest.x, chest.z + 0.5, true);
-    for (let i = 0; i < (n >= 3 ? 2 : 1); i++) this.spawnItem('snack', chest.x, chest.z + 0.5, true);
+    for (let i = 0; i < 5 + n; i++) this.spawnItem('coin', chest.x, chest.z + 0.5, true);
+    if (Math.random() < 0.7) this.spawnItem('snack', chest.x, chest.z + 0.5, true);
+    this.dropLoot(chest.x, chest.z + 0.6, 'chest', 1 + Math.floor(n / 3));
+    this.gainXp(5, chest.x, chest.z);
   }
 
   updateDoorsAndChests(dt, active) {
@@ -1645,10 +1089,12 @@ export class KeepScene extends MiniGame {
     this.fx = this.fx.filter((f) => f.life > 0);
   }
 
-  floater(text, pos, css, life) {
+  /** Floating text; dark = dark outline (for gold/white text that needs contrast). */
+  floater(text, pos, css, life, dark = false) {
     const el = this.game.ui.label('label');
     el.textContent = text;
     el.style.color = css;
+    if (dark) { el.style.webkitTextStroke = '0.2em #2b2340'; el.style.fontSize = 'clamp(12px, 1.2vw, 20px)'; }
     this.floaters.push({ el, pos: pos.clone(), life, max: life });
   }
 
@@ -1677,7 +1123,7 @@ export class KeepScene extends MiniGame {
       if (d < tg.r && this.walkableAt(e.x, e.z)) {
         e.state = 'walk';
         e.bubble.visible = false;
-        e.yawn = Math.min(e.yawn, 0.5);
+        e.yawn = Math.min(e.yawn, e.st.maxYawn * 0.5);
         e.inv = 1;
         e.bubbleCd = 2;
         e.ch.squash(0.7);
@@ -1688,7 +1134,6 @@ export class KeepScene extends MiniGame {
       e.napT += dt;
       if (e.napT >= (this.ents.length === 1 ? NAP_SOLO : NAP_MAX)) this.wake(e, null);
       else if (active) {
-        // A teammate bumping into a napper wakes them up.
         const friend = this.ents.find((o) => o !== e && o.state === 'walk' && Math.hypot(o.x - e.x, o.z - e.z) < 1.1);
         if (friend) this.wake(e, friend);
       }
@@ -1697,7 +1142,7 @@ export class KeepScene extends MiniGame {
       const len = Math.hypot(mx, mz);
       if (len > 1) { mx /= len; mz /= len; }
       if (len > 0.25) { const l = Math.hypot(mx, mz); e.fx = mx / l; e.fz = mz / l; }
-      const sp = SPEED * (e.boost > 0 ? 1.45 : 1) * (e.yawn > 0.66 ? 0.85 : 1);
+      const sp = SPEED * e.st.speed * (e.boost > 0 ? 1.45 : 1) * (e.yawn > e.st.maxYawn * 0.66 ? 0.85 : 1);
       e.vx += (mx * sp - e.vx) * Math.min(1, dt * 14);
       e.vz += (mz * sp - e.vz) * Math.min(1, dt * 14);
       this.moveCircle(e, e.vx * dt, e.vz * dt, PR);
@@ -1710,7 +1155,6 @@ export class KeepScene extends MiniGame {
       if (e.calm > 3) e.yawn = Math.max(0, e.yawn - 0.03 * dt);
       if (e.boost > 0 && Math.random() < dt * 10) this.puffs.burst(new THREE.Vector3(e.x, 0.2, e.z), 0xffd23f, { count: 1, size: 0.18, life: 0.4, speed: 1 });
     }
-    // Pose.
     const ch = e.ch;
     if (Math.abs(e.fx) + Math.abs(e.fz) > 0.01) ch.face(e.fx, e.fz);
     let y = 0;
@@ -1770,7 +1214,6 @@ export class KeepScene extends MiniGame {
       if (!others.length) continue;
       const mx = others.reduce((a, o) => a + o.x, 0) / others.length;
       const mz = others.reduce((a, o) => a + o.z, 0) / others.length;
-      // Moving away from the group counts a bit extra, so the one who wandered off is the one pulled.
       const away = ((e.x - mx) * e.vx + (e.z - mz) * e.vz) > 0 ? 0.15 : 0;
       const f = Math.max(Math.abs(e.x - mx) / STRAY_X, Math.abs(e.z - mz) / STRAY_Z) + away;
       if (f > wf) { wf = f; worst = e; }
@@ -1798,7 +1241,6 @@ export class KeepScene extends MiniGame {
     const on = this.ents.filter((e) => e.state !== 'bubble' && this.inStairs(e.x, e.z)).length;
     this.onStairs = on;
     if (on === n) { this.nextFloor(); return; }
-    // If someone wandered off again after the float, give it another go a bit later.
     if (this.floatingAll && !this.ents.some((e) => e.state === 'bubble')) { this.floatingAll = false; this.stairsT = STAIRS_WAIT - 3; }
     if (on >= Math.ceil(n / 2) && on > 0) {
       this.stairsT += dt;
@@ -1824,7 +1266,7 @@ export class KeepScene extends MiniGame {
     this.floorTimes.push(this.floorT);
     this.game.audio.play('fanfare');
     this.confetti.burst(new THREE.Vector3(this.stairs.x, 1.5, this.stairs.z), 0, { count: 60, speed: 8, up: 5, colors: PLAYER_COLORS.map((c) => c.hex).concat(COLORS.gold), life: 1.3, size: 0.18 });
-    if (this.floorIndex >= FLOORS.length - 1) {
+    if (this.floorIndex >= FLOORS - 1) {
       this.later(1.0, () => this.end());
       return;
     }
@@ -1841,19 +1283,28 @@ export class KeepScene extends MiniGame {
     const coins = this.ents.reduce((a, e) => a + e.coins, 0);
     const ranked = [...this.ents].sort((a, b) => b.coins - a.coins);
     const top = ranked[0].coins;
+    this.totalTime = total;
     this.confettiOrigin = this.camCenter.clone().setY(2);
     this.finish({
       title: t('keep.title'),
-      subtitle: `${t('keep.sub', { coins, time: clock(total) })} · ${this.floorTimes.map((s, i) => `${i + 1}: ${clock(s)}`).join(' · ')}`,
+      subtitle: `${t('keep.sub', { coins, time: clock(total), lv: this.teamLevel, naps: this.naps })} · ${this.floorTimes.map((s, i) => `${i + 1}: ${clock(s)}`).join(' · ')}`,
       rows: ranked.map((e) => ({
         css: e.p.css,
         name: e.p.name,
         value: e.coins === 1 ? t('keep.coin1') : t('keep.coins', { n: e.coins }),
-        detail: t('keep.detail', { cls: t(`keep.cls.${e.cls}`), nests: e.nests, woken: e.woken }),
+        detail: `${t('keep.detail', { cls: `${t(`keep.cls.${e.cls}`)} ${t('keep.lv', { n: e.level })}`, fluffed: e.fluffed, nests: e.nests, woken: e.woken })}${e.best ? ` · ${itemName(e.best)}` : ''}`,
         crown: top > 0 && e.coins === top,
       })),
-      stars: total < 420 ? 3 : 2,
+      stars: this.naps <= 3 + 2 * this.ents.length ? 3 : 2,
     });
+  }
+
+  /** Story campaign hook: 1 = the whole keep with hardly any naps, lower the more the team napped. */
+  campaignStats() {
+    const n = this.ents.length;
+    const floors = this.floorTimes.length;
+    const nap = clamp(1 - this.naps / (6 + 4 * n), 0.3, 1);
+    return { team: (floors / FLOORS) * nap, floors, level: this.teamLevel, naps: this.naps, time: this.totalTime ?? 0, players: n };
   }
 
   // ---------- camera, lights, HUD ----------
@@ -1861,10 +1312,10 @@ export class KeepScene extends MiniGame {
   updateCamera(dt, snap = false) {
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
     const pts = this.ents.map((e) => [e.x, e.z]);
-    if (this.sheepAwake()) pts.push([this.sheep.x, this.sheep.z]);
+    if (this.boss?.awake) pts.push([this.boss.x, this.boss.z]);
     for (const [x, z] of pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
     const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-    const d = clamp(this.fitDistance(x1 - x0 + 14, (z1 - z0 + 10) * Math.sin(TILT)), 23, 40);
+    const d = clamp(this.fitDistance(x1 - x0 + 14, (z1 - z0 + 10) * Math.sin(TILT)), 23, 42);
     const k = snap ? 1 : Math.min(1, dt * 3);
     this.camCenter.x += (cx - this.camCenter.x) * k;
     this.camCenter.z += (cz - this.camCenter.z) * k;
@@ -1908,7 +1359,7 @@ export class KeepScene extends MiniGame {
         if (prompt) html += `<small style="color:#2b2340">${esc(prompt)}</small>`;
         if (e.state === 'nap') html += `<span style="color:#8a45e0">Zzz</span>`;
         else if (e.yawn >= 0.05) {
-          const n = Math.min(5, Math.ceil(e.yawn * 5 - 0.001));
+          const n = Math.min(5, Math.ceil(e.yawn / e.st.maxYawn * 5 - 0.001));
           html += `<span style="color:#9b5de5">${'●'.repeat(n)}</span><span style="color:#d6cfe6">${'●'.repeat(5 - n)}</span>`;
         }
       }
@@ -1919,30 +1370,39 @@ export class KeepScene extends MiniGame {
     }
   }
 
+  /** The boss health bar: name, phase and notches where the next phases start. */
+  bossBar() {
+    const b = this.boss;
+    const pct = Math.round(b.pct * 100);
+    const notches = b.phases.map((p) => `<span style="position:absolute;left:${p * 100}%;top:-2px;bottom:-2px;width:3px;background:#2b2340"></span>`).join('');
+    const phase = b.phases.length ? ` <small style="opacity:.7">${esc(t('keep.phase', { n: b.phase + 1, m: b.phases.length + 1 }))}</small>` : '';
+    return `<div class="pill" style="flex-direction:column;gap:3px;padding:6px 22px"><div><b>${esc(t(b.nameKey))}</b>${phase}</div>`
+      + `<span style="position:relative;display:block;width:clamp(180px,26vw,420px);height:.8em;border-radius:1em;background:#e6defa;border:2px solid #2b2340"><span style="display:block;height:100%;width:${pct}%;border-radius:1em;background:linear-gradient(#c78bff,#8a45e0)"></span>${notches}</span></div>`;
+  }
+
   goalText() {
-    const s = this.sheep;
-    if (s && !s.gone && s.state !== 'idle') {
-      const pct = Math.round(s.sleep / s.need * 100);
-      return `<b>${esc(t('keep.boss'))}</b><span style="display:inline-block;width:7em;height:.7em;border-radius:1em;background:#e6defa;overflow:hidden"><span style="display:block;height:100%;width:${pct}%;background:#9b5de5"></span></span>`;
-    }
     if (this.onStairs > 0) return esc(t('keep.waiting', { n: this.onStairs, total: this.ents.length }));
     const closed = this.doors.some((d) => !d.open);
     if (closed) {
       if (this.ents.some((e) => e.hasKey)) return esc(t('keep.goal.door'));
       return esc(t('keep.goal.key'));
     }
-    if (this.fog) return esc(t('keep.goal.sheep'));
+    if (this.fog) return esc(t('keep.goal.boss'));
     return esc(t('keep.goal.stairs'));
   }
 
   updateHud() {
     if (this.state !== 'play' && this.state !== 'intro') return;
     const coins = this.ents.reduce((a, e) => a + e.coins, 0);
-    this.game.ui.setTop(`<div class="pill"><b>${esc(t('keep.floor', { n: this.floorIndex + 1, total: FLOORS.length }))}</b></div>`
-      + `<div class="pill">${COIN} <b>${coins}</b></div><div class="pill">${clock(this.floorT)}</div><div class="pill">${this.goalText()}</div>`);
+    const xpPct = Math.round(this.xp / xpNeed(this.teamLevel) * 100);
+    const lv = `<div class="pill"><b>${esc(t('keep.lv', { n: this.teamLevel }))}</b><span style="display:inline-block;width:4.5em;height:.55em;border-radius:1em;background:#e6defa;overflow:hidden"><span style="display:block;height:100%;width:${xpPct}%;background:#ffb400"></span></span></div>`;
+    const b = this.boss;
+    const goal = b && b.state !== 'idle' && !b.gone ? this.bossBar() : `<div class="pill">${this.goalText()}</div>`;
+    this.game.ui.setTop(`<div class="pill"><b>${esc(t('keep.floor', { n: this.floorIndex + 1, total: FLOORS }))}</b></div>`
+      + `${lv}<div class="pill">${COIN} <b>${coins}</b></div><div class="pill">${clock(this.floorT)}</div>${goal}`);
     this.game.ui.bar(this.players, (p) => {
       const e = this.ents.find((x) => x.p === p);
-      return e ? `${GLYPH[e.cls]} ${COIN} ${e.coins}` : '';
+      return e ? `${GLYPH[e.cls]} ${esc(t('keep.lv', { n: e.level }))} · ${COIN} ${e.coins}` : '';
     });
   }
 
@@ -1963,7 +1423,8 @@ export class KeepScene extends MiniGame {
     this.updateShots(dt);
     this.updateItems(dt, active);
     this.updateDoorsAndChests(dt, active);
-    this.updateSheep(dt, active);
+    if (this.boss && !this.boss.gone) this.boss.update(dt, active);
+    this.hazards.update(dt, active);
     this.updateFx(dt);
     this.updateStairs(dt, active);
     if (this.stairsArrow) {
@@ -1979,3 +1440,5 @@ export class KeepScene extends MiniGame {
     this.updateHud();
   }
 }
+
+Object.assign(KeepScene.prototype, FoeMixin, LootMixin);

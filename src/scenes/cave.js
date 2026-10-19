@@ -7,6 +7,7 @@ import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo, faceted } from '../core/
 import { addLights, skyTexture, makeGem, makeMushroom, makeStar, seeded } from '../core/world.js';
 import { moveBody, platformerControl } from '../core/physics2d.js';
 import { esc } from '../core/ui.js';
+import { makeGrumble } from '../core/critters.js';
 
 addStrings({
   en: {
@@ -664,6 +665,7 @@ function placeCritters(lv, seen, players, used, free, take) {
         if (!q.pass(lc, r) || HAZ[q.at(lc, r)] || CLIMBY[q.at(lc, r)]) break;
         if (q.support(lc, r) && !q.pass(lc, r - 1)) break; // needs room to hop over the peas
         if (nearEnt(lc, r, 2)) { len = 0; break; }
+        if (nearExit(lc, r, 2)) break; // no peas flying around the door
         len = k;
       }
       if (len >= 4 && !nearExit(fc, r, 2) && lv.plants.every((p) => p.r !== r || Math.abs(p.c - c) > 6) && far(i, lv.plants, 6)) { lv.plants.push({ c, r, dir, len }); break; }
@@ -714,7 +716,7 @@ const GRUMBLE_COLORS = [0x7b6cf6, 0x4f7bd8, 0xd64f9a];
 const STAL_COLORS = [0x9d93b5, 0xd8f0ff, 0xe0a8ff];
 const HEART_PATH = 'M5 8.6C2 6.4 0.4 4.8 0.4 3A2.3 2.3 0 0 1 5 1.9A2.3 2.3 0 0 1 9.6 3C9.6 4.8 8 6.4 5 8.6Z';
 const heartSvg = (fill) => `<svg viewBox="0 0 10 9" style="width:0.82em;height:0.74em;vertical-align:-0.04em;margin-right:0.06em"><path d="${HEART_PATH}" fill="${fill}"/></svg>`;
-const GHOST_SVG = '<svg viewBox="0 0 10 10" style="width:1em;height:1em;vertical-align:-0.12em;margin-right:0.15em"><path d="M1.5 9.5V4.6a3.5 3.5 0 0 1 7 0v4.9l-1.15-.9-1.15.9-1.2-.9-1.2.9-1.15-.9z" fill="#fff" opacity="0.9"/><circle cx="3.9" cy="4.7" r="0.75" fill="#2b2140"/><circle cx="6.1" cy="4.7" r="0.75" fill="#2b2140"/></svg>';
+const GHOST_SVG = '<svg viewBox="0 0 10 10" style="width:1em;height:1em;vertical-align:-0.12em;margin-right:0.15em"><path d="M1.5 9.5V4.6a3.5 3.5 0 0 1 7 0v4.9l-1.15-.9-1.15.9-1.2-.9-1.2.9-1.15-.9z" fill="#d9d4f0" stroke="#8a82b0" stroke-width="0.6"/><circle cx="3.9" cy="4.7" r="0.75" fill="#2b2140"/><circle cx="6.1" cy="4.7" r="0.75" fill="#2b2140"/></svg>';
 
 const geo = {
   box: () => sharedGeo('caveBox', () => new THREE.BoxGeometry(1, 1, 2)),
@@ -787,12 +789,12 @@ function makeGhost(color) {
     part(inner, geo.sph(0.1, 8, 6), sheet, Math.sin(a) * 0.5, 0.4, Math.cos(a) * 0.5);
   }
   for (const s of [-1, 1]) {
-    const eye = part(inner, geo.sph(0.075, 10, 8), toon(COLORS.ink), s * 0.16, 0.92, 0.46);
+    const eye = part(inner, geo.sph(0.085, 10, 8), toon(COLORS.ink), s * 0.16, 0.95, 0.47);
     eye.scale.set(0.8, 1.25, 0.5);
     const arm = part(inner, geo.sph(0.12, 8, 6), sheet, s * 0.56, 0.7, 0.05);
     arm.scale.set(0.7, 1.2, 0.7);
   }
-  part(inner, geo.sph(0.05, 8, 6), toon(COLORS.ink), 0, 0.76, 0.48).scale.set(1, 0.7, 0.5);
+  part(inner, geo.sph(0.055, 8, 6), toon(COLORS.ink), 0, 0.78, 0.53).scale.set(1, 0.7, 0.5);
   g.userData.inner = inner;
   g.scale.setScalar(BEAN_SCALE);
   return g;
@@ -865,6 +867,8 @@ export class CaveScene extends MiniGame {
     this.depthsDone = 0;
     this.teamGems = 0;
     this.puppiesSaved = 0;
+    this.restarts = 0; // all-ghost restarts (each one rolls a fresh layout)
+    this.restarting = false;
     this.hintTime = HINT_TIME;
     this.rescueTime = RESCUE_TIME;
     this.camX = 0;
@@ -882,6 +886,10 @@ export class CaveScene extends MiniGame {
 
   retryOptions() {
     return { key: this.key };
+  }
+
+  onStart() {
+    this.later(0.6, () => { if (this.state === 'play') this.game.ui.toast(t('cave.tip'), 4200); });
   }
 
   // ---------- grid helpers ----------
@@ -902,7 +910,7 @@ export class CaveScene extends MiniGame {
   /** Collision box for a cell (null when there is nothing to bump into). */
   makeRect(c, r) {
     const tl = this.tile(c, r), y = this.bottomOf(r);
-    if (tl === TL.DIRT || tl === TL.ROCK || tl === TL.GOLD) return { x: c, y, w: 1, h: 1, cell: r * this.lv.W + c };
+    if (tl === TL.DIRT || tl === TL.ROCK || tl === TL.GOLD || tl === TL.CRUMB) return { x: c, y, w: 1, h: 1, cell: r * this.lv.W + c };
     if (tl === TL.PLAT) return { x: c, y: y + 0.75, w: 1, h: 0.25, oneWay: true };
     if (tl === TL.MUSH) return { x: c + 0.08, y, w: 0.84, h: 0.55, spring: true, cell: r * this.lv.W + c };
     if (CLIMBY[tl] && !CLIMBY[this.tile(c, r - 1)] && this.passable(c, r - 1)) return { x: c, y: y + 0.85, w: 1, h: 0.15, oneWay: true, ladderTop: true };
@@ -946,11 +954,25 @@ export class CaveScene extends MiniGame {
     for (const [x, y, s] of [[0, 0, 0.16], [0.13, -0.08, 0.1], [-0.12, -0.05, 0.11]]) part(honey, geo.sph(s), toon(0xffb627), x, y, 0.1);
     honey.visible = false;
     this.scene.add(honey);
+    const ghost = makeGhost(p.color);
+    ghost.visible = false;
+    this.scene.add(ghost);
+    // Hearts that pop up over your head when you get hurt or heal.
+    const heartRow = new THREE.Group();
+    const heartSlots = [];
+    for (let k = 0; k < MAX_HEARTS; k++) {
+      const full = makeHeart(), empty = makeHeart(0x6d6a80, 0x000000);
+      for (const h of [full, empty]) { h.position.x = (k - (MAX_HEARTS - 1) / 2) * 0.36; heartRow.add(h); }
+      heartSlots.push({ full, empty });
+    }
+    heartRow.visible = false;
+    this.scene.add(heartRow);
     return {
-      p, ch, bubble, stars, honey,
+      p, ch, bubble, stars, honey, ghost, heartRow, heartSlots,
       body: { x: 0, y: 0, w: BODY_W, h: BODY_H, vx: 0, vy: 0, grounded: true },
       facing: 1, state: 'play', t: 0, climbing: false, climbCol: 0, regrab: 0,
-      dizzy: 0, stun: 0, invuln: 0, sticky: 0, peakY: 0, lastSafe: { x: 0, y: 0 },
+      dizzy: 0, stun: 0, invuln: 0, sticky: 0, knock: 0, peakY: 0, lastSafe: { x: 0, y: 0 },
+      hearts: MAX_HEARTS, heartShow: 0, hits: 0, ghosts: 0,
       gems: 0, ropes: ROPES, bombs: BOMBS, ropesUsed: 0, bombsUsed: 0, pups: 0, toExit: false, order: i,
     };
   }
@@ -965,7 +987,8 @@ export class CaveScene extends MiniGame {
     }
     this.depth = d;
     this.theme = THEMES[d];
-    this.lv = generateCave(this.seed, d);
+    // After an all-ghost restart the same depth gets a brand new layout.
+    this.lv = generateCave(this.seed + this.restarts * 7777, d, this.players.length);
     if (this.scene.background?.dispose) this.scene.background.dispose();
     this.scene.background = skyTexture(...this.theme.sky);
     this.levelGroup = new THREE.Group();
@@ -978,6 +1001,9 @@ export class CaveScene extends MiniGame {
     this.snowballs = [];
     this.mushMeshes = new Map();
     this.nuggetMeshes = new Map();
+    this.hazMeshes = new Map(); // cell -> mesh for spikes and goo
+    this.crumbs = new Map(); // cell -> crumbly floor
+    this.gooBubbles = [];
     this.hint = null;
     this.protect = new Set();
     const { W, H } = this.lv;
@@ -989,6 +1015,7 @@ export class CaveScene extends MiniGame {
     this.buildTiles();
     this.buildDecor();
     this.buildThings();
+    this.buildDangers();
     this.computeDist();
 
     const en = this.lv.entrance;
@@ -1001,8 +1028,12 @@ export class CaveScene extends MiniGame {
       b.grounded = true;
       e.state = 'play';
       e.climbing = false;
-      e.dizzy = e.stun = e.sticky = 0;
+      e.dizzy = e.stun = e.sticky = e.knock = 0;
       e.invuln = 0;
+      // Everyone (ghosts too) starts each cave alive with full hearts.
+      e.hearts = MAX_HEARTS;
+      e.heartShow = 0;
+      e.ghost.visible = false;
       e.peakY = sy;
       e.lastSafe = { x: sx, y: sy };
       e.toExit = false;
@@ -1077,6 +1108,37 @@ export class CaveScene extends MiniGame {
           part(g, geo.rbox('honey', 1.0, 0.38, 1.8, 0.1), toon(0xffb627), x, y + 0.17, 0);
           const drip = part(g, geo.sph(0.09), toon(0xffc94a), x + (c % 2 ? 0.2 : -0.2), y + 0.33, 0.85);
           drip.scale.y = 1.6;
+        } else if (tl === TL.SPIKE || tl === TL.CSPIKE) {
+          const sp = makeSpikes(tl === TL.CSPIKE);
+          sp.position.set(x, tl === TL.CSPIKE ? y + 1 : y, 0);
+          g.add(sp);
+          this.hazMeshes.set(r * W + c, sp);
+        } else if (tl === TL.GOO) {
+          const gc = GOO_COLORS[this.depth];
+          const pool = new THREE.Group();
+          pool.position.set(x, y, 0);
+          part(pool, geo.rbox('goo', 1.0, 0.4, 1.8, 0.1), toon(gc, { emissive: this.depth === 1 ? 0x0a2040 : 0x401000 }), 0, 0.19, 0);
+          for (let k = 0; k < 2; k++) {
+            const bub = part(pool, geo.sph(0.09, 8, 6), toon(new THREE.Color(gc).lerp(new THREE.Color(0xffffff), 0.45).getHex()), (k - 0.5) * 0.45, 0.38, 0.6 - k * 0.5);
+            this.gooBubbles.push({ mesh: bub, phase: (c * 1.7 + k * 2.3) % 3 });
+          }
+          g.add(pool);
+          this.hazMeshes.set(r * W + c, pool);
+        } else if (tl === TL.CRUMB) {
+          const cm = new THREE.Group();
+          cm.position.set(x, y + 0.5, 0);
+          const crumbColor = new THREE.Color(th.dirt[0]).lerp(new THREE.Color(0x8a8aa0), 0.4).getHex();
+          const block = part(cm, geo.rbox('crumb', 0.96, 0.96, 1.92, 0.1), toon(crumbColor), 0, 0, 0);
+          block.castShadow = block.receiveShadow = true;
+          const crack = toon(0x4a3a4a);
+          for (const [cx, cy, rz, w] of [[-0.15, 0.1, 0.7, 0.45], [0.18, -0.05, -0.5, 0.4], [0.02, -0.28, 0.2, 0.3]]) {
+            const cr = part(cm, geo.rbox('crack', 1, 0.05, 0.04, 0.01), crack, cx, cy, 0.97);
+            cr.scale.x = w;
+            cr.rotation.z = rz;
+          }
+          part(cm, geo.rbox('crumbTop', 1.0, 0.14, 1.96, 0.05), toon(th.top), 0, 0.45, 0);
+          g.add(cm);
+          this.crumbs.set(r * W + c, { i: r * W + c, c, r, x, mesh: cm, state: 'solid', t: 0 });
         } else if (tl === TL.MUSH) {
           const mush = makeMushroom(th.mush);
           mush.scale.setScalar(0.55);
@@ -1220,10 +1282,18 @@ export class CaveScene extends MiniGame {
       this.crates.push({ x: s.c + 0.5, y: this.bottomOf(s.r), mesh, open: false });
     }
     for (const s of lv.snowballs) {
+      // Rolling boulders (big snowballs in the frosty cave).
       const mesh = new THREE.Group();
-      const ball = part(mesh, geo.sph(0.42, 16, 12), toon(COLORS.white), 0, 0, 0);
-      ball.castShadow = true;
-      for (const [x, y, z] of [[0.25, 0.2, 0.25], [-0.2, -0.1, 0.32], [0.05, 0.3, -0.25]]) part(mesh, geo.sph(0.12), toon(0xe6f4ff), x, y, z);
+      if (this.depth === 1) {
+        const ball = part(mesh, geo.sph(0.42, 16, 12), toon(COLORS.white), 0, 0, 0);
+        ball.castShadow = true;
+        for (const [x, y, z] of [[0.25, 0.2, 0.25], [-0.2, -0.1, 0.32], [0.05, 0.3, -0.25]]) part(mesh, geo.sph(0.12), toon(0xe6f4ff), x, y, z);
+      } else {
+        const rockM = toon(this.depth === 0 ? 0x9c8f84 : 0x9a86b8, { flat: true });
+        const ball = part(mesh, sharedGeo('caveBoulder', () => faceted(new THREE.IcosahedronGeometry(0.43, 1))), rockM, 0, 0, 0);
+        ball.castShadow = true;
+        for (const [x, y, z] of [[0.22, 0.24, 0.26], [-0.26, -0.08, 0.28]]) part(mesh, geo.nugget(), toon(this.theme.crystal[0], { emissive: 0x111133 }), x, y, z).scale.setScalar(1.3);
+      }
       g.add(mesh);
       const home = { x: s.c + 0.5, y: this.bottomOf(s.r) };
       this.snowballs.push({ home, mesh, body: { x: home.x, y: home.y, w: 0.8, h: 0.8, vx: 0, vy: 0 }, state: 'idle', t: 0, dir: 1, bounces: 0 });
@@ -1236,6 +1306,52 @@ export class CaveScene extends MiniGame {
       g.add(mesh, heart);
       this.puppy = { x: lv.puppy.c + 0.5, y: this.bottomOf(lv.puppy.r), mesh, heart, carrier: null, saved: false, t: 0 };
     }
+  }
+
+  /** Hearts to find and the moving dangers. */
+  buildDangers() {
+    const lv = this.lv, g = this.levelGroup, d = this.depth;
+    for (const s of lv.hearts || []) {
+      const x = s.c + 0.5, y = this.bottomOf(s.r) + 0.5;
+      const mesh = makeHeart();
+      mesh.scale.setScalar(1.7);
+      mesh.position.set(x, y, 0);
+      g.add(mesh);
+      this.pickups.push({ x, y, baseY: y, mesh, value: 0, heart: true, gem: false, taken: false, body: null });
+    }
+    this.stals = (lv.stalactites || []).map((s) => {
+      const top = this.bottomOf(s.r) + 1;
+      const mesh = new THREE.Group();
+      const cone = part(mesh, geo.cone('stalHaz', 0.24, 0.85, 7), toon(STAL_COLORS[d], { emissive: 0x111122 }), 0, -0.425, 0);
+      cone.rotation.z = Math.PI;
+      cone.castShadow = true;
+      mesh.position.set(s.c + 0.5, top, 0);
+      g.add(mesh);
+      return { c: s.c, r: s.r, x: s.c + 0.5, top, y: top, vy: 0, state: 'hang', t: 0, mesh };
+    });
+    this.bats = (lv.bats || []).map((s) => {
+      const mesh = makeBat();
+      const hx = s.c + 0.5, hy = this.bottomOf(s.r) + 0.68;
+      mesh.position.set(hx, hy, 0.2);
+      g.add(mesh);
+      return { hx, hy, x: hx, y: hy, state: 'perch', t: 0, cd: 1 + Math.random(), tx: 0, ty: 0, mesh };
+    });
+    this.grumbles = (lv.grumbles || []).map((s) => {
+      const mesh = makeGrumble(GRUMBLE_COLORS[d]);
+      mesh.scale.setScalar(0.78);
+      g.add(mesh);
+      const x0 = s.c0 + 0.45, x1 = s.c1 + 0.55;
+      return { x: x0 + Math.random() * (x1 - x0), y: this.bottomOf(s.r), x0, x1, r: s.r, dir: Math.random() < 0.5 ? -1 : 1, state: 'walk', t: 0, mesh };
+    });
+    this.plants = (lv.plants || []).map((s, k) => {
+      const y = this.bottomOf(s.r) + 0.42;
+      const fx = s.c + 0.5 + s.dir * 0.5; // the face of the wall it grows from
+      const mesh = makePlant(s.dir, d === 1 ? 0x8fc8e8 : 0x5fbf4a, PEA_COLORS[d]);
+      mesh.position.set(fx, y, 0);
+      g.add(mesh);
+      return { c: s.c, r: s.r, dir: s.dir, x: fx, y, maxX: s.c + 0.5 + s.dir * (s.len + 0.5), t: 1.2 + k * 0.9, mesh, alive: true };
+    });
+    this.shots = [];
   }
 
   /** Distance (in tiles, ignoring jumps) from every open cell to the exit: who is ahead. */
@@ -1275,7 +1391,7 @@ export class CaveScene extends MiniGame {
   }
 
   bubbleUp(e, toExit = false) {
-    if (e.state === 'done') return;
+    if (e.state === 'done' || e.state === 'ghost') return; // ghosts are never rescued
     if (e.state === 'bubble') { e.toExit = e.toExit || toExit; return; }
     e.state = 'bubble';
     e.t = 0;
@@ -1293,7 +1409,9 @@ export class CaveScene extends MiniGame {
       const b = e.body;
       const inp = this.input(e.p) || NO_INPUT;
       e.invuln -= dt;
+      e.heartShow -= dt;
       if (e.state === 'bubble') this.updateBubble(e, dt, lead);
+      else if (e.state === 'ghost') this.updateGhost(e, dt, inp, lead);
       else if (e.state === 'done') {
         e.t += dt;
         const k = Math.max(0, 1 - e.t * 2.5);
@@ -1306,6 +1424,14 @@ export class CaveScene extends MiniGame {
       if (e.climbing) e.ch.targetYaw = Math.PI;
       e.ch.group.position.set(b.x, b.y, 0);
       if (e.state === 'play') e.ch.group.visible = e.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
+      else if (e.state === 'ghost') e.ch.group.visible = false;
+      e.heartRow.visible = e.heartShow > 0 && e.state === 'play';
+      if (e.heartRow.visible) {
+        e.heartRow.position.set(b.x, b.y + 1.38, 0.6);
+        e.heartSlots.forEach((h, k) => { h.full.visible = k < e.hearts; h.empty.visible = k >= e.hearts; });
+        const pop = Math.min(1, (2.2 - e.heartShow) * 6);
+        e.heartRow.scale.setScalar(0.8 * Math.max(0.01, pop));
+      }
       e.ch.pivot.rotation.z = e.dizzy > 0 ? Math.sin(this.time * 9) * 0.25 : 0;
       const moving = e.climbing ? Math.abs(b.vy) / CLIMB_SPEED : Math.min(1, Math.abs(b.vx) / PHYS.speed);
       e.ch.update(dt, { moving, grounded: b.grounded || e.climbing || e.state === 'bubble', vy: b.vy });
@@ -1351,6 +1477,7 @@ export class CaveScene extends MiniGame {
     e.stun -= dt;
     e.sticky -= dt;
     e.regrab -= dt;
+    e.knock -= dt;
     const free = playing && e.dizzy <= 0 && e.stun <= 0;
     const ctrl = free ? inp : NO_INPUT;
     const feet = this.tileAtXY(b.x, b.y + 0.2);
@@ -1368,7 +1495,9 @@ export class CaveScene extends MiniGame {
     }
     if (e.climbing) this.climb(e, dt, ctrl, slow);
     else {
+      const keepVx = b.vx;
       const j = platformerControl(b, { x: ctrl.x * slow, y: ctrl.y, a: ctrl.a, aPressed: ctrl.aPressed }, dt, PHYS);
+      if (e.knock > 0) b.vx = keepVx; // a knockback push carries you for a moment
       if (j) { e.ch.squash(1.3); this.game.audio.play('jump'); }
       moveBody(b, dt, this.solidsNear(b));
       if (!b.grounded) e.peakY = Math.max(e.peakY, b.y);
@@ -1376,7 +1505,9 @@ export class CaveScene extends MiniGame {
         const drop = e.peakY - b.y;
         const soft = b.ground?.spring || feet === TL.MUD || feet === TL.HONEY || this.tileAtXY(b.x, b.y + 0.2) === TL.HONEY || this.tileAtXY(b.x, b.y + 0.2) === TL.MUD;
         if (drop > DIZZY_FALL && !soft) {
-          e.dizzy = 1.3;
+          // Long falls make you dizzy; really long ones (no rope!) also cost a heart.
+          if (drop > HURT_FALL) this.hurt(e, 0, 3, 0);
+          e.dizzy = e.state === 'play' ? 1.3 : 0;
           e.ch.squash(0.55);
           b.vx = 0;
           this.game.audio.play('dizzy');
@@ -1397,16 +1528,16 @@ export class CaveScene extends MiniGame {
           this.game.audio.play('boing');
           const mm = this.mushMeshes.get(g.cell);
           if (mm) mm.squish = 1;
-        } else if (g && !g.oneWay && e.sticky <= 0) {
+        } else if (g && !g.oneWay && e.sticky <= 0 && this.safeSpot(b, g)) {
           e.lastSafe = { x: b.x, y: b.y };
         }
       }
     }
-    if (free) {
+    if (free && e.state === 'play') {
       if (ctrl.cPressed) this.throwBomb(e, ctrl);
       else if (ctrl.bPressed) this.throwRope(e, ctrl);
     }
-    if (!playing) return;
+    if (!playing || e.state !== 'play') return;
     // Stragglers who drop off the shared screen float back to the group.
     const half = this.viewHalfSize(this.camDist);
     // (The camera always follows whoever is furthest along, so they never bubble.)
@@ -1592,6 +1723,11 @@ export class CaveScene extends MiniGame {
       this.game.audio.play('boing');
     }
     for (const sb of this.snowballs) if (sb.state !== 'gone' && Math.hypot(sb.body.x - cx, sb.body.y + 0.4 - cy) < 2.2) this.meltSnowball(sb);
+    // Critters get dizzy, peas pop and nearby stalactites shatter harmlessly.
+    for (const g of this.grumbles) if (Math.hypot(g.x - cx, g.y + 0.4 - cy) < 2.4) { g.state = 'dizzy'; g.t = 0; }
+    for (const bat of this.bats) if (bat.state !== 'dizzy' && Math.hypot(bat.x - cx, bat.y - cy) < 2.4) this.dizzyBat(bat);
+    for (const sh of this.shots) if (Math.hypot(sh.x - cx, sh.y - cy) < 2.2) this.popShot(sh);
+    for (const st of this.stals) if ((st.state === 'hang' || st.state === 'shake' || st.state === 'fall') && Math.hypot(st.x - cx, st.y - 0.4 - cy) < 2.2) this.shatterStalactite(st);
     for (const cr of this.crates) if (!cr.open && Math.hypot(cr.x - cx, cr.y + 0.35 - cy) < 2) this.openCrate(cr, bomb.owner);
   }
 
@@ -1601,12 +1737,18 @@ export class CaveScene extends MiniGame {
     const wasGold = this.lv.grid[i] === TL.GOLD;
     this.lv.grid[i] = TL.EMPTY;
     this.rects[i] = null;
+    this.removeHazard(i);
+    const cr = this.crumbs.get(i);
+    if (cr) { this.levelGroup.remove(cr.mesh); this.crumbs.delete(i); }
+    // Spikes and goo resting on this tile (or ceiling spikes hanging from it) go too.
+    if (r > 0 && (this.lv.grid[i - W] === TL.SPIKE || this.lv.grid[i - W] === TL.GOO)) { this.lv.grid[i - W] = TL.EMPTY; this.removeHazard(i - W); }
+    if (this.lv.grid[i + W] === TL.CSPIKE) { this.lv.grid[i + W] = TL.EMPTY; this.removeHazard(i + W); }
     const zero = new THREE.Matrix4().makeScale(0, 0, 0);
     if (this.tileInst[i] >= 0) { this.tileMesh.setMatrixAt(this.tileInst[i], zero); this.tileMesh.instanceMatrix.needsUpdate = true; this.tileInst[i] = -1; }
     if (this.topInst[i] >= 0) { this.topMesh.setMatrixAt(this.topInst[i], zero); this.topMesh.instanceMatrix.needsUpdate = true; this.topInst[i] = -1; }
     // The tile below now has an open top.
     const below = i + W;
-    if (SOLID[this.lv.grid[below]] && this.lv.grid[below] !== TL.MUSH) this.addTop(below);
+    if (SOLID[this.lv.grid[below]] && this.lv.grid[below] !== TL.MUSH && this.lv.grid[below] !== TL.CRUMB) this.addTop(below);
     // Ladder/vine tops may have changed.
     if (r > 0) this.rects[i - W] = this.makeRect(c, r - 1);
     this.rects[below] = this.makeRect(c, r + 1);
@@ -1622,6 +1764,14 @@ export class CaveScene extends MiniGame {
         this.pickups.push({ x, y, baseY: y, mesh, value: 1, gem: false, taken: false, body: { x: x + (k - 0.5) * 0.3, y: y - 0.3, w: 0.3, h: 0.3, vx: (k - 0.5) * 3, vy: 5 } });
       }
     }
+  }
+
+  removeHazard(i) {
+    const m = this.hazMeshes.get(i);
+    if (!m) return;
+    this.levelGroup.remove(m);
+    this.hazMeshes.delete(i);
+    this.gooBubbles = this.gooBubbles.filter((gb) => gb.mesh.parent !== m);
   }
 
   // ---------- things in the cave ----------
@@ -1645,6 +1795,18 @@ export class CaveScene extends MiniGame {
         if (e.state !== 'play') continue;
         const b = e.body;
         if (Math.abs(b.x - pk.x) < 0.6 && pk.y > b.y - 0.3 && pk.y < b.y + b.h + 0.3) {
+          if (pk.heart) {
+            // Hearts are only picked up by someone who is missing one.
+            if (e.hearts >= MAX_HEARTS) continue;
+            pk.taken = true;
+            this.levelGroup.remove(pk.mesh);
+            e.hearts++;
+            e.heartShow = 2.2;
+            this.game.audio.play('rescue');
+            this.confetti.burst(new THREE.Vector3(pk.x, pk.y, 0.4), 0, { count: 12, speed: 4, size: 0.12, colors: [0xff5d73, 0xff9fd0, COLORS.white] });
+            this.game.ui.toast(t('cave.heart', { name: e.p.name }), 1200);
+            break;
+          }
           pk.taken = true;
           this.levelGroup.remove(pk.mesh);
           e.gems += pk.value;
@@ -1662,10 +1824,12 @@ export class CaveScene extends MiniGame {
     this.levelGroup.remove(cr.mesh);
     e.ropes = Math.min(MAX_ITEMS, e.ropes + 2);
     e.bombs = Math.min(MAX_ITEMS, e.bombs + 2);
+    const heal = e.state === 'play' && e.hearts < MAX_HEARTS;
+    if (heal) { e.hearts++; e.heartShow = 2.2; }
     this.game.audio.play('star');
     this.puffs.burst(new THREE.Vector3(cr.x, cr.y + 0.4, 0.4), 0xc98a4a, { count: 10, size: 0.35 });
     this.confetti.burst(new THREE.Vector3(cr.x, cr.y + 0.6, 0.4), 0, { count: 18, speed: 5, colors: [0xe8c07a, 0xff7eb6, COLORS.gold] });
-    this.game.ui.toast(t('cave.crate', { name: e.p.name }), 1300);
+    this.game.ui.toast(t(heal ? 'cave.crateHeart' : 'cave.crate', { name: e.p.name }), 1300);
   }
 
   updateCrates() {
@@ -1705,7 +1869,7 @@ export class CaveScene extends MiniGame {
           if (e.state !== 'play') continue;
           const dx = e.body.x - b.x;
           if (Math.abs(dx) < 8 && Math.abs(e.body.y - b.y) < 2.5) {
-            sb.state = 'roll';
+            sb.state = 'wobble'; // a little rumble first, then it rolls
             sb.dir = Math.sign(dx) || 1;
             sb.t = 0;
             sb.bounces = 0;
@@ -1713,9 +1877,14 @@ export class CaveScene extends MiniGame {
           }
         }
       }
+      if (sb.state === 'wobble') {
+        sb.t += dt;
+        sb.mesh.rotation.z = Math.sin(sb.t * 40) * 0.12;
+        if (sb.t > 0.55) { sb.state = 'roll'; sb.t = 0; this.game.audio.play('whoosh'); }
+      }
       if (sb.state === 'roll') {
         sb.t += dt;
-        b.vx = sb.dir * 3.4;
+        b.vx = sb.dir * BOULDER_SPEED[this.depth];
         b.vy = Math.max(-16, b.vy - 30 * dt);
         moveBody(b, dt, this.solidsNear(b));
         if (b.wallHit) { sb.dir = -sb.dir; sb.bounces++; }
@@ -1733,12 +1902,7 @@ export class CaveScene extends MiniGame {
             this.meltSnowball(sb);
             break;
           }
-          e.climbing = false;
-          pb.vx = sb.dir * 8;
-          pb.vy = 6;
-          e.stun = 0.4;
-          e.invuln = 1.0;
-          this.game.audio.play('bump');
+          this.hurt(e, sb.dir, 7, 7);
         }
       }
       sb.mesh.position.set(b.x, b.y + 0.42, 0);
@@ -1775,6 +1939,432 @@ export class CaveScene extends MiniGame {
     }
   }
 
+  // ---------- hearts, ghosts and dangers ----------
+
+  /** Somewhere a bubble may drop you back: not on crumbly floor, not by spikes or goo. */
+  safeSpot(b, g) {
+    if (g.cell !== undefined && this.lv.grid[g.cell] === TL.CRUMB) return false;
+    const r = this.rowAt(b.y + 0.1);
+    for (const dx of [-0.6, 0, 0.6]) if (HAZ[this.tile(Math.floor(b.x + dx), r)] || HAZ[this.tile(Math.floor(b.x + dx), r - 1)]) return false;
+    return true;
+  }
+
+  /** Costs a heart (unless still blinking from the last hit) and pushes you away in direction dir. */
+  hurt(e, dir, vy = 9, push = 5.5) {
+    if (e.state !== 'play' || e.invuln > 0 || this.state !== 'play') return false;
+    const b = e.body;
+    e.hearts = Math.max(0, e.hearts - 1);
+    e.hits++;
+    e.invuln = HURT_INVULN;
+    e.climbing = false;
+    e.regrab = 0.3;
+    e.sticky = 0;
+    e.knock = 0.3;
+    e.stun = 0.3;
+    b.vx = dir * push;
+    b.vy = vy;
+    b.grounded = false;
+    e.peakY = b.y;
+    e.heartShow = 2.2;
+    e.ch.squash(0.6);
+    this.game.audio.play('bump');
+    this.puffs.burst(new THREE.Vector3(b.x, b.y + 0.5, 0.5), 0xffffff, { count: 8, size: 0.3 });
+    if (e.hearts <= 0) this.becomeGhost(e);
+    return true;
+  }
+
+  becomeGhost(e) {
+    const b = e.body;
+    e.state = 'ghost';
+    e.ghosts++;
+    e.t = 0;
+    e.climbing = false;
+    e.dizzy = e.sticky = e.stun = e.knock = 0;
+    e.bubble.visible = false;
+    e.ch.group.visible = false;
+    e.ghost.visible = true;
+    b.vx = 0;
+    b.vy = 2.5;
+    // A ghost can't carry the puppy: it waits where its carrier last stood safely.
+    const pup = this.puppy;
+    if (pup && pup.carrier === e && !pup.saved) {
+      pup.carrier = null;
+      pup.x = e.lastSafe.x;
+      pup.y = e.lastSafe.y;
+      pup.heart.visible = true;
+    }
+    this.puffs.burst(new THREE.Vector3(b.x, b.y + 0.5, 0.6), 0xffffff, { count: 14, size: 0.4 });
+    this.game.audio.play('whoosh');
+    if (this.ents.some((x) => x.state !== 'ghost')) this.game.ui.toast(t('cave.ghost', { name: e.p.name }), 2000);
+  }
+
+  /** Ghosts float freely (through walls), get nudged after the living players and stay on screen. */
+  updateGhost(e, dt, inp, lead) {
+    const b = e.body;
+    e.t += dt;
+    const ctrl = this.state === 'play' ? inp : NO_INPUT;
+    b.vx += ctrl.x * 26 * dt;
+    b.vy += ctrl.y * 26 * dt;
+    // Where the group is heading: the camera centre, pushed a little ahead of the leader.
+    const tx = this.camX + (lead ? THREE.MathUtils.clamp(lead.body.vx * 0.4, -2, 2) : 0);
+    const ty = this.camY + 0.8 + (lead ? THREE.MathUtils.clamp(lead.body.vy * 0.15, -2, 1) : 0);
+    const dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy);
+    if (d > 2.5) {
+      const pull = Math.min(14, (d - 2.5) * 2.6);
+      b.vx += (dx / d) * pull * dt;
+      b.vy += (dy / d) * pull * dt;
+    }
+    const damp = Math.exp(-dt * 2.2);
+    b.vx *= damp;
+    b.vy *= damp;
+    const sp = Math.hypot(b.vx, b.vy);
+    if (sp > 6.5) { b.vx *= 6.5 / sp; b.vy *= 6.5 / sp; }
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    const half = this.viewHalfSize(this.camDist);
+    b.x = THREE.MathUtils.clamp(b.x, this.camX - half.w + 0.8, this.camX + half.w - 0.8);
+    b.y = THREE.MathUtils.clamp(b.y, this.camY - half.h + 0.4, this.camY + half.h - 1.6);
+    if (Math.abs(ctrl.x) > 0.2) e.facing = Math.sign(ctrl.x);
+    const gh = e.ghost;
+    gh.position.set(b.x, b.y + Math.sin(e.t * 3) * 0.12, 1.15); // in front of the rock, so it never hides
+    gh.rotation.y += ((e.facing > 0 ? 0.45 : -0.45) - gh.rotation.y) * Math.min(1, dt * 8);
+    gh.userData.inner.rotation.z = THREE.MathUtils.clamp(-b.vx * 0.05, -0.3, 0.3) + Math.sin(e.t * 2.3) * 0.06;
+  }
+
+  /** Which way to bounce out of a spike/goo patch: toward its nearer safe edge. */
+  escapeDir(c, r, b) {
+    let L = 0, R = 0;
+    while (L < 4 && HAZ[this.tile(c - L - 1, r)]) L++;
+    while (R < 4 && HAZ[this.tile(c + R + 1, r)]) R++;
+    const lOk = this.passable(c - L - 1, r), rOk = this.passable(c + R + 1, r);
+    if (lOk && rOk && L === R) return Math.abs(b.vx) > 0.3 ? -Math.sign(b.vx) : b.x < c + 0.5 ? -1 : 1;
+    if (lOk && (!rOk || L < R)) return -1;
+    return rOk ? 1 : 0;
+  }
+
+  /** Spikes, ceiling spikes and goo under/over a player. */
+  touchTiles(e) {
+    const b = e.body;
+    for (const dx of [-0.22, 0.22]) {
+      const c = Math.floor(b.x + dx);
+      const rf = this.rowAt(b.y + 0.1);
+      const tf = this.tile(c, rf);
+      if ((tf === TL.SPIKE || tf === TL.GOO) && b.y - this.bottomOf(rf) < 0.42) {
+        if (tf === TL.GOO) this.puffs.burst(new THREE.Vector3(b.x, b.y + 0.2, 0.6), GOO_COLORS[this.depth], { count: 8, size: 0.3 });
+        this.hurt(e, this.escapeDir(c, rf, b), 10.5, 5);
+        return;
+      }
+      const rh = this.rowAt(b.y + b.h);
+      if (this.tile(c, rh) === TL.CSPIKE && b.y + b.h - this.bottomOf(rh) > 0.55) { this.hurt(e, 0, -4, 0); return; }
+    }
+  }
+
+  updateCrumbs(dt) {
+    for (const cr of this.crumbs.values()) {
+      if (cr.state === 'solid') {
+        if (this.ents.some((e) => e.state === 'play' && e.body.grounded && e.body.ground?.cell === cr.i)) {
+          cr.state = 'shake';
+          cr.t = 0;
+          this.game.audio.play('trap');
+        }
+      } else if (cr.state === 'shake') {
+        cr.t += dt;
+        cr.mesh.position.x = cr.x + Math.sin(cr.t * 70) * 0.05;
+        if (cr.t >= CRUMB_TIME) this.crumble(cr);
+      } else if (cr.state === 'gone') {
+        cr.t += dt;
+        const y0 = this.bottomOf(cr.r);
+        const blocked = this.ents.some((e) => e.state !== 'ghost' && e.state !== 'done' && Math.abs(e.body.x - cr.x) < 0.85 && e.body.y < y0 + 1.1 && e.body.y + e.body.h > y0 - 0.1) ||
+          this.snowballs.some((sb) => sb.state !== 'gone' && Math.abs(sb.body.x - cr.x) < 1 && Math.abs(sb.body.y - y0) < 1);
+        if (cr.t > CRUMB_BACK && !blocked) {
+          // It grows back, so nobody is ever cut off for good.
+          cr.state = 'solid';
+          this.lv.grid[cr.i] = TL.CRUMB;
+          this.rects[cr.i] = this.makeRect(cr.c, cr.r);
+          if (cr.r > 0) this.rects[cr.i - this.lv.W] = this.makeRect(cr.c, cr.r - 1);
+          cr.mesh.visible = true;
+          cr.mesh.scale.setScalar(0.2);
+          this.puffs.burst(new THREE.Vector3(cr.x, y0 + 0.5, 0.6), this.theme.dirt[1], { count: 4, size: 0.3 });
+        }
+      }
+      if (cr.state === 'solid' && cr.mesh.scale.x < 1) cr.mesh.scale.setScalar(Math.min(1, cr.mesh.scale.x + dt * 3));
+    }
+  }
+
+  crumble(cr) {
+    cr.state = 'gone';
+    cr.t = 0;
+    this.lv.grid[cr.i] = TL.EMPTY;
+    this.rects[cr.i] = null;
+    if (cr.r > 0) this.rects[cr.i - this.lv.W] = this.makeRect(cr.c, cr.r - 1);
+    cr.mesh.visible = false;
+    cr.mesh.position.x = cr.x;
+    const pos = new THREE.Vector3(cr.x, this.bottomOf(cr.r) + 0.5, 0.6);
+    this.puffs.burst(pos, this.theme.dirt[1], { count: 8, size: 0.4, life: 0.6 });
+    this.confetti.burst(pos, 0, { count: 10, speed: 3, colors: [this.theme.dirt[0], this.theme.dirt[1]], size: 0.18, life: 0.8 });
+    this.game.audio.play('pop');
+  }
+
+  /** Is the straight line between two points clear of rock? */
+  clearLine(x0, y0, x1, y1) {
+    const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 0.3);
+    for (let k = 1; k < n; k++) if (!this.passable(Math.floor(x0 + ((x1 - x0) * k) / n), this.rowAt(y0 + ((y1 - y0) * k) / n))) return false;
+    return true;
+  }
+
+  updateStalactites(dt) {
+    for (const st of this.stals) {
+      const ceiling = SOLID[this.tile(st.c, st.r - 1)];
+      if (st.state === 'hang' || st.state === 'grow') {
+        if (st.state === 'grow') {
+          st.t += dt;
+          st.mesh.scale.setScalar(Math.min(1, st.t));
+          if (st.t >= 1) st.state = 'hang';
+          continue;
+        }
+        if (!ceiling) { st.state = 'shake'; st.t = STAL_WARN[this.depth]; continue; }
+        // Shakes when someone walks underneath, then drops.
+        for (const e of this.ents) {
+          if (e.state !== 'play') continue;
+          const b = e.body;
+          if (Math.abs(b.x - st.x) < 1.1 && b.y < st.top - 0.5 && b.y > st.top - 9 && this.clearLine(st.x, st.top - 0.5, st.x, b.y + 0.5)) {
+            st.state = 'shake';
+            st.t = 0;
+            this.game.audio.play('trap');
+            this.puffs.burst(new THREE.Vector3(st.x, st.top - 0.1, 0.4), this.theme.dirt[1], { count: 3, size: 0.2, life: 0.5 });
+            break;
+          }
+        }
+      } else if (st.state === 'shake') {
+        st.t += dt;
+        st.mesh.position.x = st.x + Math.sin(st.t * 60) * 0.06;
+        if (st.t >= STAL_WARN[this.depth]) { st.state = 'fall'; st.vy = 0; st.mesh.position.x = st.x; }
+      } else if (st.state === 'fall') {
+        st.vy -= 30 * dt;
+        st.y += st.vy * dt;
+        st.mesh.position.y = st.y;
+        const tip = st.y - 0.85;
+        for (const e of this.ents) {
+          const b = e.body;
+          if (e.state === 'play' && Math.abs(b.x - st.x) < 0.5 && tip < b.y + b.h && st.y > b.y) this.hurt(e, b.x >= st.x ? 1 : -1, 6);
+        }
+        if (SOLID[this.tile(st.c, this.rowAt(tip))] || tip < 0) this.shatterStalactite(st);
+      } else if (st.state === 'gone') {
+        st.t += dt;
+        if (st.t > 9 && ceiling) {
+          st.state = 'grow';
+          st.t = 0;
+          st.y = st.top;
+          st.mesh.position.set(st.x, st.top, 0);
+          st.mesh.scale.setScalar(0.01);
+          st.mesh.visible = true;
+        }
+      }
+    }
+  }
+
+  shatterStalactite(st) {
+    st.state = 'gone';
+    st.t = 0;
+    st.mesh.visible = false;
+    const pos = new THREE.Vector3(st.x, st.y - 0.6, 0.5);
+    this.confetti.burst(pos, 0, { count: 12, speed: 4, colors: [STAL_COLORS[this.depth], COLORS.white], size: 0.14, life: 0.7 });
+    this.puffs.burst(pos, 0xffffff, { count: 5, size: 0.3 });
+    this.game.audio.play('splat');
+  }
+
+  /** Stomping (falling onto it from above) beats a critter; any other touch costs a heart. */
+  critterTouch(e, x, y, w, h, onStomp) {
+    const b = e.body;
+    if (e.state !== 'play' || Math.abs(b.x - x) > (w + b.w) / 2 || b.y > y + h || b.y + b.h < y) return false;
+    if (b.vy < 0 && b.y > y + h * 0.45) {
+      b.vy = 11;
+      b.grounded = false;
+      e.ch.squash(1.35);
+      this.game.audio.play('boing');
+      onStomp();
+      return true;
+    }
+    this.hurt(e, b.x >= x ? 1 : -1, 8);
+    return true;
+  }
+
+  updateBats(dt) {
+    const sp = BAT_SPEED[this.depth];
+    for (const bat of this.bats) {
+      bat.t += dt;
+      bat.cd -= dt;
+      const flap = bat.state === 'perch' ? 0.2 : bat.state === 'dizzy' ? 0.5 : 1;
+      const wa = Math.sin(this.time * (bat.state === 'perch' ? 3 : 22)) * 0.7 * flap;
+      bat.mesh.userData.wl.rotation.z = wa;
+      bat.mesh.userData.wr.rotation.z = -wa;
+      const moveTo = (tx, ty, v) => {
+        const dx = tx - bat.x, dy = ty - bat.y, d = Math.hypot(dx, dy);
+        if (d < v * dt || d < 0.05) { bat.x = tx; bat.y = ty; return true; }
+        bat.x += (dx / d) * v * dt;
+        bat.y += (dy / d) * v * dt;
+        return false;
+      };
+      if (bat.state === 'perch') {
+        bat.mesh.rotation.z = Math.PI; // sleeps upside down
+        if (bat.cd <= 0) {
+          for (const e of this.ents) {
+            if (e.state !== 'play') continue;
+            const b = e.body;
+            if (Math.hypot(b.x - bat.hx, b.y - bat.hy) < 6 && b.y < bat.hy - 0.5 && this.clearLine(bat.hx, bat.hy, b.x, b.y + 0.45)) {
+              bat.state = 'warn';
+              bat.t = 0;
+              bat.prey = e;
+              this.game.audio.play('beep');
+              break;
+            }
+          }
+        }
+      } else if (bat.state === 'warn') {
+        bat.mesh.rotation.z = Math.PI * Math.max(0, 1 - bat.t * 3);
+        bat.y = bat.hy - Math.min(0.25, bat.t);
+        if (bat.t > 0.5) {
+          const b = bat.prey.body;
+          if (bat.prey.state === 'play' && this.clearLine(bat.x, bat.y, b.x, b.y + 0.45)) {
+            bat.state = 'swoop';
+            bat.t = 0;
+            bat.tx = b.x;
+            bat.ty = b.y + 0.45;
+            this.game.audio.play('whoosh');
+          } else { bat.state = 'back'; bat.t = 0; }
+        }
+      } else if (bat.state === 'swoop') {
+        bat.mesh.rotation.z = 0;
+        if (moveTo(bat.tx, bat.ty, sp) || bat.t > 2) { bat.state = 'back'; bat.t = 0; }
+      } else if (bat.state === 'back' || bat.state === 'dizzy') {
+        bat.mesh.rotation.z = bat.state === 'dizzy' ? Math.sin(this.time * 9) * 0.5 : 0;
+        if (moveTo(bat.hx, bat.hy, bat.state === 'dizzy' ? 1.8 : 3.6) && bat.t > (bat.state === 'dizzy' ? 3 : 0)) {
+          bat.state = 'perch';
+          bat.cd = 2.5;
+        }
+      }
+      if (bat.state === 'swoop' || bat.state === 'back') {
+        for (const e of this.ents) {
+          if (this.critterTouch(e, bat.x, bat.y - 0.25, 0.5, 0.5, () => this.dizzyBat(bat))) break;
+        }
+      }
+      bat.mesh.position.set(bat.x, bat.y, 0.2);
+    }
+  }
+
+  dizzyBat(bat) {
+    bat.state = 'dizzy';
+    bat.t = 0;
+    this.puffs.burst(new THREE.Vector3(bat.x, bat.y, 0.5), 0x8f73c4, { count: 6, size: 0.25 });
+  }
+
+  updateGrumbles(dt) {
+    const sp = GRUMBLE_SPEED[this.depth];
+    for (const g of this.grumbles) {
+      g.t += dt;
+      const body = g.mesh.userData.body;
+      if (g.state === 'dizzy') {
+        body.scale.set(1.25, 0.55, 1.25);
+        g.mesh.rotation.y = Math.sin(this.time * 8) * 0.4;
+        if (g.t > 3.5) { g.state = 'walk'; g.t = 0; body.scale.set(1, 1, 1); }
+      } else {
+        g.x += g.dir * sp * dt;
+        // Turn at the ends of its floor (or where a bomb took the floor away).
+        const ahead = g.x + g.dir * 0.45;
+        if (g.x > g.x1 || g.x < g.x0 || !SOLID[this.tile(Math.floor(ahead), g.r + 1)] || HAZ[this.tile(Math.floor(ahead), g.r)]) {
+          g.x = THREE.MathUtils.clamp(g.x - g.dir * sp * dt, g.x0, g.x1);
+          g.dir = -g.dir;
+        }
+        g.mesh.rotation.y = g.dir * 0.8;
+        body.scale.set(1, 1 + Math.sin(g.t * 12) * 0.05, 1);
+        for (const e of this.ents) {
+          if (this.critterTouch(e, g.x, g.y, 0.7, 0.75, () => { g.state = 'dizzy'; g.t = 0; this.puffs.burst(new THREE.Vector3(g.x, g.y + 0.4, 0.5), GRUMBLE_COLORS[this.depth], { count: 6, size: 0.3 }); })) break;
+        }
+      }
+      if (!SOLID[this.tile(Math.floor(g.x), g.r + 1)]) { g.y -= 6 * dt; if (g.y < this.bottomOf(g.r) - 1) { g.y = this.bottomOf(g.r); g.x = (g.x0 + g.x1) / 2; } }
+      g.mesh.position.set(g.x, g.y, 0);
+    }
+  }
+
+  updatePlants(dt) {
+    const d = this.depth;
+    for (const pl of this.plants) {
+      if (!pl.alive) continue;
+      if (!SOLID[this.tile(pl.c, pl.r)]) { // its wall was popped away
+        pl.alive = false;
+        this.levelGroup.remove(pl.mesh);
+        this.puffs.burst(new THREE.Vector3(pl.x, pl.y, 0.5), 0x5fbf4a, { count: 8, size: 0.3 });
+        continue;
+      }
+      const near = this.ents.some((e) => e.state === 'play' && Math.abs(e.body.x - pl.x) < 12 && Math.abs(e.body.y - pl.y) < 5);
+      pl.t -= dt;
+      if (!near) pl.t = Math.max(pl.t, 0.8);
+      const head = pl.mesh.userData.head;
+      // It puffs up just before it spits: that's your cue to hop.
+      const swell = pl.t < 0.6 ? 1 + (0.6 - pl.t) * 0.5 : 1;
+      head.scale.set(swell, swell, swell);
+      if (pl.t <= 0) {
+        pl.t = PLANT_PERIOD[d];
+        const mesh = new THREE.Mesh(geo.sph(0.16, 10, 8), toon(PEA_COLORS[d]));
+        mesh.castShadow = true;
+        this.levelGroup.add(mesh);
+        this.shots.push({ x: pl.x + pl.dir * 0.6, y: pl.y, vx: pl.dir * PEA_SPEED[d], maxX: pl.maxX, mesh, alive: true });
+        this.game.audio.play('pop');
+      }
+    }
+    for (const sh of this.shots) {
+      sh.x += sh.vx * dt;
+      sh.mesh.position.set(sh.x, sh.y + Math.sin(this.time * 20) * 0.02, 0);
+      if ((sh.vx > 0 ? sh.x > sh.maxX : sh.x < sh.maxX) || SOLID[this.tileAtXY(sh.x, sh.y)]) { this.popShot(sh); continue; }
+      for (const e of this.ents) {
+        const b = e.body;
+        if (e.state === 'play' && Math.abs(b.x - sh.x) < 0.42 && sh.y > b.y - 0.1 && sh.y < b.y + b.h + 0.1) {
+          this.hurt(e, Math.sign(sh.vx), 7);
+          this.popShot(sh);
+          break;
+        }
+      }
+    }
+    this.shots = this.shots.filter((sh) => sh.alive);
+  }
+
+  popShot(sh) {
+    if (!sh.alive) return;
+    sh.alive = false;
+    this.levelGroup.remove(sh.mesh);
+    this.puffs.burst(new THREE.Vector3(sh.x, sh.y, 0.4), PEA_COLORS[this.depth], { count: 4, size: 0.2, life: 0.4 });
+  }
+
+  updateDangers(dt) {
+    for (const e of this.ents) if (e.state === 'play' && e.invuln <= 0) this.touchTiles(e);
+    this.updateCrumbs(dt);
+    this.updateStalactites(dt);
+    this.updateBats(dt);
+    this.updateGrumbles(dt);
+    this.updatePlants(dt);
+  }
+
+  /** Everyone is a ghost: same depth again with a new layout and full hearts. */
+  restartDepth() {
+    if (this.restarting || this.cleared) return;
+    this.restarting = true;
+    this.game.audio.play('dizzy');
+    this.game.ui.banner(t('cave.allGhosts'), t('cave.tryAgain'), 1700);
+    this.later(1.7, () => {
+      if (this.state === 'results') return;
+      this.state = 'between';
+      this.game.ui.wipe();
+      this.later(0.45, () => {
+        this.restarts++;
+        this.buildDepth(this.depth);
+        this.updateCamera(1, true);
+        this.state = 'play';
+        this.restarting = false;
+        this.game.audio.play('go');
+      });
+    });
+  }
+
   // ---------- exits and depths ----------
 
   enterExit(e) {
@@ -1801,7 +2391,14 @@ export class CaveScene extends MiniGame {
       this.exitTimer = EXIT_WAIT;
       if (this.ents.length > 1 && this.ents.some((x) => x.state !== 'done')) this.game.ui.banner(t('cave.exitOpen', { name: e.p.name }), t('cave.everyone'), 1500);
     }
-    if (this.ents.every((x) => x.state === 'done')) this.depthCleared();
+    this.checkDepthEnd();
+  }
+
+  /** Cleared when every living player is through the door; restart when everyone is a ghost. */
+  checkDepthEnd() {
+    if (this.cleared || this.restarting) return;
+    if (this.ents.every((x) => x.state === 'ghost')) this.restartDepth();
+    else if (this.ents.some((x) => x.state === 'done') && this.ents.every((x) => x.state === 'done' || x.state === 'ghost')) this.depthCleared();
   }
 
   gatherToExit() {
@@ -1819,16 +2416,20 @@ export class CaveScene extends MiniGame {
       this.state = 'between';
       this.game.ui.wipe();
       this.later(0.45, () => {
+        const hadGhosts = this.ents.some((e) => e.state === 'ghost');
+        this.restarts = 0;
         this.buildDepth(this.depth + 1);
         this.updateCamera(1, true);
         this.state = 'play';
         this.game.audio.play('go');
         this.game.ui.banner(`${t('cave.depth', { n: this.depth + 1, total: DEPTHS.length })}`, t(this.theme.name), 1600);
+        if (hadGhosts) this.later(1.8, () => this.game.ui.toast(t('cave.revive'), 2000));
       });
     });
   }
 
   updateFlow(dt) {
+    this.checkDepthEnd();
     if (this.cleared) return;
     this.depthTime += dt;
     if (this.exitTimer !== null) {
@@ -1880,7 +2481,14 @@ export class CaveScene extends MiniGame {
       minX = Math.min(...act.map((e) => e.body.x)); maxX = Math.max(...act.map((e) => e.body.x));
       minY = Math.min(...act.map((e) => e.body.y)); maxY = Math.max(...act.map((e) => e.body.y));
     } else {
-      minX = maxX = this.door.x; minY = maxY = this.door.y;
+      // Nobody walking (all bubbles, ghosts or through the door): hold still, or follow the bubbles.
+      const bub = this.ents.filter((e) => e.state === 'bubble');
+      if (bub.length) {
+        minX = Math.min(...bub.map((e) => e.body.x)); maxX = Math.max(...bub.map((e) => e.body.x));
+        minY = Math.min(...bub.map((e) => e.body.y)); maxY = Math.max(...bub.map((e) => e.body.y));
+      } else {
+        minX = maxX = this.camX; minY = maxY = this.camY + 1.2;
+      }
     }
     const minDist = this.fitDistance(22, 12.5), maxDist = this.fitDistance(30, 17);
     const want = THREE.MathUtils.clamp(this.fitDistance(maxX - minX + 9, maxY - minY + 7), minDist, maxDist);
@@ -1905,6 +2513,11 @@ export class CaveScene extends MiniGame {
   }
 
   animateWorld(dt) {
+    for (const gb of this.gooBubbles) {
+      const k = ((this.time + gb.phase) % 1.6) / 1.6; // grow, then pop
+      gb.mesh.scale.setScalar(k < 0.85 ? 0.4 + k * 1.2 : 0.01);
+      gb.mesh.position.y = 0.36 + k * 0.12;
+    }
     for (const mm of this.mushMeshes.values()) {
       if (mm.squish <= 0) continue;
       mm.squish = Math.max(0, mm.squish - dt * 4);
@@ -1929,7 +2542,8 @@ export class CaveScene extends MiniGame {
   chip(e) {
     const rope = '<span style="display:inline-block;width:0.32em;height:0.95em;border-radius:0.2em;background:#e8c07a;margin:0 0.2em 0 0.5em;vertical-align:-0.1em"></span>';
     const bomb = '<span style="display:inline-block;width:0.75em;height:0.75em;border-radius:50%;background:#ff7eb6;margin:0 0.2em 0 0.5em"></span>';
-    return `${e.gems}${rope}${e.ropes}${bomb}${e.bombs}`;
+    const life = e.state === 'ghost' ? GHOST_SVG : Array.from({ length: MAX_HEARTS }, (_, k) => heartSvg(k < e.hearts ? '#ff5d73' : 'rgba(0,0,0,0.22)')).join('');
+    return `${life} ${e.gems}${rope}${e.ropes}${bomb}${e.bombs}`;
   }
 
   end() {
@@ -1940,7 +2554,7 @@ export class CaveScene extends MiniGame {
       subtitle: t('cave.sub', { gems: this.teamGems, depth: Math.max(1, this.depthsDone), total: DEPTHS.length, pups: this.puppiesSaved }),
       rows: ranked.map((e, i) => ({
         css: e.p.css, name: e.p.name, value: t('cave.gems', { n: e.gems }),
-        detail: t('cave.ropesUsed', { n: e.ropesUsed }) + (e.pups ? ` · ${e.pups === 1 ? t('cave.pup1') : t('cave.pupN', { n: e.pups })}` : ''),
+        detail: t('cave.ropesUsed', { n: e.ropesUsed }) + (e.pups ? ` · ${e.pups === 1 ? t('cave.pup1') : t('cave.pupN', { n: e.pups })}` : '') + (e.ghosts ? ` · ${t('cave.ghosted', { n: e.ghosts })}` : ''),
         crown: i === 0 && e.gems > 0,
       })),
       stars: 3,
@@ -1963,6 +2577,7 @@ export class CaveScene extends MiniGame {
       this.updateRopes(dt);
       this.updateBombs(dt);
       this.updateSnowballs(dt);
+      this.updateDangers(dt);
       this.updatePickups(dt);
       this.updateCrates(dt);
       this.updateFlow(dt);

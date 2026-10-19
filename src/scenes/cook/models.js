@@ -325,7 +325,7 @@ export function soupMesh(kind, withPlate = true) {
 }
 
 // Where parts sit on a plate, by how many there are.
-const SPOTS = [[[0, 0]], [[-0.14, 0.02], [0.14, -0.02]], [[-0.15, 0.08], [0.15, 0.08], [0, -0.14]]];
+const SPOTS = [[[0, 0]], [[-0.15, 0.02], [0.15, -0.02]], [[-0.16, 0.1], [0.16, 0.1], [0, -0.15]]];
 
 /** Plate with whatever is on it: { parts: ['kind:state'], soup }. */
 export function plateMesh(plate) {
@@ -337,7 +337,7 @@ export function plateMesh(plate) {
   plate.parts.forEach((p, i) => {
     const [k, s] = p.split(':');
     const m = partMesh(k, s);
-    m.scale.setScalar(n === 1 ? 0.9 : n === 2 ? 0.72 : 0.62);
+    m.scale.setScalar(n === 1 ? 1 : n === 2 ? 0.82 : 0.72);
     const [x, z] = SPOTS[Math.min(n, 3) - 1][i] || [0, 0];
     m.position.set(x, 0.07, z);
     g.add(m);

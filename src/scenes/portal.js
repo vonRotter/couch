@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
-import { t } from '../core/i18n.js';
+import { t, addStrings } from '../core/i18n.js';
 import { Character } from '../core/character.js';
-import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
+import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
 
 // Top-down co-op portal rooms.
@@ -65,6 +65,57 @@ const ROOMS = [
   },
 ];
 
+addStrings({
+  en: {
+    'portal.intro': 'Get everyone to the exit · [A] and [B] shoot your two portals · your pair has your color and your symbol',
+    'portal.left': '{n} to go · hold both portal buttons to reset',
+  },
+  no: {
+    'portal.intro': 'Få alle til utgangen · [A] og [B] skyter de to portalene dine · paret ditt har din farge og ditt symbol',
+    'portal.left': '{n} igjen · hold begge portalknappene for å starte rommet på nytt',
+  },
+});
+
+// Every player's portal pair gets its own symbol as well as its color, so pairs are easy to tell
+// apart (also without seeing colors). Shapes are drawn in a -1..1 box, y up: M move, L line, C curve.
+const SYMBOLS = {
+  star: [['M', 0, 1], ...Array.from({ length: 9 }, (_, i) => {
+    const a = ((i + 1) / 10) * Math.PI * 2, r = i % 2 ? 1 : 0.45;
+    return ['L', Math.sin(a) * r, Math.cos(a) * r];
+  })],
+  heart: [['M', 0, -0.9], ['C', -0.2, -0.65, -1, -0.25, -1, 0.3], ['C', -1, 0.85, -0.3, 1.0, 0, 0.55], ['C', 0.3, 1.0, 1, 0.85, 1, 0.3], ['C', 1, -0.25, 0.2, -0.65, 0, -0.9]],
+  moon: [['M', 0.5, 0.95], ['C', -0.15, 0.95, -0.65, 0.5, -0.65, 0], ['C', -0.65, -0.5, -0.15, -0.95, 0.5, -0.95], ['C', 0.1, -0.7, -0.1, -0.35, -0.1, 0], ['C', -0.1, 0.35, 0.1, 0.7, 0.5, 0.95]],
+  drop: [['M', 0, 1], ['C', 0.25, 0.55, 0.75, 0.1, 0.75, -0.3], ['C', 0.75, -0.75, 0.4, -1, 0, -1], ['C', -0.4, -1, -0.75, -0.75, -0.75, -0.3], ['C', -0.75, 0.1, -0.25, 0.55, 0, 1]],
+  bolt: [['M', 0.25, 1], ['L', -0.55, -0.1], ['L', -0.05, -0.1], ['L', -0.25, -1], ['L', 0.55, 0.15], ['L', 0.05, 0.15]],
+  diamond: [['M', 0, 1], ['L', 0.7, 0], ['L', 0, -1], ['L', -0.7, 0]],
+};
+const SYMBOL_ORDER = ['star', 'heart', 'moon', 'drop', 'bolt', 'diamond'];
+
+function symbolGeo(name) {
+  return sharedGeo(`pSym_${name}`, () => {
+    const sh = new THREE.Shape();
+    for (const [op, ...v] of SYMBOLS[name]) {
+      if (op === 'M') sh.moveTo(v[0], v[1]);
+      else if (op === 'L') sh.lineTo(v[0], v[1]);
+      else sh.bezierCurveTo(...v);
+    }
+    sh.closePath();
+    return new THREE.ShapeGeometry(sh, 10);
+  });
+}
+
+/** The same symbol as a tiny inline SVG for the HUD. */
+function symbolSvg(name, css) {
+  const f = (n) => (Math.round(n * 100) / 100).toString();
+  const d = SYMBOLS[name].map(([op, ...v]) => op + v.map((n, i) => f(i % 2 ? -n : n)).join(' ')).join(' ') + ' Z';
+  return `<svg viewBox="-1.2 -1.2 2.4 2.4" width="1.1em" height="1.1em" style="vertical-align:-0.15em"><path d="${d}" fill="${css}" stroke="#2b2340" stroke-width="0.18" stroke-linejoin="round"/></svg>`;
+}
+
+/** A lighter tint of a color (for the second portal of a pair). */
+function tint(hex, k) {
+  return new THREE.Color(hex).lerp(new THREE.Color(0xffffff), k).getHex();
+}
+
 const CELL = 1.6;
 const PR = 0.42;
 const SPEED = 5.2;
@@ -85,16 +136,32 @@ export class PortalScene extends MiniGame {
     this.portals = new Map(); // face key -> portal
     this.resetHold = 0;
 
+    // Symbols follow the player's color (Coral is always the star...), never two the same.
+    const used = new Set();
     this.ents = this.players.map((p, i) => {
       const ch = new Character(p.color, { hat: p.hat });
       this.scene.add(ch.group);
       const aim = new THREE.Mesh(sharedGeo('pAim', () => new THREE.ConeGeometry(0.2, 0.45, 3)), toon(p.color));
       aim.rotation.x = -Math.PI / 2;
       this.scene.add(aim);
+      let k = Math.max(0, PLAYER_COLORS.findIndex((c) => c.hex === p.color));
+      while (used.has(k % SYMBOL_ORDER.length)) k++;
+      used.add(k % SYMBOL_ORDER.length);
+      const symbol = SYMBOL_ORDER[k % SYMBOL_ORDER.length];
+      // A little badge with your symbol floats over your head, so you know which portals are yours.
+      const badge = new THREE.Group();
+      const back = new THREE.Mesh(symbolGeo(symbol), basic(COLORS.ink));
+      back.scale.setScalar(0.34);
+      back.position.z = -0.01;
+      const front = new THREE.Mesh(symbolGeo(symbol), basic(p.color));
+      front.scale.setScalar(0.27);
+      badge.add(back, front);
+      badge.rotation.x = -0.75;
+      this.scene.add(badge);
       return {
-        p, ch, aim, index: i, x: 0, z: 0, vx: 0, vz: 0, dc: 0, dr: 1,
+        p, ch, aim, badge, symbol, index: i, x: 0, z: 0, vx: 0, vz: 0, dc: 0, dr: 1,
         slots: [null, null], tpCd: 0, pushT: 0, exited: false, exitT: 0,
-        placed: 0, pushes: 0,
+        placed: 0, pushes: 0, hintDots: null,
       };
     });
 
@@ -257,6 +324,7 @@ export class PortalScene extends MiniGame {
       e.exitT = 0;
       e.ch.group.visible = true;
       e.ch.group.scale.setScalar(1);
+      e.badge.visible = true;
     });
 
     this.frame();
@@ -315,7 +383,7 @@ export class PortalScene extends MiniGame {
   }
 
   shootBolt(e, slot) {
-    const mesh = new THREE.Mesh(sharedGeo('pBolt', () => new THREE.SphereGeometry(0.2, 10, 8)), slot === 0 ? toon(e.p.color, { emissive: 0x222222 }) : toon(COLORS.white, { emissive: 0x222222 }));
+    const mesh = new THREE.Mesh(sharedGeo('pBolt', () => new THREE.SphereGeometry(0.2, 10, 8)), toon(slot === 0 ? e.p.color : tint(e.p.color, 0.55), { emissive: 0x222222 }));
     mesh.position.set(e.x, 0.9, e.z);
     this.scene.add(mesh);
     this.bolts.push({ e, slot, mesh, x: e.x + e.dc * 0.3, z: e.z + e.dr * 0.3, dc: e.dc, dr: e.dr, t: 0 });
@@ -364,25 +432,54 @@ export class PortalScene extends MiniGame {
     const p = this.cellPos(c, r);
     const low = r === this.H - 1;
     const mesh = new THREE.Group();
-    const ring = new THREE.Mesh(sharedGeo('pRing', () => new THREE.TorusGeometry(0.62, 0.1, 10, 28)), toon(e.p.color, { emissive: 0x111111 }));
+    // Both portals of a pair share the rim color and the symbol; the [A] portal is filled with the
+    // color, the [B] portal with a pale tint of it.
+    const col = e.p.color, pale = tint(col, 0.6);
+    const ring = new THREE.Mesh(sharedGeo('pRing', () => new THREE.TorusGeometry(0.62, 0.13, 10, 28)), toon(col, { emissive: 0x111111 }));
     ring.scale.y = 1.35;
-    const fill = new THREE.Mesh(sharedGeo('pFill', () => new THREE.CircleGeometry(0.58, 28)), basic(slot === 0 ? e.p.color : 0xffffff, { transparent: true, opacity: 0.75 }));
+    const edge = new THREE.Mesh(sharedGeo('pEdge', () => new THREE.TorusGeometry(0.78, 0.04, 6, 32)), basic(COLORS.ink));
+    edge.scale.y = 1.32;
+    const fill = new THREE.Mesh(sharedGeo('pFill', () => new THREE.CircleGeometry(0.58, 28)), basic(slot === 0 ? col : pale, { transparent: true, opacity: 0.85 }));
     fill.scale.y = 1.35;
     fill.position.z = -0.01;
-    const glow = new THREE.Mesh(sharedGeo('pGlow', () => new THREE.CircleGeometry(0.55, 20)), basic(e.p.color, { transparent: true, opacity: 0.45 }));
-    glow.rotation.x = -Math.PI / 2;
-    glow.position.set(0, -(low ? 0.5 : 0.9) + 0.03, 0.55);
-    mesh.add(ring, fill, glow);
+    const symBack = new THREE.Mesh(symbolGeo(e.symbol), basic(COLORS.ink));
+    symBack.scale.setScalar(0.48);
+    symBack.position.z = 0.03;
+    const sym = new THREE.Mesh(symbolGeo(e.symbol), basic(slot === 0 ? COLORS.white : col));
+    sym.scale.setScalar(0.4);
+    sym.position.z = 0.04;
+    // The symbol again on the floor in front of the portal: readable from above on any wall.
+    const floorSym = new THREE.Group();
+    const fsBack = new THREE.Mesh(symbolGeo(e.symbol), basic(COLORS.ink));
+    fsBack.scale.setScalar(0.6);
+    const fs = new THREE.Mesh(symbolGeo(e.symbol), basic(col));
+    fs.scale.setScalar(0.5);
+    fs.position.z = 0.005;
+    floorSym.add(fsBack, fs);
+    // Lie flat and stay upright on screen whichever wall the portal is on.
+    floorSym.rotation.order = 'YXZ';
+    floorSym.rotation.set(-Math.PI / 2, -Math.atan2(dc, dr), 0);
+    // (Low portals on the front wall are drawn at 70%: keep their floor symbol full size.)
+    floorSym.position.set(0, low ? -0.55 / 0.7 + 0.03 : -0.95 + 0.03, low ? 0.95 : 0.62);
+    if (low) floorSym.scale.setScalar(1 / 0.7);
+    // Sparkles in the pair color circle the rim.
+    const sparks = [];
+    for (let k = 0; k < 3; k++) {
+      const sp = new THREE.Mesh(sharedGeo('pSpark', () => new THREE.OctahedronGeometry(0.09)), basic(k === 1 ? COLORS.white : col));
+      mesh.add(sp);
+      sparks.push(sp);
+    }
+    mesh.add(edge, ring, fill, symBack, sym, floorSym);
     mesh.position.set(p.x + dc * (CELL / 2 + 0.03), low ? 0.55 : 0.95, p.z + dr * (CELL / 2 + 0.03));
     mesh.rotation.y = Math.atan2(dc, dr);
     if (low) mesh.scale.setScalar(0.7);
     this.scene.add(mesh);
-    const portal = { owner: e, slot, c, r, dc, dr, key, mesh, born: this.time };
+    const portal = { owner: e, slot, c, r, dc, dr, key, mesh, sparks, born: this.time };
     this.portals.set(key, portal);
     e.slots[slot] = portal;
     e.placed++;
     this.game.audio.play('trap');
-    this.confetti.burst(mesh.position, e.p.color, { count: 10, speed: 3, size: 0.12, life: 0.5 });
+    this.confetti.burst(mesh.position, 0, { count: 12, speed: 3, size: 0.12, life: 0.5, colors: [col, pale, COLORS.white] });
   }
 
   removePortal(portal) {
@@ -474,6 +571,7 @@ export class PortalScene extends MiniGame {
         e.exited = true;
         e.ch.group.visible = false;
         e.aim.visible = false;
+        e.badge.visible = false;
         this.game.audio.play('star');
         this.confetti.burst(new THREE.Vector3(e.x, 1, e.z), 0, { count: 24, speed: 5, colors: [e.p.color, COLORS.gold, COLORS.white] });
         return;
@@ -488,7 +586,56 @@ export class PortalScene extends MiniGame {
     e.ch.update(dt, { moving: Math.min(1, sp / SPEED), grounded: true });
     e.aim.visible = playing;
     e.aim.position.set(e.x + e.dc * 0.85, 0.08, e.z + e.dr * 0.85);
+    e.badge.position.set(e.x, 2.05 + Math.sin(this.time * 3 + e.index) * 0.06, e.z);
     e.aim.rotation.z = -Math.atan2(e.dc, -e.dr);
+  }
+
+  /**
+   * Standing close to a portal shows a trail of dots on the floor to its partner, flowing from the
+   * portal you are near to the place you would pop out.
+   */
+  updatePairHints() {
+    const active = this.state === 'play' && !this.roomDone;
+    for (const owner of this.ents) {
+      const [p0, p1] = owner.slots;
+      let from = null, to = null;
+      if (active && p0 && p1) {
+        for (const e of this.ents) {
+          if (e.exited) continue;
+          for (const [a, b] of [[p0, p1], [p1, p0]]) {
+            const m = this.mouth(a);
+            if (Math.hypot(e.x - m.x, e.z - m.z) < 2.2) { from = a; to = b; }
+          }
+        }
+      }
+      if (!owner.hintDots) {
+        owner.hintDots = Array.from({ length: 18 }, () => {
+          const d = new THREE.Mesh(symbolGeo(owner.symbol), basic(owner.p.color));
+          d.rotation.x = -Math.PI / 2;
+          d.scale.setScalar(0.13);
+          d.visible = false;
+          this.scene.add(d);
+          return d;
+        });
+      }
+      const show = !!from;
+      const a = show && this.mouth(from), b = show && this.mouth(to);
+      const len = show ? Math.hypot(b.x - a.x, b.z - a.z) : 0;
+      const n = show ? Math.min(owner.hintDots.length, Math.max(2, Math.floor(len / 0.7))) : 0;
+      owner.hintDots.forEach((d, i) => {
+        d.visible = i < n;
+        if (!d.visible) return;
+        const k = ((i + (this.time * 1.5) % 1) / n);
+        d.position.set(a.x + (b.x - a.x) * k, 0.06, a.z + (b.z - a.z) * k);
+        d.scale.setScalar(0.13 + 0.1 * Math.sin(k * Math.PI));
+      });
+    }
+  }
+
+  /** Floor point just in front of a portal. */
+  mouth(portal) {
+    const p = this.cellPos(portal.c, portal.r);
+    return { x: p.x + portal.dc * (CELL / 2 + 0.6), z: p.z + portal.dr * (CELL / 2 + 0.6) };
   }
 
   teleport(e, dest) {
@@ -677,7 +824,13 @@ export class PortalScene extends MiniGame {
     for (const portal of this.portals.values()) {
       const s = (portal.r === this.H - 1 ? 0.7 : 1) * (1 + Math.sin(this.time * 4 + portal.c) * 0.04);
       portal.mesh.scale.setScalar(Math.min(s, (this.time - portal.born) * 6));
+      portal.sparks.forEach((sp, k) => {
+        const a = this.time * (portal.slot ? -2.2 : 2.2) + (k * Math.PI * 2) / 3;
+        sp.position.set(Math.cos(a) * 0.72, Math.sin(a) * 0.95, 0.06);
+        sp.rotation.y = this.time * 4;
+      });
     }
+    this.updatePairHints();
     if (this.state === 'play' && !this.roomDone) {
       this.checkReset(dt);
       if (this.ents.every((e) => e.exited)) this.roomCleared();
@@ -686,7 +839,11 @@ export class PortalScene extends MiniGame {
       const left = this.ents.filter((e) => !e.exited).length;
       this.game.ui.setTop(`<div class="pill hud-title">${t('portal.hud', { i: this.roomIndex + 1, n: ROOMS.length, name: t(`room.${this.roomIndex}.name`) })}</div><div class="pill">${t('portal.left', { n: left })}</div>`);
     }
-    this.game.ui.bar(this.players, (p) => (this.ents.find((e) => e.p === p)?.exited ? t('portal.out') : ''));
+    this.game.ui.bar(this.players, (p) => {
+      const e = this.ents.find((x) => x.p === p);
+      if (!e) return '';
+      return `${symbolSvg(e.symbol, p.css)}${e.exited ? ' ' + t('portal.out') : ''}`;
+    });
   }
 }
 

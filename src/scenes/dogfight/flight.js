@@ -5,16 +5,16 @@
 // nose drops until the dive has built up speed again. Same physics for players and bots.
 
 export const FLY = {
-  gravity: 14,
-  thrust: 15,          // cruise engine (always on)
-  boostThrust: 28,     // [A] held
-  drag: 0.058,         // quadratic drag: level cruise ~16, boost ~22
+  gravity: 12,
+  thrust: 12,          // cruise engine (always on); equal to gravity, so straight up only coasts
+  boostThrust: 22,     // [A] held
+  drag: 0.04,          // quadratic drag: level cruise ~17, boost ~23
   grip: 4.5,           // how fast the velocity swings to follow the nose at full lift (momentum)
-  liftZero: 4,         // below this speed the wings carry nothing
-  liftFull: 12,        // at and above this the wings carry the whole weight
-  stallSpeed: 6.5,     // slower than this for a moment: stall
+  liftZero: 3,         // below this speed the wings carry nothing
+  liftFull: 10,        // at and above this the wings carry the whole weight
+  stallSpeed: 6,        // slower than this for a moment: stall
   recoverSpeed: 11,    // diving faster than this ends the stall
-  turn: 3.3,           // rad/s at full authority
+  turn: 3.6,           // rad/s at full authority
   ceiling: 38,         // the air thins above here: less engine
   ceilingTop: 47,      // no engine at all up here
   groundY: 0.75,       // plane center height when the wheels touch the ground
@@ -45,6 +45,11 @@ export function noseSpeed(f) {
   return f.vx * Math.cos(f.ang) + f.vy * Math.sin(f.ang);
 }
 
+/** Speed the wings feel: mostly along the nose, but a quick pull-up keeps most of the momentum. */
+export function wingSpeed(f) {
+  return Math.max(noseSpeed(f), Math.hypot(f.vx, f.vy) * 0.85);
+}
+
 /** Nose pitch relative to the way the plane faces (+ is nose up), -PI..PI. */
 export function pitchOf(f) {
   return f.facing > 0 ? wrapAngle(f.ang) : wrapAngle(Math.PI - f.ang);
@@ -56,8 +61,7 @@ export function pitchOf(f) {
  */
 export function flightStep(f, ctl, dt) {
   let ev = '';
-  const cos = Math.cos(f.ang), sin = Math.sin(f.ang);
-  const s = f.vx * cos + f.vy * sin;
+  const s = wingSpeed(f);
   const mag = Math.hypot(ctl.x, ctl.y);
   f.rollCd -= dt;
   f.boostLock -= dt;
@@ -77,10 +81,11 @@ export function flightStep(f, ctl, dt) {
     }
   } else if (mag > 0.35) {
     let d = wrapAngle(Math.atan2(ctl.y, ctl.x) - f.ang);
-    // Turning all the way around: go up and over (a half loop) rather than down into the ground.
+    // Turning all the way around: high up, dive around (keeps speed); low down, go up and over.
     if (Math.abs(d) > 2.5) {
       const upDir = Math.cos(f.ang) >= 0 ? 1 : -1;
-      if (Math.sign(d) !== upDir) d += upDir * TAU;
+      const way = f.y > 16 ? -upDir : upDir;
+      if (Math.sign(d) !== way) d += way * TAU;
     }
     const auth = clamp(0.35 + 0.65 * s / 12, 0.35, 1) * f.turnMul;
     f.ang += clamp(d, -FLY.turn * auth * dt, FLY.turn * auth * dt);
@@ -131,7 +136,7 @@ export function flightStep(f, ctl, dt) {
   f.vy += fy * thrust * dt;
 
   const sp = f.vx * fx + f.vy * fy;
-  let lift = clamp((sp - FLY.liftZero) / (FLY.liftFull - FLY.liftZero), 0, 1);
+  let lift = clamp((wingSpeed(f) - FLY.liftZero) / (FLY.liftFull - FLY.liftZero), 0, 1);
   if (f.stalled) lift *= 0.25;
   if (f.dead) lift *= 0.2;
   // Gravity along the nose always counts; across the nose the wings carry `lift` of it.
@@ -140,12 +145,22 @@ export function flightStep(f, ctl, dt) {
   const gx = gPar * fx, gy = gPar * fy;
   f.vx += (gx + (1 - lift) * (0 - gx)) * dt;
   f.vy += (gy + (1 - lift) * (g - gy)) * dt;
-  // Wings swing the velocity toward the nose (only when moving forward).
-  if (sp > 0) {
-    const px = f.vx - fx * sp, py = f.vy - fy * sp;
+  // Wings swing the velocity toward the nose, keeping most of the speed (a little is lost
+  // in hard turns). Flying tail first, they only damp the sideways slide.
+  const v = Math.hypot(f.vx, f.vy);
+  if (v > 0.01) {
+    const aoa = wrapAngle(f.ang - Math.atan2(f.vy, f.vx));
     const k = Math.min(1, FLY.grip * lift * dt);
-    f.vx -= px * k;
-    f.vy -= py * k;
+    if (Math.abs(aoa) < Math.PI / 2) {
+      const a = Math.atan2(f.vy, f.vx) + aoa * k;
+      const keep = v * (1 - 0.25 * Math.abs(aoa) * k);
+      f.vx = Math.cos(a) * keep;
+      f.vy = Math.sin(a) * keep;
+    } else {
+      const px = f.vx - fx * sp, py = f.vy - fy * sp;
+      f.vx -= px * k;
+      f.vy -= py * k;
+    }
   }
   const speed = Math.hypot(f.vx, f.vy);
   const dk = Math.max(0, 1 - FLY.drag * speed * dt);
@@ -172,7 +187,7 @@ export function flightStep(f, ctl, dt) {
 
   // ---- stall ----
   if (!f.grounded && !f.dead) {
-    const s3 = noseSpeed(f);
+    const s3 = wingSpeed(f);
     if (!f.stalled) {
       const slow = s3 < FLY.stallSpeed || (f.thin < 0.4 && s3 < 10);
       f.lowT = slow ? f.lowT + dt : 0;
@@ -201,7 +216,7 @@ export function flightStep(f, ctl, dt) {
 export function botControl(me, foes, time, dt, skill, xw, pelletSpeed, dodgeThreat) {
   const f = me.fl;
   const out = { x: 0, y: 0, boost: false, fire: false, rollPressed: false };
-  const s = noseSpeed(f);
+  const s = wingSpeed(f);
   me.brain = me.brain || { aimT: 0, wander: Math.random() * 10, fireHold: 0 };
   const br = me.brain;
 

@@ -9,23 +9,27 @@ import { t, addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'paintnum.title': 'Paint by Numbers',
-    'paintnum.hint': 'Walk into a paint pot to fill your brush. Then stand on squares with the same number and hold [A] to paint. Finish the picture together for a bonus!',
+    'paintnum.hint': 'Walk into a paint pot to fill your brush. Then stand on squares with the same number and hold [A] to paint. A wrong color has to be painted over with the right one, and costs a point. Finish the picture together for a bonus!',
     'paintnum.left': 'Painted {n} / {total}', 'paintnum.done': 'Picture done!', 'paintnum.bonus': 'Bonus for everyone!',
     'paintnum.n': '{n} painted',
     'paintnum.heart': 'a heart', 'paintnum.fish': 'a fish', 'paintnum.house': 'a house', 'paintnum.flower': 'a flower', 'paintnum.mushroom': 'a mushroom', 'paintnum.boat': 'a boat',
     'paintnum.what': 'It was {what}!',
+    'paintnum.oops': 'Oops: {n}', 'paintnum.oopsEnd': 'Wrong colors: {n} (−{n} points)', 'paintnum.clean': 'Not a single wrong color!',
   },
   no: {
     'paintnum.title': 'Mal etter tall',
-    'paintnum.hint': 'Gå inn i en malingsbøtte for å fylle penselen. Stå på ruter med samme tall og hold inne [A] for å male. Gjør ferdig bildet sammen for bonus!',
+    'paintnum.hint': 'Gå inn i en malingsbøtte for å fylle penselen. Stå på ruter med samme tall og hold inne [A] for å male. Feil farge må males over med riktig farge, og koster et poeng. Gjør ferdig bildet sammen for bonus!',
     'paintnum.left': 'Malt {n} / {total}', 'paintnum.done': 'Bildet er ferdig!', 'paintnum.bonus': 'Bonus til alle!',
     'paintnum.n': '{n} malt',
     'paintnum.heart': 'et hjerte', 'paintnum.fish': 'en fisk', 'paintnum.house': 'et hus', 'paintnum.flower': 'en blomst', 'paintnum.mushroom': 'en sopp', 'paintnum.boat': 'en båt',
     'paintnum.what': 'Det ble {what}!',
+    'paintnum.oops': 'Oi: {n}', 'paintnum.oopsEnd': 'Feil farger: {n} (−{n} poeng)', 'paintnum.clean': 'Ikke én eneste feil farge!',
   },
 });
 
 // Paint by Numbers: calm co-op. Load a color from a pot, paint the squares with its number.
+// Any color sticks: a wrong one shows on the square (number still visible) until someone paints
+// the right color over it. Each wrong square costs its painter a point and the team a little.
 const GW = 10;
 const GH = 8;
 const CELL = 1.15;
@@ -109,6 +113,7 @@ export class PaintNumRound extends Round {
     this.design = DESIGNS[Math.floor(Math.random() * DESIGNS.length)];
     this.t = 0;
     this.finished = false;
+    this.mistakes = 0; // wrong-color squares painted by the team
     this.build();
     this.ents = this.players.map((p, i) => {
       const ch = this.bean(p);
@@ -118,7 +123,7 @@ export class PaintNumRound extends Round {
       const blob = new THREE.Mesh(sharedGeo('pn-badge', () => new THREE.PlaneGeometry(0.7, 0.7)), glyphMaterial('?'));
       blob.visible = false;
       this.group.add(blob);
-      return { p, ch, x, z: HALF_D + 1.2, vx: 0, vz: 0, color: 0, painted: 0, bonus: 0, blob, nope: 0 };
+      return { p, ch, x, z: HALF_D + 1.2, vx: 0, vz: 0, color: 0, painted: 0, bonus: 0, mistakes: 0, blob, nope: 0 };
     });
   }
 
@@ -163,7 +168,8 @@ export class PaintNumRound extends Round {
           label.position.set(x, 0.24, z);
           g.add(label);
         }
-        this.cells.push({ r, c, x, z, num, tile, label, painted: !num, pop: 0 });
+        // cur: the color number currently on the square (0 = bare canvas).
+        this.cells.push({ r, c, x, z, num, tile, label, painted: !num, cur: 0, pop: 0, wiggle: 0 });
       });
     });
     this.toPaint = this.cells.filter((c) => c.num).length;
@@ -234,28 +240,57 @@ export class PaintNumRound extends Round {
     return this.cells[r * GW + c];
   }
 
+  /** Paint a numbered square with e's color. Right color: done for good. Wrong: it shows, and must be redone. */
   paint(e, cell) {
-    cell.painted = true;
+    const color = this.design.colors[e.color - 1];
+    cell.cur = e.color;
     cell.pop = 1;
-    cell.tile.material = toon(this.design.colors[cell.num - 1]);
-    if (cell.label) { this.group.remove(cell.label); cell.label = null; }
-    e.painted++;
-    this.game.audio.play('pop');
-    this.party.puffs.burst(new THREE.Vector3(cell.x, 0.4, cell.z), this.design.colors[cell.num - 1], { count: 5, size: 0.25, life: 0.35, speed: 2 });
-    if (this.cells.every((c) => c.painted)) this.complete();
+    cell.tile.material = toon(color);
+    this.party.puffs.burst(new THREE.Vector3(cell.x, 0.4, cell.z), color, { count: 5, size: 0.25, life: 0.35, speed: 2 });
+    if (e.color === cell.num) {
+      cell.painted = true;
+      this.markWrong(cell, false);
+      if (cell.label) { this.group.remove(cell.label); cell.label = null; }
+      e.painted++;
+      this.game.audio.play('pop');
+      if (this.cells.every((c) => c.painted)) this.complete();
+    } else {
+      // The number stays on top (lifted above the paint) and wiggles: "not quite!"
+      cell.wiggle = 1;
+      this.markWrong(cell, true);
+      e.mistakes++;
+      this.mistakes++;
+      e.ch.squash(0.85);
+      this.game.audio.play('bump');
+    }
   }
 
   complete() {
     this.finished = true;
     for (const e of this.ents) { e.bonus = BONUS; e.ch.squash(1.4); }
     this.game.audio.play('fanfare');
-    this.game.ui.banner(t('paintnum.done'), `${t('paintnum.what', { what: t(`paintnum.${this.design.key}`) })} ${t('paintnum.bonus')}`, 2200);
+    this.game.ui.banner(t('paintnum.done'), `${t('paintnum.what', { what: t(`paintnum.${this.design.key}`) })} ${t('paintnum.bonus')} ${this.oopsText()}`, 2200);
     const cols = this.design.colors.concat([COLORS.gold]);
     for (let i = 0; i < 6; i++) {
       this.later(i * 0.3, () => this.party.confetti.burst(new THREE.Vector3((Math.random() - 0.5) * GW * CELL, 2, (Math.random() - 0.5) * GH * CELL), 0, { count: 30, speed: 7, colors: cols }));
     }
     this.celebrate = 0;
     this.later(3.2, () => { this.done = true; });
+  }
+
+  /** A dashed-looking coral frame around a wrongly painted square (so it shows even on light colors). */
+  markWrong(cell, on) {
+    if (on && !cell.mark) {
+      const geo = sharedGeo('pn-wrong', () => new THREE.RingGeometry(CELL * 0.5, CELL * 0.6, 4, 1, Math.PI / 4));
+      cell.mark = new THREE.Mesh(geo, toon(0xff3b5c));
+      cell.mark.rotation.x = -Math.PI / 2;
+      this.group.add(cell.mark);
+    }
+    if (cell.mark) cell.mark.visible = on;
+  }
+
+  oopsText() {
+    return this.mistakes ? t('paintnum.oopsEnd', { n: this.mistakes }) : t('paintnum.clean');
   }
 
   update(dt, playing) {
@@ -266,7 +301,7 @@ export class PaintNumRound extends Round {
       if (this.t >= TIME && !this.over) {
         this.over = true;
         this.game.audio.play('beep');
-        this.game.ui.banner(t('paintnum.what', { what: t(`paintnum.${this.design.key}`) }), '', 1800);
+        this.game.ui.banner(t('paintnum.what', { what: t(`paintnum.${this.design.key}`) }), this.oopsText(), 1800);
         this.later(2, () => { this.done = true; });
       }
     }
@@ -279,9 +314,16 @@ export class PaintNumRound extends Round {
         c.label.scale.setScalar(s);
       }
       if (c.pop > 0) c.pop = Math.max(0, c.pop - dt * 4);
+      if (c.wiggle > 0) c.wiggle = Math.max(0, c.wiggle - dt * 1.5);
+      if (c.label) c.label.rotation.z = Math.sin(this.time * 18) * 0.35 * c.wiggle;
       let y = 0.17 + Math.sin(c.pop * Math.PI) * 0.15;
       if (this.celebrate !== undefined && c.num) y += Math.max(0, Math.sin(this.time * 7 - (c.c + c.r) * 0.5)) * 0.18;
       c.tile.position.y = y;
+      if (c.label) c.label.position.y = y + 0.07;
+      if (c.mark?.visible) {
+        c.mark.position.set(c.x, y + 0.075, c.z);
+        c.mark.scale.setScalar(1 + Math.sin(this.time * 5) * 0.03);
+      }
     }
     for (const pot of this.pots) {
       pot.sign.position.y = 1.55 + Math.sin(this.time * 3 + pot.num) * 0.08;
@@ -308,9 +350,10 @@ export class PaintNumRound extends Round {
         }
         if (d.a) {
           const cell = this.cellAt(e.x, e.z);
-          if (cell && !cell.painted && cell.num === e.color) this.paint(e, cell);
-          else if (d.aPressed && cell && !cell.painted && e.nope <= 0) {
-            // Wrong number: the brush just bounces off.
+          // Finished squares are dry; bare or wrongly painted ones take any color.
+          if (cell && !cell.painted && e.color && cell.cur !== e.color) this.paint(e, cell);
+          else if (d.aPressed && cell && !cell.painted && !e.color && e.nope <= 0) {
+            // Empty brush: nothing happens (fill it at a pot first).
             e.nope = 0.4;
             e.ch.squash(0.85);
             this.game.audio.play('bump');
@@ -341,21 +384,23 @@ export class PaintNumRound extends Round {
 
   hud() {
     const n = this.cells.filter((c) => c.num && c.painted).length;
-    return `<div class="pill"><b>${t('paintnum.left', { n, total: this.toPaint })}</b></div>${clock(TIME - this.t)}`;
+    const oops = this.mistakes ? `<div class="pill"><b>${t('paintnum.oops', { n: this.mistakes })}</b></div>` : '';
+    return `<div class="pill"><b>${t('paintnum.left', { n, total: this.toPaint })}</b></div>${oops}${clock(TIME - this.t)}`;
   }
 
-  /** Story campaign: share of the picture the team painted (0..1). */
+  /** Story campaign: share of the picture painted right (0..1); each wrong color takes off half a square. */
   campaignStats() {
-    return { team: this.cells.filter((c) => c.num && c.painted).length / Math.max(1, this.toPaint) };
+    const right = this.cells.filter((c) => c.num && c.painted).length;
+    return { team: Math.max(0, right - this.mistakes * 0.5) / Math.max(1, this.toPaint), mistakes: this.mistakes };
   }
 
   score(p) {
     const e = this.ents.find((x) => x.p === p);
-    return e.painted + e.bonus;
+    return Math.max(0, e.painted + e.bonus - e.mistakes);
   }
 
   detail(p) {
     const e = this.ents.find((x) => x.p === p);
-    return t('paintnum.n', { n: e.painted }) + (e.bonus ? ` +${e.bonus}` : '');
+    return t('paintnum.n', { n: e.painted }) + (e.bonus ? ` +${e.bonus}` : '') + (e.mistakes ? ` −${e.mistakes}` : '');
   }
 }

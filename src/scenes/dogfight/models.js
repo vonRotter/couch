@@ -71,7 +71,7 @@ export function makePlane({ color, wing = tint(color, 0.45), kind = 'bi', pilot 
 
   // Wings and struts.
   const wings = [];
-  const levels = kind === 'tri' ? [[-0.32, 3.0], [0.3, 3.0], [0.92, 3.0]] : [[-0.3, 3.4], [0.88, 3.6]];
+  const levels = kind === 'tri' ? [[-0.32, 2.2], [0.3, 2.2], [0.92, 2.2]] : [[-0.3, 2.4], [0.88, 2.6]];
   for (const [y, span] of levels) {
     const w = mesh(rbox(`wing${span}`, kind === 'tri' ? 0.78 : 0.95, 0.1, span, 0.04), wingMat, 0.28, y, 0);
     body.add(w);
@@ -80,13 +80,13 @@ export function makePlane({ color, wing = tint(color, 0.45), kind = 'bi', pilot 
     for (const s of [-1, 1]) body.add(mesh(rbox('wingTip', 0.8, 0.12, 0.3, 0.04), main, 0.28, y, s * (span / 2 - 0.12)));
   }
   const top = levels[levels.length - 1][0], bot = levels[0][0];
-  for (const z of [-1.25, 1.25, -0.42, 0.42]) {
+  for (const z of [-0.85, 0.85, -0.4, 0.4]) {
     const strut = mesh(cyl('strut', 0.035, 0.035, top - bot, 6), ink, 0.28, (top + bot) / 2, z);
     body.add(strut);
   }
   // Tail fin and stabilizer.
   body.add(mesh(rbox('fin', 0.55, 0.62, 0.07, 0.03), wingMat, -1.55, 0.36, 0));
-  body.add(mesh(rbox('stab', 0.48, 0.07, 1.4, 0.03), wingMat, -1.55, 0.04, 0));
+  body.add(mesh(rbox('stab', 0.48, 0.07, 1.1, 0.03), wingMat, -1.55, 0.04, 0));
   // Wheels.
   for (const z of [-0.42, 0.42]) {
     const leg = mesh(cyl('leg', 0.03, 0.03, 0.5, 6), ink, 0.48, -0.48, z * 0.85);

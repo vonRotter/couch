@@ -5,7 +5,7 @@ import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeFlower, seeded } from '../core/world.js';
 import { moveBody, platformerControl } from '../core/physics2d.js';
-import { LEVELS, glyphMaterial, fontsReady, speak, chooseLevels, shuffle } from '../core/edu.js';
+import { LEVELS, glyphMaterial, fontsReady, speak, chooseLevels, shuffle, pickByAge, nextSeq } from '../core/edu.js';
 import { WORDS, ALPHABET } from './edu-words.js';
 import { esc } from '../core/ui.js';
 
@@ -15,7 +15,7 @@ import { esc } from '../core/ui.js';
 const HALF_W = 13;
 const TOP = 14;
 const ROUND_TIME = 120;
-const MAX_BALLOONS = 16;
+const MAX_BALLOONS = 16; // plus two per player, so letters for everyone can float by ahead of time
 const LANES = [2.7, 4.9, 7.3, 9.9]; // reachable from the ground, low clouds, middle cloud, high clouds
 // Each lane drifts one way at one speed, so balloons never overtake or cover each other.
 const LANE_VX = [1.3, -1.1, 1.2, -1.0];
@@ -55,7 +55,12 @@ export class SpellingScene extends MiniGame {
     this.state = 'pick';
     fontsReady().then(() => chooseLevels(this, 'Bokstavballonger')).then(() => {
       if (this.game.current !== this) return;
-      for (const e of this.ents) this.nextWord(e);
+      // Start with balloons already spread over the sky, so the first words can come from them.
+      for (let i = 0; i < 10 + this.ents.length; i++) {
+        const b = this.spawnBalloon(ALPHABET[Math.floor(Math.random() * ALPHABET.length)], i % 4);
+        if (b) b.x = -Math.sign(b.vx) * (HALF_W - 1 - (Math.floor(i / 4) + Math.random() * 0.5) * (HALF_W * 2 - 2) / 3.2);
+      }
+      for (const e of shuffle(this.ents)) this.nextWord(e);
       this.intro('Bokstavballonger', 'Ballongene svever forbi. Hopp opp til ballongen med neste bokstav i ordet ditt!');
     });
   }
@@ -137,37 +142,68 @@ export class SpellingScene extends MiniGame {
     return LEVELS[e.p.eduLevel ?? 0].key;
   }
 
-  /** A word for e's level with its hidden letters picked. */
-  makeWord(e) {
+  /**
+   * The next word for e. Bokstavballonger's balloons can only come in from the sides, so a
+   * letter spawned the moment it is needed is always the newest balloon. Instead the word
+   * (and, below the hardest level, which letters are hidden) is chosen so that the first
+   * missing letter is already floating in the sky, on a balloon of random age. The word's
+   * later letters are sent up early by updateBalloons (see upcoming()).
+   */
+  nextWord(e) {
     const lv = this.levelKey(e);
     let pool = WORDS[lv].filter(([w]) => !e.used.has(w) && w !== e.word?.word);
     if (!pool.length) { e.used.clear(); pool = WORDS[lv].filter(([w]) => w !== e.word?.word); }
-    const [word, clue] = pool[Math.floor(Math.random() * pool.length)];
+    const taken = new Set(this.ents.filter((o) => o !== e).map((o) => this.needed(o)));
+    const sky = this.reachable(true);
+    const inSky = new Set(sky.map((b) => b.letter));
+    // Every way to start a word: which letter would be needed first, and the hidden set.
+    const starts = [];
+    for (const [word, clue] of pool) {
+      const n = word.length;
+      if (lv === 'easy') for (let i = 0; i < n; i++) starts.push({ word, clue, first: i, hidden: [i] });
+      else if (lv === 'medium') {
+        for (let i = 0; i < n - 1; i++) {
+          // The second hidden letter: preferably one that is floating by already too.
+          const later = [...Array(n).keys()].slice(i + 1);
+          const there = later.filter((j) => inSky.has(word[j]));
+          const pickFrom = there.length ? there : later;
+          starts.push({ word, clue, first: i, hidden: [i, pickFrom[Math.floor(Math.random() * pickFrom.length)]] });
+        }
+      } else starts.push({ word, clue, first: 1, hidden: [...Array(n).keys()].slice(1) });
+    }
+    if (lv === 'hard') {
+      // Every letter but the first is hidden: prefer words whose letters are mostly in the sky.
+      const cover = (st) => st.hidden.filter((i) => inSky.has(st.word[i])).length / st.hidden.length;
+      const best = Math.max(...starts.map(cover));
+      starts.splice(0, starts.length, ...starts.filter((st) => cover(st) >= best - 0.2));
+    }
+    const letterOf = (st) => st.word[st.first];
+    const usable = new Set(starts.map(letterOf));
+    const balloon = pickByAge(sky, sky.filter((b) => usable.has(b.letter) && !taken.has(b.letter)));
+    let options = balloon ? starts.filter((st) => letterOf(st) === balloon.letter) : starts;
+    // Best of all: every hidden letter of the word is floating by already.
+    const full = options.filter((st) => st.hidden.every((i) => inSky.has(st.word[i])));
+    if (full.length) options = full;
+    // Pick a word first (so long words with many options are not favored), then a start.
+    const words = [...new Set(options.map((st) => st.word))];
+    const word = words[Math.floor(Math.random() * words.length)];
+    const mine = options.filter((st) => st.word === word);
+    const st = mine[Math.floor(Math.random() * mine.length)];
     e.used.add(word);
-    const letters = word.split('');
-    let hidden;
-    if (lv === 'easy') hidden = [Math.floor(Math.random() * letters.length)];
-    else if (lv === 'medium') hidden = shuffle(letters.map((_, i) => i)).slice(0, 2);
-    else hidden = letters.map((_, i) => i).slice(1);
-    return { word, clue, letters, open: new Set(hidden) };
-  }
-
-  nextWord(e) {
-    // Words are picked a few ahead, so their letters can already be floating by when they
-    // start (see upcoming()).
-    e.queue = e.queue || [];
-    while (e.queue.length < 4) e.queue.push(this.makeWord(e));
-    e.word = e.queue.shift();
-    e.queue.push(this.makeWord(e));
+    e.word = { word, clue: st.clue, letters: word.split(''), open: new Set(st.hidden) };
     e.doneT = 0;
   }
 
-  /** The letters e will need after the current one: rest of this word, then the queued words. */
+  /** Balloons on screen in a lane players can reach (with `lasting`, not about to drift out). */
+  reachable(lasting = false) {
+    return this.balloons.filter((b) => b.lane <= 2 && Math.abs(b.x) < HALF_W - 1
+      && (!lasting || Math.abs(b.x) < HALF_W - 6 || Math.sign(b.x) !== Math.sign(b.vx)));
+  }
+
+  /** The letters e will need after the current one, in order. */
   upcoming(e) {
-    if (!e.word) return [];
-    const order = (w) => [...w.open].sort((a, b) => a - b).map((i) => w.letters[i]);
-    const rest = e.doneT > 0 ? [] : order(e.word).slice(1);
-    return rest.concat(...e.queue.map(order));
+    if (!e.word || e.doneT > 0) return [];
+    return [...e.word.open].sort((a, b) => a - b).slice(1).map((i) => e.word.letters[i]);
   }
 
   needed(e) {
@@ -213,7 +249,7 @@ export class SpellingScene extends MiniGame {
     const b = {
       letter, mesh: g, lane: li,
       x: this.entryX(li), y: LANES[li], vx: LANE_VX[li],
-      phase: Math.random() * 6, bumpCd: new Map(), bumpY: 0,
+      phase: Math.random() * 6, bumpCd: new Map(), bumpY: 0, seq: nextSeq(),
     };
     this.balloons.push(b);
     return b;
@@ -224,23 +260,18 @@ export class SpellingScene extends MiniGame {
   }
 
   /**
-   * Spawning. Letters are sent up ahead of time: the letters players will need next (the
-   * rest of their word and their queued word) are kept floating, so when a letter becomes
-   * the one you need, its balloon has usually been drifting for a while among newer ones.
-   * Before, the needed letter was spawned the moment it was needed, so the newest balloon
-   * was nearly always the answer.
+   * Spawning. A word's later letters are sent up ahead of time in random order, so when a
+   * letter becomes the one you need, its balloon has usually been drifting for a while
+   * among newer ones (the first letter is already in the sky, see nextWord). Before, the
+   * needed letter was spawned the moment it was needed, so the newest balloon was nearly
+   * always the answer.
    */
   updateBalloons(dt) {
-    // A letter "is around" when a balloon with it is on screen in a reachable lane
-    // (with `lasting`, also not about to drift out the far side).
-    const around = (letter, lasting = false) => this.balloons.some((b) => b.letter === letter && b.lane <= 2
-      && Math.abs(b.x) < HALF_W - 1 && (!lasting || Math.abs(b.x) < HALF_W - 6 || Math.sign(b.x) !== Math.sign(b.vx)));
-    // Letters coming up in the next ~20 seconds (a balloon takes about that long to cross).
-    const ahead = Math.max(3, Math.round(12 / this.ents.length));
-    const soon = this.ents.flatMap((e) => this.upcoming(e).slice(0, ahead)).filter((l) => !around(l, true));
+    const around = (letter, lasting = false) => this.reachable(lasting).some((b) => b.letter === letter);
+    const soon = this.ents.flatMap((e) => this.upcoming(e)).filter((l) => !around(l, true));
     this.spawnT -= dt;
-    if (this.spawnT <= 0 && this.balloons.length < MAX_BALLOONS) {
-      this.spawnT = 0.9;
+    if (this.spawnT <= 0 && this.balloons.length < MAX_BALLOONS + 2 * this.ents.length) {
+      this.spawnT = Math.max(0.55, 1 - 0.1 * this.ents.length);
       const r = Math.random();
       if (soon.length && r < 0.6) this.spawnBalloon(soon[Math.floor(Math.random() * soon.length)], Math.floor(Math.random() * 3));
       else this.spawnBalloon(ALPHABET[Math.floor(Math.random() * ALPHABET.length)]);
@@ -248,16 +279,16 @@ export class SpellingScene extends MiniGame {
     this.ensureT -= dt;
     if (this.ensureT <= 0) {
       this.ensureT = 0.5;
-      // Every player's next letter must always be somewhere reachable (rarely missing now),
-      // and their following letter should be on its way already.
-      const wanted = [];
+      // Every player's next letter must always be somewhere reachable (rarely missing now).
+      // A missing letter comes in together with two random letters, in random order and lanes,
+      // so the newest balloon is still not a giveaway.
       for (const e of this.ents) {
         const need = this.needed(e);
-        if (need && !around(need)) wanted.push(need);
-        const next = this.upcoming(e)[0];
-        if (next && !around(next, true) && Math.random() < 0.5) wanted.push(next);
+        if (!need || around(need)) continue;
+        const batch = shuffle([need, ...[0, 1].map(() => ALPHABET[Math.floor(Math.random() * ALPHABET.length)])]);
+        const lanes = shuffle([0, 1, 2]);
+        batch.forEach((letter, i) => this.spawnBalloon(letter, lanes[i]));
       }
-      for (const letter of shuffle(wanted)) this.spawnBalloon(letter, Math.floor(Math.random() * 3));
     }
 
     for (const b of this.balloons) {

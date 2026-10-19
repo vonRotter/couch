@@ -120,7 +120,7 @@ addStrings({
     ...bank.en,
     'quiz.title': 'Quiz Run',
     'quiz.hint': 'First walk to the quiz you want and press [A]. Then run to the zone with the right answer before time runs out! Picture puzzles are read aloud: press [B] to hear one again.',
-    'quiz.kid': "Kids' question", 'quiz.grown': 'Grown-up question', 'quiz.pic': 'Picture puzzle', 'quiz.q': 'Question {n} of {total}',
+    'quiz.kid': "Kids' question", 'quiz.grown': 'Grown-up question', 'quiz.q': 'Question {n} of {total}',
     'quiz.again': '[B] hear it again', 'quiz.answer': 'Answer: {a}', 'quiz.n': '{n} correct',
     'quiz.vote': 'Which quiz? Walk to one!',
     'quiz.voteSay': 'Which quiz do you want? Pictures, mixed, classic or grown-up?',
@@ -134,7 +134,7 @@ addStrings({
     ...bank.no,
     'quiz.title': 'Quizløpet',
     'quiz.hint': 'Gå først til quizen du vil ha og trykk [A]. Løp så til feltet med riktig svar før tiden er ute! Bildeoppgaver blir lest opp: trykk [B] for å høre igjen.',
-    'quiz.kid': 'Barnespørsmål', 'quiz.grown': 'Voksenspørsmål', 'quiz.pic': 'Bildeoppgave', 'quiz.q': 'Spørsmål {n} av {total}',
+    'quiz.kid': 'Barnespørsmål', 'quiz.grown': 'Voksenspørsmål', 'quiz.q': 'Spørsmål {n} av {total}',
     'quiz.again': '[B] hør igjen', 'quiz.answer': 'Svar: {a}', 'quiz.n': '{n} riktige',
     'quiz.vote': 'Hvilken quiz? Gå til en!',
     'quiz.voteSay': 'Hvilken quiz vil dere ha? Bilder, blandet, klassisk eller voksen?',
@@ -170,11 +170,13 @@ const ZONES = [
 ];
 // Picture cards lean back toward the camera so the models read like pictures.
 const TILT = -0.6;
-const CARD_W = 3.3;
-const CARD_H = 2.4;
-const CARD_SCALE = 1.6;
-const BOARD_SCALE = 1.15;
-const BOARD_Z = -HALF_Z - 1.1;
+const CARD_W = 3.6;
+const CARD_H = 2.6;
+const CARD_SCALE = 2.0;
+const CARD_COLOR = 0xe6f2ff;
+const BOARD_SCALE = 1.1;
+const BOARD_Z = -HALF_Z - 1.7;
+const BOARD_Y = 0.6;
 
 function dim(hex) {
   return new THREE.Color(hex).lerp(new THREE.Color(0xb9b4c8), 0.65).getHex();
@@ -358,7 +360,7 @@ export class QuizRound extends Round {
     const holder = new THREE.Group();
     holder.position.set(x, 0.2, z);
     holder.rotation.x = TILT;
-    const card = new THREE.Mesh(sharedGeo(`quizCard${w}x${h}`, () => new RoundedBoxGeometry(w, h, 0.16, 3, 0.07)), toon(COLORS.white));
+    const card = new THREE.Mesh(sharedGeo(`quizCard${w}x${h}`, () => new RoundedBoxGeometry(w, h, 0.16, 3, 0.07)), toon(CARD_COLOR));
     card.position.set(0, h / 2, -0.1);
     card.castShadow = true;
     card.receiveShadow = true;
@@ -374,24 +376,38 @@ export class QuizRound extends Round {
     obj.scale.multiplyScalar(CARD_SCALE);
     obj.position.y += 0.22;
     obj.position.z += 0.1;
-    const h = this.card3d(obj, zn.x, zn.z - 0.3, CARD_W, CARD_H);
+    const h = this.card3d(obj, zn.x, zn.z + 0.1, CARD_W, CARD_H);
     h.userData.zone = zone;
     return h;
   }
 
   showBoard(items) {
-    const step = 1.25 * BOARD_SCALE;
+    // Few items (a prompt picture, a speaker) are drawn bigger than long rows (counting, patterns).
+    const scale = BOARD_SCALE * (items.length <= 2 ? 1.5 : items.length <= 4 ? 1.2 : 1);
+    const step = 1.25 * scale;
     const w = Math.round(items.length * step + 0.8);
     const holder = new THREE.Group();
     items.forEach((obj, i) => {
-      obj.scale.multiplyScalar(BOARD_SCALE);
+      obj.scale.multiplyScalar(scale);
       obj.position.x += (i - (items.length - 1) / 2) * step;
       obj.position.y += 0.15;
       obj.position.z += 0.1;
       holder.add(obj);
     });
-    const b = this.card3d(holder, 0, BOARD_Z, w, 2.1);
+    const b = this.card3d(holder, 0, BOARD_Z, w, 2.0);
+    b.position.y = BOARD_Y;
     b.userData.zone = -1;
+    // Two legs hold the board up behind the stage (in an untilted frame inside the board).
+    const legs = new THREE.Group();
+    legs.rotation.x = -TILT;
+    b.add(legs);
+    for (const s of [-1, 1]) {
+      const leg = new THREE.Mesh(sharedGeo('quizLeg', () => new THREE.CylinderGeometry(0.12, 0.12, 1, 10)), toon(COLORS.trunk));
+      leg.scale.y = BOARD_Y + 0.4;
+      leg.position.set(s * (w / 2 - 0.6), -(BOARD_Y + 0.4) / 2 + 0.2, -0.3);
+      leg.castShadow = true;
+      legs.add(leg);
+    }
   }
 
   showPictures() {
@@ -538,26 +554,18 @@ export class QuizRound extends Round {
     }
   }
 
-  /** The HTML question card: big text for text questions, a slim strip for picture puzzles. */
+  /** The HTML question card for text questions and the vote. Picture puzzles use the top bar instead (see hud()). */
   updateCard(show, parts, pic, voting) {
     let html = '';
     if (voting) {
       html = `<div>${esc(t('quiz.vote'))}</div>`;
-    } else if (show) {
+    } else if (show && !pic) {
       const kind = this.q.kind;
-      const color = { kid: '#ff4f9a', grown: '#6b4fd8', pic: '#14a865' }[kind];
-      const badge = `<span style="color:${color}">${t(`quiz.${kind}`)}</span> · ${t('quiz.q', { n: this.qi + 1, total: this.questions.length })}`;
-      if (pic) {
-        const done = this.phase === 'reveal' ? ' <span style="color:#14a865">✓</span>' : '';
-        html = `<div style="font-size:0.5em;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9">${badge} · ${esc(t('quiz.again'))}</div>`
-          + `<div style="font-size:0.72em">🔊 ${esc(parts.text)}${done}</div>`;
-      } else {
-        const ans = this.phase === 'reveal' ? `<div style="color:#14a865;margin-top:2px">✓ ${esc(t('quiz.answer', { a: parts.answers[parts.right] }))}</div>` : '';
-        html = `<div style="font-size:0.55em;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9">${badge}</div><div>${esc(parts.text)}</div>${ans}`;
-      }
+      const badge = `<span style="color:${kind === 'kid' ? '#ff4f9a' : '#6b4fd8'}">${t(`quiz.${kind}`)}</span> · ${t('quiz.q', { n: this.qi + 1, total: this.questions.length })}`;
+      const ans = this.phase === 'reveal' ? `<div style="color:#14a865;margin-top:2px">✓ ${esc(t('quiz.answer', { a: parts.answers[parts.right] }))}</div>` : '';
+      html = `<div style="font-size:0.55em;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9">${badge}</div><div>${esc(parts.text)}</div>${ans}`;
     }
     this.card.style.display = html ? '' : 'none';
-    this.card.style.padding = pic ? '4px 18px 6px' : '8px 22px 12px';
     if (html && this.card.dataset.html !== html) { this.card.innerHTML = html; this.card.dataset.html = html; }
   }
 
@@ -575,6 +583,11 @@ export class QuizRound extends Round {
 
   hud() {
     const tt = this.phase === 'ask' || this.phase === 'vote' ? this.phaseT : this.phase === 'idle' ? VOTE_TIME : 0;
+    // Picture puzzles keep the screen free for the board: the spoken question sits small in the top bar.
+    if (this.qi >= 0 && this.q && this.q.kind === 'pic' && (this.phase === 'ask' || this.phase === 'reveal')) {
+      const done = this.phase === 'reveal' ? ' ✓' : '';
+      return `${clock(tt)}<div class="pill">🔊 ${esc(this.parts().text)}${done} <small style="opacity:0.7">· ${esc(t('quiz.again'))} · ${this.qi + 1}/${this.questions.length}</small></div>`;
+    }
     return clock(tt);
   }
 

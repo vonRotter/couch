@@ -128,6 +128,7 @@ export class FieldRound extends Round {
     this.timeLeft = ROUND_TIME;
     this.tiles = [];
     this.ensureT = 0;
+    this.churnT = 4;
     this.cardCache = '';
     this.labelsHidden = false;
     this.buildField(theme);
@@ -416,6 +417,18 @@ export class FieldRound extends Round {
         this.ensureT = 0.3;
         this.ensure();
         if (this.tiles.length < this.tileCount) this.spawnTile(); // gentle top-up
+      }
+      // Now and then one unneeded tile is swapped for a fresh one, so new tiles keep appearing
+      // that are usually wrong, and tiles nobody can use do not pile up.
+      this.churnT -= dt;
+      if (this.churnT <= 0) {
+        this.churnT = 3.5 + Math.random() * 3;
+        const spare = this.tiles.filter((t) => !this.ents.some((o) => o.task && o.doneT <= 0 && (this.isRight(o, t) || this.counts(o, t)))
+          && !this.ents.some((o) => this.touching(o, t)));
+        if (spare.length) {
+          this.removeTile(spare[Math.floor(Math.random() * spare.length)]);
+          this.spawnTile();
+        }
       }
       this.timeLeft -= dt;
       if (this.timeLeft <= 0) { this.timeLeft = 0; this.done = true; }
