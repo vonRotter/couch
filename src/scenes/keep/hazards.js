@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { COLORS, toon } from '../../core/palette.js';
+import { t } from '../../core/i18n.js';
 import { PR, angDiff, mesh, rbox, bx, fadeMat } from './common.js';
 
 // Telegraphed floor attacks for the bosses (and pillow-throwing grumbles).
@@ -45,6 +46,8 @@ export class Hazards {
     this.group.add(h.root);
     this.build(h);
     this.list.push(h);
+    // The first telegraph of a run explains the rule once.
+    if (!this.s.dodgeHint) { this.s.dodgeHint = true; this.s.game.ui.toast(t('keep.dodge'), 2600); }
     return h;
   }
 
