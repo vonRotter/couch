@@ -17,7 +17,7 @@ export const FLY = {
   turn: 3.6,           // rad/s at full authority
   ceiling: 38,         // the air thins above here: less engine
   ceilingTop: 47,      // no engine at all up here
-  groundY: 0.75,       // plane center height when the wheels touch the ground
+  groundY: 0.95,       // plane center height when the wheels touch the ground
   takeoff: 9,
   maxSpeed: 30,
   boostTime: 2.6,      // seconds of boost in a full tank

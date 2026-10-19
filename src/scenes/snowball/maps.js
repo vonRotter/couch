@@ -457,11 +457,11 @@ export class Terrain {
           }
         }
       } else {
-        const cliff = new THREE.Mesh(new RoundedBoxGeometry(w, p.h, d, 2, 0.1), toon(0xcfe7fb));
+        const cliff = new THREE.Mesh(new RoundedBoxGeometry(w, p.h, d, 2, 0.1), toon(0x9fd0f0));
         cliff.position.set(cx, p.h / 2, cz);
         add(cliff);
         const top = new THREE.Mesh(new RoundedBoxGeometry(w + 0.12, 0.18, d + 0.12, 2, 0.08), toon(COLORS.white));
-        top.position.set(cx, p.h, cz);
+        top.position.set(cx, p.h - 0.09, cz); // its top is exactly the walkable height
         add(top);
         for (let x = p.x0 + 0.3; x < p.x1 - 0.1; x += 0.55) {
           if (this.ramps.some((r) => inRect(r, x, p.z1 + 0.2))) continue;
@@ -478,7 +478,7 @@ export class Terrain {
     for (const r of this.ramps) {
       const along = r.dir.endsWith('x');
       const len = along ? r.x1 - r.x0 : r.z1 - r.z0, w = along ? r.z1 - r.z0 : r.x1 - r.x0;
-      const ramp = new THREE.Mesh(wedgeGeometry(len, w, r.h), toon(r.wood ? COLORS.trunk : 0xeef6ff));
+      const ramp = new THREE.Mesh(wedgeGeometry(len, w, r.h), toon(r.wood ? COLORS.trunk : 0xcfe6f8));
       const cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2;
       ramp.rotation.y = { '+x': 0, '-x': Math.PI, '+z': -Math.PI / 2, '-z': Math.PI / 2 }[r.dir];
       // The wedge starts at its local origin: shift it so its low end sits at the low side.

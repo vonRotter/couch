@@ -687,10 +687,11 @@ export class SnowballScene extends MiniGame {
     if (this.state === 'play') for (const e of this.ents) if (this.inZone(e)) counts[e.team]++;
     const owner = counts[0] && counts[1] ? 2 : counts[0] ? 0 : counts[1] ? 1 : -1;
     if (owner !== this.zoneOwner) { this.zoneOwner = owner; this.zoneAcc = 0; }
-    const col = owner === 2 ? (blink ? 0xff5d73 : 0xffffff) : owner >= 0 ? TEAM_COLORS[owner] : 0xffffff;
+    const FREE = 0x9b5de5; // grape purple: a free hill stands out on white snow
+    const col = owner === 2 ? (blink ? 0xff5d73 : 0xffffff) : owner >= 0 ? TEAM_COLORS[owner] : FREE;
     this.zoneRing.color.setHex(col);
-    this.zoneFill.color.setHex(owner >= 0 && owner < 2 ? TEAM_COLORS[owner] : 0xffffff);
-    this.zoneCloth.color.setHex(owner >= 0 && owner < 2 ? TEAM_COLORS[owner] : 0xffffff);
+    this.zoneFill.color.setHex(owner >= 0 && owner < 2 ? TEAM_COLORS[owner] : FREE);
+    this.zoneCloth.color.setHex(owner >= 0 && owner < 2 ? TEAM_COLORS[owner] : FREE);
     this.zoneFlag.children[1].rotation.x = Math.sin(this.time * 5) * 0.2;
     if (this.state !== 'play') return;
     if (owner === 0 || owner === 1) {

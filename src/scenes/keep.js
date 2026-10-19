@@ -774,6 +774,14 @@ export class KeepScene extends MiniGame {
     e.ch.squash(1.4);
     this.game.audio.play('rescue');
     this.puffs.burst(new THREE.Vector3(e.x, 1, e.z), 0xfff1a8, { count: 8, size: 0.35, life: 0.6 });
+    // A big waking stretch shoos nearby grumbles back, so nobody gets stuck napping again and again.
+    for (const g of this.grumbles) {
+      const dx = g.x - e.x, dz = g.z - e.z, d = Math.hypot(dx, dz);
+      if (d > 3.5 || g.state === 'idle' || g.state === 'bubble') continue;
+      g.kx += dx / (d || 1) * 14; g.kz += dz / (d || 1) * 14;
+      if (g.state === 'walk') { g.state = 'dizzy'; g.t = 1.2; }
+    }
+    this.addFx('ring', e.x, e.z, { color: 0xfff1a8, from: 0.5, to: 3.5, life: 0.4 });
     if (by) {
       by.woken++;
       this.floater(t('keep.woke', { name: by.p.name, other: e.p.name }), new THREE.Vector3(e.x, 2.4, e.z), by.p.css, 1.3);

@@ -14,6 +14,7 @@ import { Siege } from './castle/siege.js';
 import { makeTent, makeGoalFlag, makeHintGhost, mesh, GOLD } from './castle/props.js';
 import { CampaignMap, loadProgress, saveProgress } from './castle/map.js';
 import './castle/text.js';
+import './castle.js'; // Versus strings (castle.cls.*, castle.piece.*, ...) shared with the campaign
 
 // Knights & Builders: the Campaign. Co-op story mode: everyone plays on the bean team and helps the
 // marching bean troopers past grumble castles to the Golden Bean Princess. Without opts.level this
@@ -1453,6 +1454,18 @@ function injectStyle() {
 .kc-tiers { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; font-weight: 600; font-size: clamp(12px, 1.3vw, 20px); margin-bottom: 6px; }
 .kc-tiers span { opacity: 0.45; }
 .kc-tiers span.on { opacity: 1; color: #c98f00; }
+.kc-node { color: #8a45e0; text-align: center; }
+.kc-node small { display: block; color: #e0a100; font-size: 0.8em; }
+.kc-goal { min-width: min(640px, 92vw); }
+.kc-goals { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; width: fit-content; margin: 6px auto 10px; font-size: clamp(16px, 1.8vw, 28px); font-weight: 700; color: #e85a35; text-align: left; }
+.kc-card { position: absolute; left: 50%; bottom: 3vh; transform: translateX(-50%); width: min(860px, 92vw); background: rgba(255,255,255,0.95); border-radius: 28px; padding: 16px 28px 12px; box-shadow: 0 8px 0 rgba(43,35,64,0.2); font-size: clamp(16px, 1.9vw, 30px); font-weight: 600; line-height: 1.3; text-align: left; white-space: normal; }
+.kc-card .speaker { display: inline-block; color: #fff; border-radius: 999px; padding: 2px 14px; font-size: 0.7em; font-weight: 700; margin-bottom: 6px; }
+.kc-card .line.say { font-weight: 700; color: #5a3fd0; }
+.kc-card .foot { display: flex; justify-content: space-between; align-items: center; font-size: 0.68em; opacity: 0.85; margin-top: 6px; }
+.kc-card .dots { display: flex; gap: 6px; }
+.kc-card .dots i { width: 10px; height: 10px; border-radius: 50%; background: #e4dff0; display: inline-block; }
+.kc-card .dots i.on { background: #ff6fae; }
+.kc-card .foot .blink { margin-left: auto; }
 `;
   document.head.appendChild(el);
 }

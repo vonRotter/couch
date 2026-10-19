@@ -73,6 +73,9 @@ const MAX_HITS = 3;
 const CHUTE_TIME = 3; // parachute until respawn
 const CRASH_TIME = 2.5;
 const INVULN = 1.6;
+const PLANE_SCALE = 1.3; // models are drawn a bit big so they read when the camera zooms out
+const HIT_R = 1.4;
+const CHUTE_FLOOR = 3.9; // canopy height when the pilot stands on the ground
 const PELLET_SPEED = 32;
 const PELLET_LIFE = 0.8;
 const FIRE_CD = 0.14;
@@ -240,6 +243,7 @@ export class DogfightScene extends MiniGame {
       color = PURPLE; wing = 0xc9a8ff; pilot = { grumble: 0x5fd068 }; skill = SKILL.grunt; css = '#7b6cf6'; name = '';
     }
     const m = makePlane({ color, wing, kind: planeKind, pilot });
+    m.group.scale.setScalar(PLANE_SCALE);
     this.scene.add(m.group);
     const chute = makeChute(p ? { color: p.color, hat: p.hat } : { color: tint(color, 0.15), grumble: pilot.grumble });
     this.scene.add(chute.group);
@@ -293,10 +297,12 @@ export class DogfightScene extends MiniGame {
       e.state = 'fly';
       this.updateModel(e, 0);
     };
-    if (this.mode === 'coop') right.forEach((e, k) => place(e, -RUNWAY + 3 + k * 4.4, 1));
+    // Big groups start further in, so nobody rolls off the end into the sea before takeoff.
+    const shift = (n) => Math.max(0, n - 4) * 5;
+    if (this.mode === 'coop') right.forEach((e, k) => place(e, -RUNWAY + 3 + k * 5, 1));
     else {
-      left.forEach((e, k) => place(e, -2.5 - k * 4.4, -1));
-      right.forEach((e, k) => place(e, 2.5 + k * 4.4, 1));
+      left.forEach((e, k) => place(e, -3 + shift(left.length) - k * 5, -1));
+      right.forEach((e, k) => place(e, 3 - shift(right.length) + k * 5, 1));
     }
   }
 
@@ -484,7 +490,7 @@ export class DogfightScene extends MiniGame {
     // Effects: stall sputter, boost puffs, damage drips.
     e.fxT -= dt;
     if (e.fxT <= 0) {
-      const tail = new THREE.Vector3(f.x - Math.cos(f.ang) * 1.6, f.y - Math.sin(f.ang) * 1.6, e.z);
+      const tail = new THREE.Vector3(f.x - Math.cos(f.ang) * 2.1, f.y - Math.sin(f.ang) * 2.1, e.z);
       if (f.stalled) {
         e.fxT = 0.1;
         const nose = new THREE.Vector3(f.x + Math.cos(f.ang) * 1.4, f.y + Math.sin(f.ang) * 1.4, e.z + 0.3);
@@ -541,7 +547,7 @@ export class DogfightScene extends MiniGame {
     const c = Math.cos(ang), s = Math.sin(ang);
     this.pellets.push({
       mesh, owner: e, team: e.team, color, r: 0.2,
-      x: f.x + Math.cos(f.ang) * 1.7, y: f.y + Math.sin(f.ang) * 1.7,
+      x: f.x + Math.cos(f.ang) * 2.2, y: f.y + Math.sin(f.ang) * 2.2,
       vx: c * speed + f.vx, vy: s * speed + f.vy, life: PELLET_LIFE * (enemy ? 1.1 : 1),
     });
     e.fireCd = FIRE_CD * (e.skill ? e.skill.fireCd : 1);
@@ -689,11 +695,11 @@ export class DogfightScene extends MiniGame {
       e.chuteVy += (-2.2 - e.chuteVy) * Math.min(1, dt * 2.2);
       e.chuteVx *= Math.max(0, 1 - dt * 1.5);
       e.chuteX += (e.chuteVx + Math.sin(e.t * 1.7) * 0.8) * dt;
-      e.chuteY = Math.max(3.0, e.chuteY + e.chuteVy * dt);
+      e.chuteY = Math.max(CHUTE_FLOOR, e.chuteY + e.chuteVy * dt);
       e.chuteX = clamp(e.chuteX, -XW - 2, XW + 2);
-      const open = Math.min(1, e.t / 0.4);
+      const open = Math.min(1, e.t / 0.4) * PLANE_SCALE;
       const g = e.chute.group;
-      const landed = e.chuteY <= 3.0;
+      const landed = e.chuteY <= CHUTE_FLOOR;
       g.scale.set(open, open * (landed ? 0.6 : 1), open);
       g.position.set(e.chuteX, e.chuteY, e.z + 0.2);
       g.rotation.z = landed ? 0 : Math.sin(e.t * 1.7) * 0.18;
@@ -749,7 +755,7 @@ export class DogfightScene extends MiniGame {
         for (const e of this.ents) {
           if (e.state !== 'fly' || e.team === p.team) continue;
           const dx = e.fl.x - p.x, dy = e.fl.y - p.y;
-          if (dx * dx + dy * dy < (1.15 + p.r) ** 2 && this.hitPlane(e, p)) { p.life = 0; break; }
+          if (dx * dx + dy * dy < (HIT_R + p.r) ** 2 && this.hitPlane(e, p)) { p.life = 0; break; }
         }
         if (p.life <= 0) break;
         if (p.team !== 1 || this.mode !== 'coop') {
@@ -847,9 +853,9 @@ export class DogfightScene extends MiniGame {
     }
     for (const d of this.decor) {
       d.t += dt;
-      d.y = Math.max(3, d.y - dt * 2.4);
+      d.y = Math.max(CHUTE_FLOOR, d.y - dt * 2.4);
       d.x += Math.sin(d.t * 1.5) * dt;
-      const k = Math.min(1, d.t / 0.4) * (d.t > 3.5 ? Math.max(0.01, 1 - (d.t - 3.5) * 2) : 1);
+      const k = PLANE_SCALE * Math.min(1, d.t / 0.4) * (d.t > 3.5 ? Math.max(0.01, 1 - (d.t - 3.5) * 2) : 1);
       d.g.scale.setScalar(k);
       d.g.position.set(d.x, d.y, 0.2);
       d.g.rotation.z = Math.sin(d.t * 1.5) * 0.2;
@@ -888,7 +894,7 @@ export class DogfightScene extends MiniGame {
     const show = e.state === 'fly' || e.state === 'chute';
     if (!show || this.state === 'results') { e.tag.style.display = 'none'; e.stallEl.style.display = 'none'; return; }
     const f = e.fl;
-    const pos = e.state === 'chute' ? new THREE.Vector3(e.chuteX, e.chuteY + 0.7, 0) : new THREE.Vector3(f.x, f.y + 1.8, 0);
+    const pos = e.state === 'chute' ? new THREE.Vector3(e.chuteX, e.chuteY + 0.5, 0) : new THREE.Vector3(f.x, f.y + 2.2, 0);
     let sub = '';
     if (e.state === 'fly') {
       if (f.grounded && this.state === 'play' && e.p && this.time - this.playStart < 8) sub = `<small>↑ ${esc(t('dogfight.takeoff'))}</small>`;
