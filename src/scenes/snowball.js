@@ -778,6 +778,10 @@ export class SnowballScene extends MiniGame {
       this.say(e, 'snowball.noRoom');
       return;
     }
+    if (type === 'fort' && !this.fortSpots(e).length) {
+      this.say(e, 'snowball.notHere'); // keep the gift for a better spot
+      return;
+    }
     e.power = null;
     if (e.powerMesh) { e.ch.group.remove(e.powerMesh); e.powerMesh = null; }
     if (type === 'giant' || type === 'freeze') this.throwBall(e, this.aimFor(e), type);
@@ -787,16 +791,20 @@ export class SnowballScene extends MiniGame {
     this.game.audio.play('whoosh');
   }
 
-  /** Three free walls in a U in front of you. */
-  instantFort(e) {
+  /** Where the three walls of an instant fort go (a U in front of you), minus blocked ones. */
+  fortSpots(e) {
     const a = Math.atan2(e.dirX, e.dirZ);
     const px = -e.dirZ, pz = e.dirX;
-    const spots = [
+    return [
       [e.x + e.dirX * 1.3, e.z + e.dirZ * 1.3, a],
       [e.x + e.dirX * 0.3 + px * 1.35, e.z + e.dirZ * 0.3 + pz * 1.35, a + Math.PI / 2],
       [e.x + e.dirX * 0.3 - px * 1.35, e.z + e.dirZ * 0.3 - pz * 1.35, a + Math.PI / 2],
-    ];
-    for (const [x, z, ang] of spots) if (this.wallSpotOk(e.team, x, z, ang)) this.makeWall(e.team, x, z, ang, e);
+    ].filter(([x, z, ang]) => this.wallSpotOk(e.team, x, z, ang));
+  }
+
+  /** Three free walls in a U in front of you. */
+  instantFort(e) {
+    for (const [x, z, ang] of this.fortSpots(e)) this.makeWall(e.team, x, z, ang, e);
     e.ch.squash(0.7);
     this.game.audio.play('land');
     this.puffs.burst(new THREE.Vector3(e.x, 0.5, e.z), 0xffffff, { count: 18, size: 0.45, life: 0.6, speed: 3 });

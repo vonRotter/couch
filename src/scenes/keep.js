@@ -1095,7 +1095,11 @@ export class KeepScene extends MiniGame {
     el.textContent = text;
     el.style.color = css;
     if (dark) { el.style.webkitTextStroke = '0.2em #2b2340'; el.style.fontSize = 'clamp(12px, 1.2vw, 20px)'; }
-    this.floaters.push({ el, pos: pos.clone(), life, max: life });
+    // Stack texts that pop up at the same spot instead of drawing them on top of each other.
+    const p = pos.clone();
+    const near = this.floaters.filter((f) => Math.abs(f.pos.x - p.x) < 2.5 && Math.abs(f.pos.z - p.z) < 1.5 && f.life > f.max * 0.4).length;
+    p.y += near * 0.75;
+    this.floaters.push({ el, pos: p, life, max: life });
   }
 
   updateFloaters(dt) {

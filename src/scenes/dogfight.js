@@ -89,18 +89,17 @@ const GOO = 0xb08bff;
 const SKILL = {
   ace: { turn: 0.8, cone: 0.13, react: 0.3, jitter: 0.12, lead: 0.75, dodge: 0.012, fireCd: 1.6 },
   helper: { turn: 0.78, cone: 0.13, react: 0.32, jitter: 0.14, lead: 0.7, dodge: 0.01, fireCd: 1.7 },
-  grunt: { turn: 0.6, cone: 0.12, react: 0.5, jitter: 0.22, lead: 0.4, dodge: 0, fireCd: 2.4 },
+  grunt: { turn: 0.65, cone: 0.12, react: 0.4, jitter: 0.2, lead: 0.5, dodge: 0, fireCd: 2.2 },
   red: { turn: 0.8, cone: 0.14, react: 0.3, jitter: 0.12, lead: 0.75, dodge: 0.012, fireCd: 1.7 },
 };
 
 /** Co-op waves for n players: more grumbles with more pilots, then the King Blimp. */
 function coopWaves(n) {
-  const half = Math.ceil(n / 2);
   return [
-    { planes: 1 + half, aces: 0, blimps: 0 },
-    { planes: 1 + half, aces: 0, blimps: 1 },
-    { planes: half, aces: 1 + (n >= 4 ? 1 : 0), blimps: n >= 3 ? 2 : 1 },
-    { planes: 1 + Math.floor(n / 3), aces: n >= 5 ? 1 : 0, blimps: 0, boss: true },
+    { planes: 1 + Math.ceil(n * 0.7), aces: 0, blimps: 0 },
+    { planes: Math.ceil(n * 0.7), aces: 0, blimps: 1 },
+    { planes: Math.ceil(n * 0.5), aces: 1 + Math.floor(n / 3), blimps: 1 + Math.floor(n / 3) },
+    { planes: 1 + Math.floor(n / 2), aces: Math.floor(n / 4), blimps: 0, boss: true },
   ];
 }
 
@@ -290,7 +289,7 @@ export class DogfightScene extends MiniGame {
     const place = (e, x, dir) => {
       e.fl = makeFlight(x, FLY.groundY, dir, 0, true);
       if (e.skill) e.fl.turnMul = e.skill.turn;
-      e.roll = dir > 0 ? 0.25 : Math.PI - 0.25;
+      e.roll = dir > 0 ? 0.15 : Math.PI - 0.15;
       e.state = 'fly';
       this.updateModel(e, 0);
     };
@@ -328,7 +327,7 @@ export class DogfightScene extends MiniGame {
     const e = this.makeEnt({ kind: 'enemy', team: 1, type });
     e.fl = makeFlight(side * (XW - 1), 18 + Math.random() * 14, -side, 15);
     e.fl.turnMul = e.skill.turn;
-    e.roll = -side > 0 ? 0.25 : Math.PI - 0.25;
+    e.roll = -side > 0 ? 0.15 : Math.PI - 0.15;
     e.invuln = 0.8;
     this.ents.push(e);
   }
@@ -339,7 +338,7 @@ export class DogfightScene extends MiniGame {
     const color = boss ? 0x9b5de5 : [0xff9fd0, 0x8fd8ff, 0xffb347][this.blimps.length % 3];
     const m = makeBlimp(size, color, boss);
     this.scene.add(m.group);
-    const hp = boss ? 24 + 8 * n : 6 + 2 * n;
+    const hp = boss ? 24 + 12 * n : 6 + 3 * n;
     const y = boss ? 27 : 17 + Math.random() * 15;
     const b = {
       m, boss, size, hp, maxHp: hp, x: side * (XW + 4 * size), y, baseY: y, dir: -side,
@@ -650,7 +649,7 @@ export class DogfightScene extends MiniGame {
     const dir = best.x < 0 ? 1 : best.x > 0 ? -1 : (Math.random() < 0.5 ? 1 : -1);
     e.fl = makeFlight(best.x, best.y, dir, 15);
     if (e.skill) e.fl.turnMul = e.skill.turn;
-    e.roll = dir > 0 ? 0.25 : Math.PI - 0.25;
+    e.roll = dir > 0 ? 0.15 : Math.PI - 0.15;
     e.state = 'fly';
     e.hits = 0; e.heat = 0; e.jam = false;
     e.invuln = INVULN;
@@ -865,7 +864,7 @@ export class DogfightScene extends MiniGame {
     const f = e.fl;
     const m = e.m;
     // Show the top of the wings a little, flip upright when flying left, spin in a barrel roll.
-    const target = f.facing > 0 ? 0.25 : Math.PI - 0.25;
+    const target = f.facing > 0 ? 0.15 : Math.PI - 0.15;
     e.roll += clamp(target - e.roll, -6 * dt, 6 * dt);
     if (dt === 0) e.roll = target;
     let r = e.roll;

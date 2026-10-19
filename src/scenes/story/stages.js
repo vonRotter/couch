@@ -3,6 +3,27 @@ import { t, addStrings } from '../../core/i18n.js';
 // Story campaign data: four lands, each with three game stages and a Grumble King boss.
 // A stage runs an existing game with campaign opts (no votes) and turns the game's
 // campaignStats() into 1-3 stars. Every stage gives at least 1 star, so the story never blocks.
+//
+// Opposition and scaling with the number of players n (stats.n), stage by stage:
+//   m1 Sky Hop 1      grumbles walk the level; EVERYONE must reach the flag (harder with more
+//                     beans); 3 stars also needs a share of the gems that grows with n.
+//   m2 Paint Party    grumble painters smear mud you must repaint (paint.js scales them by n,
+//                     opts.grumbles: true); thresholds measured with grumbles on (see PAINT).
+//   m3 Bubble Bobble  grumble waves of 3 + n (+2 per wave); the 3-star time drops a little for
+//                     big teams since more beans bubble faster.
+//   f1 Slalom         bumpers and ramps; the gate goal is per bean (60% / 85% of 20 each).
+//   f2 Snowball       all beans vs Snow Bots that wall up and hit your targets; the bots are
+//                     capped at 2, so the target goal grows faster than n, and 3 stars also
+//                     needs a win over the bots.
+//   f3 Hockey         all beans vs goalie grumbles (capped at 2): the goal grows with n.
+//   fb..sb bosses     see BOSS_GOALS and the boss files: telegraphed throws, helpers per phase,
+//                     all scaled by n.
+//   c1 Cooking        orders expire; cook.js already scales order rate by n, goals by COOK.
+//   c2 Portal         everyone must reach the exit, two rooms (more beans = more to coordinate).
+//   c3 Party rounds   team score; the bar rises a little with n (more hands help in two rounds).
+//   s1 Space Race     asteroids; rings per bean (10 each, all 15 each for 3 stars).
+//   s2 Rooftop Rush   shared camera; half / all of the team must reach the flag.
+//   s3 Bean Golf      strokes per bean against par.
 
 addStrings({
   en: {
@@ -10,7 +31,7 @@ addStrings({
     'story.tier.play': 'play the stage',
     'story.goal.flag': 'Everyone reaches the flag together!',
     'story.tier.flag': 'everyone reaches the flag',
-    'story.tier.gems': 'everyone reaches the flag and the team grabs half the gems',
+    'story.tier.gems': 'everyone reaches the flag and the team grabs {n}% of the gems',
     'story.goal.paint': 'Together, paint {n}% of the floor!',
     'story.tier.paint': 'paint {n}% of the floor together',
     'story.goal.bubble': 'Clear all 3 bubble waves together!',
@@ -20,6 +41,7 @@ addStrings({
     'story.tier.gates': 'pass {n} gates together',
     'story.goal.snowball': 'All on one team: hit {n} targets on the Grumble side!',
     'story.tier.targets': 'hit {n} targets together',
+    'story.tier.targetsWin': 'hit {n} targets and beat the Snow Bots',
     'story.goal.hockey': 'All on one team: score {n} goals past the Goalie Grumbles!',
     'story.tier.goals': 'score {n} goals together',
     'story.goal.cook': 'Serve {n} orders together!',
@@ -63,7 +85,7 @@ addStrings({
     'story.tier.play': 'spill banen',
     'story.goal.flag': 'Alle kommer til flagget sammen!',
     'story.tier.flag': 'alle kommer til flagget',
-    'story.tier.gems': 'alle kommer til flagget, og laget tar halvparten av diamantene',
+    'story.tier.gems': 'alle kommer til flagget, og laget tar {n} % av diamantene',
     'story.goal.paint': 'Mal {n} % av gulvet sammen!',
     'story.tier.paint': 'mal {n} % av gulvet sammen',
     'story.goal.bubble': 'Klar alle 3 boblebølgene sammen!',
@@ -73,6 +95,7 @@ addStrings({
     'story.tier.gates': 'kjør gjennom {n} porter sammen',
     'story.goal.snowball': 'Alle på samme lag: treff {n} blinker på Grumle-siden!',
     'story.tier.targets': 'treff {n} blinker sammen',
+    'story.tier.targetsWin': 'treff {n} blinker og slå Snøbotene',
     'story.goal.hockey': 'Alle på samme lag: skår {n} mål forbi Grumle-keeperne!',
     'story.tier.goals': 'skår {n} mål sammen',
     'story.goal.cook': 'Server {n} bestillinger sammen!',
@@ -142,8 +165,8 @@ function stage(id, key, opts, def) {
 }
 
 const flagStage = (id, opts) => stage(id, 'platformer', opts, {
-  goal: () => ({ main: t('story.goal.flag'), two: t('story.tier.flag'), three: t('story.tier.gems') }),
-  stars: (s) => (s.finished >= s.players ? (s.gems * 2 >= s.totalGems ? 3 : 2) : 1),
+  goal: (n) => ({ main: t('story.goal.flag'), two: t('story.tier.flag'), three: t('story.tier.gems', { n: pick(GEMS, n) }) }),
+  stars: (s, n) => (s.finished >= s.players ? (s.gems * 100 >= s.totalGems * pick(GEMS, n) ? 3 : 2) : 1),
   value: (s) => t('story.val.flag', { a: s.finished, b: s.players }),
 });
 
@@ -154,22 +177,35 @@ const bossStage = (id, chapter) => stage(id, `boss${chapter}`, {}, {
   value: (s) => (s.done ? t('story.val.bossDone', { s: secs(s.time) }) : t('story.val.boss', { n: s.count, m: s.goal })),
 });
 
-const PAINT = { two: [50, 70, 80, 85, 88, 90], three: [65, 85, 92, 94, 95, 96] }; // random play paints ~55% solo, ~99% with 3
+// Paint Party with grumble painters (opts.grumbles: true scales them 2..7 by n, +1 at 20 s and
+// 40 s). Measured share painted: random play 1p 35-41%, 2p 46-58%, 4p 67-76%; a skilled bot
+// 1p 62-63%, 2p 78-80%, 4p 92-95%. Two stars sits around good random play, three needs skill.
+const PAINT = { two: [45, 60, 70, 72, 74, 75], three: [60, 75, 85, 87, 88, 89] };
 const COOK = { two: [3, 4, 4, 5, 5, 6], three: [5, 6, 7, 8, 8, 9] };
+// Sky Hop 1: share of the gems the team needs for 3 stars (more beans can grab more).
+const GEMS = [40, 50, 55, 60, 65, 70];
+// Bubble Bobble: seconds to clear all waves for 3 stars (more beans, more bubbles flying).
+const BUBBLE_FAST = [120, 110, 100, 95, 90, 90];
+// Snowball fight vs the Snow Bots: targets hit by the team.
+const SNOW = { two: (n) => 3 + 2 * n, three: (n) => 6 + 3 * n };
+// Hockey vs the Goalie Grumbles: goals by the team.
+const HOCKEY = { two: [2, 3, 4, 5, 5, 6], three: [4, 5, 6, 8, 8, 9] };
+// Party rounds: team score (%) for 2 and 3 stars, a little higher for bigger teams.
+const PARTY = { two: (n) => Math.min(55, 43 + 2 * n), three: (n) => Math.min(85, 73 + 2 * n) };
 
 export const CHAPTERS = [
   {
     key: 'meadow', color: 0x7ad65a, css: '#3f9a32', sky: 0x9fdcff,
     stages: [
       flagStage('m1', { level: 0 }),
-      stage('m2', 'paint', {}, {
+      stage('m2', 'paint', { grumbles: true }, {
         goal: (n) => ({ main: t('story.goal.paint', { n: pick(PAINT.two, n) }), two: t('story.tier.paint', { n: pick(PAINT.two, n) }), three: t('story.tier.paint', { n: pick(PAINT.three, n) }) }),
         stars: (s, n) => (pct(s.painted) >= pick(PAINT.three, n) ? 3 : pct(s.painted) >= pick(PAINT.two, n) ? 2 : 1),
         value: (s) => t('story.val.paint', { n: pct(s.painted) }),
       }),
       stage('m3', 'bubble', {}, {
-        goal: () => ({ main: t('story.goal.bubble'), two: t('story.tier.bubble'), three: t('story.tier.bubbleFast', { s: 110 }) }),
-        stars: (s) => (s.cleared ? (s.time <= 110 ? 3 : 2) : 1),
+        goal: (n) => ({ main: t('story.goal.bubble'), two: t('story.tier.bubble'), three: t('story.tier.bubbleFast', { s: pick(BUBBLE_FAST, n) }) }),
+        stars: (s, n) => (s.cleared ? (s.time <= pick(BUBBLE_FAST, n) ? 3 : 2) : 1),
         value: (s) => (s.cleared ? t('story.val.bubbleDone', { s: secs(s.time) }) : t('story.val.bubble', { n: Math.max(1, s.waves || 1) })),
       }),
       bossStage('mb', 0),
@@ -187,13 +223,13 @@ export const CHAPTERS = [
         value: (s) => t('story.val.gates', { n: s.gates }),
       }),
       stage('f2', 'snowball', { coop: true, length: 90 }, {
-        goal: (n) => ({ main: t('story.goal.snowball', { n: 4 + n }), two: t('story.tier.targets', { n: 4 + n }), three: t('story.tier.targets', { n: 7 + 2 * n }) }),
-        stars: (s, n) => (s.team >= 7 + 2 * n ? 3 : s.team >= 4 + n ? 2 : 1),
+        goal: (n) => ({ main: t('story.goal.snowball', { n: SNOW.two(n) }), two: t('story.tier.targets', { n: SNOW.two(n) }), three: t('story.tier.targetsWin', { n: SNOW.three(n) }) }),
+        stars: (s, n) => (s.team >= SNOW.three(n) && s.team > (s.bots || 0) ? 3 : s.team >= SNOW.two(n) ? 2 : 1),
         value: (s) => t('story.val.targets', { n: s.team }),
       }),
       stage('f3', 'hockey', { coop: true, length: 90 }, {
-        goal: (n) => ({ main: t('story.goal.hockey', { n: n > 2 ? 3 : 2 }), two: t('story.tier.goals', { n: n > 2 ? 3 : 2 }), three: t('story.tier.goals', { n: n > 2 ? 6 : 4 }) }),
-        stars: (s, n) => (s.team >= (n > 2 ? 6 : 4) ? 3 : s.team >= (n > 2 ? 3 : 2) ? 2 : 1),
+        goal: (n) => ({ main: t('story.goal.hockey', { n: pick(HOCKEY.two, n) }), two: t('story.tier.goals', { n: pick(HOCKEY.two, n) }), three: t('story.tier.goals', { n: pick(HOCKEY.three, n) }) }),
+        stars: (s, n) => (s.team >= pick(HOCKEY.three, n) ? 3 : s.team >= pick(HOCKEY.two, n) ? 2 : 1),
         value: (s) => t('story.val.goals', { n: s.team }),
       }),
       bossStage('fb', 1),
@@ -213,8 +249,8 @@ export const CHAPTERS = [
         value: (s) => t('story.val.rooms', { n: s.rooms, m: s.roomCount }),
       }),
       stage('c3', 'party', { rounds: ['keepy', 'tower', 'paintnum'] }, {
-        goal: () => ({ main: t('story.goal.party', { a: t('keepy.title'), b: t('tower.title'), c: t('paintnum.title') }), two: t('story.tier.team', { n: 45 }), three: t('story.tier.team', { n: 75 }) }),
-        stars: (s) => (pct(s.team) >= 75 ? 3 : pct(s.team) >= 45 ? 2 : 1),
+        goal: (n) => ({ main: t('story.goal.party', { a: t('keepy.title'), b: t('tower.title'), c: t('paintnum.title') }), two: t('story.tier.team', { n: PARTY.two(n) }), three: t('story.tier.team', { n: PARTY.three(n) }) }),
+        stars: (s, n) => (pct(s.team) >= PARTY.three(n) ? 3 : pct(s.team) >= PARTY.two(n) ? 2 : 1),
         value: (s) => t('story.val.team', { n: pct(s.team) }),
       }),
       bossStage('cb', 2),
