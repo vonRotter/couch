@@ -144,8 +144,10 @@ function plan(S, e) {
 
   // Out of snow: scoop (at the big pile if it is near).
   if (!carrying) {
-    if (e.task === 'scoop' && e.snow < e.wantSnow) return;
-    if (e.snow < 1 && !(S.mode === 'ctf' && S.flags[e.team].state !== 'home' && e.role === 'def')) {
+    // The objective comes first: hill bots scoop inside the ring, flag attackers run without snow.
+    const objective = (S.mode === 'koth' && !S.inZone(e)) || (S.mode === 'ctf' && (e.role === 'att' || S.flags[e.team].state !== 'home'));
+    if (e.task === 'scoop' && e.snow < e.wantSnow && !objective) return;
+    if (e.snow < 1 && !objective) {
       e.task = 'scoop';
       e.wantSnow = 3 + Math.floor(Math.random() * 3);
       const pile = S.piles[e.team];

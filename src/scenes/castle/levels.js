@@ -59,16 +59,17 @@ const GATEHOUSE = ch([
   'CCCCCCCCCCCCCCCCCCC',
 ]);
 
-// Builder castle (level 5): no way in but over or through, and grumble builders fix every hole.
+// Builder castle (level 5): a thin wall with no way in but over or through, and grumble builders
+// inside fix every hole and take bean ladders away (they reach through the wall).
 // The way out is a gate; its lever hangs high on the inside, next to a ladder.
 const WORKSHOP = ch([
   'C.............Ca.C',
-  'CC............CCCC',
-  'CC..........HLCCCC',
-  'CC::::::::::H:CCCC',
-  'CC::::::::::H::::G',
-  'CC::::::::::H::::G',
-  'CC:b:vc:k:b:H::::G',
+  'C.............CCCC',
+  'C...........HLCCCC',
+  'C:::::::::::H:CCCC',
+  'C:::::::::::H::::G',
+  'C:::::::::::H::::G',
+  'C::b:vc:k:b:H::::G',
   'CCCCCCCCCCCCCCCCCC',
 ]);
 

@@ -24,16 +24,16 @@ const shadows = (g) => { g.traverse((o) => { if (o.isMesh) o.castShadow = true; 
 /** Striped class tent: stand inside and press down to change class. */
 export function makeTent(color = 0xff5d73) {
   const g = new THREE.Group();
-  const body = mesh(sharedGeo('kcTent', () => new THREE.ConeGeometry(1.5, 2.3, 4, 1, true)), toon(color), 0, 1.15, -0.9);
+  const body = mesh(sharedGeo('kcTent', () => new THREE.ConeGeometry(1.5, 2.3, 4, 1, true)), toon(color), 0, 1.15, -1.4);
   body.rotation.y = Math.PI / 4;
   body.scale.set(1, 1, 0.6);
-  const stripe = mesh(sharedGeo('kcTentS', () => new THREE.ConeGeometry(1.52, 0.5, 4, 1, true)), toon(COLORS.white), 0, 0.9, -0.9);
+  const stripe = mesh(sharedGeo('kcTentS', () => new THREE.ConeGeometry(1.52, 0.5, 4, 1, true)), toon(COLORS.white), 0, 0.9, -1.4);
   stripe.rotation.y = Math.PI / 4;
   stripe.scale.set(1, 1, 0.6);
-  const door = mesh(sharedGeo('kcTentD', () => new THREE.CircleGeometry(0.55, 3)), toon(0x5a3d7a), 0, 0.42, -0.25);
+  const door = mesh(sharedGeo('kcTentD', () => new THREE.CircleGeometry(0.55, 3)), toon(0x5a3d7a), 0, 0.42, -0.6);
   door.rotation.z = Math.PI / 2;
-  const pole = mesh(sharedGeo('kcTentP', () => new THREE.CylinderGeometry(0.04, 0.04, 0.8, 6)), toon(COLORS.trunk), 0, 2.6, -0.9);
-  const pen = mesh(sharedGeo('kcTentF', () => new THREE.ConeGeometry(0.14, 0.42, 3)), toon(GOLD), 0.2, 2.85, -0.9);
+  const pole = mesh(sharedGeo('kcTentP', () => new THREE.CylinderGeometry(0.04, 0.04, 0.8, 6)), toon(COLORS.trunk), 0, 2.6, -1.4);
+  const pen = mesh(sharedGeo('kcTentF', () => new THREE.ConeGeometry(0.14, 0.42, 3)), toon(GOLD), 0.2, 2.85, -1.4);
   pen.rotation.z = -Math.PI / 2;
   g.add(body, stripe, door, pole, pen);
   return shadows(g);

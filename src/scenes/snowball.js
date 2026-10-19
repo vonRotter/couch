@@ -668,9 +668,9 @@ export class SnowballScene extends MiniGame {
     fill.renderOrder = 1;
     this.zoneMeshes = [ring, fill];
     this.scene.add(ring, fill);
-    this.zoneFlag.position.set(this.zone.x, this.terrain.groundY(this.zone.x, this.zone.z), this.zone.z);
-    // The flag pole would block a narrow bridge: put it at the edge there.
-    if (!this.zone.r) this.zoneFlag.position.z = this.zone.z1 - 0.1;
+    // The flag pole stands at the far edge of the ring, out of the way of gifts and players.
+    const fz = this.zone.r ? this.zone.z - this.zone.r * 0.92 : this.zone.z0 + 0.1;
+    this.zoneFlag.position.set(this.zone.x, this.terrain.groundY(this.zone.x, fz), fz);
     this.nextMesh = null;
   }
 

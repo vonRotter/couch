@@ -378,7 +378,7 @@ export class Grumbles {
     const ty = m.tile[J.i];
     if ((J.job === 'fix' && ty !== EMPTY) || (J.job === 'take' && (m.owner[J.i] !== 0 || ty === EMPTY))) { g.job = null; return inp; }
     const dx = J.c + 0.5 - b.x;
-    if (Math.abs(dx) > 1.6 || (Math.abs(dx) < 0.6 && J.r === Math.floor(b.y + 0.05) && J.job === 'fix')) {
+    if (Math.abs(dx) > 2.05 || (Math.abs(dx) < 0.6 && J.r === Math.floor(b.y + 0.05) && J.job === 'fix')) {
       inp.x = Math.abs(dx) < 0.6 ? -g.facing : Math.sign(dx);
     } else {
       g.facing = Math.sign(dx) || g.facing;

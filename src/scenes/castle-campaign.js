@@ -32,7 +32,7 @@ const CHARGE_FULL = 0.75;
 const DRAW_FULL = 0.7;
 const WOOD_START = 30, WOOD_MAX = 40;
 const ARROWS_START = 10, ARROWS_MAX = 14;
-const VIEW_W = 44;
+const VIEW_W = 40;
 const STRAY_TIME = 2.5;
 const BONUS_TIME = 30;
 const PHYS = { speed: 6.2, accel: 60, airAccel: 40, jump: 14.5, jump2: 0, doubleJump: false, gravity: 38, fallMul: 1.6, coyote: 0.1, buffer: 0.14, maxFall: -20 };
@@ -249,7 +249,7 @@ export class CastleCampaignScene extends MiniGame {
     };
     if (this.opts.classes) {
       for (const e of this.heroes) if (this.opts.classes[e.p.deviceId]) this.setClass(e, this.opts.classes[e.p.deviceId]);
-      go();
+      this.later(0.05, go); // after setScene, so intro() sees this as the current scene
     } else {
       this.picker = new ClassPicker(this, this.heroes, go);
     }
@@ -315,9 +315,9 @@ export class CastleCampaignScene extends MiniGame {
 
   frame() {
     if (this.mode !== 'level') { this.mapView?.frame(); return; }
-    this.camDist = this.fitDistance(VIEW_W, ROWS + 1.5);
+    this.camDist = this.fitDistance(VIEW_W, ROWS - 1);
     this.halfW = this.viewHalfSize(this.camDist).w;
-    this.camY = ROWS / 2 + 0.4;
+    this.camY = ROWS / 2 - 0.6;
     this.placeCamera();
   }
 
@@ -535,6 +535,13 @@ export class CastleCampaignScene extends MiniGame {
     const ay = Math.abs(inp.y) > 0.35 ? Math.sign(inp.y) : 0;
     if (!ax && !ay) ax = e.facing;
     let c, r;
+    // Ladder aimed straight up: grow the ladder you stand in (starting at your feet).
+    if (PIECES[e.piece].tile === LADDER && ay > 0 && !ax) {
+      c = Math.floor(b.x);
+      r = Math.floor(b.y + 0.05);
+      while (this.map.at(c, r) === LADDER && r < ROWS) r++;
+      return { c, r: Math.min(r, Math.floor(b.y + b.h) + 1), grow: true };
+    }
     if (ax) {
       c = Math.floor(b.x + ax * 0.9);
       r = Math.floor(b.y + 0.05) + ay;
@@ -551,8 +558,12 @@ export class CastleCampaignScene extends MiniGame {
     const m = this.map;
     if (c < 0 || c >= m.cols || r < 1 || r >= ROWS) return false;
     if (m.at(c, r) !== EMPTY) return false;
-    for (const o of this.heroes) if (o.state === 'play' && this.cellHitsBody(c, r, o.body)) return false;
-    for (const tr of this.troopers.list) if (this.troopers.active(tr) && this.cellHitsBody(c, r, tr.body)) return false;
+    // Ladders and bean doors can go right where beans stand (beans pass through them).
+    const see = PIECES[e.piece].tile === WOOD || PIECES[e.piece].tile === PAD;
+    if (see) {
+      for (const o of this.heroes) if (o.state === 'play' && this.cellHitsBody(c, r, o.body)) return false;
+      for (const tr of this.troopers.list) if (this.troopers.active(tr) && this.cellHitsBody(c, r, tr.body)) return false;
+    }
     return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => m.at(c + dc, r + dr) !== EMPTY);
   }
 
@@ -624,9 +635,9 @@ export class CastleCampaignScene extends MiniGame {
       this.game.audio.play('select');
     }
     e.hammerCd -= dt;
-    const { c, r } = this.aimCell(e, inp);
+    const { c, r, grow } = this.aimCell(e, inp);
     const ty = this.map.at(c, r);
-    const mode = ty === EMPTY ? (this.canPlace(e, c, r) ? 'place' : 'bad') : this.canDig(c, r) ? 'dig' : 'bad';
+    const mode = ty === EMPTY ? (this.canPlace(e, c, r) ? 'place' : 'bad') : this.canDig(c, r) && !grow ? 'dig' : 'bad';
     e.cursor = { c, r, mode };
     e.buildCd -= dt;
     if (bPress && e.hammerCd <= 0 && this.hammerHit(e)) { e.holdMode = 'hammer'; return; }
