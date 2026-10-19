@@ -7,14 +7,19 @@ import { makeGrumble } from '../core/critters.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeBush, makeStar, seeded } from '../core/world.js';
 import { moveBody, platformerControl, approach } from '../core/physics2d.js';
-import { t, addStrings } from '../core/i18n.js';
+import { t, addStrings, getLang, keyName, buttonText } from '../core/i18n.js';
+import { PAD_LABELS } from '../core/input.js';
 import { esc } from '../core/ui.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 import { voteLength } from '../core/vote.js';
 
-addStrings({
+const STRINGS = {
   en: {
     'game.castle': 'Knights & Builders',
+    'castle.hint.build': '[B] build · [C] next piece',
+    'castle.hint.knight': '[B] sword · [C] shield',
+    'castle.hint.archer': '[B] shoot · [C] rope arrow',
+    'castle.buildPill': 'Build: [B] · next piece: [C]',
     'castle.intro': "Grab the other team's flag and carry it to yours! [A]: jump and climb · [B]: class action · [C]: next piece / shield / rope arrow",
     'castle.bot': 'Grumble Guard',
     'castle.pick': 'Pick a class',
@@ -40,6 +45,10 @@ addStrings({
   },
   no: {
     'game.castle': 'Riddere og byggere',
+    'castle.hint.build': '[B] bygg · [C] neste brikke',
+    'castle.hint.knight': '[B] sverd · [C] skjold',
+    'castle.hint.archer': '[B] skyt · [C] taupil',
+    'castle.buildPill': 'Bygg: [B] · neste brikke: [C]',
     'castle.intro': 'Ta flagget til det andre laget og bær det til deres eget! [A]: hopp og klatre · [B]: klassehandling · [C]: neste brikke / skjold / taupil',
     'castle.bot': 'Grumlevakt',
     'castle.pick': 'Velg klasse',
@@ -63,7 +72,23 @@ addStrings({
     'castle.built': '{n} bygget',
     'castle.noWood': 'Tom for planker!', 'castle.noArrows': 'Ingen piler!',
   },
-});
+};
+addStrings(STRINGS);
+
+/** Button name one player presses (their own key or pad button). */
+function buttonFor(game, p, b) {
+  const d = p && game.input.get(p.deviceId);
+  if (!d) return buttonText(b);
+  return d.type === 'keyboard' ? keyName(d.scheme[b][0]) : PAD_LABELS[d.kind][b];
+}
+
+/** Like t(), but [A]/[B]/[C] become this one player's keys (for hints over a bean's head). */
+function tFor(game, p, key, vars) {
+  let s = (STRINGS[getLang()] || STRINGS.en)[key] ?? STRINGS.en[key];
+  if (s === undefined) return t(key, vars);
+  if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
+  return s.replace(/\[([ABC])\]/g, (_, b) => buttonFor(game, p, b.toLowerCase()));
+}
 
 // Knights & Builders: a couch take on King Arthur's Gold, kid-friendly and non-violent.
 // Side view of a 56 x 24 tile map with destructible terrain. Each team starts in a small stone
@@ -117,6 +142,7 @@ const colOf = (x) => Math.floor(x - X0);
 const cellX = (c) => c + X0;
 const clamp = THREE.MathUtils.clamp;
 const mirror = (c) => COLS - 1 - c;
+const HINT_CSS = 'font-size:.8em;margin-top:2px;padding:0 7px;border-radius:9px;background:rgba(255,255,255,.88);color:#2b2340;white-space:nowrap';
 const NO_INPUT = { x: 0, y: 0, a: false, b: false, c: false, aPressed: false, bPressed: false, cPressed: false };
 
 function mesh(geo, mat, x = 0, y = 0, z = 0) {
@@ -639,19 +665,22 @@ export class CastleScene extends MiniGame {
       frame.visible = false;
       this.scene.add(frame);
       e.cursorMesh = frame;
-      e.ghosts = PIECES.map((pc) => this.makeGhost(pc.key));
+      // Piece preview in the player's color; grey where the piece can't go.
+      e.ghostMat = new THREE.MeshToonMaterial({ color: p.color, gradientMap: toon(0xffffff).gradientMap, transparent: true, opacity: 0.6 });
+      e.ghosts = PIECES.map((pc) => this.makeGhost(pc.key, e.ghostMat));
       e.ghosts.forEach((g) => { g.visible = false; this.scene.add(g); });
     }
     return e;
   }
 
   /** Translucent preview of a piece, shown inside the build cursor. */
-  makeGhost(key) {
-    if (!this.ghostMat) {
-      this.ghostMat = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toon(0xffffff).gradientMap, transparent: true, opacity: 0.5 });
+  makeGhost(key, mat) {
+    if (!this.ghostBad) {
+      this.ghostBad = new THREE.MeshToonMaterial({ color: 0x9a94b2, gradientMap: toon(0xffffff).gradientMap, transparent: true, opacity: 0.3 });
     }
     const g = new THREE.Group();
-    const add = (geo, x = 0, y = 0) => { const m = mesh(geo, this.ghostMat, x, y, 0.85); g.add(m); return m; };
+    g.userData.ok = mat;
+    const add = (geo, x = 0, y = 0) => { const m = mesh(geo, mat, x, y, 0.85); g.add(m); return m; };
     if (key === 'block') add(new THREE.BoxGeometry(0.8, 0.8, 0.1));
     if (key === 'door') { add(new THREE.BoxGeometry(0.62, 0.86, 0.1)); add(new THREE.BoxGeometry(0.12, 0.12, 0.12), 0.18, 0); }
     if (key === 'ladder') { add(new THREE.BoxGeometry(0.08, 0.86, 0.1), -0.28); add(new THREE.BoxGeometry(0.08, 0.86, 0.1), 0.28); add(new THREE.BoxGeometry(0.6, 0.08, 0.1), 0, -0.2); add(new THREE.BoxGeometry(0.6, 0.08, 0.1), 0, 0.2); }
@@ -878,13 +907,14 @@ export class CastleScene extends MiniGame {
   updateBuilder(e, inp, bHeld, bPress, dt) {
     if (inp.cPressed) {
       e.piece = (e.piece + 1) % PIECES.length;
+      e.switched = true;
       this.floater(t(`castle.piece.${PIECES[e.piece].key}`), new THREE.Vector3(e.body.x, e.body.y + 2.1, 0.5), e.css, 1);
       this.game.audio.play('select');
     }
     const { c, r } = this.aimCell(e, inp);
     const ty = this.tileAt(c, r);
     const mode = ty === EMPTY ? (this.canPlace(e, c, r) ? 'place' : 'bad') : this.canDig(c, r) ? 'dig' : 'bad';
-    e.cursor = { c, r, mode };
+    e.cursor = { c, r, mode, empty: ty === EMPTY };
     e.buildCd -= dt;
     if (bPress) { e.holdMode = mode === 'dig' ? 'dig' : 'place'; e.holdT = 0; }
     if (!bHeld) { e.holdMode = null; return; }
@@ -1404,8 +1434,7 @@ export class CastleScene extends MiniGame {
     const act = this.phase === 'build' && this.state === 'play' && !e.bot ? 'builder' : e.cls;
     let inp = !playing ? NO_INPUT : e.bot ? this.botInput(e, dt) : (this.input(e.p) || NO_INPUT);
     if (e.state !== 'play') return; // the bot gave up and is floating home
-    // C keys also count as B, so B actions only fire while C is up.
-    const bHeld = inp.b && !inp.c, bPress = inp.bPressed && !inp.c;
+    const bHeld = !!inp.b, bPress = !!inp.bPressed;
 
     // Wood and arrows slowly refill.
     e.refill += dt;
@@ -1566,14 +1595,18 @@ export class CastleScene extends MiniGame {
       const cur = e.cursor;
       const show = !!cur && this.state === 'play';
       e.cursorMesh.visible = show;
-      e.ghosts.forEach((g, i) => { g.visible = show && cur.mode === 'place' && i === e.piece; });
+      e.ghosts.forEach((g, i) => { g.visible = show && cur.empty && i === e.piece; });
       if (show) {
         const x = cellX(cur.c) + 0.5, y = cur.r + 0.5;
         e.cursorMesh.position.set(x, y, 0.85);
         const pulse = cur.mode === 'dig' ? 1 + Math.sin(this.time * 20) * 0.04 : 1;
         e.cursorMesh.scale.setScalar(cur.mode === 'bad' ? 0.8 : pulse);
         for (const m of e.cursorMesh.userData.bars) m.material = cur.mode === 'bad' ? basic(0x9a94b2) : cur.mode === 'dig' ? basic(COLORS.white) : basic(e.p.color);
-        e.ghosts[e.piece].position.set(x, y, 0);
+        const gh = e.ghosts[e.piece];
+        gh.position.set(x, y, 0);
+        const gm = cur.mode === 'place' ? gh.userData.ok : this.ghostBad;
+        if (gh.children[0].material !== gm) for (const m of gh.children) m.material = gm;
+        if (cur.mode === 'place') gh.userData.ok.opacity = 0.5 + Math.sin(this.time * 6) * 0.15;
       }
     }
   }
@@ -1605,11 +1638,23 @@ export class CastleScene extends MiniGame {
     return GLYPH.knight;
   }
 
+  /** Small key reminder under a player's tag: until builders have built and switched pieces, early in battle for the rest. */
+  hintText(e) {
+    const act = e.act || e.cls;
+    if (act === 'builder') {
+      const piece = esc(t(`castle.piece.${PIECES[e.piece].key}`));
+      const learning = e.built < 3 || !e.switched || this.phase === 'build';
+      return `<div style="${HINT_CSS}"><b>${piece}</b>${learning ? ` · ${esc(tFor(this.game, e.p, 'castle.hint.build'))}` : ''}</div>`;
+    }
+    if (this.phase === 'battle' && this.battleT < 15) return `<div style="${HINT_CSS}">${esc(tFor(this.game, e.p, `castle.hint.${act}`))}</div>`;
+    return '';
+  }
+
   updateLabels() {
     const show = this.state === 'play';
     for (const e of this.ents) {
       if (!e.label) continue;
-      const html = show && e.state === 'play' ? `<span style="color:${e.css}">${this.countText(e)}</span>` : '';
+      const html = show && e.state === 'play' ? `<span style="color:${e.css}">${this.countText(e)}${this.hintText(e)}</span>` : '';
       if (html !== e.labelHtml) { e.label.innerHTML = html; e.labelHtml = html; }
       if (html) this.game.ui.place(e.label, new THREE.Vector3(e.body.x, e.body.y + 2.05, 0.3), this.camera);
       else e.label.style.display = 'none';
@@ -1626,6 +1671,7 @@ export class CastleScene extends MiniGame {
 
   startBattle() {
     this.phase = 'battle';
+    this.battleT = 0;
     this.openWall();
     this.game.ui.toast(t('castle.battleGo'), 2600);
     this.game.audio.play('go');
@@ -1689,13 +1735,15 @@ export class CastleScene extends MiniGame {
         this.buildLeft -= dt;
         if (this.buildLeft <= 0) this.startBattle();
       } else {
+        this.battleT = (this.battleT || 0) + dt;
         this.timeLeft -= dt;
         if (this.timeLeft <= 0) { this.timeLeft = 0; this.end(); return; }
       }
     }
     if (this.state !== 'intro') {
       const phase = this.phase === 'build' ? `${t('castle.build')} ${clock(this.buildLeft)}` : `${t('castle.battle')} ${clock(this.timeLeft)}`;
-      this.game.ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div><div class="pill"><b>${phase}</b></div>`);
+      const help = this.phase === 'build' ? `<div class="pill" style="font-weight:700;font-size:.9em">${GLYPH.builder} ${esc(t('castle.buildPill'))}</div>` : '';
+      this.game.ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div><div class="pill"><b>${phase}</b></div>${help}`);
     }
     this.game.ui.bar(this.players, (p) => {
       const e = this.ents.find((x) => x.p === p);

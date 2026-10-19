@@ -13,23 +13,25 @@ import { BossScene, volley } from './boss-common.js';
 // Opposition (harmless, telegraphed): he flings wobbly jelly at the beans, mostly at the ones
 // carrying cake. A purple ring shows where it lands; a hit makes you slip and drop your cake.
 // Phase 2 (a third of the goal): grumble waiters march back and forth across the kitchen;
-// bumping into one also makes you slip. Phase 3: more waiters and more jelly.
-// Scaling with n players: goal 6 + 3n cakes (stages.js), wishes at once 1/2/2/3 (more beans can
-// work in parallel), jelly per volley ceil(n/2) (+1 in phase 3), waiters ceil(n/2) (+1 in phase 3).
+// bumping into one also makes you slip. Phase 3: more waiters, more jelly, and he changes his
+// mind about one wish every few seconds. Carrying a cake slows you down, and he eats one cake
+// at a time (the next server waits while he chews).
+// Scaling with n players: goal 6 + 3n cakes (stages.js), wishes at once ceil(n/2) (pairs of
+// beans share a wish, so helping each other matters), jelly per volley ceil(n/2) (+1 in phase 3), waiters ceil(n/2) (+1 in phase 3).
 
 addStrings({
   en: {
     'bossk.hint': 'Walk into a cake stand to grab a cake · bring him the one in his thought bubble · dodge the jelly!',
     'bossk.p1': 'His waiters are coming! Don\'t bump into them!',
-    'bossk.p2': 'Jelly time! Watch the purple rings!',
-    'bossk.no': 'Not that one!', 'bossk.yum': 'Yum!',
+    'bossk.p2': 'He keeps changing his mind! Watch his thought bubble!',
+    'bossk.no': 'Not that one!', 'bossk.yum': 'Yum!', 'bossk.hmm': 'Hmm, no, THIS one!',
     'bossk.c0': 'strawberry', 'bossk.c1': 'chocolate', 'bossk.c2': 'lemon', 'bossk.c3': 'blueberry',
   },
   no: {
     'bossk.hint': 'Gå inn i et kakefat for å ta en kake · kom med den han tenker på · unngå geléen!',
     'bossk.p1': 'Kelnerne hans kommer! Ikke dult borti dem!',
-    'bossk.p2': 'Gelétid! Se etter de lilla ringene!',
-    'bossk.no': 'Ikke den!', 'bossk.yum': 'Nam!',
+    'bossk.p2': 'Han ombestemmer seg hele tiden! Følg med på tankeboblen!',
+    'bossk.no': 'Ikke den!', 'bossk.yum': 'Nam!', 'bossk.hmm': 'Hmm, nei, DENNE!',
     'bossk.c0': 'jordbær', 'bossk.c1': 'sjokolade', 'bossk.c2': 'sitron', 'bossk.c3': 'blåbær',
   },
 });
@@ -50,6 +52,8 @@ const STAND_Z = 4.4;
 const JELLY_GAP = [2.8, 2.3, 1.9];
 const JELLY_TIME = [1.3, 1.15, 1.0];
 const WAITER_LANES = [1.0, 2.6, 0.2, 3.3]; // z of each waiter's path across the kitchen
+const CARRY_SPEED = 4.6;
+const FUSSY_GAP = 7; // phase 3: seconds between changes of mind
 
 /** A small layered cake (about 0.7 wide). */
 function makeCake(type, scale = 1) {
@@ -80,7 +84,7 @@ export class BossKitchenScene extends BossScene {
 
     this.king.group.position.set(0, 0.5, KING_Z);
     this.kingState = { chew: 0, shake: 0 };
-    this.wishCount = this.n === 1 ? 1 : this.n <= 3 ? 2 : 3;
+    this.wishCount = Math.ceil(this.n / 2); // 1, 1, 2, 2, 3, 3 cakes wished for at once
     this.wishes = [];
     this.buildBubble();
     for (let i = 0; i < this.wishCount; i++) this.addWish();
@@ -98,6 +102,7 @@ export class BossKitchenScene extends BossScene {
     this.sayT = 0;
     this.throwT = 2.5;
     this.windup = 0;
+    this.fussyT = FUSSY_GAP;
     this.waiters = [];
     this.helpers = this.waiters; // (test bots look for scene.helpers)
     this.start('party');
@@ -281,7 +286,7 @@ export class BossKitchenScene extends BossScene {
       this.game.audio.play('pop');
       this.puffs.burst(new THREE.Vector3(k.x, 2.2, k.z + 1.2), CAKES[type].side, { count: 16, speed: 4, size: 0.3 });
       this.addPoint(e, new THREE.Vector3(k.x, 3.4, k.z + 1));
-      if (!this.finished) this.later(0.9, () => { if (!this.finished) this.addWish(); });
+      if (!this.finished) this.later(1.3, () => { if (!this.finished) this.addWish(); });
     } else {
       this.kingState.shake = 0.8;
       this.say(t('bossk.no'), '#8a63f0');
@@ -366,8 +371,29 @@ export class BossKitchenScene extends BossScene {
     this.game.audio.play('whoosh');
   }
 
+  /** Phase 3: swap one wished-for cake for another (nobody may be carrying the new one yet). */
+  changeMind() {
+    if (!this.wishes.length) return;
+    const w = this.wishes[Math.floor(Math.random() * this.wishes.length)];
+    const taken = new Set(this.wishes.map((x) => x.type));
+    const free = [0, 1, 2, 3].filter((i) => !taken.has(i));
+    if (!free.length) return;
+    w.type = free[Math.floor(Math.random() * free.length)];
+    this.bubble.remove(w.mesh);
+    w.mesh = makeCake(w.type, 0.9);
+    this.bubble.add(w.mesh);
+    this.layoutWishes();
+    this.puffs.burst(this.bubble.position.clone(), 0xffffff, { count: 10, speed: 3, size: 0.35 });
+    this.say(t('bossk.hmm'), '#8a63f0');
+    this.game.audio.play('beep');
+  }
+
   updateThrows(dt) {
     if (this.state !== 'play' || this.finished) { this.windup = 0; return; }
+    if (this.phase >= 2) {
+      this.fussyT -= dt;
+      if (this.fussyT <= 0) { this.fussyT = FUSSY_GAP * (0.8 + Math.random() * 0.4); this.changeMind(); }
+    }
     this.throwT -= dt;
     if (this.throwT <= 0 && this.windup <= 0) { this.windup = 0.45; this.king.squash(1.2); }
     if (this.windup > 0) {
@@ -414,7 +440,8 @@ export class BossKitchenScene extends BossScene {
     }
 
     for (const e of this.ents) {
-      this.moveBean(e, dt, { x0: -HW, x1: HW, z0: Z0, z1: Z1 });
+      // Cakes are wobbly: you walk slower while carrying one.
+      this.moveBean(e, dt, { x0: -HW, x1: HW, z0: Z0, z1: Z1 }, { speed: e.carry !== null ? CARRY_SPEED : undefined });
       e.serveCd -= dt;
       if (this.state !== 'play' || this.finished || e.slip > 0) continue;
       // Grab (or swap) a cake by walking into a stand.
@@ -427,7 +454,8 @@ export class BossKitchenScene extends BossScene {
         }
       }
       // Serve by walking up to the table.
-      if (e.carry !== null && e.serveCd <= 0 && e.z < Z0 + PR_SERVE && Math.abs(e.x) < TABLE_HW + 0.3) this.serve(e);
+      // He eats one cake at a time: wait at the table while he is still chewing.
+      if (e.carry !== null && e.serveCd <= 0 && this.kingState.chew <= 0 && e.z < Z0 + PR_SERVE && Math.abs(e.x) < TABLE_HW + 0.3) this.serve(e);
     }
     // The stands block walking through them a little.
     for (const e of this.ents) {
