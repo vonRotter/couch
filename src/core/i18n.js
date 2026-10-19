@@ -340,9 +340,16 @@ export function keyName(code) {
   return code;
 }
 
-/** "E / B": the names of one button for everyone playing. */
+/** Like t(), but [A]/[B]/[C] name only this player's buttons (for hints shown next to one player). */
+let onlyDevice = null;
+export function tFor(player, key, vars) {
+  onlyDevice = player?.deviceId ?? null;
+  try { return t(key, vars); } finally { onlyDevice = null; }
+}
+
+/** "E / B": the names of one button for everyone playing (or just one player inside tFor). */
 export function buttonText(btn) {
-  const list = buttonSource?.(btn);
+  const list = buttonSource?.(btn, onlyDevice);
   return list?.length ? list.join(' / ') : btn.toUpperCase();
 }
 

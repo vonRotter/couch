@@ -5,7 +5,7 @@ import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
-import { t } from '../core/i18n.js';
+import { t, tFor } from '../core/i18n.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 import { VotePicker, voteLength } from '../core/vote.js';
 import './snowball/strings.js';
@@ -1000,7 +1000,7 @@ export class SnowballScene extends MiniGame {
   say(e, key) {
     if (e.bot || e.msgT > 0) return;
     e.msgT = 0.9;
-    this.floater(t(key), new THREE.Vector3(e.x, e.y + 2.4, e.z), e.css, 1.0);
+    this.floater(tFor(e.p, key), new THREE.Vector3(e.x, e.y + 2.4, e.z), e.css, 1.0);
     this.game.audio.play('bump');
   }
 

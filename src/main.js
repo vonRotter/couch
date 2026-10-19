@@ -81,8 +81,8 @@ class Game {
     this.input = new Input();
     this.roster = new Roster();
     setLang(this.roster.progress.lang || 'en');
-    setButtonSource((b) => {
-      let devs = this.roster.players.map((p) => this.input.get(p.deviceId)).filter(Boolean);
+    setButtonSource((b, only) => {
+      let devs = only ? [this.input.get(only)].filter(Boolean) : this.roster.players.map((p) => this.input.get(p.deviceId)).filter(Boolean);
       if (!devs.length) devs = [this.input.get('kb0'), ...[0, 1, 2, 3].map((i) => this.input.get(`gp${i}`)).filter((d) => d.connected)];
       return [...new Set(devs.map((d) => buttonLabel(d, b)))];
     });
