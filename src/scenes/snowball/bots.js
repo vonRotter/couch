@@ -67,7 +67,7 @@ export function botBrain(S, e, dt) {
   if (tgt && e.throwCd <= 0 && e.snow >= 1 && !S.terrain.inTunnel(e.x, e.z)) {
     faceTo(e, tgt);
     S.throwBall(e, lead(S, e, tgt));
-    e.throwCd = S.mode === 'targets' ? 1.6 + Math.random() * 1.4 : 1.25 + Math.random() * 1.1;
+    e.throwCd = S.mode === 'targets' ? 1.6 + Math.random() * 1.4 : 1.7 + Math.random() * 1.3;
   }
 
   // Gifts.
@@ -85,7 +85,7 @@ function lead(S, e, tgt) {
   if (!tgt.ent) return tgt;
   const p = tgt.ent;
   const T = 0.35 + dist(e, p) / 32;
-  return { x: p.x + p.vx * T * 0.7, y: p.y + 0.7, z: p.z + p.vz * T * 0.7 };
+  return { x: p.x + p.vx * T * 0.35, y: p.y + 0.7, z: p.z + p.vz * T * 0.35 };
 }
 
 /** The best thing to throw at, or null. Returns { x, y, z, ent?, target? }. */

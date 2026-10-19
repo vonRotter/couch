@@ -84,7 +84,7 @@ function makeFoeMesh(kind, color, elite) {
 export const FoeMixin = {
   foeHp(kind, elite, trait) {
     const n = this.ents.length, d = this.floorIndex;
-    let hp = (1 + 0.8 * d) * TYPES[kind].hp * (1 + 0.12 * (n - 1));
+    let hp = (1 + 1.1 * d) * TYPES[kind].hp * (1 + 0.12 * (n - 1));
     if (elite) hp *= 4 * (trait === 'tough' ? 1.8 : 1) * (1 + 0.15 * (n - 1));
     return hp;
   },
@@ -250,6 +250,9 @@ export const FoeMixin = {
 
   blockFx(g) {
     this.game.audio.play('boing');
+    // Keep bonking: after a few blocks in a row the cushion wobbles and the shield is open.
+    g.blockN = (g.blockN || 0) + 1;
+    if (g.blockN >= 4) { g.blockN = 0; g.state = 'dizzy'; g.t = 1.6; g.vx = g.vz = 0; }
     this.puffs.burst(new THREE.Vector3(g.x + Math.sin(g.yaw) * 0.6, 0.6, g.z + Math.cos(g.yaw) * 0.6), 0x8fd8ff, { count: 3, size: 0.25, life: 0.3, speed: 2 });
     if ((g.blockMsg || 0) < this.time) {
       g.blockMsg = this.time + 1.5;
@@ -390,7 +393,7 @@ export const FoeMixin = {
 
   updateGrumbles(dt, active) {
     const base = 2.5 * (1 + 0.05 * this.floorIndex);
-    const yawnK = 1 + 0.08 * this.floorIndex;
+    const yawnK = 1 + 0.15 * this.floorIndex;
     for (const g of this.grumbles) {
       if (g.dead) continue;
       g.hitCd -= dt;
@@ -480,7 +483,7 @@ export const FoeMixin = {
           }
           // Shields turn slowly toward their target, so friends can get around them.
           const face = near ? Math.atan2(near.e.x - g.x, near.e.z - g.z) : Math.abs(mvx) + Math.abs(mvz) > 0.1 ? Math.atan2(mvx, mvz) : g.yaw;
-          const turn = g.kind === 'shield' ? 2.0 : 12;
+          const turn = g.kind === 'shield' ? 1.3 : 12;
           const diff = Math.atan2(Math.sin(face - g.yaw), Math.cos(face - g.yaw));
           g.yaw += clamp(diff, -turn * dt, turn * dt);
           // Touching a player makes them yawn; the grumble bounces off.
@@ -552,7 +555,6 @@ export const FoeMixin = {
     if (g.g.userData.arm) {
       g.throwT = Math.max(0, (g.throwT || 0) - dt);
       g.g.userData.arm.rotation.x = g.throwT > 0 ? -1.5 * Math.sin(g.throwT / 0.4 * Math.PI) : 0;
-      g.g.userData.arm.visible = g.actCd > 0.6 ? g.throwT > 0.2 || g.actCd < 1.6 : true;
     }
     if (g.g.userData.aura) {
       g.g.userData.aura.rotation.z += dt * 2;

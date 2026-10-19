@@ -139,7 +139,7 @@ export class BossMeadowScene extends BossScene {
   addHelper() {
     // Helpers pop out of the bushes at the edge, away from the beans.
     const a = Math.random() * Math.PI * 2;
-    const mesh = makeGrumble(0xff9f43);
+    const mesh = makeGrumble(); // the usual grumble violet, unlike any player color
     mesh.scale.setScalar(1.15);
     const h = { mesh, x: Math.cos(a) * (R - 1), z: Math.sin(a) * (R - 1), vx: 0, vz: 0, flat: 0, bumpCd: 1, target: null, retarget: 0 };
     mesh.position.set(h.x, 0, h.z);

@@ -50,7 +50,7 @@ const TARGET_TYPES = ['flag', 'snowman', 'bell', 'snowman', 'flag'];
 const GOLD_EVERY = 18, GOLD_TIME = 9;
 // Player hits
 const SLIP_TIME = 0.75;
-const IMMUNE_AFTER = 1.0;
+const IMMUNE_AFTER = 1.4;
 const KNOCK = 3.5, KNOCK_HILL = 6.5;
 // Capture the Flag
 const CAP_LIMIT = 3;
@@ -222,7 +222,7 @@ export class SnowballScene extends MiniGame {
       snow: START_SNOW, bHold: 0, bWas: false, scooping: false, scoopT: 0, gained: false,
       throwCd: 0, buildCd: 0, refill: 0,
       slip: 0, immune: 0, slow: 0, triple: 0, boots: 0, power: null, powerHeld: 0, powerMesh: null,
-      carry: null, pickCd: 0, needT: 0, msgT: 0,
+      carry: null, pickCd: 0, msgT: 0,
       hits: 0, walls: 0, throws: 0, splats: 0, caps: 0, saves: 0, hill: 0,
       // bot brain
       role: 'att', task: 'move', goal: null, wp: null, wpT: 0, think: Math.random() * 0.3, wantSnow: 4,
@@ -519,6 +519,7 @@ export class SnowballScene extends MiniGame {
     f.state = 'carried';
     f.carrier = e;
     e.carry = f;
+    e.immune = Math.max(e.immune, 0.8); // a moment to get going
     e.ch.group.add(f.group);
     f.group.position.set(0, 0.2, -0.38);
     f.group.scale.setScalar(0.62);
@@ -546,14 +547,9 @@ export class SnowballScene extends MiniGame {
       if (f.state === 'carried') {
         const e = f.carrier;
         f.group.userData.cloth.rotation.y = Math.sin(this.time * 9) * 0.2;
+        // Kid-friendly rule: you can score even while your own flag is away (no stalemates).
         const mine = this.flags[e.team];
-        if (Math.hypot(e.x - mine.home.x, e.z - mine.home.z) < HOME_R && !this.ending) {
-          if (mine.state === 'home') this.capture(e, f);
-          else if (e.needT <= 0) {
-            e.needT = 2.5;
-            if (!e.bot) this.floater(t('snowball.needFlag'), new THREE.Vector3(e.x, e.y + 2.6, e.z), e.css, 1.6);
-          }
-        }
+        if (Math.hypot(e.x - mine.home.x, e.z - mine.home.z) < HOME_R && !this.ending) this.capture(e, f);
         continue;
       }
       // Waving at home or lying in the snow, blinking before it flies back.
@@ -1225,7 +1221,7 @@ export class SnowballScene extends MiniGame {
   updateEnt(e, dt) {
     const playing = this.state === 'play';
     let ix = 0, iz = 0, scoop = false;
-    for (const k of ['throwCd', 'buildCd', 'immune', 'slip', 'slow', 'triple', 'boots', 'pickCd', 'needT', 'msgT']) e[k] -= dt;
+    for (const k of ['throwCd', 'buildCd', 'immune', 'slip', 'slow', 'triple', 'boots', 'pickCd', 'msgT']) e[k] -= dt;
     if (playing && e.slip <= 0) {
       if (e.bot) {
         ({ ix, iz, scoop } = botBrain(this, e, dt));

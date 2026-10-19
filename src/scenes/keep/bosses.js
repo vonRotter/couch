@@ -158,7 +158,7 @@ class Boss {
         this.idleMove(dt * k);
         if (this.next <= 0) this.startAct();
       }
-      this.touch(0.2);
+      this.touch(0.28);
     } else if (this.state === 'asleep') {
       this.sleepT += dt;
       if (this.sleepT > 2.4 && !this.gone) this.poof();
@@ -203,7 +203,7 @@ class Boss {
 
 export class TeddyBoss extends Boss {
   constructor(s, x, z) {
-    super(s, x, z, { hp: 230, r: 1.45, phases: [0.5] });
+    super(s, x, z, { hp: 300, r: 1.45, phases: [0.5] });
     this.nameKey = 'keep.teddy';
     this.subKey = 'keep.teddy.sub';
     this.yaw = 0;
@@ -285,7 +285,7 @@ export class TeddyBoss extends Boss {
       const r = 2.6 + this.phase * 0.4;
       this.act.from = { x: this.x, z: this.z };
       this.act.to = { x: tg.x, z: tg.z };
-      this.act.hz = H.add({ shape: 'circle', x: tg.x, z: tg.z, r, warn: fast ? 1.05 : 1.3, yawn: 0.34 });
+      this.act.hz = H.add({ shape: 'circle', x: tg.x, z: tg.z, r, warn: fast ? 1.05 : 1.3, yawn: 0.42 });
       s.game.audio.play('jump');
     } else if (name === 'toss') {
       const n = 3 + this.phase * 2 + Math.floor(s.ents.length / 2);
@@ -296,7 +296,7 @@ export class TeddyBoss extends Boss {
         const a = Math.random() * Math.PI * 2;
         const x = clamp(e.x + Math.cos(a) * off * Math.random(), s.arena.x0 + 1, s.arena.x1 - 1);
         const z = clamp(e.z + Math.sin(a) * off * Math.random(), s.arena.z0 + 1, s.arena.z1 - 1);
-        s.later(i * 0.18, () => { if (this.state === 'fight') H.add({ shape: 'circle', x, z, r: 1.35, warn: 1.3, drop: true, dropColor: [COLORS.candyPink, COLORS.candyBlue, COLORS.candyYellow][i % 3], yawn: 0.26 }); });
+        s.later(i * 0.18, () => { if (this.state === 'fight') H.add({ shape: 'circle', x, z, r: 1.35, warn: 1.3, drop: true, dropColor: [COLORS.candyPink, COLORS.candyBlue, COLORS.candyYellow][i % 3], yawn: 0.32 }); });
       }
       s.game.audio.play('whoosh');
     } else if (name === 'summon') {
@@ -330,7 +330,7 @@ export class TeddyBoss extends Boss {
         // Players in the way get bowled over (a sleepy bump, not a hurt).
         for (const e of this.s.ents) {
           if (e.state !== 'walk') continue;
-          if (Math.hypot(e.x - this.x, e.z - this.z) < this.r + PR + 0.2 && this.s.addYawn(e, 0.32)) {
+          if (Math.hypot(e.x - this.x, e.z - this.z) < this.r + PR + 0.2 && this.s.addYawn(e, 0.4)) {
             const side = Math.sign((e.x - this.x) * Math.cos(a.yaw) - (e.z - this.z) * Math.sin(a.yaw)) || 1;
             e.vx += Math.cos(a.yaw) * side * 12; e.vz += -Math.sin(a.yaw) * side * 12;
           }
@@ -406,7 +406,7 @@ export class TeddyBoss extends Boss {
 
 export class SheepBoss extends Boss {
   constructor(s, x, z) {
-    super(s, x, z, { hp: 420, r: 1.6, phases: [0.66, 0.33] });
+    super(s, x, z, { hp: 600, r: 1.6, phases: [0.66, 0.33] });
     this.nameKey = 'keep.sheep';
     this.subKey = 'keep.sheep.sub';
     this.yaw = 0;
@@ -489,7 +489,7 @@ export class SheepBoss extends Boss {
         const near = i < L.length;
         const a = Math.random() * Math.PI * 2, d = near ? 0 : 1.5 + Math.random() * 5;
         const x = clamp(e.x + Math.cos(a) * d, s.arena.x0 + 1, s.arena.x1 - 1), z = clamp(e.z + Math.sin(a) * d, s.arena.z0 + 1, s.arena.z1 - 1);
-        s.later(i * 0.14, () => { if (this.state === 'fight') H.add({ shape: 'circle', x, z, r: 1.4, warn: 1.35, drop: true, dropColor: [COLORS.candyLilac, COLORS.candyBlue, COLORS.candyPink][i % 3], yawn: 0.26 }); });
+        s.later(i * 0.14, () => { if (this.state === 'fight') H.add({ shape: 'circle', x, z, r: 1.4, warn: 1.35, drop: true, dropColor: [COLORS.candyLilac, COLORS.candyBlue, COLORS.candyPink][i % 3], yawn: 0.32 }); });
       }
       dur = 1.2 + n * 0.14 + 0.8;
       s.game.audio.play('whoosh');
@@ -500,7 +500,7 @@ export class SheepBoss extends Boss {
       for (let i = 0; i < count; i++) {
         const e = L[Math.floor(Math.random() * L.length)];
         const yaw = Math.atan2(e.x - this.x, e.z - this.z) + (i ? 0.9 : 0);
-        H.add({ shape: 'cone', x: this.x, z: this.z, yaw, r: 9, half: 0.42, warn: P >= 2 ? 0.95 : 1.2, yawn: 0.32, onFire: (h) => this.yawnFx(h) });
+        H.add({ shape: 'cone', x: this.x, z: this.z, yaw, r: 9, half: 0.42, warn: P >= 2 ? 0.95 : 1.2, yawn: 0.4, onFire: (h) => this.yawnFx(h) });
         if (i === 0) this.yaw = yaw;
       }
       dur = 1.8;
@@ -510,11 +510,11 @@ export class SheepBoss extends Boss {
       const gapsN = P === 0 ? 3 : 2;
       const base = Math.random() * Math.PI * 2;
       const gaps = Array.from({ length: gapsN }, (_, i) => base + (i / gapsN) * Math.PI * 2 + (Math.random() - 0.5) * 0.5);
-      H.add({ shape: 'wave', x: this.x, z: this.z, gaps, gapHalf: P >= 2 ? 0.36 : 0.44, speed: 6 + P, rMax: 20, warn: 1.5, yawn: 0.3 });
+      H.add({ shape: 'wave', x: this.x, z: this.z, gaps, gapHalf: P >= 2 ? 0.36 : 0.44, speed: 6 + P, rMax: 20, warn: 1.5, yawn: 0.36 });
       dur = 4.2;
       if (P >= 2) {
         const gaps2 = gaps.map((g) => g + Math.PI / gapsN);
-        s.later(1.6, () => { if (this.state === 'fight') H.add({ shape: 'wave', x: this.x, z: this.z, gaps: gaps2, gapHalf: 0.4, speed: 6.5, rMax: 20, warn: 1.4, yawn: 0.3 }); });
+        s.later(1.6, () => { if (this.state === 'fight') H.add({ shape: 'wave', x: this.x, z: this.z, gaps: gaps2, gapHalf: 0.4, speed: 6.5, rMax: 20, warn: 1.4, yawn: 0.36 }); });
         dur = 5.6;
       }
     } else if (name === 'beam') {
@@ -523,7 +523,7 @@ export class SheepBoss extends Boss {
       const e = this.pickTarget();
       const yaw = Math.atan2(e.x - this.x, e.z - this.z) + Math.PI * 0.6;
       const spin = (Math.random() < 0.5 ? -1 : 1) * (0.75 + 0.15 * P);
-      H.add({ shape: 'beam', follow: () => ({ x: this.x, z: this.z }), yaw, spin, len: 15, width: 1.3, count, warn: 1.5, life: 4.2, yawn: 0.28 });
+      H.add({ shape: 'beam', follow: () => ({ x: this.x, z: this.z }), yaw, spin, len: 15, width: 1.3, count, warn: 1.5, life: 4.2, yawn: 0.34 });
       if (P >= 2) this.s.later(1.2, () => { if (this.state === 'fight') this.rainLight(); });
       dur = 6;
       this.act.still = true;

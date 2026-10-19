@@ -255,7 +255,7 @@ export class KeepScene extends MiniGame {
       this.recomputeStats(e);
       // A level-up is a fresh start: the yawn meter empties (Diablo refills your health).
       if (e.state === 'nap') this.wake(e, null);
-      e.yawn = 0;
+      e.yawn *= 0.5;
       const learned = SKILLS[e.cls].find(([lv]) => lv === this.teamLevel);
       const at = new THREE.Vector3(e.x, 2.4, e.z);
       this.floater(learned ? t('keep.newSkill', { skill: t(`keep.skill.${learned[1]}`) }) : t('keep.level', { n: this.teamLevel }), at, learned ? '#ffb400' : e.p.css, learned ? 2.4 : 1.4, true);

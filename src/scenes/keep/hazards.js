@@ -14,7 +14,7 @@ import { PR, angDiff, mesh, rbox, bx, fadeMat } from './common.js';
 //   wave   { x, z, gaps, gapHalf, speed, rMax }  an expanding ring with safe gaps
 //   beam   { follow, yaw, spin, len, width, count }  rotating moonbeams around a point
 
-const DANGER = 0xff4f9a;
+const DANGER = 0xff2d7a;
 const SAFE = 0x5ee08a;
 const BEAM = 0xffd84a;
 const FLOOR_Y = 0.07;
@@ -114,12 +114,12 @@ export class Hazards {
       if (!gaps.length) h.arcs.push([0, Math.PI * 2]);
       h.warnMeshes = [];
       for (const [a0, a1] of h.arcs) {
-        const m = flat(this.geo(h, new THREE.RingGeometry(1.6, h.rMax, 48, 1, a0 - Math.PI / 2, a1 - a0)), this.mat(h, DANGER, 0.16), y);
+        const m = flat(this.geo(h, new THREE.RingGeometry(1.6, h.rMax, 48, 1, a0 - Math.PI / 2, a1 - a0)), this.mat(h, DANGER, 0.3), y);
         h.root.add(m);
         h.warnMeshes.push(m);
       }
       for (const g of gaps) {
-        const m = flat(this.geo(h, new THREE.RingGeometry(1.6, h.rMax, 8, 1, g - gapHalf - Math.PI / 2, gapHalf * 2)), this.mat(h, SAFE, 0.32), y + 0.001);
+        const m = flat(this.geo(h, new THREE.RingGeometry(1.6, h.rMax, 8, 1, g - gapHalf - Math.PI / 2, gapHalf * 2)), this.mat(h, SAFE, 0.5), y + 0.001);
         h.root.add(m);
         h.warnMeshes.push(m);
       }
@@ -150,7 +150,7 @@ export class Hazards {
         // Warning: the fill grows; the outline blinks faster near the end.
         if (h.shape === 'circle') {
           h.fill.scale.setScalar(Math.max(0.01, k));
-          h.fill.material.opacity = 0.18 + 0.32 * k;
+          h.fill.material.opacity = 0.25 + 0.35 * k;
           h.outline.material.opacity = 0.6 + 0.4 * (k > 0.7 ? pulse : 1);
           if (h.pillow) {
             const fall = Math.max(0, (k - 0.55) / 0.45);
@@ -168,7 +168,7 @@ export class Hazards {
           h.fill.material.opacity = 0.2 + 0.3 * k;
           h.outline.material.opacity = 0.6 + 0.4 * (k > 0.7 ? pulse : 1);
         } else if (h.shape === 'wave') {
-          for (const m of h.warnMeshes) m.material.opacity = (m.material.color.getHex() === SAFE ? 0.25 : 0.1) + 0.15 * k * (k > 0.7 ? pulse : 1);
+          for (const m of h.warnMeshes) m.material.opacity = (m.material.color.getHex() === SAFE ? 0.45 : 0.2) + 0.2 * k * (k > 0.7 ? pulse : 1);
         } else if (h.shape === 'beam') {
           for (const b of h.beams) {
             b.g.rotation.y = h.yaw + b.off;
@@ -206,7 +206,7 @@ export class Hazards {
         h.yaw += h.spin * dt;
         for (const b of h.beams) {
           b.g.rotation.y = h.yaw + b.off;
-          b.fill.material.opacity = 0.55 + 0.1 * pulse;
+          b.fill.material.opacity = 0.7 + 0.15 * pulse;
           b.core.material.opacity = 1;
         }
         if (active) {
@@ -265,7 +265,7 @@ export class Hazards {
   }
 
   hurt(e, h, nx, nz) {
-    if (this.s.addYawn(e, h.yawn)) {
+    if (this.s.addYawn(e, h.yawn * (1 + 0.1 * this.s.floorIndex))) {
       e.vx += nx * 9; e.vz += nz * 9;
     }
   }

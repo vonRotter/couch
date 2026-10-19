@@ -50,7 +50,7 @@ const COVER = 1.0; // an umbrella this close (in x) to a bell covers it
 const PACK_TIME = 0.75; // holding [B] this long packs a snowball
 const PACK_SPEED = 1.8; // walking speed while packing
 const G = 18;
-const HELPER_COLOR = 0x6fb7ff;
+const HELPER_COLOR = 0x7b6cf6; // the usual grumble violet, unlike any player color
 
 /**
  * Helper grumbles guarding bells, by players and phase: big teams get one from the start, and

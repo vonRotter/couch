@@ -307,7 +307,7 @@ export class BossKitchenScene extends BossScene {
   addWaiter() {
     const i = this.waiters.length;
     const g = new THREE.Group();
-    const body = makeGrumble(0x4cc9f0);
+    const body = makeGrumble(); // the usual grumble violet, unlike any player color
     body.scale.setScalar(1.25);
     g.add(body);
     const tray = new THREE.Mesh(sharedGeo('bkTray', () => new THREE.CylinderGeometry(0.45, 0.45, 0.06, 18)), toon(0xd8dbe8));

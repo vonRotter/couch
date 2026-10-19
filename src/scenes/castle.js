@@ -175,13 +175,17 @@ class ClassPicker {
   }
 
   render() {
+    const { scene } = this;
     const cols = CLASSES.map((cls) => {
       const chips = this.ents.filter((e) => e.cls === cls).map((e) => {
         const ok = this.locked.get(e);
-        return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.css}"><span style="color:${ok ? '#fff' : TEAM_CSS[e.team]}">●</span> ${esc(e.name)}${ok ? ' ✓' : ''}</div>`;
+        // Each chip also shows that player's own keys for this class.
+        const keys = esc(tFor(scene.game, e.p, `castle.hint.${cls === 'builder' ? 'build' : cls}`));
+        return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.css}"><span style="color:${ok ? '#fff' : TEAM_CSS[e.team]}">●</span> ${esc(e.name)}${ok ? ' ✓' : ''}<div style="font-size:.72em;font-weight:700;opacity:.85">${keys}</div></div>`;
       }).join('');
+      const desc = t(`castle.desc.${cls}`).split(' · ').map((line) => `<div>${esc(line)}</div>`).join('');
       return `<div class="vote-opt" style="width:clamp(140px,22vw,280px)"><div class="vote-label">${GLYPH[cls]} ${esc(t(`castle.cls.${cls}`))}</div>
-        <div style="font-size:clamp(11px,1vw,16px);font-weight:600;text-align:center;opacity:.75;margin-bottom:6px">${esc(t(`castle.desc.${cls}`))}</div>${chips}</div>`;
+        <div style="font-size:clamp(11px,1vw,16px);font-weight:600;text-align:center;opacity:.75;margin-bottom:6px;display:grid;gap:3px">${desc}</div>${chips}</div>`;
     }).join('');
     this.el.innerHTML = `<div class="results-title">${esc(t('game.castle'))}</div>
       <div class="results-sub">${esc(t('castle.pick'))}</div>

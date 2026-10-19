@@ -13,7 +13,7 @@ import { RARITY_CSS, RARITY_HEX, mesh, sph, rbox, bx, cyl, cone } from './common
 
 export const SLOTS = ['weapon', 'hat', 'boots', 'cape'];
 // One "point" of each stat; an item's score is its stats counted in points.
-const UNIT = { dmg: 0.25, rate: 0.06, speed: 0.035, yawn: 0.12, cdr: 0.05 };
+const UNIT = { dmg: 0.25, rate: 0.06, speed: 0.035, yawn: 0.08, cdr: 0.05 };
 const MAIN = { weapon: 'dmg', hat: 'yawn', boots: 'speed', cape: 'cdr' };
 const AFFIX = ['dmg', 'rate', 'speed', 'yawn', 'cdr'];
 const GOLD_NAMES = 5;

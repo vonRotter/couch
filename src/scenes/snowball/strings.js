@@ -46,7 +46,6 @@ addStrings({
     'snowball.dropped': 'Dropped it!',
     'snowball.returned': 'Flag back home!',
     'snowball.captured': '{team} brings a flag home!',
-    'snowball.needFlag': 'Get your own flag back first!',
     'snowball.firstTo': 'first to {n}',
 
     // king of the hill
@@ -106,7 +105,6 @@ addStrings({
     'snowball.dropped': 'Mistet det!',
     'snowball.returned': 'Flagget er hjemme!',
     'snowball.captured': '{team} får et flagg hjem!',
-    'snowball.needFlag': 'Hent ditt eget flagg først!',
     'snowball.firstTo': 'først til {n}',
 
     'snowball.hill': 'Haugen',
