@@ -13,7 +13,7 @@ import { t, addStrings } from '../../core/i18n.js';
 //                     big teams since more beans bubble faster.
 //   f1 Slalom         bumpers and ramps; the gate goal is per bean (60% / 85% of 20 each).
 //   f2 Snowball       all beans vs Snow Bots that wall up and hit your targets; the bots are
-//                     capped at 2, so the target goal is per bean (10 + 8n / 16 + 12n), and
+//                     capped at 2, so the target goal is per bean (8 + 9n / 14 + 13n), and
 //                     3 stars also needs a win over the bots.
 //   f3 Hockey         all beans vs goalie grumbles (capped at 2): the goal grows with n.
 //   fb..sb bosses     see BOSS_GOALS and the boss files: telegraphed throws, helpers per phase,
@@ -187,8 +187,8 @@ const GEMS = [40, 50, 55, 60, 65, 70];
 // Bubble Bobble: seconds to clear all waves for 3 stars (more beans, more bubbles flying).
 const BUBBLE_FAST = [120, 110, 100, 95, 90, 90];
 // Snowball fight vs the Snow Bots: targets hit by the team. Aim assist is generous: random
-// button mashing hit 21 (1p), 17 (2p) and 42 (4p) targets in 90 s, so the bar is per bean and high.
-const SNOW = { two: (n) => 10 + 8 * n, three: (n) => 16 + 12 * n };
+// button mashing hit 16-21 (1p), 17-21 (2p) and 42-43 (4p) targets in 90 s, so the bar is per bean.
+const SNOW = { two: (n) => 8 + 9 * n, three: (n) => 14 + 13 * n }; // 17/27, 26/40, 35/53, 44/66 ...
 // Hockey vs the Goalie Grumbles: goals by the team.
 const HOCKEY = { two: [2, 3, 4, 5, 5, 6], three: [4, 5, 6, 8, 8, 9] };
 // Party rounds: team score (%) for 2 and 3 stars, a little higher for bigger teams.

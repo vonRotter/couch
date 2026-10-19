@@ -1004,7 +1004,7 @@ export class CastleCampaignScene extends MiniGame {
 
     const act = e.cls;
     let inp = !playing ? NO_INPUT : (this.input(e.p) || NO_INPUT);
-    const bHeld = inp.b && !inp.c, bPress = inp.bPressed && !inp.c;
+    const bHeld = !!inp.b, bPress = !!inp.bPressed; // A, B and C are separate buttons
     if (playing) this.tentSwap(e, inp);
 
     e.refill += dt;
@@ -1369,7 +1369,7 @@ export class CastleCampaignScene extends MiniGame {
       const d = this.input(p);
       if (!d) continue;
       if (d.aPressed) { this.leaving = true; this.backToMap(this.result); break; }
-      if (d.bPressed && !d.c) {
+      if (d.bPressed) {
         this.leaving = true;
         const opts = this.retryOptions();
         const game = this.game;

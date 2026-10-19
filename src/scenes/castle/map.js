@@ -353,7 +353,7 @@ export class CampaignMap {
       this.state = 'leaving';
       this.game.audio.play('join');
       this.start(this.goalIndex);
-    } else if (this.players().some((p) => { const d = this.s.input(p); return d?.bPressed && !d.c; })) {
+    } else if (this.players().some((p) => { const d = this.s.input(p); return d?.bPressed; })) {
       this.closePanel();
       this.state = 'map';
       this.stateT = 0;
@@ -414,7 +414,7 @@ export class CampaignMap {
         if (to !== this.selected) this.walkTo(to);
         else this.game.audio.play('bump');
       }
-      const hb = inp.b && !inp.c ? (this.holdB.get(p) || 0) + dt : 0;
+      const hb = inp.b ? (this.holdB.get(p) || 0) + dt : 0;
       this.holdB.set(p, hb);
       if (hb > LEAVE_HOLD) {
         this.state = 'leaving';
