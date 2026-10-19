@@ -91,7 +91,7 @@ const HOLES = [
     decor: [['tree', -5, -1.5], ['lolly', -1.5, -3.5], ['cupcake', 7, 0], ['gum', -8, 7], ['cane', 6.8, -4.5], ['tree', 7.5, 4.5]],
   },
   { // 3: the windmill
-    par: 3, felt: 0x6fd86a, cake: 0xffe47a, stripe: [0xff5d73, COLORS.icing], tilt: 47,
+    par: 3, felt: 0x6fd86a, cake: 0xffe47a, stripe: [0xff5d73, COLORS.icing], tilt: 60, // steep: see over the mill
     tiles: [{ x0: -4.5, x1: 4.5, z0: 0, z1: 7 }, { x0: -0.8, x1: 0.8, z0: -2.4, z1: 0 }, { x0: -4.5, x1: 4.5, z0: -8, z1: -2.4 }],
     walls: [[-4.5, 7, 4.5, 7, 4.5, 0, 0.8, 0, 0.8, -2.4, 4.5, -2.4, 4.5, -8, -4.5, -8, -4.5, -2.4, -0.8, -2.4, -0.8, 0, -4.5, 0, -4.5, 7]],
     windmill: { x: 0, z: 0, hy: 2.7, len: 2.45, speed: 1.0, bladeZ: 0.38 },
@@ -1224,12 +1224,12 @@ export class GolfScene extends MiniGame {
     this.camera.lookAt(this.camLook);
   }
 
-  /** Fade every fader that stands between the camera and a ball, bean or the cup. */
+  /** Fade every fader that stands between the camera and a ball or a bean. */
   updateFaders(dt) {
     const H = this.hole;
     if (!H?.faders.length) return;
     const cam = this.camera.position;
-    const pts = [this.worldPos(H.cup[0], H.cupH + 0.3, H.cup[1])];
+    const pts = [];
     for (const e of this.ents) {
       const b = e.ball;
       if (b.state !== 'in') pts.push(this.worldPos(b.x, b.y + BALL_R, b.z));
