@@ -46,6 +46,7 @@ const PADS = [
   { key: 'guides', color: 0x9a6a44, css: '#8a5a32' },
   { key: 'splash', color: 0x3a6fe0, css: '#2257c8' },
   { key: 'cave', color: 0x7a7fa8, css: '#565c8c' },
+  { key: 'dogfight', color: 0xd62839, css: '#b81d2c' },
 ].map((p, i, all) => {
   const a = (i / all.length) * Math.PI * 2;
   return { ...p, angle: a, x: Math.sin(a) * RING_R, z: -Math.cos(a) * RING_R };

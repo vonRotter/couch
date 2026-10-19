@@ -37,7 +37,14 @@ Each game shows its own controls before it starts.
 | Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . | Numpad Enter |
 
 - Press A on any device to join (up to 6 players). The first player picks a mode in the start
-  menu: **Island** (roam and pick games on the pads) or **Story** (the co-op campaign). Press C on
+  menu: **Island** (roam and pick games on the pads) or **Paint Pilots** (side-view biplane dogfight, inspired by Triplane Turmoil and Luftrausers). Vote
+on Free for all, Teams or Co-op against waves of grumble planes and blimps ending with the King Blimp.
+The stick points the nose, A boosts, B fires paint pellets and C does a barrel roll that dodges
+paint. Climb too steeply or too slowly and you stall: the engine sputters and the nose drops until
+you pick up speed again. Three paint hits and you parachute down in confetti and are back in the air
+3 seconds later; crashing is just a puff. Land gently on the runway to wash the paint off.
+
+**Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
 - In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). Pick with B (use) or A; `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound.
@@ -95,7 +102,7 @@ stomp it for gems. Once someone reaches the flag, everyone else has 12 seconds. 
 level: A for the next level, B for the island.
 
 **Paint Party** (free-for-all, 60 seconds). Walk to paint the floor. A dashes (and shoves),
-B lobs a paint bomb. Grab the golden paint can for a Mega Brush. Most floor wins.
+B lobs a paint bomb. Grab the golden paint can for a Mega Brush. Most floor wins. Grumble painters smear grey mud over the floor (yours too), and mud has to be painted over again. Dash into a grumble or hit it with a paint bomb to make it dizzy and drop its brush. There are more grumbles with more players, and more join during the match.
 
 **Balloon Archers** (free-for-all, TowerFall style, 90 seconds). Aim with the stick, B shoots a
 suction-cup arrow. Pop other players' balloons or jump on their heads. Arrows stick in walls,
@@ -141,7 +148,7 @@ aside. Anyone who falls far behind floats back to the pack in a bubble.
 **Portal Pals** (co-op puzzle, 4 rooms). Top-down rooms. A and B shoot your two portals onto
 white walls; walk into one to come out of the other. Anyone can use anyone's portals.
 Buttons open doors while someone (or a box) stands on them. Push boxes, even through
-portals. Everyone has to reach the gold exit. Hold A+B to reset a room.
+portals. Everyone has to reach the gold exit. Hold A+B to reset a room. Each player's portal pair has its own symbol as well as a color (star, heart, moon, drop, lightning bolt, diamond), also drawn on the floor in front of the portal; standing next to a portal shows a trail of symbols to its partner.
 
 **Space Race** (split-screen 3D, laps by vote, 14 rings per lap). Every rocket has its pilot bean in a
 glass dome. The flight model borrows the feel of Tachyon-style arcade flight: turn rates ease in
@@ -163,15 +170,17 @@ off the left edge floats forward in a bubble to just behind the leader (it takes
 so nobody gets stuck. After the first finisher, the others have 12 seconds, and the race ends
 after 150 seconds regardless.
 
-**Cook-Off** (co-op kitchen, 3 minutes, Overcooked style but forgiving). A picks up, puts down
-and serves; hold B at a chopping board to chop. Recipes: salad, tomato soup and mushroom soup.
-Pots never burn, and an expired order just walks away. The team earns coins and 1 to 3 stars;
-the kitchen grows with the number of players.
+**Cook-Off** (co-op kitchen, 3 minutes, Overcooked style but forgiving). Every match picks 3–4 random
+ingredients (from 12) and a menu of 2–4 dishes made from them (from 36), in a random kitchen. A recipe
+card at the start shows each dish and its steps as pictures: raw, chopping board, frying pan or pot.
+A picks up, puts down and serves; hold B at a board to chop. You start with the easiest dish and
+the others unlock during the match. Pots and pans never burn, and an expired order just walks
+away. Order speed and dish difficulty grow with the number of players.
 
 **Bean Golf** (mini golf, 3 or 6 holes by vote). Everyone putts on the same hole at once: the stick
 aims, hold B for fine aim, hold A to charge and let go to putt. Six candy holes: warm-up, bumper
 bend, windmill, big jump, sliding blocks and a loop. Falling off costs a stroke, 8 strokes puts the
-ball in for you, and once the first ball drops the others get 25 seconds.
+ball in for you, and once the first ball drops the others get 25 seconds. Obstacles such as the windmill turn see-through when a ball is behind them, and balls show through walls as an outline.
 
 **Snowball Fort** (two teams). Snowballs are thrown at the other team's targets (bells, flags,
 snowman heads), never at players. Tap B to throw (with gentle auto-aim), hold B to scoop snow, and
@@ -192,16 +201,17 @@ foam sword, hold for a big slash, C raises a shield that also glides) or Archer 
 suction-cup arrows, C shoots a rope arrow to climb). The first 45 seconds are a build phase behind a
 magic wall. Then grab the other team's flag and carry it to yours. Foam hits only push and wobble;
 three hits (or one big slash) floats you home in a bubble for 3 seconds. Helper bots even out the
-teams.
+teams. A builder sees a preview of the piece in their color where it will go; name tags show each player's own keys until they get the hang of it.
 
-**Pillow Keep** (co-op dungeon, Gauntlet style, three floors). Everyone picks a class first:
-Knight (wide pillow swing, B spins), Archer (foam darts, B fires a fan), Wizard (bubbles trap a
-grumble for a while, B fires a ring) or Bard (a note, B sings a lullaby that puts grumbles to sleep
-and speeds up teammates). C wakes a napping teammate, opens doors with a key and opens chests.
-Fluff the pillow nests that keep sending grumbles; a grumble touch fills your yawn meter, and a full
-meter means a nap until a teammate taps you (or a few seconds pass). Find keys, open doors, and meet
-on the stairs; the last floor ends with the Sleepy Sheep, who needs enough bonks on its glowing
-spots to curl up and fall asleep. The team shares coins; 3 stars under 7 minutes.
+**Pillow Keep** (co-op dungeon crawl, Gauntlet and Diablo style, five random floors). Everyone picks
+a class: Knight, Archer, Wizard or Bard. Every run builds new floors with rooms, keys and doors,
+pillow nests, chests and elite grumbles: Cushion Hall, Blanket Vaults, Toy Attic (Big Teddy guards
+the stairs), Moonlit Library and the Sheep's Bedroom (Sleepy Sheep). Loot (weapon, hat, slippers,
+cape; white, blue or gold) is put on automatically, and only when it is better. The team shares XP,
+levels up together and learns skills at levels 3, 5 and 8. Grumbles come as chargers, throwers,
+shields and named elites. Every boss attack is drawn on the floor in pink before it lands, so it can
+be dodged. A grumble touch fills your yawn meter; a full meter means a nap until a teammate taps you
+(C) or a few seconds pass.
 
 **Grumble Guides** (co-op puzzle, Lemmings style, 5 levels). Grumbles pop out of a hot-air balloon
 and march along; guide enough of them home. Every player has a cursor ring: A gives the grumble under
@@ -217,7 +227,7 @@ Tools: water balloon (blown by the wind, which changes every turn), bouncy ball 
 plank (build a bridge or a wall) and big bubble (floats a bean gently away). Splashes bite craters
 out of the island and push beans; the wetter a bean, the further it slides. A bean that falls in
 the sea gives the other team 2 points and floats straight back home in a bubble, and walking never
-takes you into the water. Grumble bots even out the teams; solo is you against two bots.
+takes you into the water. Grumble bots even out the teams; solo is you against two bots. Walking climbs small steps on its own and hops onto low walls; jump goes forward when you hold a direction. The active bean glows and the top bar shows that player's keys.
 
 **Crystal Caves** (co-op cave run, Spelunky style, three depths). Every run is a new cave stitched
 from hand-made rooms, and each one is checked to be passable without ropes or bombs before you see it.
@@ -225,7 +235,7 @@ Run, jump (A) and climb ladders, vines and ropes. B shoots a rope up (down+B han
 and C drops a pop bomb that breaks dirt and only bounces players. Collect gold and gems, and carry
 the lost puppy on your head to the exit for a team bonus. Hazards are soft: bouncy mushrooms, mud,
 sticky honey and rolling snowballs; a long fall only makes you dizzy. Stragglers float to the leader
-in a bubble, sparkles show the way after a while, and nobody is ever out.
+in a bubble, sparkles show the way after a while, and nobody is ever out. Dangers: spikes, hot goo (icy water in the frost cave), crumbly floors, falling stalactites (they shake first), swooping bats, patrolling grumbles, pea plants and rolling boulders. Each player has 3 hearts; jumping on a bat or grumble makes it dizzy instead. At zero hearts you become a ghost who floats along with the others until the next depth, where you come back with 3 hearts. If everyone becomes a ghost, the depth restarts with a new layout.
 
 **Story** (co-op campaign, chosen in the start menu instead of the island). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
@@ -266,10 +276,11 @@ number). Nobody is ever knocked out of a round.
 - **Balloon Pump**: pump with A, bank with B; every balloon pops at a secret size.
 - **Mirror Maze**: race to the star; colored floors flip your controls while you stand on them.
 - **Spot the Difference**: two dioramas side by side; mark the differences with your cursor.
-- **Paint by Numbers**: calm co-op, load a numbered paint and paint the matching cells.
+- **Paint by Numbers**: calm co-op, load a numbered paint and paint the matching cells. A wrong color sticks (with a red frame) until someone paints the right one over it, and costs a point.
 - **Follow the Leader**: stay on the leader's glowing trail; everyone leads in turn.
-- **Quiz Run**: run to the right answer zone; alternating kids' and grown-up questions,
-  in English or Norwegian.
+- **Quiz Run**: run to the right answer zone. Players first vote on the kind of quiz: Pictures (49
+  picture puzzles for small children, read aloud; B repeats the question), Mixed, Classic (kids'
+  and grown-up questions) or Grown-up.
 - **Paint Trails**: steer a paint roller that never stops; its wet stripe fades after a few
   seconds. Bumping into a stripe or the wall is a splat and a short respawn; points for time on
   the road and for others splatting into your stripe.
@@ -296,8 +307,11 @@ player's answer is always somewhere on the field. Word lists live in
 
 **Læringsmiks** (three rounds in a row). *Klokka*: read the clock floating over you and walk to the
 right time ("kl. 3", "halv fire", "kvart over to", "ti på halv fem"). *Pengebutikken*: pay the exact
-price with 1, 5, 10 and 20 kroner coins (a coin that would overshoot just hops away). *Rimord*:
-walk to the word that rhymes with yours. Each player picks their own level first.
+price with real Norwegian coins (a coin that would overshoot just hops away): Lett uses 1 and 5 kr
+(prices 2–10), Middels adds 10 kr (5–20), Vanskelig adds 20 kr (10–50). *Rimord*:
+walk to the word that rhymes with yours. Each player picks their own level first. In all the
+learning games the right answer is usually already on the field among other choices, so it is not
+simply the newest thing to appear.
 
 ## Code layout
 
@@ -324,7 +338,7 @@ src/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
-    guides.js  splash.js  cave.js
+    guides.js  splash.js  cave.js  dogfight.js
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
     learnmix.js  learn/  Læringsmiks and its rounds (klokka, penger, rimord)

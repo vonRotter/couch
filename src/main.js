@@ -35,6 +35,7 @@ import { KeepScene } from './scenes/keep.js';
 import { GuidesScene } from './scenes/guides.js';
 import { SplashScene } from './scenes/splash.js';
 import { CaveScene } from './scenes/cave.js';
+import { DogfightScene } from './scenes/dogfight.js';
 import { StoryScene, STORY_GAMES } from './scenes/story.js';
 
 export const GAMES = {
@@ -60,6 +61,7 @@ export const GAMES = {
   guides: { Scene: GuidesScene },
   splash: { Scene: SplashScene },
   cave: { Scene: CaveScene },
+  dogfight: { Scene: DogfightScene },
   story: { Scene: StoryScene },
   ...STORY_GAMES, // the four Grumble King boss games (only reachable from the story map)
   spelling: { Scene: SpellingScene, edu: true },

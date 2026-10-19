@@ -296,6 +296,25 @@ const ICONS = {
     g.add(coil);
     g.add(mesh(cyl('caveRope', 0.04, 0.04, 0.6, 6), toon(0xe8c07a), 0.78, -0.55, 0.36));
   },
+  dogfight(g) {
+    // A little red biplane with a paint splat.
+    const p = new THREE.Group();
+    const fus = mesh(cyl('dfFus', 0.34, 0.18, 1.5, 14), toon(0xe0262f));
+    fus.rotation.z = -Math.PI / 2;
+    const cowl = mesh(cyl('dfCowl', 0.36, 0.38, 0.22, 14), toon(COLORS.cream), 0.82, 0, 0);
+    cowl.rotation.z = -Math.PI / 2;
+    p.add(fus, cowl);
+    for (const y of [-0.28, 0.5]) p.add(mesh(box('dfWing', 0.6, 0.08, 1.9, 0.03), toon(0xff7b7b), 0.15, y, 0));
+    for (const z of [-0.65, 0.65]) p.add(mesh(cyl('dfStrut', 0.03, 0.03, 0.78, 6), toon(COLORS.ink), 0.15, 0.11, z));
+    p.add(mesh(box('dfFin', 0.38, 0.42, 0.06, 0.02), toon(0xff7b7b), -0.85, 0.25, 0));
+    p.add(mesh(box('dfStab', 0.34, 0.06, 0.8, 0.02), toon(0xff7b7b), -0.85, 0.02, 0));
+    for (const s of [-1, 1]) p.add(mesh(box('dfBlade', 0.04, 0.5, 0.1, 0.02), toon(0xa0704a), 1.0, s * 0.25, 0));
+    const splat = mesh(sph(0.16), toon(0x4cc9f0), -0.3, 0.05, 0.3);
+    splat.scale.set(1.4, 1, 0.4);
+    p.add(splat);
+    p.rotation.set(0.35, -0.5, 0.25);
+    g.add(p);
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));
