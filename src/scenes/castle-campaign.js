@@ -507,7 +507,8 @@ export class CastleCampaignScene extends MiniGame {
   }
 
   inWater(b) {
-    return this.map.at(Math.floor(b.x), Math.floor(b.y + 0.3)) === WATER;
+    const c = Math.floor(b.x);
+    return this.map.at(c, Math.floor(b.y + 0.3)) === WATER || this.map.at(c, Math.floor(b.y + 0.05)) === WATER;
   }
 
   cellHitsBody(c, r, b, pad = 0.02) {

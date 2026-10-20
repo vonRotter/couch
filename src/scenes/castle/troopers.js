@@ -378,15 +378,20 @@ export class Troopers {
     const b = tr.body, m = this.map;
     if (b.justLanded) tr.ch.squash(0.8);
     // Fell in the water: float back to the last dry spot.
-    if (m.at(Math.floor(b.x), Math.floor(b.y + 0.3)) === WATER) {
+    const c = Math.floor(b.x);
+    if (m.at(c, Math.floor(b.y + 0.3)) === WATER || m.at(c, Math.floor(b.y + 0.05)) === WATER) {
       this.scene.puffs.burst(new THREE.Vector3(b.x, b.y + 0.5, 0.5), 0x8fd8ff, { count: 10, size: 0.35 });
       this.scene.game.audio.play('splat');
+      // Two splashes in a row: the dry spot is no good, float to a tent instead.
+      tr.splashes = this.scene.time - (tr.splashT ?? -99) < 6 ? (tr.splashes || 0) + 1 : 1;
+      tr.splashT = this.scene.time;
+      const dest = tr.splashes >= 2 ? this.scene.trooperRespawn(b.x) : tr.lastSafe;
       tr.state = 'bubble';
-      tr.bub = { x0: b.x, y0: b.y, x1: tr.lastSafe.x, y1: tr.lastSafe.y, t: 0, time: 2 };
+      tr.bub = { x0: b.x, y0: b.y, x1: dest.x, y1: dest.y, t: 0, time: 2 };
       tr.ch.leaf.visible = false;
       return;
     }
-    if (b.grounded && tr.state !== 'dizzy' && b.ground && !b.ground.pad && m.at(Math.floor(b.x), Math.floor(b.y - 0.5)) !== WATER) {
+    if (b.grounded && tr.state !== 'dizzy' && b.ground && !b.ground.pad && m.solid(c, Math.floor(b.y - 0.5))) {
       tr.lastSafe = { x: Math.floor(b.x) + 0.5, y: b.y };
     }
     // Home at the Golden Bean flag!
@@ -420,7 +425,6 @@ export class Troopers {
     if (B.t >= 1) {
       tr.state = 'march';
       tr.invuln = 1.5;
-      tr.lastSafe = { x: b.x, y: b.y };
       this.scene.puffs.burst(new THREE.Vector3(b.x, b.y + 0.6, 0.5), 0xbfeaff, { count: 8, size: 0.3 });
       this.scene.game.audio.play('pop');
     }
