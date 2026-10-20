@@ -1,6 +1,7 @@
 import { BaseScene } from './scene.js';
 import { PLAYER_COLORS, COLORS } from './palette.js';
 import { t } from './i18n.js';
+import { say } from './voice.js';
 
 /** Shared flow for every game: intro -> countdown -> play -> results -> back to the island. */
 export class MiniGame extends BaseScene {
@@ -16,6 +17,7 @@ export class MiniGame extends BaseScene {
 
   async intro(title, sub) {
     this.state = 'intro';
+    say(`${title}. ${sub || ''}`);
     await this.game.ui.banner(title, sub, 2300);
     if (this.game.current !== this) return;
     await this.game.ui.countdown(this.game.audio);

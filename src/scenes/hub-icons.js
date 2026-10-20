@@ -315,6 +315,36 @@ const ICONS = {
     p.rotation.set(0.35, -0.5, 0.25);
     g.add(p);
   },
+  tachyon(g) {
+    // A sleek starfighter.
+    const ship = new THREE.Group();
+    const body = mesh(sharedGeo('icon-tyBody', () => new THREE.ConeGeometry(0.32, 1.6, 6)), toon(0x3b4fbf));
+    body.rotation.z = -Math.PI / 2;
+    ship.add(body);
+    ship.add(mesh(box('tyWing', 0.7, 0.06, 1.7, 0.03), toon(0x8fa2ff), -0.2, 0, 0));
+    ship.add(mesh(sph(0.16), toon(0x9ff0ff, { emissive: 0x224466 }), 0.2, 0.18, 0));
+    for (const z of [-0.25, 0.25]) ship.add(mesh(cyl('tyFlame', 0.0, 0.12, 0.4, 8), toon(0xffb347, { emissive: 0x663300 }), -0.95, 0, z));
+    ship.children[ship.children.length - 1].rotation.z = Math.PI / 2;
+    ship.children[ship.children.length - 2].rotation.z = Math.PI / 2;
+    ship.rotation.set(0.3, -0.6, 0.2);
+    g.add(ship);
+  },
+  starlite(g) {
+    // A glossy crystal on a paint splat.
+    g.add(mesh(cyl('slSplat', 0.95, 0.95, 0.08, 10), toon(0xff6fb5), 0, -0.7, 0));
+    const cr = mesh(sharedGeo('icon-slCrystal', () => new THREE.OctahedronGeometry(0.6, 0)), toon(0x4cc9f0, { emissive: 0x112244 }), 0, 0.05, 0);
+    cr.scale.set(0.8, 1.4, 0.8);
+    g.add(cr);
+    g.add(mesh(sph(0.16), toon(0xffe47a), 0.6, -0.5, 0.3));
+  },
+  foothold(g) {
+    // A colony dome with a flag.
+    g.add(mesh(cyl('fhBase', 0.95, 1.0, 0.2, 18), toon(0x8a7a5a), 0, -0.7, 0));
+    g.add(mesh(sharedGeo('icon-fhDome', () => new THREE.SphereGeometry(0.7, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2)), toon(0xd8e8f0), 0, -0.6, 0));
+    g.add(mesh(box('fhDoor', 0.26, 0.32, 0.08, 0.03), toon(0x5a7d2a), 0, -0.44, 0.66));
+    g.add(mesh(cyl('fhPole', 0.03, 0.03, 0.9, 6), toon(COLORS.ink), 0.5, 0.2, 0));
+    g.add(mesh(box('fhFlag', 0.4, 0.24, 0.03, 0.02), toon(0xffc93c), 0.72, 0.5, 0));
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

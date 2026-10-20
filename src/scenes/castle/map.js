@@ -9,6 +9,7 @@ import { esc } from '../../core/ui.js';
 import { LEVELS, parseLevel, troopersNeeded } from './levels.js';
 import { makePrincess, makeDuke, makeTrooper, makeTent, mesh, GOLD } from './props.js';
 import { CARDS } from './text.js';
+import { say } from '../../core/voice.js';
 
 // The campaign map: a storybook road with seven castles from the bean camp to Castle Grumblegrump.
 // Stick left/right walks to any unlocked castle, [A] opens its goal card, [A] again starts it.
@@ -273,6 +274,7 @@ export class CampaignMap {
       const s = t(k);
       return `<div class="line ${/^["«“]/.test(s) ? 'say' : ''}">${esc(s)}</div>`;
     }).join('');
+    say(page.lines.map((k) => t(k)).join(' '));
     const html = `${speaker}${lines}<div class="foot">${dots}<span class="blink">${esc(t(last ? 'kc.cardLast' : 'kc.cardNext'))}</span></div>`;
     if (!this.cardEl) this.cardEl = this.game.ui.label('story-card kc-card');
     this.cardEl.innerHTML = html;
@@ -336,6 +338,7 @@ export class CampaignMap {
       <div class="results-sub">${esc(t(`kc.tip.${lv.mech}`))}</div>
       ${best ? `<div class="results-sub">${esc(t('kc.best'))} ${'★'.repeat(best)}${'☆'.repeat(3 - best)}</div>` : ''}
       <div class="results-footer blink" style="margin-top:10px">${esc(t('kc.goalHint'))}</div>`;
+    say(`${t(`kc.level.${lv.id}`)}. ${t(`kc.story.${lv.id}`)} ${goals.join('. ')}.`);
     if (!this.panelEl) this.panelEl = this.game.ui.panel(html, 'panel kc-goal');
     else this.panelEl.innerHTML = html;
   }

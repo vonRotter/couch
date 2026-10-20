@@ -329,12 +329,37 @@ walk to the word that rhymes with yours. Each player picks their own level first
 learning games the right answer is usually already on the field among other choices, so it is not
 simply the newest thing to appear.
 
+## Solo island
+
+Choose **Solo** in the start menu (or open the site with `#solo`) for a separate island for one
+player. Each child picks or creates a **profile** (name typed with the stick on a letter grid,
+and a color). Everything on the solo island is saved per profile in this browser: stars, hats and
+every game's progress, apart from the shared island's save.
+
+- Games: Sky Hop, Crystal Caves, Pillow Keep, Grumble Guides and Knights & Builders: The Golden
+  Bean, plus guest games (Tachyon, Starlite, Foothold) that open as their own pages on the same
+  site and come back here.
+- A new controller pressing jump takes over the one player.
+- C opens the start menu to switch back to the shared island or the Story.
+
+**Read-aloud.** V turns read-aloud on or off (on by default for new solo profiles, off on the shared
+island; each profile remembers its choice). Intro cards, Party Mix how-to cards and the story and
+campaign cards are read by the browser's own voice in English or Norwegian; if the device has no
+voice for the language it stays quiet.
+
+**Guest game contract.** A guest game is opened with
+`?profile=<id>&name=<name>&return=<url>&lang=en|no`, and the active profile is also stored in
+`localStorage['couch.profile']` (`{ id, name }`). A guest game should put the profile id in front of
+its own save keys and show a button back to the `return` link.
+
 ## Code layout
 
 ```
 src/
   main.js            renderer, game loop, scene switching
   core/
+    profiles.js      solo profiles (storage, picker) and the guest-game contract
+    voice.js         read-aloud with the browser's speech voices
     input.js         keyboard schemes + gamepads -> one controller shape
     roster.js        joined players, colors, hats, saved star count
     character.js     the shared bean buddy (squash/stretch, blink, hats)

@@ -18,9 +18,9 @@ export const HATS = [
 
 const STORE_KEY = 'couch-party.v1';
 
-function load() {
+function load(key = STORE_KEY) {
   try {
-    return JSON.parse(localStorage.getItem(STORE_KEY)) || {};
+    return JSON.parse(localStorage.getItem(key)) || {};
   } catch {
     return {};
   }
@@ -29,6 +29,7 @@ function load() {
 export class Roster {
   constructor() {
     this.players = [];
+    this.storeKey = STORE_KEY;
     const saved = load();
     this.stars = saved.stars || 0;
     this.progress = saved.progress || {};
@@ -36,10 +37,25 @@ export class Roster {
 
   save() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ stars: this.stars, progress: this.progress }));
+      localStorage.setItem(this.storeKey, JSON.stringify({ stars: this.stars, progress: this.progress }));
     } catch {
       /* storage unavailable: progress only lasts this session */
     }
+  }
+
+  /**
+   * Switch to another save slot (a solo profile's, or back to the shared island's with no key).
+   * Stars, hats and every game's progress follow the slot; the language choice carries over.
+   */
+  useSave(key = STORE_KEY) {
+    if (key === this.storeKey) return;
+    this.save();
+    const lang = this.progress.lang;
+    this.storeKey = key;
+    const saved = load(key);
+    this.stars = saved.stars || 0;
+    this.progress = saved.progress || {};
+    if (lang) this.progress.lang = lang;
   }
 
   addStars(n) {
@@ -67,7 +83,8 @@ export class Roster {
       colorIndex: 0,
       deviceId: device.id,
       hat: 1,
-      get name() { return t(`color.${this.colorIndex}`); },
+      // A solo profile's name wins over the color name.
+      get name() { return this.profileName || t(`color.${this.colorIndex}`); },
       get deviceLabel() { return deviceLabel(this.deviceId); },
     };
     this.applyColor(p, colorIndex);

@@ -26,6 +26,7 @@ import { PaintNumRound } from './party/paintnum.js';
 import { FollowRound } from './party/follow.js';
 import { QuizRound } from './party/quiz.js';
 import { TrailsRound } from './party/trails.js';
+import { say } from '../core/voice.js';
 
 // Party Mix: five short random rounds in a row with a running scoreboard.
 export const ROUNDS = [
@@ -103,6 +104,7 @@ export class PartyScene extends MiniGame {
     this.ready = new Map(this.players.map((p) => [p, false]));
     this.panelEl = this.game.ui.panel('', 'panel picker');
     this.renderHowTo();
+    say(`${this.round.title}. ${this.round.hint}`);
   }
 
   renderHowTo() {

@@ -10,6 +10,7 @@ import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { glyphMaterial } from '../core/edu.js';
 import { makeGameIcon } from './hub-icons.js';
+import { ProfilePicker } from '../core/profiles.js';
 
 const ISLAND_R = 45;
 const RING_R = 38;
@@ -18,9 +19,11 @@ const PR = 0.42; // player radius
 const SPEED = 7.5;
 const GRAVITY = 32;
 const JUMP = 11.5;
+const MODES = ['island', 'story', 'solo'];
 
 // Game pads sit in a ring along the shore; angle 0 is north, clockwise.
-const PADS = [
+// The shared island and the solo island each have their own list.
+const COOP_PADS = [
   { key: 'platformer', color: 0x4cc9f0, css: '#1aa7d8' },
   { key: 'paint', color: 0xff8c42, css: '#f26b1d' },
   { key: 'brawl', color: 0xff5d73, css: '#f0364f' },
@@ -47,10 +50,27 @@ const PADS = [
   { key: 'splash', color: 0x3a6fe0, css: '#2257c8' },
   { key: 'cave', color: 0x7a7fa8, css: '#565c8c' },
   { key: 'dogfight', color: 0xd62839, css: '#b81d2c' },
-].map((p, i, all) => {
-  const a = (i / all.length) * Math.PI * 2;
-  return { ...p, angle: a, x: Math.sin(a) * RING_R, z: -Math.cos(a) * RING_R };
-});
+];
+
+// Solo island: one player, games that work alone, and guest games from other repos
+// (they open in their own page and come back here; see Game.launchGuest).
+const SOLO_PADS = [
+  { key: 'platformer', color: 0x4cc9f0, css: '#1aa7d8' },
+  { key: 'cave', color: 0x7a7fa8, css: '#565c8c' },
+  { key: 'keep', color: 0xb79fd6, css: '#8a63c9' },
+  { key: 'guides', color: 0x9a6a44, css: '#8a5a32' },
+  { key: 'castle', color: 0xd9a066, css: '#b8752f', opts: { mode: 'campaign' } },
+  { key: 'tachyon', color: 0x2f3e8f, css: '#3b4fbf', guest: 'tachyon' },
+  { key: 'starlite', color: 0xff6fb5, css: '#e0459a', guest: 'starlite' },
+  { key: 'foothold', color: 0x6b8f3a, css: '#5a7d2a', guest: 'foothold' },
+];
+
+function layoutPads(list) {
+  return list.map((p, i) => {
+    const a = (i / list.length) * Math.PI * 2;
+    return { ...p, angle: a, x: Math.sin(a) * RING_R, z: -Math.cos(a) * RING_R };
+  });
+}
 
 // The "settings corner": colors, hats, learning switch and language flag together.
 const CORNER = { x: 0, z: 13 };
@@ -76,14 +96,17 @@ const STAR_SPOTS = [
 ];
 
 export class HubScene extends BaseScene {
-  constructor(game, { fromGame = null, chooseMode = false } = {}) {
+  constructor(game, { fromGame = null, chooseMode = false, solo = false } = {}) {
     super(game);
     this.key = null;
     this.camera.fov = 45;
     this.camera.far = 500;
     this.camera.updateProjectionMatrix();
-    this.scene.background = skyTexture('#6fd0ff', '#d9f6ff');
-    this.scene.fog = new THREE.Fog(0xbfeeff, 90, 190);
+    this.solo = solo;
+    this.pads = layoutPads(solo ? SOLO_PADS : COOP_PADS);
+    // The solo island sits under an evening sky so it never feels like the shared one.
+    this.scene.background = solo ? skyTexture('#ff9f7a', '#ffe6c7') : skyTexture('#6fd0ff', '#d9f6ff');
+    this.scene.fog = new THREE.Fog(solo ? 0xffd9bd : 0xbfeeff, 90, 190);
     this.lights = addLights(this.scene, { size: 50 });
 
     this.obstacles = [];
@@ -103,7 +126,7 @@ export class HubScene extends BaseScene {
     this.buildNature();
     this.buildStars();
 
-    const pad = PADS.find((d) => d.key === fromGame);
+    const pad = this.pads.find((d) => d.key === fromGame);
     for (const [i, p] of this.players.entries()) {
       const a = (i / Math.max(1, this.players.length)) * Math.PI * 2;
       const bx = pad ? pad.x * 0.78 : 0, bz = pad ? pad.z * 0.78 : 0;
@@ -116,12 +139,42 @@ export class HubScene extends BaseScene {
     // and whenever someone presses C on the island.
     this.modeEl = null;
     this.modeIndex = 0;
-    this.modeAsked = !!fromGame || this.players.length > 0;
+    this.modeAsked = !!fromGame || this.players.length > 0 || solo;
     if (chooseMode && this.players.length) this.openMode(1);
+    this.profilePicker = null;
     game.audio.playMusic('hub');
   }
 
   // ---------- island ----------
+
+  /** Solo island landmark: a striped lighthouse between the first two pads, its lamp turning. */
+  buildLighthouse() {
+    const a = Math.PI / this.pads.length; // halfway between pad 0 and pad 1
+    const x = Math.sin(a) * 27, z = -Math.cos(a) * 27;
+    const g = new THREE.Group();
+    for (let i = 0; i < 5; i++) {
+      const seg = new THREE.Mesh(new THREE.CylinderGeometry(1.5 - i * 0.18, 1.6 - i * 0.18, 1.6, 20), toon(i % 2 ? COLORS.white : 0xff5d73));
+      seg.position.y = 0.8 + i * 1.6;
+      seg.castShadow = true;
+      g.add(seg);
+    }
+    const room = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 1.1, 16), toon(0xfff1a8, { emissive: 0x664400 }));
+    room.position.y = 8.9;
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.2, 16), toon(0xff5d73));
+    roof.position.y = 10;
+    g.add(room, roof);
+    this.lamp = new THREE.Mesh(new THREE.ConeGeometry(0.9, 6, 12, 1, true), basic(0xfff3b0, { transparent: true, opacity: 0.25 }));
+    this.lamp.rotation.z = Math.PI / 2;
+    this.lamp.position.set(3, 0, 0);
+    const pivot = new THREE.Group();
+    pivot.position.y = 8.9;
+    pivot.add(this.lamp);
+    g.add(pivot);
+    this.lampPivot = pivot;
+    g.position.set(x, 0, z);
+    this.scene.add(g);
+    this.obstacles.push({ x, z, r: 1.7 });
+  }
 
   buildIsland() {
     const s = this.scene;
@@ -134,10 +187,11 @@ export class HubScene extends BaseScene {
     sand.position.y = -0.75;
     sand.receiveShadow = true;
     s.add(sand);
-    const grass = new THREE.Mesh(new THREE.CylinderGeometry(ISLAND_R, ISLAND_R + 0.6, 1, 80), toon(COLORS.grass));
+    const grass = new THREE.Mesh(new THREE.CylinderGeometry(ISLAND_R, ISLAND_R + 0.6, 1, 80), toon(this.solo ? 0xa9cf5c : COLORS.grass));
     grass.position.y = -0.5;
     grass.receiveShadow = true;
     s.add(grass);
+    if (this.solo) this.buildLighthouse();
     const cliff = new THREE.Mesh(new THREE.CylinderGeometry(ISLAND_R + 3, ISLAND_R - 6, 5, 80), toon(COLORS.dirt));
     cliff.position.y = -3.8;
     s.add(cliff);
@@ -164,7 +218,7 @@ export class HubScene extends BaseScene {
     s.add(plaza);
     // A few stepping stones leading up to every pad.
     const stoneGeo = sharedGeo('stone', () => new THREE.CylinderGeometry(0.55, 0.6, 0.12, 10));
-    for (const pad of PADS) {
+    for (const pad of this.pads) {
       for (let r = RING_R - 9.6; r < RING_R - 3; r += 2.4) {
         const st = new THREE.Mesh(stoneGeo, toon(COLORS.sand));
         const wob = Math.sin(r * 1.7 + pad.angle * 3) * 0.35;
@@ -177,7 +231,7 @@ export class HubScene extends BaseScene {
 
   buildPads() {
     const s = this.scene;
-    for (const pad of PADS) {
+    for (const pad of this.pads) {
       const g = new THREE.Group();
       g.position.set(pad.x, 0, pad.z);
       const base = new THREE.Mesh(sharedGeo('padBase', () => new THREE.CylinderGeometry(PAD_R, PAD_R + 0.2, 0.25, 40)), toon(COLORS.icing));
@@ -477,7 +531,7 @@ export class HubScene extends BaseScene {
   buildNature() {
     const s = this.scene;
     const rand = seeded(42);
-    const nearPath = (x, z, d) => PADS.some((p) => {
+    const nearPath = (x, z, d) => this.pads.some((p) => {
       // Distance to the radial stone path from the plaza to this pad.
       const ux = Math.sin(p.angle), uz = -Math.cos(p.angle);
       const along = x * ux + z * uz;
@@ -485,7 +539,7 @@ export class HubScene extends BaseScene {
       return Math.abs(x * uz - z * ux) < d;
     });
     const clear = (x, z, d) =>
-      PADS.every((p) => Math.hypot(p.x - x, p.z - z) > PAD_R + d + 1.5) &&
+      this.pads.every((p) => Math.hypot(p.x - x, p.z - z) > PAD_R + d + 1.5) &&
       STAR_SPOTS.every(([sx, sz]) => Math.hypot(sx - x, sz - z) > d + 1.6) &&
       this.obstacles.every((o) => Math.hypot(o.x - x, o.z - z) > o.r + d + 1.2) &&
       !nearPath(x, z, d + 1.2) && Math.hypot(x - CORNER.x, z - CORNER.z) > 9.5;
@@ -577,18 +631,29 @@ export class HubScene extends BaseScene {
     const roster = this.game.roster;
     for (const d of this.game.input.joinRequests()) {
       if (roster.has(d.id)) continue;
+      if (this.solo && roster.players.length) {
+        // Solo island: one player at a time; a new controller takes over.
+        roster.players[0].deviceId = d.id;
+        this.game.ui.toast(t('solo.takeover'));
+        continue;
+      }
       const p = roster.join(d);
       if (!p) continue;
+      if (this.solo) this.game.applyProfile(p);
       const a = Math.random() * Math.PI * 2;
       this.spawn(p, Math.cos(a) * 1.6, Math.sin(a) * 1.6);
       this.game.audio.play('join');
       this.game.ui.toast(t('hub.joined', { name: p.name }));
     }
     if (this.game.input.escPressed) this.toggleHelp();
-    if (!this.modeAsked && this.players.length) { this.modeAsked = true; this.openMode(0); }
+    if (!this.modeAsked && this.players.length) {
+      this.modeAsked = true;
+      // Coming back from a guest game (#solo link): straight to the profiles.
+      if (this.game.bootSolo) { this.game.bootSolo = false; this.openProfiles(); } else this.openMode(0);
+    }
   }
 
-  // ---------- start menu (Island or Story) ----------
+  // ---------- start menu (Island, Story or Solo) ----------
 
   openMode(index = 0) {
     if (this.helpEl) this.toggleHelp();
@@ -600,22 +665,37 @@ export class HubScene extends BaseScene {
   }
 
   renderMode() {
-    const opts = ['island', 'story'].map((k, i) => `<div class="vote-opt mode-opt ${i === this.modeIndex ? 'on' : ''}">
-      <div class="mode-icon">${k === 'island' ? '🏝️' : '📖'}</div><b>${t(`mode.${k}`)}</b><small>${t(`mode.${k}.sub`)}</small></div>`).join('');
+    const icons = { island: '🏝️', story: '📖', solo: '🗺️' };
+    const opts = MODES.map((k, i) => `<div class="vote-opt mode-opt ${i === this.modeIndex ? 'on' : ''}">
+      <div class="mode-icon">${icons[k]}</div><b>${t(`mode.${k}`)}</b><small>${t(`mode.${k}.sub`)}</small></div>`).join('');
     this.modeEl.innerHTML = `<div class="results-title">${t('mode.title')}</div>
       <div class="vote-row">${opts}</div>
       <div class="results-footer">${t('mode.hint')}</div>`;
   }
 
+  /** Solo: pick or create a profile, then travel to the solo island. */
+  openProfiles() {
+    this.profilePicker = new ProfilePicker(this, {
+      onDone: (profile, deviceId) => {
+        this.profilePicker = null;
+        this.launching = true;
+        this.game.enterSolo(profile, deviceId);
+      },
+      onCancel: () => { this.profilePicker = null; this.openMode(MODES.indexOf('solo')); },
+    });
+  }
+
   /** True while the menu is open (the island waits behind it). */
   updateMode(dt) {
+    if (this.profilePicker) { this.profilePicker.update(dt); return true; }
     if (!this.modeEl) return false;
     this.modeT += dt;
     for (const p of this.players) {
       const d = this.input(p);
       if (!d) continue;
-      if (d.stepX && (d.stepX > 0 ? 1 : 0) !== this.modeIndex) {
-        this.modeIndex = d.stepX > 0 ? 1 : 0;
+      const to = THREE.MathUtils.clamp(this.modeIndex + d.stepX, 0, MODES.length - 1);
+      if (d.stepX && to !== this.modeIndex) {
+        this.modeIndex = to;
         this.game.audio.play('select');
         this.renderMode();
       }
@@ -623,7 +703,10 @@ export class HubScene extends BaseScene {
         this.modeEl.remove();
         this.modeEl = null;
         this.game.audio.play('join');
-        if (this.modeIndex === 1) { this.launching = true; this.game.startGame('story'); }
+        const mode = MODES[this.modeIndex];
+        if (mode === 'solo') this.openProfiles();
+        else if (this.solo) { this.launching = true; this.game.leaveSolo(mode); }
+        else if (mode === 'story') { this.launching = true; this.game.startGame('story'); }
         return true;
       }
     }
@@ -1096,6 +1179,7 @@ export class HubScene extends BaseScene {
     if (e.potCd > 0 || e.p.colorIndex === index) return;
     e.potCd = 1;
     if (this.game.roster.setColor(e.p, index)) {
+      this.game.syncProfile?.(e.p);
       this.recolor(e);
       this.game.audio.play('join');
       this.game.ui.toast(t('hub.newColor', { name: e.p.name }));
@@ -1115,6 +1199,7 @@ export class HubScene extends BaseScene {
 
   cycleHat(e) {
     const h = this.game.roster.cycleHat(e.p);
+    this.game.syncProfile?.(e.p);
     e.ch.setHat(h);
     e.ch.squash(1.25);
     this.game.audio.play('select');
@@ -1256,7 +1341,7 @@ export class HubScene extends BaseScene {
   updatePads(dt) {
     const n = this.entities.size;
     const need = Math.max(1, Math.ceil(n / 2));
-    for (const pad of PADS) {
+    for (const pad of this.pads) {
       const hidden = pad.edu && !this.eduOn;
       pad.group.visible = !hidden;
       if (hidden) {
@@ -1274,13 +1359,14 @@ export class HubScene extends BaseScene {
       pad.fill.scale.set(k, 1, k);
       pad.icon.rotation.y += dt * (0.8 + pad.progress * 6);
       pad.icon.position.y = 3.3 + Math.sin(this.time * 1.8 + pad.angle * 3) * 0.2 + pad.progress * 0.6;
-      const sub = n === 0 ? t('hub.padJoin') : on > 0 ? t('hub.padReady', { on, need }) : t('hub.padNeed', { need });
+      const sub = n === 0 ? t('hub.padJoin') : pad.guest ? t('solo.guestSub') : this.solo ? t('solo.padSub') : on > 0 ? t('hub.padReady', { on, need }) : t('hub.padNeed', { need });
       const html = `${pad.edu ? `<span class="edu-badge small">${t('badge.edu')}</span>` : ''}${esc(t(`game.${pad.key}`))}<small>${esc(sub)}</small>`;
       if (pad.label.innerHTML !== html) pad.label.innerHTML = html;
       this.game.ui.place(pad.label, pad.labelPos, this.camera);
       if (pad.progress >= 1 && !this.launching) {
         this.launching = true;
-        this.game.startGame(pad.key);
+        if (pad.guest) this.game.launchGuest(pad.guest);
+        else this.game.startGame(pad.key, pad.opts);
       }
     }
   }
@@ -1313,6 +1399,7 @@ export class HubScene extends BaseScene {
   }
 
   animateWorld(dt) {
+    if (this.lampPivot) this.lampPivot.rotation.y += dt * 0.8;
     const t2 = this.time;
     this.foam.scale.setScalar(1 + Math.sin(t2 * 1.3) * 0.006);
     for (const s of this.sparkles) s.scale.setScalar(0.3 + ((Math.sin(t2 * 2 + s.userData.phase) + 1) / 2) * 0.8);
@@ -1385,7 +1472,7 @@ export class HubScene extends BaseScene {
       this.game.ui.place(e.tag, e.tagPos, this.camera);
     }
     const goal = this.game.roster.nextHatGoal();
-    const hint = this.players.length ? `<div class="pill" style="font-size:clamp(12px,1.1vw,18px)">${t('hub.hint')}</div>` : '';
+    const hint = this.players.length ? `<div class="pill" style="font-size:clamp(12px,1.1vw,18px)">${t(this.solo ? 'solo.hint' : 'hub.hint', { name: this.game.solo?.profile.name || '' })}</div>` : '';
     this.game.ui.setCorner(`${hint}<div class="pill"><span class="star-icon"></span><b>${this.game.roster.stars}</b>${goal ? `<span style="opacity:.7">${t('hub.nextHat', { n: goal.stars })}</span>` : ''}</div>`);
     this.game.ui.bar(this.players, (p) => esc(p.deviceLabel));
   }

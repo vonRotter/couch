@@ -38,6 +38,8 @@ import { SplashScene } from './scenes/splash.js';
 import { CaveScene } from './scenes/cave.js';
 import { DogfightScene } from './scenes/dogfight.js';
 import { StoryScene, STORY_GAMES } from './scenes/story.js';
+import { activateProfile, updateProfile, soloSaveKey } from './core/profiles.js';
+import { setVoice, voiceOn, say } from './core/voice.js';
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -82,6 +84,12 @@ class Game {
     this.input = new Input();
     this.roster = new Roster();
     setLang(this.roster.progress.lang || 'en');
+    setVoice(this.roster.progress.voice === true);
+    // Solo island state: { profile } while a solo profile is playing, else null.
+    this.solo = null;
+    // Guest games link back with #solo: go straight to the profiles after the first join.
+    this.bootSolo = location.hash === '#solo';
+    if (this.bootSolo) history.replaceState(null, '', location.pathname + location.search);
     setButtonSource((b, only) => {
       let devs = only ? [this.input.get(only)].filter(Boolean) : this.roster.players.map((p) => this.input.get(p.deviceId)).filter(Boolean);
       if (!devs.length) devs = [this.input.get('kb0'), ...[0, 1, 2, 3].map((i) => this.input.get(`gp${i}`)).filter((d) => d.connected)];
@@ -125,8 +133,8 @@ class Game {
 
   goHub(fromGame = null) {
     if (this.campaign) { this.backToStory(); return; }
-    // Leaving the story goes back to the start menu (Island or Story).
-    const make = () => new HubScene(this, { fromGame: fromGame === 'story' ? null : fromGame, chooseMode: fromGame === 'story' });
+    // Leaving the story goes back to the start menu (Island or Story). Solo games return to the solo island.
+    const make = () => new HubScene(this, { fromGame: fromGame === 'story' ? null : fromGame, chooseMode: fromGame === 'story', solo: !!this.solo });
     if (!this.current) this.setScene(make);
     else this.transition(make);
   }
@@ -154,6 +162,72 @@ class Game {
     this.campaign = null;
     const result = { id: c.id, stats: c.stats, quit: !c.stats };
     this.transition(() => new StoryScene(this, { key: 'story', result }));
+  }
+
+  // ---------- solo island ----------
+
+  /** Start playing as a solo profile: one player, the profile's own saves, the solo island. */
+  enterSolo(profile, deviceId) {
+    const keep = this.roster.players.find((p) => p.deviceId === deviceId) || this.roster.players[0];
+    for (const p of [...this.roster.players]) if (p !== keep) this.roster.leave(p);
+    activateProfile(profile);
+    this.roster.useSave(soloSaveKey(profile.id));
+    this.solo = { profile };
+    if (keep) this.applyProfile(keep);
+    setVoice(profile.voice);
+    if (profile.voice) say(t('solo.welcome', { name: profile.name }));
+    this.transition(() => new HubScene(this, { solo: true }));
+  }
+
+  /** Give a player the solo profile's name, color and hat. */
+  applyProfile(player) {
+    const prof = this.solo?.profile;
+    if (!prof) return;
+    player.profileName = prof.name;
+    this.roster.applyColor(player, prof.colorIndex);
+    player.hat = prof.hat ?? 1;
+  }
+
+  /** Back to the shared island (or the story), with the shared saves. */
+  leaveSolo(mode = 'island') {
+    this.solo = null;
+    this.roster.useSave();
+    for (const p of this.roster.players) delete p.profileName;
+    setVoice(this.roster.progress.voice === true);
+    if (mode === 'story') this.startGame('story');
+    else this.transition(() => new HubScene(this, {}));
+  }
+
+  /** Keep the solo profile in step with the player's hat and color. */
+  syncProfile(player) {
+    if (!this.solo) return;
+    const prof = this.solo.profile;
+    prof.hat = player.hat;
+    prof.colorIndex = player.colorIndex;
+    updateProfile(prof);
+  }
+
+  /**
+   * Open a guest game (its own repo on the same site) for the solo profile. It reads the profile
+   * from the link (or localStorage 'couch.profile') and returns to the solo island via #solo.
+   */
+  launchGuest(name) {
+    const prof = this.solo?.profile;
+    if (!prof) return;
+    this.roster.save();
+    const base = location.hostname.endsWith('github.io') ? location.origin : 'https://vonrotter.github.io';
+    const back = location.origin + location.pathname + '#solo';
+    const q = new URLSearchParams({ profile: prof.id, name: prof.name, return: back, lang: getLang() });
+    this.audio.play('whoosh');
+    this.ui.wipe(() => { location.href = `${base}/${name}/?${q}`; });
+  }
+
+  toggleVoice() {
+    const on = !voiceOn();
+    setVoice(on);
+    if (this.solo) { this.solo.profile.voice = on; updateProfile(this.solo.profile); } else { this.roster.progress.voice = on; this.roster.save(); }
+    this.ui.toast(t(on ? 'voice.on' : 'voice.off'));
+    if (on) say(t('voice.on'));
   }
 
   toggleLanguage() {
@@ -238,6 +312,7 @@ class Game {
     this.input.update();
     if (this.input.mutePressed) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
     if (this.input.pressed.has('KeyN')) this.toggleLanguage();
+    if (this.input.pressed.has('KeyV')) this.toggleVoice();
     if (this.input.menuPressed && !this.switching && this.current && !(this.current instanceof HubScene)) {
       if (this.pause) this.closePause();
       else this.openPause();

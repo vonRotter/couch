@@ -14,6 +14,7 @@ import { BossMeadowScene } from './story/boss-meadow.js';
 import { BossFrostScene } from './story/boss-frost.js';
 import { BossKitchenScene } from './story/boss-kitchen.js';
 import { BossSpaceScene } from './story/boss-space.js';
+import { say } from '../core/voice.js';
 
 // Story campaign map: four floating lands along a path, three game stages and a Grumble King
 // boss in each. Beans hop from node to node; A starts the selected stage, stick left/right picks
@@ -571,6 +572,7 @@ export class StoryScene extends BaseScene {
       const tip = page.speaker === 'king' && !say;
       return `<div class="line ${say ? 'say' : ''} ${tip ? 'tip' : ''}">${esc(s)}</div>`;
     }).join('');
+    say(page.lines.map((k) => t(k)).join(' '));
     const html = `${page.speaker === 'king' ? `<div class="speaker">${esc(t('story.speaker.king'))}</div>` : ''}${lines}
       <div class="foot">${dots}<span class="blink">${esc(t(last ? 'story.cardLast' : 'story.cardHint'))}</span></div>`;
     if (!this.cardEl) this.cardEl = this.game.ui.label('story-card');
@@ -763,6 +765,7 @@ export class StoryScene extends BaseScene {
       ${best ? `<div class="results-sub">${esc(t('story.result.best', { n: best }))}</div>` : ''}
       <div class="results-footer blink" style="margin-top:12px">${esc(t('story.startHint'))}</div>`;
     this.setPanel(html, 'panel story-goal');
+    say(`${t('story.goalTitle')}. ${g.main}`);
   }
 
   setPanel(html, cls) {
