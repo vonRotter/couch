@@ -59,11 +59,16 @@ export function makeDiff(L, n) {
   return {
     L, n,
     gSpeed: 3.3 + 0.12 * L + 0.05 * n,
-    leash: 11,
-    aggro: 7.5 + 0.3 * L,
+    leash: 13,
+    aggro: 9 + 0.3 * L,
+    windup: Math.max(0.3, 0.48 - 0.02 * L), // grumble knights raise the sword this long before a swing
+    waves: 2 + Math.floor(L / 2) + (n >= 3 ? 1 : 0), // sally waves per castle / camp
+    waveSize: Math.min(4, 2 + Math.floor(L / 3) + Math.floor(n / 3)),
+    waveGap: Math.max(14, 26 - 1.5 * L - n),
+    firstWave: 4,
     swingGap: Math.max(0.45, 0.95 - 0.06 * L - 0.04 * n),
     shield: 0.2 + 0.05 * L,
-    dizzy: 1.2 + 0.05 * L,
+    dizzy: 0.5 + 0.03 * L,
     reserves: 1 + Math.floor(L / 2) + Math.floor((n - 1) / 2),
     respawn: Math.max(6, 14 - L - 0.5 * n),
     archerRate: Math.max(1.6, 3.4 - 0.18 * L - 0.12 * n),
@@ -222,6 +227,7 @@ export class CastleCampaignScene extends MiniGame {
       if (!TYPE[mk.ch] || extra[mk.ch] === false) continue;
       this.grumbles.add(TYPE[mk.ch], mk.c, mk.r);
     }
+    this.grumbles.setupSallies();
     // Tutorial ghosts.
     this.ghostMat = new THREE.MeshToonMaterial({ color: 0xfff3a0, gradientMap: toon(0xffffff).gradientMap, transparent: true, opacity: 0.45 });
     this.hints = [];
@@ -828,7 +834,8 @@ export class CastleCampaignScene extends MiniGame {
     if (a.state !== 'fly') return;
     const bounce = () => { a.state = 'drop'; a.vx *= -0.2; a.vy = 4; };
     if (a.team === 0) {
-      if (this.siege.hitPoint(tx, ty, a.owner)) { bounce(); return; }
+      // Bean arrows also hit cages, levers and catapults (trooper arrows only aim at grumbles).
+      if (a.owner.kind !== 'trooper' && this.siege.hitPoint(tx, ty, a.owner)) { bounce(); return; }
       for (const g of this.grumbles.list) {
         if (g.state !== 'play') continue;
         const b = g.body;
@@ -848,7 +855,7 @@ export class CastleCampaignScene extends MiniGame {
         if (!this.troopers.active(tr)) continue;
         const b = tr.body;
         if (Math.abs(tx - b.x) < b.w / 2 + 0.1 && ty > b.y && ty < b.y + b.h + 0.1) {
-          if (this.troopers.knock(tr, Math.sign(a.vx) || 1, 5, this.diff.dizzy)) { bounce(); return; }
+          if (this.troopers.knock(tr, Math.sign(a.vx) || 1, 5, this.diff.dizzy, { from: a.x - a.vx })) { bounce(); return; }
         }
       }
     }
@@ -1193,6 +1200,19 @@ export class CastleCampaignScene extends MiniGame {
     }
   }
 
+  /** Where a bonked trooper floats back to: the last tent behind it (or the trooper camp). */
+  trooperRespawn(x) {
+    let best = null;
+    for (const tn of this.tents) if (tn.x <= x + 0.5 && (!best || tn.x > best.x)) best = tn;
+    const camp = this.troopers.camp;
+    const base = best && best.x > camp.x ? best : camp;
+    const c = Math.floor(base.x);
+    for (let r = Math.max(1, Math.floor(base.y) - 1); r < ROWS - 2; r++) {
+      if (!this.map.solidFor(c, r, 0) && !this.map.solidFor(c, r + 1, 0) && this.map.solidFor(c, r - 1, 0)) return { x: c + 0.5, y: r };
+    }
+    return { x: base.x, y: base.y };
+  }
+
   /** Where the troopers need the most attention: the first waiting one, or the middle of the march. */
   troopFocus() {
     let front = null, sum = 0, n = 0;
@@ -1358,6 +1378,8 @@ export class CastleCampaignScene extends MiniGame {
     this.confettiOrigin = new THREE.Vector3(this.camX, 14, 0);
     const lines = [t('kc.res.home', { n: home, total })];
     if (won) lines.push(t('kc.res.time', { t: clock(this.result.time), par: clock(this.level.par) }));
+    const trooperBonks = this.troopers.list.reduce((a, tr) => a + tr.bonks, 0);
+    if (trooperBonks) lines.push(t('kc.res.battle', { n: trooperBonks }));
     const ranked = [...this.heroes].sort((a, b) => (b.freed + b.bonks + b.built / 10) - (a.freed + a.bonks + a.built / 10));
     this.finish({
       title: won ? (this.level.finale ? t('kc.res.finale') : t('kc.res.win')) : t('kc.res.lose'),

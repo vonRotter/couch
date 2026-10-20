@@ -244,7 +244,7 @@ export class Siege {
     for (const o of this.scene.grumbles.targets()) {
       const dx = o.body.x - p.x, dy = o.body.y + 0.5 - p.y;
       if (Math.abs(dx) > 1.7 || Math.abs(dy) > 1.6) continue;
-      if (o.kind === 'trooper') this.scene.troopers.knock(o, Math.sign(dx) || dir, 6, this.diff.dizzy + 0.4);
+      if (o.kind === 'trooper') this.scene.troopers.knock(o, Math.sign(dx) || dir, 6, this.diff.dizzy + 0.4, { from: p.x - dir });
       else this.scene.hitHero(o, null, { dir: Math.sign(dx) || dir, big: false });
     }
   }

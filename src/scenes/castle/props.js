@@ -167,8 +167,31 @@ export function makeHintGhost(ladder, mat) {
 }
 
 /** A bean trooper: cream bean with a silver helmet and a golden plume. */
-export function makeTrooper(i = 0) {
+export function makeTrooper(i = 0, type = 'sword') {
   const ch = new Character(TROOPER_COLOR, { hat: 0 });
+  // Soldier gear in the right hand (forward is +z in the bean's own space).
+  const gear = new THREE.Group();
+  gear.position.set(0.32, 0.5, 0.22);
+  if (type === 'sword') {
+    gear.add(mesh(sharedGeo('kcTBlade', () => new RoundedBoxGeometry(0.12, 0.7, 0.08, 2, 0.05)), toon(0xffe47a), 0, 0.45, 0));
+    gear.add(mesh(sharedGeo('kcTGuard', () => new THREE.BoxGeometry(0.3, 0.07, 0.1)), toon(0x4c7fd8), 0, 0.1, 0));
+  } else if (type === 'archer') {
+    const bow = mesh(sharedGeo('kcTBow', () => new THREE.TorusGeometry(0.3, 0.035, 6, 12, Math.PI)), toon(0xc98b5a), 0, 0.2, 0.05);
+    bow.rotation.y = Math.PI / 2;
+    bow.rotation.z = -Math.PI / 2;
+    gear.add(bow);
+    const q = mesh(sharedGeo('kcTQuiver', () => new THREE.CylinderGeometry(0.08, 0.07, 0.4, 8)), toon(0xa0704a), -0.55, 0.25, -0.35);
+    q.rotation.x = 0.4;
+    gear.add(q);
+  } else {
+    gear.position.set(0.05, 0.45, 0.42);
+    const disc = mesh(sharedGeo('kcTShield', () => new THREE.CylinderGeometry(0.34, 0.34, 0.07, 18)), toon(0x4c7fd8));
+    disc.rotation.x = Math.PI / 2;
+    const boss = mesh(sharedGeo('kcTBoss', () => new THREE.SphereGeometry(0.09, 10, 8)), toon(GOLD), 0, 0, 0.05);
+    gear.add(disc, boss);
+  }
+  ch.pivot.add(gear);
+  ch.gear = gear;
   const helmet = new THREE.Group();
   helmet.add(mesh(sharedGeo('kcHelm', () => new THREE.SphereGeometry(0.36, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), toon(0xb8c2e0), 0, -0.1, 0));
   helmet.add(mesh(sharedGeo('kcHelmRim', () => new THREE.TorusGeometry(0.36, 0.04, 6, 18)), toon(0x9aa6c8), 0, -0.1, 0));

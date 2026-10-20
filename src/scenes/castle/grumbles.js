@@ -7,10 +7,12 @@ import { t } from '../../core/i18n.js';
 import { makeGrumbleGear, mesh, GRUMBLE_COLORS, FRIEND_COLOR } from './props.js';
 import { CASTLE, DOOR, EMPTY, KNIGHT_HP, WOOD, LADDER, PAD, ROWS } from './tilemap.js';
 
-// The grumble army. Knights guard a post and push beans and troopers around with pink foam swords;
-// archers stand on the walls and shoot suction-cup arrows; builders put dug-out castle stone back
-// and take bean ladders and bridges apart. Bonked grumbles float home in a bubble and come back a
-// few times; when a post runs out of grumbles, the last ones simply give up and turn friendly.
+// The grumble army. Knights guard a post and charge beans and troopers with pink foam swords (they
+// raise the sword for a moment before each swing); archers stand on the walls and draw, then shoot
+// suction-cup arrows; builders put dug-out castle stone back and take bean ladders apart. Castles
+// (and field camps) also send out sally waves that march at the troopers. Bonked grumbles float
+// home in a bubble and come back a few times; when a post runs out, the last ones turn friendly.
+// Sally grumbles simply float back into their castle and stay there.
 
 const GW = 0.8, GH = 1.25;
 const GPHYS = { speed: 3.6, accel: 40, airAccel: 30, jump: 14, jump2: 0, doubleJump: false, gravity: 38, fallMul: 1.6, coyote: 0.1, buffer: 0.12, maxFall: -20 };
@@ -49,7 +51,7 @@ export class Grumbles {
       facing: -1, swingT: 0, swingCd: 0, react: 0.5, think: Math.random() * 0.3, goalX: x, target: null,
       jumpHold: 0, stuckT: 0, lastX: x, reserves: this.diff.reserves, respawnT: 0, bub: null,
       fireT: 1 + Math.random() * this.diff.archerRate, work: 0, job: null, jobT: 0, ignore: new Map(), shieldT: 0, aim: 0,
-      zone: this.zoneOf(c, r), sq: 1,
+      zone: this.zoneOf(c, r), sq: 1, windT: 0, drawT: 0, drawTarget: null, sally: false,
       get name() { return t('kc.grumble'); },
     };
     this.list.push(g);
@@ -67,6 +69,72 @@ export class Grumbles {
   }
 
   inPlay(g) { return g.state === 'play'; }
+
+  // ---------- sally waves ----------
+
+  /**
+   * Every castle (and every field camp of knights) sends out a few waves of grumbles that march at
+   * the troopers. Castles send them out of a side door just in front of their walls.
+   */
+  setupSallies() {
+    const d = this.diff, m = this.map;
+    this.sallies = [];
+    const seen = new Set();
+    for (const g of [...this.list]) {
+      const [z0, z1] = g.zone;
+      const castle = z1 - z0 > 9;
+      const key = castle ? `c${z0}` : `f${Math.round(g.home.x)}`;
+      if (seen.has(key) || (!castle && g.type !== 'knight')) continue;
+      seen.add(key);
+      let x = castle ? z0 + 2.5 : g.home.x, y = castle ? -1 : g.home.y;
+      if (castle) {
+        // First dry ground just outside the wall (past a moat if there is one).
+        for (let k = 0; k < 8 && y < 0; k++) { y = m.landing(Math.floor(x), ROWS - 1, 1); if (y < 0) x -= 1; }
+        if (y < 0) continue;
+      }
+      const inside = castle ? { x: (z0 + z1) / 2 + 0.5, y: g.home.y } : { x, y };
+      this.sallies.push({ x, y, inside, castle, waves: d.waves, size: d.waveSize, t: d.firstWave + Math.random() * 6, alive: [] });
+    }
+  }
+
+  updateSallies(dt) {
+    const d = this.diff;
+    for (const S of this.sallies) {
+      S.alive = S.alive.filter((g) => g.state === 'play' || g.state === 'bubble');
+      if (S.waves <= 0) continue;
+      // Only once the troopers or beans are coming close.
+      const near = this.targets().some((o) => Math.abs(o.body.x - S.x) < 32);
+      if (!near) continue;
+      S.t -= dt;
+      if (S.t > 0 || S.alive.length >= S.size) continue;
+      S.waves--;
+      S.t = d.waveGap;
+      const n = S.size - S.alive.length;
+      for (let i = 0; i < n; i++) {
+        const type = d.L >= 3 && i === 2 ? 'archer' : 'knight';
+        const g = this.add(type, Math.floor(S.x + (S.castle ? -i * 0.7 : (i - (n - 1) / 2) * 0.8)), S.y);
+        g.body.x = S.x - (S.castle ? i * 0.7 : 0);
+        g.sally = true;
+        g.reserves = 0;
+        g.post = g.body.x;
+        g.home = { ...S.inside };
+        g.invuln = 0.8;
+        g.body.vy = 7;
+        g.facing = -1;
+        S.alive.push(g);
+        this.scene.puffs.burst(new THREE.Vector3(g.body.x, g.body.y + 0.7, 0.5), g.color, { count: 12, size: 0.4 });
+      }
+      this.scene.floater(t('kc.sally'), new THREE.Vector3(S.x, S.y + 2.6, 0.5), '#8a63f0', 1.6);
+      this.scene.game.audio.play('trap');
+    }
+  }
+
+  /** x of the nearest bean or trooper on the field (sally grumbles march toward it). */
+  nearestFoeX(x) {
+    let best = null, bd = 1e9;
+    for (const o of this.targets()) { const dd = Math.abs(o.body.x - x); if (dd < bd) { bd = dd; best = o.body.x; } }
+    return best;
+  }
 
   /** Things a grumble can push: beans in play and troopers on the march. */
   targets() {
@@ -128,6 +196,12 @@ export class Grumbles {
     g.bubble.position.set(b.x, b.y + 0.7, 0.2);
     if (B.t >= 1) {
       g.bubble.visible = false;
+      if (g.sally) {
+        // Sally grumbles stay home after a bonk.
+        g.state = 'gone';
+        this.scene.puffs.burst(new THREE.Vector3(b.x, b.y + 0.7, 0.5), g.color, { count: 10, size: 0.35 });
+        return;
+      }
       g.state = 'rest';
       g.respawnT = this.diff.respawn;
       this.scene.puffs.burst(new THREE.Vector3(b.x, b.y + 0.7, 0.5), g.color, { count: 10, size: 0.35 });
@@ -160,7 +234,9 @@ export class Grumbles {
   }
 
   update(dt, playing) {
+    if (playing && this.sallies) this.updateSallies(dt);
     for (const g of this.list) {
+      if (g.state === 'gone') continue;
       g.invuln = Math.max(0, g.invuln - dt);
       g.wobble = Math.max(0, g.wobble - dt);
       g.swingT = Math.max(0, g.swingT - dt);
@@ -202,6 +278,11 @@ export class Grumbles {
         g.reserves++;
       }
     }
+    // Sally grumbles that went home leave the field.
+    if (this.list.some((g) => g.state === 'gone')) {
+      for (const g of this.list) if (g.state === 'gone') { this.scene.scene.remove(g.group, g.bubble); if (g.pips) this.scene.scene.remove(g.pips); }
+      this.list = this.list.filter((g) => g.state !== 'gone');
+    }
   }
 
   // ---------- knights ----------
@@ -209,17 +290,26 @@ export class Grumbles {
   knightInput(g, dt) {
     const inp = { x: 0, y: 0, a: false, aPressed: false };
     const b = g.body, d = this.diff;
+    // Wind-up: the sword goes up, then the swing comes down.
+    if (g.windT > 0) {
+      g.windT -= dt;
+      if (g.windT <= 0) this.swing(g);
+      return inp;
+    }
     g.think -= dt;
     if (g.think <= 0) {
       g.think = 0.3;
       g.target = null;
       let best = 1e9;
+      const aggro = g.sally ? 16 : d.aggro;
       for (const o of this.targets()) {
-        if (Math.abs(o.body.x - g.post) > d.leash) continue;
+        if (!g.sally && Math.abs(o.body.x - g.post) > d.leash) continue;
         const dist = Math.hypot(o.body.x - b.x, (o.body.y - b.y) * 1.5);
-        if (dist < d.aggro && dist < best) { best = dist; g.target = o; }
+        if (dist < aggro && dist < best) { best = dist; g.target = o; }
       }
-      g.goalX = g.target ? g.target.body.x : g.post + Math.sin(this.scene.time * 0.6 + g.home.x) * 1.5;
+      if (g.target) g.goalX = g.target.body.x;
+      else if (g.sally) g.goalX = this.nearestFoeX(b.x) ?? g.post;
+      else g.goalX = g.post + Math.sin(this.scene.time * 0.6 + g.home.x) * 1.5;
     }
     g.react -= dt;
     const dx = g.goalX - b.x;
@@ -230,7 +320,12 @@ export class Grumbles {
       if (Math.abs(tdx) < 1.5 && Math.abs(tdy) < 1.2) {
         g.facing = Math.sign(tdx) || g.facing;
         if (Math.abs(tdx) < 0.9) inp.x = 0;
-        if (g.react <= 0 && g.swingCd <= 0) { this.swing(g); g.react = d.swingGap * (0.8 + Math.random() * 0.5); }
+        if (g.react <= 0 && g.swingCd <= 0) {
+          g.windT = d.windup;
+          g.sq = 0.85;
+          g.react = d.swingGap * (0.8 + Math.random() * 0.5);
+          inp.x = 0;
+        }
       } else g.react = Math.max(g.react, 0.3);
       if (Math.abs(tdx) < 1.6 && tdy > 1.0 && b.grounded) { inp.aPressed = true; g.jumpHold = 0.35; }
     }
@@ -277,7 +372,7 @@ export class Grumbles {
     for (const o of this.targets()) {
       const dx = (o.body.x - b.x) * g.facing, dy = o.body.y - b.y;
       if (dx > -0.3 && dx < 1.55 && Math.abs(dy) < 1.3) {
-        if (o.kind === 'trooper') this.scene.troopers.knock(o, g.facing, 7, this.diff.dizzy);
+        if (o.kind === 'trooper') this.scene.troopers.knock(o, g.facing, 7, this.diff.dizzy, { from: b.x });
         else this.scene.hitHero(o, g, { dir: g.facing, big: false, melee: true });
       }
     }
@@ -307,10 +402,18 @@ export class Grumbles {
         if (dist < d.archerRange && Math.abs(ox) > 1.5 && dist < bd && this.scene.lineClear(b.x, b.y + 1, o.body.x, o.body.y + 0.6)) { bd = dist; best = o; }
       }
       if (best) {
+        // Draw first (readable), shoot when the draw is done.
         g.facing = Math.sign(best.body.x - b.x) || g.facing;
-        this.shoot(g, best);
+        g.drawT = 0.5;
+        g.drawTarget = best;
         g.fireT = d.archerRate * (0.85 + Math.random() * 0.3);
       } else g.fireT = 0.5;
+    }
+    if (g.drawT > 0) {
+      g.drawT -= dt;
+      g.aim = 0.1;
+      inp.x = 0;
+      if (g.drawT <= 0 && g.drawTarget && (g.drawTarget.state === 'play' || this.scene.troopers.active(g.drawTarget))) this.shoot(g, g.drawTarget);
     }
     return inp;
   }
@@ -430,9 +533,27 @@ export class Grumbles {
       g.pivot.rotation.z = Math.sin(this.scene.time * 18) * g.wobble * 0.5 + (g.state === 'bubble' ? this.scene.time * 3 : 0);
       g.group.visible = g.state !== 'rest' && (g.invuln <= 0.4 || Math.floor(this.scene.time * 14) % 2 === 0 || g.hits > 0);
       const G = g.gear.userData;
-      if (G.sword) G.sword.rotation.z = g.swingT > 0 ? 1.3 - (1 - g.swingT / 0.22) * 3 : g.shieldT > 0 ? 1.4 : -0.4;
+      // Wind-up: sword held high (and a lean back), then the sweep.
+      if (G.sword) G.sword.rotation.z = g.windT > 0 ? 2.2 : g.swingT > 0 ? 1.3 - (1 - g.swingT / 0.22) * 3 : g.shieldT > 0 ? 1.4 : -0.4;
+      if (g.windT > 0) g.pivot.rotation.z += -g.facing * 0.2;
       if (G.hammer) G.hammer.rotation.z = g.work > 0 ? -0.6 + Math.sin(this.scene.time * 26) * 0.8 : -0.3;
-      if (G.bow) G.bow.rotation.z = -Math.PI / 2 + (g.aim > 0 ? 0.3 : 0);
+      if (G.bow) G.bow.rotation.z = -Math.PI / 2 + (g.drawT > 0 ? 0.5 : g.aim > 0 ? 0.3 : 0);
+      if (G.bow) G.bow.scale.set(1, g.drawT > 0 ? 0.8 : 1, 1);
+      // Hit pips.
+      if (!g.pips) {
+        g.pips = new THREE.Group();
+        for (let i = 0; i < 2; i++) { const st = makeStar(COLORS.gold); st.scale.setScalar(0.26); g.pips.add(st); }
+        this.scene.scene.add(g.pips);
+      }
+      g.pips.visible = g.state === 'play' && g.hits > 0;
+      if (g.pips.visible) {
+        g.pips.position.set(b.x, b.y + 1.55, 0.3);
+        g.pips.children.forEach((st, i) => {
+          const a = this.scene.time * 5 + i * Math.PI;
+          st.visible = i < g.hits;
+          st.position.set(Math.cos(a) * 0.45, 0, Math.sin(a) * 0.45);
+        });
+      }
     }
   }
 }
