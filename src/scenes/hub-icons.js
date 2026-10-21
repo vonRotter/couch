@@ -345,6 +345,29 @@ const ICONS = {
     g.add(mesh(cyl('fhPole', 0.03, 0.03, 0.9, 6), toon(COLORS.ink), 0.5, 0.2, 0));
     g.add(mesh(box('fhFlag', 0.4, 0.24, 0.03, 0.02), toon(0xffc93c), 0.72, 0.5, 0));
   },
+  duckhunt(g) {
+    // A blue duck inside a red laser crosshair.
+    const body = mesh(sph(0.55), toon(0x3f7be6), 0, -0.1, 0);
+    body.scale.set(1.35, 0.85, 0.9);
+    g.add(body);
+    g.add(mesh(sph(0.34), toon(0x2fae62), 0.62, 0.38, 0));
+    const beak = mesh(sph(0.17), toon(0xffa630), 0.98, 0.32, 0);
+    beak.scale.set(1.6, 0.5, 1);
+    g.add(beak);
+    g.add(mesh(sph(0.08), toon(COLORS.white), 0.72, 0.48, 0.26));
+    g.add(mesh(sph(0.045), toon(COLORS.ink), 0.75, 0.48, 0.32));
+    const wing = mesh(sph(0.42), toon(0x2a59bd), -0.1, 0.25, 0.35);
+    wing.scale.set(1.1, 0.25, 0.8);
+    wing.rotation.x = -0.6;
+    g.add(wing);
+    g.add(mesh(sharedGeo('icon-dhRing', () => new THREE.TorusGeometry(0.95, 0.07, 8, 32)), toon(0xff3b5c), 0, 0, 0.5));
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 2;
+      const tick = mesh(box('dhTick', 0.1, 0.4, 0.1, 0.03), toon(0xff3b5c), Math.sin(a) * 0.95, Math.cos(a) * 0.95, 0.5);
+      tick.rotation.z = -a;
+      g.add(tick);
+    }
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

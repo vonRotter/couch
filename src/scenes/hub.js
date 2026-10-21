@@ -50,6 +50,7 @@ const COOP_PADS = [
   { key: 'splash', color: 0x3a6fe0, css: '#2257c8' },
   { key: 'cave', color: 0x7a7fa8, css: '#565c8c' },
   { key: 'dogfight', color: 0xd62839, css: '#b81d2c' },
+  { key: 'duckhunt', color: 0x00d4e6, css: '#00a3b8' },
 ];
 
 // Solo island: one player, games that work alone, and guest games from other repos
@@ -60,6 +61,7 @@ const SOLO_PADS = [
   { key: 'keep', color: 0xb79fd6, css: '#8a63c9' },
   { key: 'guides', color: 0x9a6a44, css: '#8a5a32' },
   { key: 'castle', color: 0xd9a066, css: '#b8752f', opts: { mode: 'campaign' } },
+  { key: 'duckhunt', color: 0x00d4e6, css: '#00a3b8' },
   { key: 'tachyon', color: 0x2f3e8f, css: '#3b4fbf', guest: 'tachyon' },
   { key: 'starlite', color: 0xff6fb5, css: '#e0459a', guest: 'starlite' },
   { key: 'foothold', color: 0x6b8f3a, css: '#5a7d2a', guest: 'foothold' },

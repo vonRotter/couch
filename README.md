@@ -44,6 +44,13 @@ paint. Climb too steeply or too slowly and you stall: the engine sputters and th
 you pick up speed again. Three paint hits and you parachute down in confetti and are back in the air
 3 seconds later; crashing is just a puff. Land gently on the runway to wash the paint off.
 
+**Laser Ducks** (classic Duck Hunt with laser guns; on both islands). Vote Game A (one duck), Game B
+(two ducks) or Clay Shooting, and with 2+ players Team or Versus. Every player has a crosshair in
+their color (stick, with a little aim assist) and fires a laser with A; on a computer the mouse aims
+and clicks for player 1, like a light gun. Three shots per flight, ten ducks per round, and each round
+needs a rising number of hits (6, then 7, 8 and 9); miss it and the game is over. The dog fetches
+what you hit and laughs when everyone misses. The best score is saved (per profile on the solo island).
+
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
@@ -336,8 +343,8 @@ player. Each child picks or creates a **profile** (name typed with the stick on 
 and a color). Everything on the solo island is saved per profile in this browser: stars, hats and
 every game's progress, apart from the shared island's save.
 
-- Games: Sky Hop, Crystal Caves, Pillow Keep, Grumble Guides and Knights & Builders: The Golden
-  Bean, plus guest games (Tachyon, Starlite, Foothold) that open as their own pages on the same
+- Games: Sky Hop, Crystal Caves, Pillow Keep, Grumble Guides, Knights & Builders: The Golden
+  Bean and Laser Ducks, plus guest games (Tachyon, Starlite, Foothold) that open as their own pages on the same
   site and come back here.
 - A new controller pressing jump takes over the one player.
 - C opens the start menu to switch back to the shared island or the Story.
@@ -379,7 +386,7 @@ src/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
-    guides.js  splash.js  cave.js  dogfight.js
+    guides.js  splash.js  cave.js  dogfight.js  duckhunt.js
     castle-campaign.js  castle/   The Golden Bean campaign (levels, troopers, grumbles, siege props)
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)
