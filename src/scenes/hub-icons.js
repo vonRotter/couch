@@ -379,6 +379,25 @@ const ICONS = {
     missile.rotation.z = -0.8;
     g.add(missile);
   },
+  adventure(g) {
+    // A barrel that says OPEN, with a rubber duck in a pirate hat on the lid.
+    g.add(mesh(cyl('advBarrel', 0.5, 0.5, 1.0), toon(0xc68a52), 0, -0.45, 0));
+    g.add(mesh(cyl('advBulge', 0.57, 0.57, 0.5), toon(0xc68a52), 0, -0.45, 0));
+    for (const y of [-0.85, -0.05]) g.add(mesh(cyl('advBand', 0.53, 0.53, 0.07), toon(0x6b5a7a), 0, y, 0));
+    g.add(mesh(cyl('advLid', 0.47, 0.47, 0.06), toon(0x8f5f3a), 0, 0.06, 0));
+    g.add(mesh(box('advOpen', 0.62, 0.24, 0.12, 0.05), toon(0xe0364f), 0, -0.45, 0.52));
+    const body = mesh(sph(0.32), toon(0xffd23f), -0.05, 0.36, 0);
+    body.scale.set(1.25, 0.8, 1);
+    g.add(body);
+    g.add(mesh(sph(0.22), toon(0xffd23f), 0.2, 0.7, 0.05));
+    const beak = mesh(sph(0.11), toon(0xff8c2a), 0.42, 0.66, 0.1);
+    beak.scale.set(1.4, 0.5, 1);
+    g.add(beak);
+    g.add(mesh(sph(0.045), toon(COLORS.ink), 0.3, 0.76, 0.22));
+    g.add(mesh(cyl('advTricorn', 0.4, 0.4, 0.09, 3), toon(COLORS.ink), 0.18, 0.92, 0.05));
+    g.add(mesh(cyl('advHat', 0.17, 0.24, 0.2), toon(COLORS.ink), 0.18, 1.0, 0.05));
+    g.add(mesh(sph(0.05), toon(COLORS.white), 0.18, 1.0, 0.26));
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

@@ -51,6 +51,14 @@ and clicks for player 1, like a light gun. Three shots per flight, ten ducks per
 needs a rising number of hits (6, then 7, 8 and 9); miss it and the game is over. The dog fetches
 what you hit and laughs when everyone misses. The best score is saved (per profile on the solo island).
 
+**The Secret of Pudding Island** (solo island; a Monkey Island-style point-and-click adventure, scene 1 so
+far). Pip, a small bean with a wooden spoon and a lot of confidence, wants to be a pirate. Move the
+pointer with the stick (or the mouse): A does the obvious thing (talk, take, use, walk), B looks, and C
+opens the inventory to use an item on something. Dialog choices, speech bubbles read aloud, and Tickle
+Fencing: answer each boast with the right comeback. Progress is saved per profile; the title card offers
+Continue or New game. Rooms, characters, items and dialog are data in `scenes/adventure/`, so more
+islands can be added without changing the engine.
+
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
@@ -353,7 +361,7 @@ and a color). Everything on the solo island is saved per profile in this browser
 every game's progress, apart from the shared island's save.
 
 - Games: Sky Hop, Crystal Caves, Pillow Keep, Grumble Guides, Knights & Builders: The Golden
-  Bean and Laser Ducks, plus guest games (Tachyon, Starlite, Foothold) that open as their own pages on the same
+  Bean, Laser Ducks and The Secret of Pudding Island, plus guest games (Tachyon, Starlite, Foothold) that open as their own pages on the same
   site and come back here.
 - A new controller pressing jump takes over the one player.
 - C opens the start menu to switch back to the shared island or the Story.
@@ -396,6 +404,7 @@ src/
     spacefall.js  spacefall/  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
     guides.js  splash.js  cave.js  dogfight.js  duckhunt.js
+    adventure.js  adventure/   point-and-click engine (rooms, dialog, Tickle Fencing) and Pudding Island
     castle-campaign.js  castle/   The Golden Bean campaign (levels, troopers, grumbles, siege props)
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)

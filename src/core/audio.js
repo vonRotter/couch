@@ -11,6 +11,7 @@ export const SONGS = {
   platformer: { bpm: 140, root: 64, chords: [0, 5, 0, 7], seed: 7, lead: 'triangle' },
   paint: { bpm: 150, root: 57, chords: [0, 3, 5, 7], seed: 21, lead: 'square' },
   space: { bpm: 118, root: 62, chords: [0, 9, 5, 7], seed: 41, lead: 'sine' },
+  adventure: { bpm: 92, root: 57, chords: [0, 5, 7, 3], seed: 64, lead: 'triangle' },
   party: { bpm: 132, root: 65, chords: [0, 5, 9, 7], seed: 33, lead: 'square' },
   results: { bpm: 96, root: 60, chords: [0, 5, 9, 7], seed: 5, lead: 'triangle' },
 };

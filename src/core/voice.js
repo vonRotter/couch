@@ -25,8 +25,11 @@ export function voiceOn() {
   return enabled;
 }
 
-/** Speak a piece of text (replacing whatever is being said). Returns true if it spoke. */
-export function say(text, { force = false } = {}) {
+/**
+ * Speak a piece of text (replacing whatever is being said). Returns true if it spoke.
+ * Optional pitch (0..2, default 1) and rate (default 0.95) give characters their own voices.
+ */
+export function say(text, { force = false, pitch = 1, rate = 0.95 } = {}) {
   if ((!enabled && !force) || !text) return false;
   const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
   if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return false;
@@ -40,13 +43,19 @@ export function say(text, { force = false } = {}) {
     const u = new SpeechSynthesisUtterance(clean(text, no));
     u.lang = voice ? voice.lang : no ? 'nb-NO' : 'en-US';
     if (voice) u.voice = voice;
-    u.rate = 0.95;
+    u.rate = rate;
+    u.pitch = pitch;
     synth.cancel();
     synth.speak(u);
     return true;
   } catch {
     return false;
   }
+}
+
+/** True while the browser is still reading something aloud. */
+export function isSpeaking() {
+  try { return !!window.speechSynthesis?.speaking; } catch { return false; }
 }
 
 export function stopVoice() {
