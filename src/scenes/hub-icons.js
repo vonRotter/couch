@@ -48,23 +48,7 @@ const ICONS = {
     brush.rotation.z = 0.5;
     g.add(brush);
   },
-  archers(g) {
-    [[0.85, 0xff5d73], [0.62, 0xffffff], [0.4, 0x4cc9f0], [0.18, 0xffc93c]].forEach(([r, c], i) => {
-      const d = mesh(cyl(`tgt${r}`, r, r, 0.12, 24), toon(c), 0, 0, 0.02 + i * 0.03);
-      d.rotation.x = Math.PI / 2;
-      g.add(d);
-    });
-    const arrow = new THREE.Group();
-    const shaft = mesh(cyl('shaft', 0.04, 0.04, 1.2, 6), toon(COLORS.icing));
-    shaft.rotation.x = Math.PI / 2;
-    shaft.position.z = 0.6;
-    const fl = mesh(sharedGeo('icon-fletch', () => new THREE.ConeGeometry(0.12, 0.25, 3)), toon(0xff5d73), 0, 0, 1.15);
-    fl.rotation.x = Math.PI / 2;
-    arrow.add(shaft, fl);
-    arrow.position.set(0.15, 0.1, 0);
-    arrow.rotation.set(0.25, 0.3, 0);
-    g.add(arrow);
-  },
+
   brawl(g) {
     const fist = mesh(sph(0.6), toon(0xff3b5c));
     fist.scale.set(1.15, 0.95, 1.1);
@@ -367,6 +351,33 @@ const ICONS = {
       tick.rotation.z = -a;
       g.add(tick);
     }
+  },
+  spacefall(g) {
+    // A little pink spaceship with a bean pilot under a glass dome, and a missile stuck beside it.
+    const ship = new THREE.Group();
+    const hull = mesh(sharedGeo('icon-sfHull', () => new THREE.CapsuleGeometry(0.36, 0.85, 6, 14)), toon(0xff4fd8));
+    hull.rotation.z = Math.PI / 2;
+    const nose = mesh(sph(0.3), toon(COLORS.white), 0.55, 0, 0);
+    nose.scale.set(1.15, 0.95, 0.95);
+    ship.add(hull, nose);
+    ship.add(mesh(sph(0.2), toon(0xffc93c), 0.02, 0.36, 0));
+    for (const x of [-0.05, 0.09]) ship.add(mesh(sph(0.05), toon(COLORS.ink), x, 0.4, 0.17));
+    ship.add(mesh(sharedGeo('icon-sfDome', () => new THREE.SphereGeometry(0.34, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55)), toon(0xbfe9ff, { transparent: true, opacity: 0.45 }), 0.02, 0.22, 0));
+    const wing = mesh(box('sfWing', 0.6, 0.1, 1.2, 0.04), toon(COLORS.white), -0.2, -0.2, 0);
+    wing.rotation.z = 0.25;
+    const fin = mesh(box('sfFin', 0.4, 0.4, 0.08, 0.03), toon(0xff4fd8), -0.55, 0.36, 0);
+    fin.rotation.z = -0.5;
+    const flame = mesh(cyl('sfFlame', 0.0, 0.2, 0.6, 10), toon(0xffa63c, { emissive: 0x663300 }), -1.0, 0, 0);
+    flame.rotation.z = Math.PI / 2;
+    ship.add(wing, fin, flame);
+    ship.rotation.set(0.3, -0.5, 0.3);
+    g.add(ship);
+    const missile = new THREE.Group();
+    missile.add(mesh(cyl('sfMis', 0.07, 0.07, 0.6, 8), toon(COLORS.icing)));
+    missile.add(mesh(cyl('sfMisTip', 0.0, 0.1, 0.22, 8), toon(0x4cc9f0), 0, 0.41, 0));
+    missile.position.set(0.55, -0.7, 0.45);
+    missile.rotation.z = -0.8;
+    g.add(missile);
   },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));

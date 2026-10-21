@@ -13,7 +13,7 @@ import { HubScene } from './scenes/hub.js';
 import { BubbleScene } from './scenes/bubble.js';
 import { PlatformerScene } from './scenes/platformer.js';
 import { PaintScene } from './scenes/paint.js';
-import { ArchersScene } from './scenes/archers.js';
+import { SpacefallScene } from './scenes/spacefall.js';
 import { BrawlScene } from './scenes/brawl.js';
 import { KartScene } from './scenes/kart.js';
 import { PortalScene } from './scenes/portal.js';
@@ -46,7 +46,7 @@ export const GAMES = {
   bubble: { Scene: BubbleScene },
   platformer: { Scene: PlatformerScene },
   paint: { Scene: PaintScene },
-  archers: { Scene: ArchersScene },
+  spacefall: { Scene: SpacefallScene },
   brawl: { Scene: BrawlScene },
   kart: { Scene: KartScene },
   portal: { Scene: PortalScene },

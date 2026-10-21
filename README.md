@@ -111,11 +111,20 @@ level: A for the next level, B for the island.
 **Paint Party** (free-for-all, 60 seconds). Walk to paint the floor. A dashes (and shoves),
 B lobs a paint bomb. Grab the golden paint can for a Mega Brush. Most floor wins. Grumble painters smear grey mud over the floor (yours too), and mud has to be painted over again. Dash into a grumble or hit it with a paint bomb to make it dizzy and drop its brush. There are more grumbles with more players, and more join during the match.
 
-**Balloon Archers** (free-for-all, TowerFall style, 90 seconds). Aim with the stick, B shoots a
-suction-cup arrow. Pop other players' balloons or jump on their heads. Arrows stick in walls,
-so walk over them to pick them up; your quiver also refills to 3 on its own. Popped players
-float in a bubble for 2 seconds and respawn. The arena wraps around at the edges. Playing
-alone gives you floating balloon targets.
+**Spacefall** (TowerFall-style arena shooter with tiny spaceships; it replaces Balloon Archers and
+the separate Spacefall repo). Vote a mode: Last ship standing (first to 3, 5 or 7 round wins),
+Free-for-all frenzy (1:30, 2:30 or 4:00 with quick respawns) or Co-op vs aliens (7 waves ending with
+the Hive Queen). Then vote one of seven maps: three single-screen arenas whose edges wrap (Derelict
+Hub, Ice Drift, Treetop Grove) and four big stations in split screen (Cargo Bay 7, Kessler Belt, Hive
+Hulk, Gravity Failure: halves for 2, quarters for 3–4, a 3x2 grid for 5–6, with a map overview in a
+spare cell). The stick flies and aims (a gamepad's right stick can aim freely), A thrusts on gravity
+maps and boosts in zero-g, B fires a missile and C dashes, which makes you untouchable for a moment
+and catches missiles out of the air. Missiles stick in walls: fly over them to pick them up (an empty
+rack reloads one after 5 seconds). On gravity maps you can stomp ships and aliens by landing on them.
+Crates hold missiles, a shield or triple shots. Popped ships burst into a cartoon explosion and the
+pilot floats away in an escape bubble. In co-op, a teammate out of lives floats in a bubble until
+someone flies into it. One or two players get grumble bot pilots; a solo co-op pilot gets a Grumble
+Buddy.
 
 **Bonk Brawl** (free-for-all, Smash style). Tap B to punch, up+B for an uppercut, down+B to
 spin, hold B to charge a big punch. Damage % makes you fly further. Everyone has 3 lives;
@@ -384,7 +393,7 @@ src/
     minigame.js      shared intro -> countdown -> results -> back flow
   scenes/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
-    archers.js  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
+    spacefall.js  spacefall/  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
     guides.js  splash.js  cave.js  dogfight.js  duckhunt.js
     castle-campaign.js  castle/   The Golden Bean campaign (levels, troopers, grumbles, siege props)

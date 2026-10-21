@@ -22,7 +22,7 @@ const en = {
   'akey.kb0': 'Space', 'akey.kb1': 'Enter', 'akey.kb2': 'U', 'akey.kb3': 'Num 0',
 
   'game.bubble': 'Bubble Buddies', 'game.platformer': 'Sky Hop', 'game.paint': 'Paint Party',
-  'game.archers': 'Balloon Archers', 'game.brawl': 'Bonk Brawl', 'game.kart': 'Kart Party',
+  'game.brawl': 'Bonk Brawl', 'game.kart': 'Kart Party',
   'game.portal': 'Portal Pals', 'game.football': 'Mega Ball', 'game.slalom': 'Snow Slalom', 'game.hockey': 'Ice Hockey', 'game.party': 'Party Mix', 'game.space': 'Space Race', 'game.runner': 'Rooftop Rush',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
@@ -92,9 +92,6 @@ const en = {
   'paint.mega': '{name} got the Mega Brush!', 'paint.ten': '10 seconds left!',
   'paint.solo': 'What a masterpiece!', 'paint.sub': 'The floor is {n}% painted', 'paint.top': 'Top painter',
 
-  'archers.intro': 'Stick: aim · [B]: shoot · pop balloons, jump on heads, grab your arrows back',
-  'archers.soloTitle': '{n} balloons popped!', 'archers.soloSub': 'Target practice complete',
-  'archers.sub': 'Most balloons popped', 'archers.pops': '{n} pops', 'archers.popped': 'popped {n} times',
 
   'brawl.intro': '[B]: punch (hold to charge) · up+[B]: uppercut · down+[B]: spin · knock friends off the stage!',
   'brawl.bot': 'Bonk Bot', 'brawl.ghostToast': '{name} is a bubble ghost now!',
@@ -181,7 +178,7 @@ const no = {
   'akey.kb0': 'Mellomrom', 'akey.kb1': 'Enter', 'akey.kb2': 'U', 'akey.kb3': 'Num 0',
 
   'game.bubble': 'Boblevenner', 'game.platformer': 'Skyhopp', 'game.paint': 'Malefest',
-  'game.archers': 'Ballongskyttere', 'game.brawl': 'Dunkekamp', 'game.kart': 'Gokartfest',
+  'game.brawl': 'Dunkekamp', 'game.kart': 'Gokartfest',
   'game.portal': 'Portalvenner', 'game.football': 'Megaball', 'game.slalom': 'Snøslalåm', 'game.hockey': 'Ishockey', 'game.party': 'Festmiks', 'game.space': 'Romkappløp', 'game.runner': 'Takløpet',
   'game.spelling': 'Bokstavballonger', 'game.math': 'Mattejakt',
 
@@ -251,9 +248,6 @@ const no = {
   'paint.mega': '{name} fikk megapenselen!', 'paint.ten': '10 sekunder igjen!',
   'paint.solo': 'For et mesterverk!', 'paint.sub': 'Gulvet er {n} % malt', 'paint.top': 'Beste maler',
 
-  'archers.intro': 'Pinne: sikt · [B]: skyt · sprekk ballonger, hopp på hoder, plukk opp pilene igjen',
-  'archers.soloTitle': '{n} ballonger sprukket!', 'archers.soloSub': 'Blinkskytingen er ferdig',
-  'archers.sub': 'Flest ballonger sprukket', 'archers.pops': '{n} treff', 'archers.popped': 'sprukket {n} ganger',
 
   'brawl.intro': '[B]: slag (hold for å lade) · opp+[B]: oppstøt · ned+[B]: snurr · dunk vennene av øya!',
   'brawl.bot': 'Dunkebot', 'brawl.ghostToast': '{name} er et boblespøkelse nå!',

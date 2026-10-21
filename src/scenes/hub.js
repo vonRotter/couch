@@ -35,7 +35,7 @@ const COOP_PADS = [
   { key: 'learnmix', color: 0x8ac926, css: '#6aa312', edu: true },
   { key: 'portal', color: 0x9b5de5, css: '#8a45e0' },
   { key: 'slalom', color: 0x6aa8ff, css: '#3d84e8' },
-  { key: 'archers', color: 0xffc93c, css: '#e0a100' },
+  { key: 'spacefall', color: 0xffa630, css: '#d97a00' },
   { key: 'bubble', color: 0xff7eb6, css: '#ff4f9a' },
   { key: 'party', color: 0xb5179e, css: '#b5179e' },
   { key: 'space', color: 0x6a4fd8, css: '#5a3fd0' },
