@@ -56,6 +56,7 @@ const COOP_PADS = [
 // Solo island: one player, games that work alone, and guest games from other repos
 // (they open in their own page and come back here; see Game.launchGuest).
 const SOLO_PADS = [
+  { key: 'lighthouse', color: 0x1f7f8f, css: '#16697a' },
   { key: 'platformer', color: 0x4cc9f0, css: '#1aa7d8' },
   { key: 'cave', color: 0x7a7fa8, css: '#565c8c' },
   { key: 'keep', color: 0xb79fd6, css: '#8a63c9' },

@@ -398,6 +398,18 @@ const ICONS = {
     g.add(mesh(cyl('advHat', 0.17, 0.24, 0.2), toon(COLORS.ink), 0.18, 1.0, 0.05));
     g.add(mesh(sph(0.05), toon(COLORS.white), 0.18, 1.0, 0.26));
   },
+  lighthouse(g) {
+    // A striped lighthouse on its rock with the lamp lit, and a lamp crystal floating beside it.
+    g.add(mesh(cyl('lhRock', 0.8, 0.95, 0.35, 10), toon(COLORS.rockDark), 0, -1.0, 0));
+    for (let i = 0; i < 4; i++) g.add(mesh(cyl(`lhBand${i}`, 0.42 - i * 0.05, 0.47 - i * 0.05, 0.42), toon(i % 2 ? 0xff5d73 : COLORS.white), 0, -0.62 + i * 0.42, 0));
+    g.add(mesh(cyl('lhDeck', 0.4, 0.4, 0.08), toon(COLORS.ink), 0, 0.9, 0));
+    g.add(mesh(sph(0.22), toon(0xfff1a8, { emissive: 0x886600 }), 0, 1.13, 0));
+    g.add(mesh(sharedGeo('icon-lhRoof', () => new THREE.ConeGeometry(0.36, 0.36, 12)), toon(0xff5d73), 0, 1.47, 0));
+    g.add(mesh(box('lhDoor', 0.26, 0.36, 0.08, 0.04), toon(0x8a5a3a), 0, -0.62, 0.45));
+    const c = mesh(sharedGeo('icon-lhCrystal', () => new THREE.OctahedronGeometry(0.2, 0)), toon(0x8ff0ff, { emissive: 0x226677 }), 0.75, 0.35, 0.2);
+    c.scale.y = 1.5;
+    g.add(c);
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

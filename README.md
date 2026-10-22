@@ -59,6 +59,16 @@ Fencing: answer each boast with the right comeback. Progress is saved per profil
 Continue or New game. Rooms, characters, items and dialog are data in `scenes/adventure/`, so more
 islands can be added without changing the engine.
 
+**Lighthouse Caves** (solo island; a top-down Zelda-style adventure with metroidvania structure, the
+first part so far). The old keeper's lighthouse went dark and its three lamp crystals were taken into
+the caves. Explore the island and village (shop, secrets, heart pieces), then two dungeons: the Lantern
+Cellar (item: the Lantern, which lights dark rooms and torches and burns thorns) and the Tidepool Grotto
+(item: the Grapple Rope, which pulls you across gaps and pulls things to you). Each has small keys, a
+map, a compass, a big key, a mini-boss and a boss with telegraphed attacks. Stick to walk, A sword
+(hold for a spin), B talk/lift/open, C use the item (hold C for the item and map screen, with a
+"restart room" option). Hearts, heart pieces, shells as money, beacon stones to save; fainting sends
+you back to the last beacon with your items. Progress is saved per profile.
+
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
@@ -361,7 +371,7 @@ and a color). Everything on the solo island is saved per profile in this browser
 every game's progress, apart from the shared island's save.
 
 - Games: Sky Hop, Crystal Caves, Pillow Keep, Grumble Guides, Knights & Builders: The Golden
-  Bean, Laser Ducks and The Secret of Pudding Island, plus guest games (Tachyon, Starlite, Foothold) that open as their own pages on the same
+  Bean, Laser Ducks, The Secret of Pudding Island and Lighthouse Caves, plus guest games (Tachyon, Starlite, Foothold) that open as their own pages on the same
   site and come back here.
 - A new controller pressing jump takes over the one player.
 - C opens the start menu to switch back to the shared island or the Story.
@@ -404,6 +414,7 @@ src/
     spacefall.js  spacefall/  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
     guides.js  splash.js  cave.js  dogfight.js  duckhunt.js
+    lighthouse.js  lighthouse/  top-down adventure: rooms per area, dungeons, softlock checker
     adventure.js  adventure/   point-and-click engine (rooms, dialog, Tickle Fencing) and Pudding Island
     castle-campaign.js  castle/   The Golden Bean campaign (levels, troopers, grumbles, siege props)
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
