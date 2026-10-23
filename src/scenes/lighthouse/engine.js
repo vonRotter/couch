@@ -10,7 +10,9 @@ import { WorldMixin } from './world.js';
 import { HeroMixin, HERO_SCALE } from './hero.js';
 import { StoryMixin } from './story.js';
 import { MenuMixin } from './menu.js';
-import { makeBoss } from './enemies.js';
+import { ToolsMixin } from './tools.js';
+import { FinaleMixin } from './finale.js';
+import { makeBoss } from './foes.js';
 
 // Lighthouse Caves engine: modes (title, play, dialog, item screen, cutscene, screen scroll, stairs
 // fade, fainted, to be continued), the camera that frames one room at a time, light and darkness,
@@ -18,9 +20,9 @@ import { makeBoss } from './enemies.js';
 // talking and items in story.js, the title / item screen in menu.js.
 //
 // Save: game.roster.progress.lighthouse (per solo profile), written on every room change, at beacon
-// stones and when something important happens.
+// stones and when something important happens. Version 1 saves (part 1) are migrated on load.
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const PITCH = THREE.MathUtils.degToRad(57);
 const FOV = 30;
 const HOLD_MENU = 0.32;
@@ -31,14 +33,24 @@ export function freshSave() {
     items: {}, equip: null, potion: 0, keys: {}, big: {}, maps: {}, compass: {}, crystals: 0, placed: 0, rewarded: 0,
     got: {}, doors: {}, solved: {}, bosses: {}, sw: {}, visited: {}, flags: {}, talk: {}, burnt: {},
     savePoint: { room: START.room, at: START.at, face: 's' }, tbcShown: false,
+    // part 2
+    blown: {}, gshells: 0, playTime: 0,
   };
 }
 
-function normalize(s) {
+/** Fill in fields a save from an older version does not have (part 1 saves continue into part 2). */
+export function migrate(s) {
   const f = freshSave();
   for (const k of Object.keys(f)) if (s[k] === undefined) s[k] = f[k];
+  if (s.v < 2) {
+    // v1 -> v2: the Tidepools chest was a locked teaser; the shrine stone became a real gate.
+    s.v = 2;
+    if (s.room === 'o00' && s.pos && s.pos[1] <= 1) s.pos = [8, 5];
+  }
   return s;
 }
+
+export const canContinue = (saved) => !!(saved && saved.v >= 1 && saved.v <= SAVE_VERSION && ROOMS[saved.room]);
 
 const _v = new THREE.Vector3();
 const _cam = new THREE.PerspectiveCamera();
@@ -52,8 +64,8 @@ export class LighthouseEngine {
     this.hud = new LhHud(this.game);
     this.setupLights();
     const saved = this.game.roster.progress.lighthouse;
-    this.hasSave = !!(saved && saved.v === SAVE_VERSION && ROOMS[saved.room]);
-    this.save = this.hasSave ? normalize(JSON.parse(JSON.stringify(saved))) : freshSave();
+    this.hasSave = canContinue(saved);
+    this.save = this.hasSave ? migrate(JSON.parse(JSON.stringify(saved))) : freshSave();
     this.makeHero();
     this.camTarget = new THREE.Vector3();
     this.camDist = 20;
@@ -125,11 +137,13 @@ export class LighthouseEngine {
 
   applyLighting(dt) {
     const room = this.room;
-    const over = room.def.theme === 'over';
+    const over = !!THEMES[room.def.theme].outdoor;
     const dark = !room.lit;
     const k = Math.min(1, dt * 5);
-    this.hemi.intensity += ((dark ? 0.07 : over ? 1.5 : 1.25) - this.hemi.intensity) * k;
-    this.sun.intensity += ((dark ? 0.04 : over ? 1.9 : 1.35) - this.sun.intensity) * k;
+    // rain clouds dim the cliffs; the ending's dusk is warm and low
+    const dim = room.def.rain ? 0.72 : this.dusk ? 0.55 : 1;
+    this.hemi.intensity += ((dark ? 0.07 : (over ? 1.5 : 1.25) * dim) - this.hemi.intensity) * k;
+    this.sun.intensity += ((dark ? 0.04 : (over ? 1.9 : 1.35) * dim) - this.sun.intensity) * k;
     this.sun.position.copy(this.camTarget).add(_v.set(-14, 34, 18));
     this.sun.target.position.copy(this.camTarget);
     const list = [];
@@ -140,7 +154,8 @@ export class LighthouseEngine {
       list.push({ x: o.x + h.x, y: 1.3, z: o.z + h.z, i: lantern ? 9 : 2.2, d: lantern ? 6.5 : 2.6, c: 0xffd9a0 });
     }
     for (const tc of room.torches) if (tc.lit) list.push({ x: o.x + tc.x, y: 1.4, z: o.z + tc.z, i: dark ? 9 : 2.5, d: dark ? 6.5 : 4, c: 0xffa040 });
-    for (const en of room.enemies) if (en.light && !en.dead && dark) list.push({ x: o.x + en.x, y: en.y + 0.6, z: o.z + en.z, i: 2.5, d: 3, c: 0xfff27a });
+    for (const en of room.enemies) if (en.light && !en.dead && dark) list.push({ x: o.x + en.x, y: en.y + 0.6, z: o.z + en.z, i: en.lightI || 2.5, d: en.lightD || 3, c: en.lightC || 0xfff27a });
+    for (const a of room.arrows) if (a.fire) list.push({ x: o.x + a.x, y: 0.6, z: o.z + a.z, i: dark ? 5 : 2, d: 3, c: 0xffa040 });
     if (dark) for (const e of room.ents) if (e.t === 'save') list.push({ x: o.x + e.x, y: 1.4, z: o.z + e.z, i: 2, d: 3, c: 0xffe27a });
     this.points.forEach((l, i) => {
       const s = list[i];
@@ -212,11 +227,23 @@ export class LighthouseEngine {
     const def = ROOMS[id];
     if (this.room) this.unloadRoom(this.room);
     this.room = this.makeRoom(id, new THREE.Vector3(def.gx * W, 0, def.gy * H));
+    [x, z] = this.safeSpot(this.room, x, z);
     this.placeHero(x, z, face || 's');
     this.hero.warpArmed = false;
     this.room.entry = { x, z, face: face || 's' };
     this.host.scene.background = new THREE.Color(THEMES[def.theme].bg);
     this.reframe();
+  }
+
+  /** The nearest tile the hero can stand on (a save from an older map could point into a wall). */
+  safeSpot(room, x, z) {
+    const c0 = colOf(x), r0 = rowOf(z);
+    const ok = (c, r) => inGrid(c, r) && !this.heroBlocked(room, c, r, 1) && room.grid[r][c] !== 'o' && (room.grid[r][c] !== '~' || this.save.items.fins);
+    if (!inGrid(c0, r0) || ok(c0, r0)) return [x, z];
+    for (let d = 1; d < 9; d++) {
+      for (let r = r0 - d; r <= r0 + d; r++) for (let c = c0 - d; c <= c0 + d; c++) if (ok(c, r)) return [tileX(c), tileZ(r)];
+    }
+    return [x, z];
   }
 
   startScroll(d) {
@@ -315,12 +342,14 @@ export class LighthouseEngine {
     if (place !== this.lastPlace) { this.hud.showPlace(place); this.lastPlace = place; }
     if (room.id === 'h_keeper' && !s.flags.intro) this.cutscene(this.introScene);
     else if (room.id === 'h_light' && s.crystals > (s.placed || 0)) this.cutscene(this.placeScene);
+    else if (room.id === 'h_light' && (s.placed || 0) >= 2 && !s.flags.act2 && !s.bosses.d3_boss) this.cutscene(this.act2Scene);
   }
 
   playAreaMusic() {
     const room = this.room;
     const bossAlive = room.bossSpawned && room.enemies.some((e) => e.boss && !e.dead);
-    this.game.audio.playMusic(bossAlive ? 'lhBoss' : AREAS[room.area].music);
+    const song = bossAlive ? (room.id === 'h_top' ? 'lhFinal' : 'lhBoss') : room.def.music || (room.def.theme === 'cliff' ? 'lhStorm' : AREAS[room.area].music);
+    this.game.audio.playMusic(song);
   }
 
   // ---------- starting ----------
@@ -328,9 +357,12 @@ export class LighthouseEngine {
   newGame() {
     const keep = this.save.rewarded || 0;
     const tbc = !!this.save.tbcRewarded;
+    const end = !!this.save.endRewarded, full = !!this.save.fullRewarded;
     this.save = freshSave();
     this.save.rewarded = keep;
     this.save.tbcRewarded = tbc;
+    this.save.endRewarded = end;
+    this.save.fullRewarded = full;
     this.hasSave = true;
     this.lastPlace = '';
     this.loadRoom(START.room, START.at, START.face);
@@ -428,6 +460,7 @@ export class LighthouseEngine {
 
   update(dt) {
     this.time += dt;
+    if (this.mode !== 'title') this.save.playTime = (this.save.playTime || 0) + dt;
     const inp = this.readInput(dt);
     if (this.noticeCool > 0) this.noticeCool -= dt;
     if (this.lanternCool > 0) this.lanternCool -= dt;
@@ -441,6 +474,7 @@ export class LighthouseEngine {
       case 'warp': this.updateWarp(dt); break;
       case 'dead': this.updateDead(dt); this.idleWorld(dt); break;
       case 'tbc': this.updateTbc(inp, dt); this.idleWorld(dt); break;
+      case 'credits': this.updateCredits(inp, dt); this.idleWorld(dt); break;
       default: break;
     }
     this.updateCamera(dt);
@@ -456,7 +490,9 @@ export class LighthouseEngine {
     for (const w of room.waves) w.position.x = w.userData.x0 + Math.sin(room.time * 1.2 + w.userData.phase) * 0.12;
     for (const e of room.ents) if (e.t === 'npc' && e.char) e.char.update(dt, { moving: 0 });
     for (const tc of room.torches) if (tc.lit) tc.mesh.userData.flame.scale.y = 1 + Math.sin(room.time * 23 + tc.r) * 0.12;
+    if (room.rain) for (const m of room.rain.drops) { m.position.y -= dt * 13; if (m.position.y < 0) m.position.y += 7; }
     this.updatePickups(dt, false);
+    this.updateCutActors?.(dt);
     this.syncHero(dt);
   }
 
@@ -475,6 +511,7 @@ export class LighthouseEngine {
       this.addEnemy(b);
       this.playAreaMusic();
       if (room.bossSpec.kind === 'moth') this.later(5, () => { if (this.room === room && !room.solved) this.hintOnce('lh.moth.hint'); });
+      if (room.bossSpec.kind === 'murk') this.cutscene(this.murkIntro);
     }
     if (room.def.trap && !room.solved && !room.trapActive && inside) {
       room.trapActive = true;
@@ -501,6 +538,8 @@ export class LighthouseEngine {
     }
     room.projs = room.projs.filter((p) => !p.dead);
     this.updateThrown(dt);
+    this.updateBombs(dt);
+    this.updateArrows(dt);
     this.updatePickups(dt, true);
     this.checkSolve(room);
     // low health beep
@@ -544,6 +583,7 @@ export class LighthouseEngine {
     else if (def.solve === 'plates') ok = room.plates.length > 0 && room.plates.every((p) => p.pressed);
     else if (def.solve === 'torches') ok = room.torches.length > 0 && room.torches.every((tc) => tc.lit);
     else if (def.solve === 'boss') ok = room.bossSpawned && !room.enemies.some((e) => e.bossPart && !e.dead);
+    else if (def.solve === 'eyes') ok = room.eyes.length > 0 && room.eyes.every((e) => e.hit);
     if (ok) this.solveRoom(room);
   }
 
@@ -576,6 +616,7 @@ export class LighthouseEngine {
   victory(room) {
     const v = room.def.victory;
     if (!v) return;
+    if (v.finale) { this.later(1.2, () => { if (this.room === room) this.cutscene(this.endingScene); }); return; }
     this.later(0.9, () => {
       if (this.room !== room) return;
       if (!this.save.got[`${room.id}.heart`]) this.addPickup(room, 'container', tileX(6), tileZ(5), { id: `${room.id}.heart`, persist: true, pop: true });
@@ -589,14 +630,14 @@ export class LighthouseEngine {
   updateHud() {
     const s = this.save;
     const area = this.room.area;
-    const show = this.mode !== 'title' && this.mode !== 'tbc';
+    const show = this.mode !== 'title' && this.mode !== 'tbc' && this.mode !== 'credits';
     this.hud.setTop({
       hp: Math.max(0, s.hp), maxHp: s.maxHp, shells: s.shells, dungeon: !!AREAS[area].dungeon, keys: s.keys[area] || 0, bigkey: !!s.big[area],
-      sword: !!s.items.sword, equip: s.equip, potion: s.potion,
+      sword: !!s.items.sword, equip: s.equip, potion: s.potion, swim: !!this.hero.swim,
     }, { visible: show, player: this.host.players[0] });
     if (this.mode === 'play') {
       const hints = [];
-      if (s.items.sword) hints.push(['A', this.hero.carry ? 'lh.h.throw' : 'lh.h.sword']);
+      if (s.items.sword && !this.hero.swim) hints.push(['A', this.hero.carry ? 'lh.h.throw' : 'lh.h.sword']);
       const act = this.frontAction();
       if (act && act.kind !== 'note') hints.push(['B', `lh.h.${act.kind}`]);
       hints.push(['C', s.equip ? 'lh.h.itemMenu' : 'lh.h.menu']);
@@ -615,9 +656,10 @@ export class LighthouseEngine {
 
   dispose() {
     stopVoice();
+    this.dusk = false;
     this.hud.dispose();
     if (this.room) this.unloadRoom(this.room);
   }
 }
 
-Object.assign(LighthouseEngine.prototype, WorldMixin, HeroMixin, StoryMixin, MenuMixin);
+Object.assign(LighthouseEngine.prototype, WorldMixin, HeroMixin, StoryMixin, MenuMixin, ToolsMixin, FinaleMixin);

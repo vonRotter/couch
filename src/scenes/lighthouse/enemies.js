@@ -18,11 +18,11 @@ import { box, cyl, sph, cone, mesh } from './models.js';
 // Positions are room-local tiles (x, z). Meshes live in the room's group.
 
 const shadowGeo = () => sharedGeo('lh-shadow', () => new THREE.CircleGeometry(0.5, 20));
-const shadowMat = () => toon(0x000000, { transparent: true, opacity: 0.28 });
-const markGeo = () => sharedGeo('lh-mark', () => new THREE.RingGeometry(0.35, 0.5, 24));
-const markMat = () => toon(0xff3b5c, { transparent: true, opacity: 0.75 });
+export const shadowMat = () => toon(0x000000, { transparent: true, opacity: 0.28 });
+export const markGeo = () => sharedGeo('lh-mark', () => new THREE.RingGeometry(0.35, 0.5, 24));
+export const markMat = () => toon(0xff3b5c, { transparent: true, opacity: 0.75 });
 
-function makeShadow(s = 1) {
+export function makeShadow(s = 1) {
   const m = new THREE.Mesh(shadowGeo(), shadowMat());
   m.rotation.x = -Math.PI / 2;
   m.position.y = 0.02;
@@ -31,7 +31,7 @@ function makeShadow(s = 1) {
 }
 
 /** A red "!" that pops up over an enemy that is about to attack. */
-function makeAlert() {
+export function makeAlert() {
   const g = new THREE.Group();
   g.add(mesh(box(0.13, 0.38, 0.13), toon(0xff3b5c, { emissive: 0x551122 }), 0, 0.26, 0, false));
   g.add(mesh(sph(0.08, 8, 6), toon(0xff3b5c, { emissive: 0x551122 }), 0, -0.05, 0, false));
@@ -39,7 +39,7 @@ function makeAlert() {
   return g;
 }
 
-function makeDizzy() {
+export function makeDizzy() {
   const g = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const s = mesh(sph(0.07, 8, 6), toon(COLORS.gold, { emissive: 0x554400 }), Math.cos(i * 2.1) * 0.35, 0, Math.sin(i * 2.1) * 0.35, false);
@@ -49,9 +49,9 @@ function makeDizzy() {
   return g;
 }
 
-const DIR_V = { n: [0, -1], s: [0, 1], w: [-1, 0], e: [1, 0] };
+export const DIR_V = { n: [0, -1], s: [0, 1], w: [-1, 0], e: [1, 0] };
 const YAW = { s: 0, e: Math.PI / 2, n: Math.PI, w: -Math.PI / 2 };
-const cardinal = (dx, dz) => (Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 'e' : 'w') : dz > 0 ? 's' : 'n');
+export const cardinal = (dx, dz) => (Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 'e' : 'w') : dz > 0 ? 's' : 'n');
 
 export class Enemy {
   constructor(eng, x, z) {
@@ -498,7 +498,7 @@ class Shellback extends Enemy {
 
   hurt(dmg, sx, sz, src) {
     if (this.dead || this.flash > 0) return 'none';
-    if (this.stun <= 0 && (src === 'sword' || src === 'spin' || src === 'flame')) {
+    if (this.stun <= 0 && (src === 'sword' || src === 'spin' || src === 'flame' || src === 'arrow' || src === 'fire')) {
       // Blocked if the hit comes from in front of the shield.
       const [fx, fz] = DIR_V[this.face];
       const hx = sx - this.x, hz = sz - this.z;

@@ -1,11 +1,12 @@
 import { t, tFor } from '../../core/i18n.js';
 import { say as speak } from '../../core/voice.js';
-import { ROOMS, AREAS, DOORS } from './rooms.js';
+import { ROOMS, AREAS, DOORS, HEART_PIECES, GOLD_SHELLS } from './rooms.js';
 
 // Title card, the item + map screen (hold [C]), "fainted" and "to be continued". Mixed into
 // LighthouseEngine.
 
-const SELECTABLE = ['lantern', 'grapple'];
+const SELECTABLE = ['lantern', 'grapple', 'bombs', 'bow'];
+const PASSIVE = ['glove', 'fins'];
 
 export const MenuMixin = {
   // ---------- title ----------
@@ -23,9 +24,12 @@ export const MenuMixin = {
   renderTitle() {
     const c = this.title;
     const s = this.save;
+    const sub = !this.hasSave ? t('lh.sub')
+      : s.flags.beaten ? t('lh.progressDone', { p: this.heartPiecesFound(), pm: this.heartPiecesTotal(), g: this.gshellsFound(), gm: this.gshellsTotal() })
+        : t('lh.progress', { c: s.placed || 0, h: s.maxHp / 2 });
     this.hud.setTitle({
       logo: t('game.lighthouse'),
-      sub: this.hasSave ? t('lh.progress', { c: s.placed || 0, h: s.maxHp / 2 }) : t('lh.sub'),
+      sub,
       options: c.options.map((o) => ({ text: t(o.text), sub: o.sub ? t(o.sub) : '' })),
       index: c.index,
       foot: tFor(this.host.players[0], 'lh.titleHint'),
@@ -66,9 +70,18 @@ export const MenuMixin = {
     const out = [];
     if (s.items.sword) out.push({ id: 'sword', name: t('lh.item.sword') });
     for (const id of SELECTABLE) if (s.items[id]) out.push({ id, name: t(`lh.item.${id}`), equipped: s.equip === id, pick: true });
+    for (const id of PASSIVE) if (s.items[id]) out.push({ id, name: t(`lh.item.${id}`) });
     if (s.potion) out.push({ id: 'potion', name: t('lh.item.potion') });
     return out;
   },
+
+  // ---------- 100% counters ----------
+
+  heartPiecesFound() { return HEART_PIECES.filter((id) => this.save.got[id]).length; },
+  heartPiecesTotal() { return HEART_PIECES.length; },
+  gshellsFound() { return GOLD_SHELLS.filter((id) => this.save.got[id]).length; },
+  gshellsTotal() { return GOLD_SHELLS.length; },
+  allFound() { return this.heartPiecesFound() === HEART_PIECES.length && this.gshellsFound() === GOLD_SHELLS.length; },
 
   updateMenu(inp, dt) {
     const M = this.menuState;
@@ -92,10 +105,11 @@ export const MenuMixin = {
     const items = this.menuItems();
     const area = this.room.area;
     const stats = [
-      ['piece', t('lh.menu.pieces', { n: s.pieces % 4 })],
+      ['piece', t('lh.menu.pieces2', { n: s.pieces % 4, f: this.heartPiecesFound(), m: this.heartPiecesTotal() })],
       ['crystal', t('lh.menu.crystals', { n: s.placed || 0 })],
       ['shell', `${s.shells}`],
     ];
+    if (this.gshellsFound() || s.flags.act2 || s.flags.beaten) stats.push(['gshell', t('lh.menu.gshells', { n: this.gshellsFound(), m: this.gshellsTotal() })]);
     if (AREAS[area].dungeon) {
       stats.push(['key', `${s.keys[area] || 0}`]);
       if (s.big[area]) stats.push(['bigkey', t('lh.item.bigkey')]);
@@ -115,11 +129,16 @@ export const MenuMixin = {
     const s = this.save;
     let area = this.room.area;
     let here = this.room.id;
-    if (area === 'in' || area === 'cave') {
-      // inside a house or the cave: show the island, marking where you went in
-      const host = Object.values(ROOMS).find((r) => r.area === 'over' && Object.values(r.at || {}).some((e) => e.t === 'warp' && (e.to === here || (area === 'cave' && e.to === 'cave1'))));
+    if (!AREAS[area].dungeon && area !== 'over') {
+      // inside a house, a cave or the well: show the island, marking where you went in
+      // (two steps for the lamp room: lamp room -> lighthouse -> Lighthouse Point)
+      for (let i = 0; i < 2 && here && ROOMS[here].area !== 'over'; i++) {
+        const a = ROOMS[here].area;
+        const goesIn = (e) => (e.t === 'warp' || e.t === 'well') && (e.to === here || (a !== 'in' && ROOMS[e.to]?.area === a));
+        const host = Object.values(ROOMS).find((r) => r.id !== here && Object.values(r.at || {}).some(goesIn));
+        here = host ? host.id : null;
+      }
       area = 'over';
-      here = host ? host.id : null;
     }
     const rooms = Object.values(ROOMS).filter((r) => r.area === area);
     const xs = rooms.map((r) => r.gx), ys = rooms.map((r) => r.gy);

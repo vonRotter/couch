@@ -18,17 +18,21 @@ export const DIRS = {
 };
 export const DOOR_TILES = { n: [8, 0], s: [8, 10], w: [0, 5], e: [16, 5] };
 
-// How far the grapple rope reaches and how far a thrown pot flies (tiles).
+// How far the grapple rope reaches, how far a thrown pot flies and how far an arrow flies (tiles).
 export const ROPE_RANGE = 7;
 export const THROW_RANGE = 4;
+export const ARROW_RANGE = 13;
+// A bomb breaks cracked rock, cracked walls and hurts things within this distance (tiles).
+export const BLAST = 1.55;
 
 // Terrain characters. Entities (blocks, pots, enemies...) are listed in ENTITY_CHARS, digits are
 // per-room entities defined in the room's `at` table.
 //   #  wall / cliff           .  floor            ,  path            s  sand          f  flowers
-//   w  shallow water          ~  deep water (blocks walking, rope and throws fly over)
+//   w  shallow water          ~  deep water (swim fins swim it; rope, arrows and throws fly over)
 //   o  hole (you fall in)     =  bridge           v  ledge (hop down = south only)
 //   T  tree                   b  bush (sword)     *  thorn bush (lantern)               g  tall grass
-//   R  heavy boulder (later)  C  cracked rock (later)   F  fence    H  building (prop draws it)
+//   R  heavy boulder (the Strong Gloves lift it)     C  cracked rock (a bomb breaks it)
+//   F  fence                  H  building (prop draws it)
 //   @  statue                 |  post (rope hooks it)   t  torch (unlit)   L  torch (always lit)
 //   x  orange peg (up while the crystal switch is orange)   y  blue peg (up while it is blue)
 //   _  pressure plate         (space)  nothing (outside an interior room)
@@ -48,6 +52,9 @@ export const ENTITY_CHARS = {
   u: { t: 'enemy', kind: 'spitter' },
   z: { t: 'enemy', kind: 'bat' },
   Z: { t: 'enemy', kind: 'shellback' },
+  K: { t: 'enemy', kind: 'beetle' },
+  W: { t: 'enemy', kind: 'wisp' },
+  G: { t: 'enemy', kind: 'gull' },
 };
 
 export const tileX = (c) => c - HALF_W;

@@ -153,8 +153,97 @@ export function makePotion() {
   return g;
 }
 
+export function makeGlove() {
+  const g = new THREE.Group();
+  const palm = mesh(sph(0.2, 12, 10), 0xc9873f, 0, 0, 0);
+  palm.scale.set(1, 1.1, 0.7);
+  g.add(palm);
+  for (let i = 0; i < 4; i++) g.add(mesh(cyl(0.045, 0.05, 0.18, 8), 0xc9873f, -0.11 + i * 0.075, 0.2, 0));
+  const thumb = mesh(cyl(0.05, 0.055, 0.16, 8), 0xc9873f, -0.2, 0.02, 0);
+  thumb.rotation.z = 0.9;
+  g.add(thumb);
+  g.add(mesh(cyl(0.2, 0.2, 0.1, 12), C.red, 0, -0.2, 0));
+  g.add(mesh(sph(0.05), C.gold, 0, -0.2, 0.18));
+  return g;
+}
+
+/** A round bomb with a short fuse (also the bomb bag item). */
+export function makeBomb(s = 1) {
+  const g = new THREE.Group();
+  g.add(mesh(sph(0.27, 14, 10), 0x34406a, 0, 0.27, 0));
+  g.add(mesh(sph(0.08, 8, 6), 0x8ea0d8, -0.1, 0.38, 0.17, false));
+  g.add(mesh(cyl(0.08, 0.1, 0.08, 10), 0x5b5470, 0, 0.55, 0));
+  const fuse = mesh(cyl(0.025, 0.025, 0.16, 6), 0xd8b27a, 0.03, 0.66, 0);
+  fuse.rotation.z = -0.4;
+  g.add(fuse);
+  const spark = mesh(sph(0.07, 8, 6), toon(0xffd23f, { emissive: 0xcc6600 }), 0.07, 0.75, 0, false);
+  g.add(spark);
+  g.userData.spark = spark;
+  g.userData.ball = g.children[0];
+  g.scale.setScalar(s);
+  return g;
+}
+
+export function makeBow() {
+  const g = new THREE.Group();
+  const arc = mesh(sharedGeo('lh-bowArc', () => new THREE.TorusGeometry(0.32, 0.035, 6, 18, Math.PI)), 0xb5835a, 0, 0, 0);
+  arc.rotation.z = -Math.PI / 2;
+  g.add(arc);
+  g.add(mesh(box(0.012, 0.64, 0.012), COLORS.white, -0.02, 0, 0, false));
+  g.add(mesh(box(0.08, 0.14, 0.08), C.red, 0.3, 0, 0));
+  for (const y of [-0.3, 0.3]) g.add(mesh(sph(0.045), C.gold, 0.02, y, 0));
+  return g;
+}
+
+/** An arrow pointing along +z (fire arrows get a flame on the tip). */
+export function makeArrow() {
+  const g = new THREE.Group();
+  const shaft = mesh(cyl(0.025, 0.025, 0.7, 6), 0xd8b27a, 0, 0, 0, false);
+  shaft.rotation.x = Math.PI / 2;
+  g.add(shaft);
+  const tip = mesh(cone(0.06, 0.16, 6), C.steel, 0, 0, 0.42, false);
+  tip.rotation.x = Math.PI / 2;
+  g.add(tip);
+  for (const a of [0, Math.PI / 2]) {
+    const f = mesh(box(0.14, 0.01, 0.16), 0xffffff, 0, 0, -0.3, false);
+    f.rotation.z = a;
+    g.add(f);
+  }
+  const flame = new THREE.Group();
+  flame.position.z = 0.45;
+  flame.add(mesh(sph(0.14, 8, 6), toon(C.flame, { emissive: 0xcc5500 }), 0, 0, 0, false));
+  flame.add(mesh(sph(0.08, 8, 6), toon(C.flameCore, { emissive: 0xddaa00 }), 0, 0.03, 0.05, false));
+  flame.visible = false;
+  g.add(flame);
+  g.userData.flame = flame;
+  return g;
+}
+
+export function makeFins() {
+  const g = new THREE.Group();
+  for (const s of [-1, 1]) {
+    const f = mesh(sharedGeo('lh-fin', () => new THREE.CylinderGeometry(0.2, 0.08, 0.05, 3)), 0x3ddc97, s * 0.14, 0, 0);
+    f.rotation.y = Math.PI / 2;
+    f.scale.set(1, 1, 1.6);
+    g.add(f);
+    g.add(mesh(box(0.1, 0.08, 0.12), 0x1f9e6e, s * 0.14, 0.04, 0.14));
+  }
+  return g;
+}
+
+export function makeGoldShell() {
+  const g = makeShell(0xffd23f, 1.35);
+  g.add(mesh(sph(0.07, 8, 6), toon(0xfff6c8, { emissive: 0xaa8800 }), 0, 0.12, 0, false));
+  return g;
+}
+
 export function makeItem(item) {
   switch (item) {
+    case 'glove': return makeGlove();
+    case 'bombs': return makeBomb(0.9);
+    case 'bow': return makeBow();
+    case 'fins': return makeFins();
+    case 'gshell': return makeGoldShell();
     case 'sword': return makeSword();
     case 'heart': return makeHeart(C.red, 0.8);
     case 'heartpiece': return makeHeartPiece();
@@ -193,6 +282,48 @@ export function makePot() {
   g.add(mesh(cyl(0.2, 0.24, 0.14, 12), 0xb8603e, 0, 0.7, 0));
   g.add(mesh(tor(0.33, 0.035), 0xfff3dc, 0, 0.38, 0));
   g.children[2].rotation.x = Math.PI / 2;
+  return g;
+}
+
+/** A heavy boulder (the Strong Gloves lift it). */
+export function makeBoulder() {
+  const g = new THREE.Group();
+  g.add(mesh(ico(0.5, 1), COLORS.rockDark, 0, 0.42, 0));
+  g.children[0].scale.set(1.1, 0.85, 1.05);
+  g.add(mesh(ico(0.24, 0), COLORS.rock, -0.18, 0.75, 0.18));
+  g.add(mesh(ico(0.16, 0), 0x8f89a8, 0.24, 0.62, 0.22));
+  return g;
+}
+
+const CRACK_COLORS = { over: C.stone, cliff: 0xa9a3b8, cave: 0x7d6a5a, ruins: 0x8f9aa0, cellar: 0x9a8db5, grotto: 0x7fb6c9, tower: C.stone, house: C.stone };
+
+/** A cracked rock or cracked block (a bomb breaks it). */
+export function makeCracked(theme = 'over') {
+  const g = new THREE.Group();
+  const col = CRACK_COLORS[theme] || C.stone;
+  g.add(mesh(box(0.96, 0.95, 0.96), col, 0, 0.47, 0));
+  g.add(mesh(box(1.0, 0.08, 1.0), new THREE.Color(col).multiplyScalar(1.12).getHex(), 0, 0.96, 0));
+  const ink = 0x2b2340;
+  const crack = (x, y, rz, l) => { const m = mesh(box(0.06, l, 0.03), ink, x, y, 0.49, false); m.rotation.z = rz; g.add(m); };
+  crack(-0.1, 0.52, 0.5, 0.55); crack(0.14, 0.58, -0.6, 0.4); crack(0.04, 0.32, 0.2, 0.3); crack(-0.26, 0.7, -0.3, 0.25);
+  return g;
+}
+
+/** A stone eye set into a wall: shut until an arrow hits its middle. */
+export function makeEye() {
+  const g = new THREE.Group();
+  g.add(mesh(cyl(0.38, 0.4, 0.14, 16), 0x6d6084, 0, 0, 0));
+  g.children[0].rotation.x = Math.PI / 2;
+  const white = mesh(sph(0.27, 14, 10), 0xfff6e0, 0, 0, 0.06, false);
+  white.scale.set(1, 0.8, 0.45);
+  g.add(white);
+  const pupil = mesh(sph(0.12, 10, 8), toon(0xffd23f, { emissive: 0x996600 }), 0, 0, 0.16, false);
+  g.add(pupil);
+  const lid = mesh(sph(0.3, 14, 10), 0x8f89a8, 0, 0, 0.05, false);
+  lid.scale.set(1, 0.85, 0.55);
+  g.add(lid);
+  g.userData.lid = lid;
+  g.userData.pupil = pupil;
   return g;
 }
 
@@ -342,6 +473,11 @@ export function makeDoorLeaf(type, theme) {
     g.add(mesh(box(1.0, 1.05, 0.25), C.woodDark, 0, 0.52, 0));
     g.add(mesh(box(0.34, 0.36, 0.1), C.gold, 0, 0.55, 0.14));
     g.add(mesh(box(0.08, 0.16, 0.04), COLORS.ink, 0, 0.53, 0.2));
+  } else if (type === 'bomb') {
+    const col = CRACK_COLORS[theme] || C.stone;
+    g.add(mesh(box(1.0, 1.2, 0.5), col, 0, 0.6, 0));
+    const crack = (x, y, rz, l) => { const m = mesh(box(0.06, l, 0.03), 0x2b2340, x, y, 0.26, false); m.rotation.z = rz; g.add(m); };
+    crack(-0.12, 0.6, 0.5, 0.6); crack(0.15, 0.7, -0.6, 0.45); crack(0.02, 0.35, 0.2, 0.35);
   } else if (type === 'boss') {
     g.add(mesh(box(1.0, 1.15, 0.28), 0x6a3fa0, 0, 0.57, 0));
     g.add(mesh(box(0.5, 0.5, 0.12), 0xff7a2e, 0, 0.6, 0.15));
@@ -363,7 +499,85 @@ const NPC_LOOKS = {
   pell: { color: 0xff8c42, hat: 5, scale: 0.64 },
 };
 
+/** Animal townsfolk (Mitten the cat, Sela the seal) and Murky: same little API as Character. */
+class Critter {
+  constructor(id) {
+    this.group = new THREE.Group();
+    this.pivot = new THREE.Group();
+    this.group.add(this.pivot);
+    this.yaw = 0;
+    this.targetYaw = 0;
+    this.t = Math.random() * 6;
+    this.id = id;
+    this.spin = 0;
+    const P = this.pivot;
+    if (id === 'mitten') {
+      const fur = 0xff9f2e, light = 0xffe0b0;
+      const body = mesh(sph(0.26, 12, 10), fur, 0, 0.24, -0.05);
+      body.scale.set(0.9, 0.8, 1.2);
+      P.add(body);
+      P.add(mesh(sph(0.2, 12, 10), fur, 0, 0.5, 0.2));
+      P.add(mesh(sph(0.1, 8, 6), light, 0, 0.44, 0.36));
+      for (const s of [-1, 1]) {
+        const ear = mesh(cone(0.07, 0.14, 4), fur, s * 0.11, 0.68, 0.18);
+        ear.rotation.z = -s * 0.25;
+        P.add(ear);
+        P.add(mesh(sph(0.04, 6, 5), COLORS.ink, s * 0.08, 0.53, 0.37, false));
+      }
+      this.tail = mesh(cyl(0.035, 0.05, 0.42, 6), fur, 0, 0.36, -0.36);
+      this.tail.rotation.x = -0.7;
+      P.add(this.tail);
+      this.scale = 0.95;
+    } else if (id === 'sela') {
+      const skin = 0x8fa3b8;
+      const body = mesh(sph(0.36, 14, 10), skin, 0, 0.3, -0.05);
+      body.scale.set(0.9, 0.8, 1.35);
+      P.add(body);
+      P.add(mesh(sph(0.26, 12, 10), skin, 0, 0.62, 0.22));
+      P.add(mesh(sph(0.1, 8, 6), 0xc9d6e3, 0, 0.56, 0.44));
+      P.add(mesh(sph(0.05, 6, 5), COLORS.ink, 0, 0.6, 0.53, false));
+      for (const s of [-1, 1]) {
+        P.add(mesh(sph(0.045, 6, 5), COLORS.ink, s * 0.1, 0.72, 0.42, false));
+        const flip = mesh(box(0.28, 0.05, 0.14), 0x7a8ea3, s * 0.32, 0.12, 0.12);
+        flip.rotation.z = s * 0.4;
+        P.add(flip);
+      }
+      this.scale = 1;
+    } else {
+      // Murky: a small soft gloom puff with big kind eyes
+      const puff = 0x5a4d7a;
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2;
+        P.add(mesh(sph(0.16, 10, 8), puff, Math.cos(a) * 0.17, 0.42 + Math.sin(a * 2) * 0.04, Math.sin(a) * 0.12));
+      }
+      P.add(mesh(sph(0.24, 12, 10), 0x6b5d8f, 0, 0.45, 0.05));
+      for (const s of [-1, 1]) {
+        P.add(mesh(sph(0.07, 8, 6), 0xfff6c8, s * 0.09, 0.5, 0.24, false));
+        P.add(mesh(sph(0.035, 6, 5), COLORS.ink, s * 0.09, 0.5, 0.3, false));
+      }
+      this.float = true;
+      this.scale = 1;
+    }
+    this.group.scale.setScalar(this.scale);
+  }
+
+  face(dx, dz) { if (dx || dz) this.targetYaw = Math.atan2(dx, dz); }
+
+  update(dt, { moving = 0 } = {}) {
+    this.t += dt;
+    let d = this.targetYaw - this.yaw;
+    d = ((d + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    this.yaw += d * Math.min(1, dt * 10);
+    this.pivot.rotation.y = this.yaw + this.spin;
+    if (this.tail) this.tail.rotation.z = Math.sin(this.t * 3) * 0.5;
+    if (this.float) this.pivot.position.y = 0.15 + Math.sin(this.t * 2.5) * 0.08;
+    else this.pivot.position.y = moving ? Math.abs(Math.sin(this.t * 14)) * 0.08 : Math.sin(this.t * 2) * 0.01;
+    this.pivot.scale.y = 1 + Math.sin(this.t * 2.2) * 0.03;
+  }
+}
+
 export function makeNpc(id) {
+  if (id === 'mitten' || id === 'sela' || id === 'murky') return new Critter(id);
   const look = NPC_LOOKS[id] || NPC_LOOKS.mira;
   const ch = new Character(look.color, { hat: look.hat });
   ch.group.scale.setScalar(look.scale);

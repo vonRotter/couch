@@ -78,6 +78,12 @@ const CSS = `
 .lh-map .cell .boss { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 18px; height: 18px; border-radius: 50%; background: #2b2340; box-shadow: 0 0 0 3px #ff5d73; }
 .lh-map .door { position: absolute; background: #fff; }
 .lh-flash { inset: 0; background: #fff; opacity: 0; }
+.lh-credits { inset: 0; overflow: hidden; background: linear-gradient(rgba(20,14,40,.88), rgba(20,14,40,.72)); }
+.lh-credits .roll { position: absolute; left: 0; right: 0; top: 0; text-align: center; color: #fff; }
+.lh-credits .big { font-size: clamp(30px, 4.6vw, 70px); font-weight: 700; color: #ffd84a; paint-order: stroke fill; -webkit-text-stroke: 0.12em #2b2340; margin: 0.5em 0; }
+.lh-credits .small { font-size: clamp(14px, 1.6vw, 24px); font-weight: 600; opacity: .8; margin-bottom: 2.2em; }
+.lh-credits .head { font-size: clamp(14px, 1.5vw, 22px); font-weight: 700; color: #8ff0ff; margin-top: 2.4em; text-transform: uppercase; letter-spacing: .08em; }
+.lh-credits .text { font-size: clamp(18px, 2.1vw, 32px); font-weight: 700; margin-top: .35em; }
 .lh-dark { inset: 0; background: #000; opacity: 0; }
 `;
 
@@ -114,6 +120,11 @@ export const ICONS = {
   compass: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2b2340" stroke-width="1.4"/><circle cx="12" cy="12" r="6.5" fill="#fff"/><path d="M12 6l2 6h-4z" fill="#ff5d73"/><path d="M12 18l-2-6h4z" fill="#5a4d7a"/></svg>',
   crystal: '<svg viewBox="0 0 24 24"><path d="M12 2l6 8-6 12-6-12z" fill="#8ff0ff" stroke="#2b2340" stroke-width="1.4"/><path d="M12 2v20M6 10h12" stroke="#fff" stroke-width="1"/></svg>',
   piece: '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.5 5c2.1 0 3.5 1.2 5.5 3.2V21z" fill="#ff5d73" stroke="#2b2340" stroke-width="1.4"/></svg>',
+  glove: '<svg viewBox="0 0 24 24"><path d="M7 21v-4l-3-5c-.6-1 .8-2 1.6-1.2L8 13V5.5a1.4 1.4 0 0 1 2.8 0V11V3.8a1.4 1.4 0 0 1 2.8 0V11V4.8a1.4 1.4 0 0 1 2.8 0V12V7.5a1.4 1.4 0 0 1 2.8 0V15c0 3-2 6-5 6z" fill="#c9873f" stroke="#2b2340" stroke-width="1.3"/><rect x="6.5" y="19" width="11" height="3" rx="1" fill="#ff5d73" stroke="#2b2340" stroke-width="1.1"/></svg>',
+  bombs: '<svg viewBox="0 0 24 24"><circle cx="11" cy="14" r="7" fill="#34406a" stroke="#2b2340" stroke-width="1.4"/><circle cx="8.5" cy="11.5" r="1.8" fill="#8ea0d8"/><rect x="9.5" y="5.5" width="4" height="2.6" rx=".8" fill="#5b5470"/><path d="M13 6c1.5-2 3-2.5 4.5-2" stroke="#d8b27a" stroke-width="1.6" fill="none"/><circle cx="18.3" cy="3.6" r="2" fill="#ffd23f"/></svg>',
+  bow: '<svg viewBox="0 0 24 24"><path d="M6 3c8 3 8 15 0 18" fill="none" stroke="#b5835a" stroke-width="2.6" stroke-linecap="round"/><path d="M6 3v18" stroke="#fff" stroke-width="1"/><path d="M4 12h15" stroke="#d8b27a" stroke-width="1.8"/><path d="M21 12l-3.5-2.2v4.4z" fill="#dfe6f5" stroke="#2b2340" stroke-width=".8"/><path d="M4 12l-2-1.8M4 12l-2 1.8" stroke="#ff5d73" stroke-width="1.4"/></svg>',
+  fins: '<svg viewBox="0 0 24 24"><path d="M5 4l4 1 1 10-2 6-5-1 1-6z" fill="#3ddc97" stroke="#2b2340" stroke-width="1.3"/><path d="M14 5l4-1 2 10-1 6-5 1-2-6z" fill="#3ddc97" stroke="#2b2340" stroke-width="1.3"/><path d="M6 8l2 9M18 8l-2 9" stroke="#1f9e6e" stroke-width="1.2"/></svg>',
+  gshell: '<svg viewBox="0 0 24 24"><path d="M3 15c0-6 4-10 9-10s9 4 9 10l-3 2H6z" fill="#ffd23f" stroke="#2b2340" stroke-width="1.5"/><path d="M12 5v12M8 6.5l1.5 10M16 6.5l-1.5 10M5 9.5l3 7M19 9.5l-3 7" stroke="#fff6c8" stroke-width="1.2"/><rect x="9" y="17" width="6" height="3" rx="1" fill="#ffd23f" stroke="#2b2340" stroke-width="1.3"/></svg>',
 };
 export const itemIcon = (id) => ICONS[id] || '';
 
@@ -135,6 +146,8 @@ export class LhHud {
     this.big.style.display = 'none';
     this.menu = div('lh-menu', this.root);
     this.menu.style.display = 'none';
+    this.creditsEl = div('lh-credits', this.root);
+    this.creditsEl.style.display = 'none';
     this.cache = {};
   }
 
@@ -231,7 +244,22 @@ export class LhHud {
       <div class="foot">${esc(m.foot)}</div>`);
   }
 
-  flash() { this.flashV = 0.6; }
+  /** Rolling credits: c = { lines: [{ big | small | head | text }], p: 0..1 } or null. */
+  setCredits(c) {
+    this.show(this.creditsEl, !!c);
+    if (!c) { this.cache.credits = null; return; }
+    const html = c.lines.map((l) => {
+      const [cls, text] = Object.entries(l)[0];
+      return `<div class="${cls}">${esc(text)}</div>`;
+    }).join('');
+    this.set('credits', this.creditsEl, `<div class="roll">${html}</div>`);
+    const roll = this.creditsEl.firstChild;
+    const H = this.creditsEl.clientHeight || window.innerHeight;
+    const h = roll.scrollHeight || H * 2;
+    roll.style.transform = `translateY(${(H - c.p * (h + H * 0.45)).toFixed(1)}px)`;
+  }
+
+  flash(v = 0.6) { this.flashV = Math.max(this.flashV || 0, v); }
 
   setDark(on) { this.darkTarget = on ? 1 : 0; }
 

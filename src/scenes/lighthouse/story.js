@@ -2,6 +2,7 @@ import { t } from '../../core/i18n.js';
 import { say as speak } from '../../core/voice.js';
 import { makeItem } from './models.js';
 import { tileX, tileZ, colOf, rowOf } from './tiles.js';
+import { QUESTS, GOLD_SHELLS } from './rooms.js';
 
 // Dialog, townsfolk, chests, items, the shop, beacon stones, the great lamp and the little cutscenes.
 // Mixed into LighthouseEngine. Every line on screen is also read aloud (if voice is on).
@@ -12,11 +13,18 @@ export const VOICES = {
   tobi: { pitch: 1.65, rate: 1.1, css: '#e0a400' },
   mira: { pitch: 1.3, rate: 1.0, css: '#16b874' },
   pell: { pitch: 0.85, rate: 0.92, css: '#f26b1d' },
+  mitten: { pitch: 1.8, rate: 1.1, css: '#ff9f2e' },
+  sela: { pitch: 1.35, rate: 1.05, css: '#5f7f9e' },
+  murky: { pitch: 1.55, rate: 0.95, css: '#5a4d7a' },
+  murk: { pitch: 0.55, rate: 0.85, css: '#2b2340' },
   sign: { pitch: 1.0, rate: 0.95, css: '#8a5a32' },
   you: { pitch: 1.1, rate: 1.0, css: '#2b2340' },
 };
 
-const MAJOR = new Set(['sword', 'lantern', 'grapple', 'key', 'bigkey', 'map', 'compass', 'heartpiece', 'container', 'crystal', 'potion', 'shells20', 'shells50']);
+const MAJOR = new Set(['sword', 'lantern', 'grapple', 'key', 'bigkey', 'map', 'compass', 'heartpiece', 'container', 'crystal', 'potion', 'shells20', 'shells50',
+  'glove', 'bombs', 'fins', 'bow', 'gshell']);
+const TOOLS = ['sword', 'lantern', 'grapple', 'glove', 'bombs', 'fins', 'bow'];
+const EQUIP = new Set(['lantern', 'grapple', 'bombs', 'bow']);
 
 export const StoryMixin = {
   // ---------- dialog ----------
@@ -89,23 +97,57 @@ export const StoryMixin = {
 
   // ---------- townsfolk ----------
 
+  /** The keeper's advice: where to go next (works for any order of dungeons). */
+  nextHint() {
+    const s = this.save;
+    if (!s.items.sword) return 'lh.k.sword';
+    if (s.flags.beaten) return 'lh.k.after';
+    if ((s.placed || 0) >= 3) return 'lh.k.hint.top';
+    if (!s.bosses.d1_boss) return s.items.lantern ? 'lh.k.go2' : 'lh.k.go1';
+    if (!s.bosses.d2_boss) return 'lh.k.one';
+    if (!s.bosses.d3_boss) {
+      if (!s.items.glove) return 'lh.k.hint.well';
+      if (!s.items.bombs) return 'lh.k.hint.pell';
+      return 'lh.k.hint.storm';
+    }
+    return 'lh.k.done';
+  },
+
   npcLines(id) {
     const s = this.save;
     const L = (...keys) => keys.map((key) => ({ who: id, key }));
+    const it = s.items;
     if (id === 'keeper') {
-      if (!s.items.sword) return L('lh.k.sword');
-      if ((s.placed || 0) >= 2) return L('lh.k.two', 'lh.k.two2', 'lh.k.done');
-      if ((s.placed || 0) === 1) return L('lh.k.one');
-      if (s.items.lantern) return L('lh.k.go2');
-      return L('lh.k.go1');
+      if ((s.placed || 0) === 2 && !s.bosses.d3_boss && it.sword) return L('lh.k.two', this.nextHint());
+      return L(this.nextHint());
     }
-    if (id === 'olga') return s.items.lantern ? L('lh.olga3') : L('lh.olga1', 'lh.olga2');
+    if (id === 'olga') {
+      if (s.flags.catFound && !s.got['q.fins']) return L('lh.olga.fins1', 'lh.olga.fins2');
+      if (s.got['q.fins']) return L('lh.olga.after');
+      if (it.bombs) return L('lh.olga.cat1', 'lh.olga.cat2');
+      if (it.glove) return L('lh.olga.glove');
+      if (it.lantern && it.grapple) return L('lh.olga.well1', 'lh.olga.well2');
+      return it.lantern ? L('lh.olga3') : L('lh.olga1', 'lh.olga2');
+    }
     if (id === 'tobi') {
-      const n = (s.talk.tobi = ((s.talk.tobi || 0) + 1) % 3);
-      return L(['lh.tobi1', 'lh.tobi2', 'lh.tobi3'][n]);
+      const n = s.gshells || 0;
+      const quest = QUESTS.find((q) => q.npc === 'tobi' && !s.got[q.id] && n >= q.need.gshells);
+      if (quest) return L(quest.need.gshells >= GOLD_SHELLS.length ? 'lh.tobi.gs10' : 'lh.tobi.gs5');
+      if (n > 0) return [{ who: id, key: 'lh.tobi.gsN', vars: { n, m: GOLD_SHELLS.length } }];
+      if ((s.placed || 0) >= 2 || it.glove) return L('lh.tobi.gs0');
+      const k = (s.talk.tobi = ((s.talk.tobi || 0) + 1) % 3);
+      return L(['lh.tobi1', 'lh.tobi2', 'lh.tobi3'][k]);
     }
     if (id === 'mira') return L('lh.mira1');
-    if (id === 'pell') return L('lh.pell1', 'lh.pell2');
+    if (id === 'pell') {
+      if (it.fins) return L('lh.pell.seal');
+      if (it.bombs) return L('lh.pell.bombs');
+      if (it.glove) return L('lh.pell.lift');
+      return L('lh.pell1', 'lh.pell2');
+    }
+    if (id === 'mitten') return L('lh.cat1', 'lh.cat2');
+    if (id === 'sela') return L('lh.seal1', 'lh.seal2');
+    if (id === 'murky') return L(s.flags.beaten ? 'lh.murky1' : 'lh.murky0');
     return [];
   },
 
@@ -113,7 +155,34 @@ export const StoryMixin = {
     // turn to face the hero
     const h = this.hero;
     e.char?.face(h.x - e.x, h.z - e.z);
-    this.say(this.npcLines(e.id));
+    if (e.id === 'mitten') this.sfx('meow');
+    if (e.id === 'sela') this.sfx('ark');
+    this.say(this.npcLines(e.id), () => this.afterTalk(e));
+  },
+
+  /** Quests: a found cat, swim fins from Olga, Tobi's golden shell rewards. */
+  afterTalk(e) {
+    const s = this.save;
+    for (const q of QUESTS) {
+      if (q.npc !== e.id) continue;
+      if (q.flag && !s.flags[q.flag]) {
+        s.flags[q.flag] = true;
+        this.persist();
+        if (e.id === 'mitten') {
+          // she dashes home
+          this.poof(e.x, e.z, 0.2);
+          this.room.occ.delete(`${e.c},${e.r}`);
+          this.room.ents = this.room.ents.filter((x) => x !== e);
+          e.mesh.parent?.remove(e.mesh);
+        }
+        return;
+      }
+      if (!q.item || s.got[q.id]) continue;
+      if (q.need?.flag && !s.flags[q.need.flag]) continue;
+      if (q.need?.gshells && (s.gshells || 0) < q.need.gshells) continue;
+      this.giveItem(q.item, { id: q.id });
+      return;
+    }
   },
 
   // ---------- items ----------
@@ -142,10 +211,11 @@ export const StoryMixin = {
       case 'shells20': s.shells += 20; key = 'lh.get.shells'; vars = { n: 20 }; break;
       case 'shells50': s.shells += 50; key = 'lh.get.shells'; vars = { n: 50 }; break;
       case 'heart': s.hp = Math.min(s.maxHp, s.hp + 2); break;
-      case 'sword': case 'lantern': case 'grapple':
+      case 'sword': case 'lantern': case 'grapple': case 'glove': case 'bombs': case 'fins': case 'bow':
         s.items[item] = true;
-        if (item !== 'sword') s.equip = item;
+        if (EQUIP.has(item)) s.equip = item;
         break;
+      case 'gshell': s.gshells = (s.gshells || 0) + 1; vars = { n: s.gshells, m: GOLD_SHELLS.length }; break;
       case 'key': s.keys[area] = (s.keys[area] || 0) + 1; break;
       case 'bigkey': s.big[area] = true; break;
       case 'map': s.maps[area] = true; break;
@@ -175,15 +245,26 @@ export const StoryMixin = {
     m.scale.multiplyScalar(1.3);
     m.position.set(h.x, 1.35, h.z);
     this.room.group.add(m);
-    this.sfx(['sword', 'lantern', 'grapple', 'crystal', 'container', 'bigkey'].includes(item) ? 'item' : 'chest');
+    this.sfx([...TOOLS, 'crystal', 'container', 'bigkey'].includes(item) ? 'item' : 'chest');
     this.hud.flash();
     this.later(0.55, () => {
       this.say([{ who: 'you', key, vars }], () => {
         m.parent?.remove(m);
         h.mode = 'walk';
         if (item === 'crystal') this.afterCrystal();
+        this.checkFull();
       });
     });
+  },
+
+  /** Every heart piece and golden shell found: a little bonus, once per profile. */
+  checkFull() {
+    const s = this.save;
+    if (s.fullRewarded || !this.allFound()) return;
+    s.fullRewarded = true;
+    this.giveStars(3);
+    this.persist();
+    this.later(0.5, () => this.notice('lh.allFound'));
   },
 
   // ---------- the shop ----------
@@ -297,16 +378,31 @@ export const StoryMixin = {
     this.persist();
     const keeper = this.room.ents.find((e) => e.t === 'npc' && e.id === 'keeper');
     if (keeper) keeper.char.face(this.hero.x - keeper.x, this.hero.z - keeper.z);
-    if (s.placed === 1) yield { lines: [{ who: 'keeper', key: 'lh.k.one' }] };
-    if (s.placed >= 2) {
-      yield { lines: [{ who: 'keeper', key: 'lh.k.two' }, { who: 'keeper', key: 'lh.k.two2' }] };
-      if (!s.tbcShown) {
-        s.tbcShown = true;
-        if (!s.tbcRewarded) { s.tbcRewarded = true; this.giveStars(3); }
-        this.persist();
-        this.showTbc();
-      }
+    if (s.placed === 2 && !s.bosses.d3_boss) {
+      // the act 2 story: the thief fled to the Stormcliffs
+      yield { lines: [{ who: 'keeper', key: 'lh.k.two' }] };
+      yield* this.act2Scene(true);
+      return;
     }
+    if (s.placed >= 3) {
+      yield* this.finaleCall();
+      return;
+    }
+    yield { lines: [{ who: 'keeper', key: this.nextHint() }] };
+  },
+
+  /** Part 2 begins: the keeper saw where the gloom went (also for part 1 saves). */
+  *act2Scene(skipWait = false) {
+    if (!skipWait) yield 0.5;
+    const s = this.save;
+    const keeper = this.room.ents.find((e) => e.t === 'npc' && e.id === 'keeper');
+    if (keeper) keeper.char.face(this.hero.x - keeper.x, this.hero.z - keeper.z);
+    const L = (k) => ({ who: 'keeper', key: k });
+    yield { lines: [L('lh.k.act2a'), L('lh.k.act2b'), L(this.nextHint())] };
+    s.flags.act2 = true;
+    // the part 1 ending stars, for saves that never saw them
+    if (!s.tbcRewarded) { s.tbcRewarded = true; this.giveStars(3); }
+    this.persist();
   },
 
   giveStars(n) {

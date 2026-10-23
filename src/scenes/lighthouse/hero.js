@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import { toon } from '../../core/palette.js';
 import { Character } from '../../core/character.js';
 import { DIRS, TALL, tileX, tileZ, colOf, rowOf, inGrid, pegUp, ROPE_RANGE, THROW_RANGE } from './tiles.js';
-import { makeSword, makeItem, mesh, cyl, cone, sph } from './models.js';
+import { makeSword, makeItem, mesh, cyl, cone, sph, tor } from './models.js';
 
 // The hero: a bean in the solo profile's color and hat. Mixed into LighthouseEngine.
 //   stick: walk (8 ways, faces 4 ways like the classics)   [A]: sword (hold and let go: spin)
 //   [B]: talk / read / open / lift / throw                  [C]: equipped item (hold: item + map screen)
+// Part 2: the Strong Gloves lift boulders with [B], bombs can be picked up and thrown, and with the
+// swim fins you swim in deep water (no sword or items while swimming). Bombs and arrows: tools.js.
 // Positions are room-local tiles; the mesh sits at room.origin + (x, z).
 
 export const HERO_SCALE = 0.64;
@@ -39,12 +41,16 @@ export const HeroMixin = {
     this.ropeLine = mesh(cyl(0.035, 0.035, 1, 6), toon(0xd8b27a), 0, 0, 0, false);
     this.ropeHook = mesh(cone(0.12, 0.28, 6), toon(0xdfe6f5), 0, 0, 0, false);
     this.ropeLine.visible = this.ropeHook.visible = false;
-    this.host.scene.add(ch.group, this.ropeLine, this.ropeHook);
+    // rings on the water while swimming
+    this.swimRing = mesh(tor(0.42, 0.04, 6, 20), toon(0xffffff, { transparent: true, opacity: 0.75 }), 0, 0, 0, false);
+    this.swimRing.rotation.x = Math.PI / 2;
+    this.swimRing.visible = false;
+    this.host.scene.add(ch.group, this.ropeLine, this.ropeHook, this.swimRing);
     // the shine on a charged sword
     this.chargeGlow = mesh(sph(0.16, 10, 8), toon(0xfff27a, { emissive: 0xaa8800 }), 0, 0, 0.95, false);
     this.chargeGlow.visible = false;
     sword.add(this.chargeGlow);
-    this.hero = { x: 0, z: 0, face: 's', mode: 'walk', t: 0, inv: 0, kb: null, push: { vx: 0, vz: 0 }, pushT: 0, carry: null, charge: 0, warpArmed: false, moving: 0, swingHits: new Set() };
+    this.hero = { x: 0, z: 0, face: 's', mode: 'walk', t: 0, inv: 0, kb: null, push: { vx: 0, vz: 0 }, pushT: 0, carry: null, charge: 0, warpArmed: false, moving: 0, swingHits: new Set(), swim: false };
   },
 
   placeHero(x, z, face) {
@@ -56,6 +62,7 @@ export const HeroMixin = {
     h.pushT = 0;
     h.charge = 0;
     this.dropCarry(true);
+    h.swim = this.room ? this.room.grid[rowOf(z)]?.[colOf(x)] === '~' : false;
     this.heroChar.yaw = this.heroChar.targetYaw = YAW[h.face];
     this.syncHero(0);
   },
@@ -64,11 +71,16 @@ export const HeroMixin = {
     const h = this.hero;
     const ch = this.heroChar;
     const o = this.room ? this.room.origin : new THREE.Vector3();
-    ch.group.position.set(o.x + h.x, (h.y || 0), o.z + h.z);
+    ch.group.position.set(o.x + h.x, (h.y || 0) + (h.swim ? -0.34 : 0), o.z + h.z);
+    this.swimRing.visible = !!h.swim && h.mode !== 'dead';
+    if (h.swim) {
+      this.swimRing.position.set(o.x + h.x, 0.04, o.z + h.z);
+      this.swimRing.scale.setScalar(1 + Math.sin(this.time * 5) * 0.08 + (h.moving ? 0.1 : 0));
+    }
     if (h.mode !== 'get' && h.mode !== 'spin') ch.targetYaw = YAW[h.face];
     ch.update(dt, { moving: h.moving });
     ch.group.visible = h.inv > 0 && h.mode !== 'get' ? Math.floor(h.inv * 16) % 2 === 0 : true;
-    this.swordMesh.visible = !!this.save.items.sword && !h.carry && h.mode !== 'get';
+    this.swordMesh.visible = !!this.save.items.sword && !h.carry && h.mode !== 'get' && !h.swim;
     this.beltLantern.visible = !!this.save.items.lantern;
     // sword pose
     const sp = this.swordPivot;
@@ -121,10 +133,12 @@ export const HeroMixin = {
       this.checkHeroTile();
       return;
     }
-    // wind from the moth boss
+    // wind (the moth boss, Stormbeak, gusts on the cliffs); a rope pull holds on
     if (h.push.vx || h.push.vz) {
-      this.moveHero(h.push.vx * dt, h.push.vz * dt, true);
+      if (h.mode !== 'rope') this.moveHero(h.push.vx * dt, h.push.vz * dt, true);
       h.push.vx = 0; h.push.vz = 0;
+      if (h.mode !== 'rope') this.checkHeroTile();
+      if (this.mode !== 'play' || h.mode === 'fall') return;
     }
 
     if (h.mode === 'rope') { this.updateRope(dt); return; }
@@ -157,7 +171,7 @@ export const HeroMixin = {
     }
     if (mag > 0.15) {
       if (!charging) this.setFacing(ix, iz);
-      const sp = (charging ? 2.3 : h.carry ? 3.7 : SPEED) * mag;
+      const sp = (charging ? 2.3 : h.swim ? 2.9 : h.carry ? (h.carry.kind === 'boulder' ? 3.1 : 3.7) : SPEED) * mag;
       const len = Math.hypot(ix, iz) || 1;
       const res = this.moveHero((ix / len) * sp * dt * Math.min(1, mag / 0.9 + 0.1), (iz / len) * sp * dt * Math.min(1, mag / 0.9 + 0.1));
       h.moving = Math.min(1, mag);
@@ -173,6 +187,12 @@ export const HeroMixin = {
     if (this.mode !== 'play') return;
 
     if (charging) return;
+    if (h.swim) {
+      // swimming: no sword or items, but you can still talk and read
+      if (inp.b) this.interact();
+      else if (inp.a || inp.useItem) this.notice('lh.swimming');
+      return;
+    }
     if (inp.a && this.save.items.sword) {
       if (h.carry) this.throwCarry();
       else { h.mode = 'swing'; h.t = 0; h.swingHits.clear(); this.sfx('swing'); }
@@ -273,7 +293,7 @@ export const HeroMixin = {
           this.sfx('unlock');
           this.persist();
         } else this.notice('lh.bossLocked');
-      }
+      } else if (type === 'bomb') this.notice('lh.crackedWall');
       return;
     }
     const e = this.entAt(room, c, r);
@@ -295,9 +315,17 @@ export const HeroMixin = {
     if (!inGrid(c, r)) return;
     const ch = this.room.grid[r][c];
     if (ch === 'o' && Math.abs(h.x - tileX(c)) < 0.36 && Math.abs(h.z - tileZ(r)) < 0.36) { this.startFall(); return; }
+    const swim = ch === '~';
+    if (swim !== !!h.swim) {
+      h.swim = swim;
+      this.sfx('splash');
+      this.puffAt(h.x, h.z, 0xbfe9ff, 12, 0.1);
+      if (swim) { this.dropCarry(false); if (h.mode === 'charge') h.mode = 'walk'; }
+    }
     const warp = this.room.ents.find((e) => e.t === 'warp' && e.c === c && e.r === r);
     if (!warp || (warp.under && this.room.grid[r][c] === warp.under)) { h.warpArmed = true; return; }
     if (!h.warpArmed) return;
+    if (warp.lockBoss && this.room.enemies.some((en) => en.boss && !en.dead)) { h.warpArmed = false; this.notice('lh.noEscape'); return; }
     if (warp.need && !this.save.items[warp.need]) {
       h.warpArmed = false;
       this.say([{ who: 'you', key: 'lh.dark' }]);
@@ -369,21 +397,28 @@ export const HeroMixin = {
   /** What [B] would do right now (for the hint), and the target. */
   frontAction() {
     const room = this.room;
-    if (this.hero.carry) return { kind: 'throw' };
+    const h = this.hero;
+    if (h.carry) return { kind: 'throw' };
     const { c, r } = this.frontTile();
     const e = inGrid(c, r) ? this.entAt(room, c, r) : null;
     if (e) {
       if (e.t === 'npc') return { kind: 'talk', e };
       if (e.t === 'sign') return { kind: 'read', e };
+      if (h.swim) return null;
       if (e.t === 'chest' && !e.opened) return { kind: 'open', e };
       if (e.t === 'pot' || e.t === 'rock') return { kind: 'lift', e };
       if (e.t === 'save' || e.t === 'lamp') return { kind: 'save', e };
       if (e.t === 'shop') return { kind: 'buy', e };
+      if (e.t === 'well') return { kind: 'climb', e };
     }
-    // the shopkeeper stands behind her counter
+    if (h.swim) return null;
+    // a bomb on the ground in front (or under you) can be picked up
+    const v = DIRS[h.face];
+    const bomb = room.bombs.find((b) => b.state === 'ground' && (Math.hypot(b.x - (h.x + v.dx * 0.7), b.z - (h.z + v.dz * 0.7)) < 0.55 || Math.hypot(b.x - h.x, b.z - h.z) < 0.35));
+    if (bomb) return { kind: 'lift', bomb };
     if (inGrid(c, r)) {
       const ch = room.grid[r][c];
-      if (ch === 'R') return { kind: 'note', key: 'lh.heavy' };
+      if (ch === 'R') return this.save.items.glove ? { kind: 'lift', tile: [c, r] } : { kind: 'note', key: 'lh.heavy' };
       if (ch === 'C') return { kind: 'note', key: 'lh.cracked' };
       if (ch === '*') return { kind: 'note', key: 'lh.thorns' };
     }
@@ -401,14 +436,25 @@ export const HeroMixin = {
       case 'save': this.useSavePoint(act.e); break;
       case 'buy': this.buy(act.e); break;
       case 'note': this.say([{ who: 'you', key: act.key }]); break;
+      case 'climb': this.startWarp(act.e.to, act.e.at, act.e.face); break;
       case 'lift': {
-        const e = act.e;
-        this.room.occ.delete(`${e.c},${e.r}`);
-        this.room.ents = this.room.ents.filter((x) => x !== e);
-        h.carry = { kind: e.t, mesh: e.mesh, has: e.has, fromX: e.x, fromZ: e.z };
+        if (act.bomb) {
+          const b = act.bomb;
+          b.state = 'carried';
+          h.carry = { kind: 'bomb', mesh: b.mesh, bomb: b, fromX: b.x, fromZ: b.z };
+        } else if (act.tile) {
+          const [c, r] = act.tile;
+          const m = this.liftTile(this.room, c, r);
+          h.carry = { kind: 'boulder', mesh: m, fromX: tileX(c), fromZ: tileZ(r) };
+        } else {
+          const e = act.e;
+          this.room.occ.delete(`${e.c},${e.r}`);
+          this.room.ents = this.room.ents.filter((x) => x !== e);
+          h.carry = { kind: e.t, mesh: e.mesh, has: e.has, fromX: e.x, fromZ: e.z };
+        }
         h.mode = 'lift';
         h.t = 0;
-        this.sfx('lift');
+        this.sfx(h.carry.kind === 'boulder' ? 'heave' : 'lift');
         break;
       }
       default: break;
@@ -420,7 +466,9 @@ export const HeroMixin = {
     const c = h.carry;
     if (!c) return;
     const v = DIRS[h.face];
-    this.room.thrown.push({ kind: c.kind, has: c.has, mesh: c.mesh, x: h.x + v.dx * 0.3, z: h.z + v.dz * 0.3, vx: v.dx * 10, vz: v.dz * 10, dist: 0, y: 0.85 });
+    const sp = c.kind === 'boulder' ? 8.5 : 10;
+    this.room.thrown.push({ kind: c.kind, has: c.has, bomb: c.bomb, mesh: c.mesh, x: h.x + v.dx * 0.3, z: h.z + v.dz * 0.3, vx: v.dx * sp, vz: v.dz * sp, dist: 0, y: 0.85 });
+    if (c.bomb) c.bomb.state = 'flying';
     h.carry = null;
     this.sfx('whoosh');
   },
@@ -428,8 +476,17 @@ export const HeroMixin = {
   dropCarry(silent) {
     const h = this.hero;
     if (!h.carry) return;
-    h.carry.mesh.parent?.remove(h.carry.mesh);
+    const c = h.carry;
     h.carry = null;
+    if (c.bomb && !silent && this.room && this.room.bombs.includes(c.bomb)) {
+      // a bomb you were holding just drops at your feet
+      c.bomb.state = 'ground';
+      c.bomb.x = h.x; c.bomb.z = h.z;
+      c.mesh.position.set(h.x, 0, h.z);
+      return;
+    }
+    if (c.bomb && this.room) this.room.bombs = this.room.bombs.filter((b) => b !== c.bomb);
+    c.mesh.parent?.remove(c.mesh);
     if (!silent) this.sfx('shatter');
   },
 
@@ -452,20 +509,49 @@ export const HeroMixin = {
       }
       for (const en of room.enemies) {
         if (hit || en.dead) continue;
-        if (en.fly && en.y > 1.2) continue;
+        if (en.fly && en.y > (en.highCatch || 1.2)) continue;
         for (const part of en.parts()) {
-          if (Math.hypot(part.x - p.x, part.z - p.z) < part.r + 0.3) { en.hurt(p.kind === 'rock' ? 2 : 1, p.x - p.vx * 0.05, p.z - p.vz * 0.05, p.kind, part.part); hit = true; break; }
+          if (Math.hypot(part.x - p.x, part.z - p.z) < part.r + 0.3) {
+            if (p.kind !== 'bomb') en.hurt(p.kind === 'rock' || p.kind === 'boulder' ? 2 : 1, p.x - p.vx * 0.05, p.z - p.vz * 0.05, p.kind, part.part);
+            hit = true;
+            break;
+          }
         }
+      }
+      if (p.bomb) {
+        // a thrown bomb lands (or bumps into something) and keeps ticking there
+        const b = p.bomb;
+        b.x = p.x; b.z = p.z;
+        if (!room.bombs.includes(b)) return false;
+        if (hit || p.dist >= THROW_RANGE) {
+          const bx = hit ? p.x - Math.sign(p.vx) * 0.45 : p.x, bz = hit ? p.z - Math.sign(p.vz) * 0.45 : p.z;
+          const bc = colOf(bx), br = rowOf(bz);
+          if (inGrid(bc, br) && ['o', '~'].includes(room.grid[br][bc])) {
+            room.bombs = room.bombs.filter((x) => x !== b);
+            p.mesh.parent?.remove(p.mesh);
+            this.sfx(room.grid[br][bc] === '~' ? 'splash' : 'fall');
+            this.puffAt(bx, bz, 0x9a94b2, 8);
+            return false;
+          }
+          b.state = 'ground';
+          b.x = bx; b.z = bz;
+          p.mesh.position.set(bx, 0, bz);
+          p.mesh.rotation.set(0, 0, 0);
+          this.sfx('land');
+          return false;
+        }
+        return true;
       }
       if (hit || p.dist >= THROW_RANGE) {
         p.mesh.parent?.remove(p.mesh);
         const overHole = inGrid(c, r) && ['o', '~'].includes(room.grid[r][c]);
         if (!overHole || hit) {
           this.sfx('shatter');
-          this.puffAt(p.x - p.vx * 0.03, p.z - p.vz * 0.03, p.kind === 'rock' ? 0x9a94b2 : 0xd9805a, 10);
+          this.puffAt(p.x - p.vx * 0.03, p.z - p.vz * 0.03, p.kind === 'pot' ? 0xd9805a : 0x9a94b2, p.kind === 'boulder' ? 18 : 10);
+          if (p.kind === 'boulder') this.shake(0.12);
           const bx = p.x - Math.sign(p.vx) * 0.4, bz = p.z - Math.sign(p.vz) * 0.4;
           if (p.has) this.addPickup(room, p.has, bx, bz, { pop: true, persist: p.has === 'key' });
-          else if (Math.random() < 0.35) this.addPickup(room, Math.random() < 0.6 ? 'shell' : 'heart', bx, bz, { pop: true });
+          else if (p.kind !== 'boulder' && Math.random() < 0.35) this.addPickup(room, Math.random() < 0.6 ? 'shell' : 'heart', bx, bz, { pop: true });
         } else this.sfx('splat');
         return false;
       }
@@ -479,6 +565,8 @@ export const HeroMixin = {
     const item = this.save.equip;
     if (item === 'lantern' && this.save.items.lantern) this.useLantern();
     else if (item === 'grapple' && this.save.items.grapple) this.fireRope();
+    else if (item === 'bombs' && this.save.items.bombs) this.placeBomb();
+    else if (item === 'bow' && this.save.items.bow) this.shootArrow();
   },
 
   useLantern() {
@@ -499,7 +587,7 @@ export const HeroMixin = {
       if (room.grid[r][c] === '*') { this.burnTile(room, c, r); break; }
     }
     for (const en of room.enemies) {
-      if (en.dead || (en.fly && en.y > 1.2)) continue;
+      if (en.dead || (en.fly && en.y > (en.flameReach || 1.2))) continue;
       if (Math.hypot(en.x - fx, en.z - fz) < en.r + 0.55) en.hurt(1, h.x, h.z, 'flame');
     }
   },

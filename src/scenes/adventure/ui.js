@@ -50,6 +50,8 @@ const CSS = `
 .adv-choice { color: #d9d2ff; font-size: clamp(16px, 1.75vw, 28px); font-weight: 600; padding: 4px 12px 4px 36px; border-radius: 12px;
   position: relative; line-height: 1.25; }
 .adv-choice.used { color: #a99fd8; }
+.adv-choices.many { padding: 8px 14px; }
+.adv-choices.many .adv-choice { font-size: clamp(14px, 1.5vw, 24px); padding-top: 2px; padding-bottom: 2px; }
 .adv-choice.on { color: #fff; background: rgba(255,255,255,.14); }
 .adv-choice.on::before { content: '▶'; position: absolute; left: 10px; color: #ffd84a; font-size: 0.8em; top: 0.3em; }
 .adv-cursor { left: 0; top: 0; width: 0; height: 0; will-change: transform; }
@@ -62,12 +64,12 @@ const CSS = `
 .adv-cursor .tag { position: absolute; left: 0; top: 26px; transform: translateX(-50%); white-space: nowrap; font-weight: 700;
   font-size: clamp(13px, 1.25vw, 20px); color: #fff; paint-order: stroke fill; -webkit-text-stroke: 0.25em #2b2340; }
 .adv-meters { top: 2vh; left: 50%; transform: translateX(-50%); display: flex; gap: 2vw; align-items: center; }
-.adv-meter { background: #fff; border-radius: 999px; padding: 6px 16px; display: flex; gap: 8px; align-items: center; font-weight: 700;
+.adv-meter { background: #fff; border-radius: 999px; padding: 6px 16px; display: flex; gap: 8px; align-items: center; font-weight: 700; white-space: nowrap;
   font-size: clamp(14px, 1.5vw, 24px); box-shadow: 0 4px 0 rgba(43,35,64,.2); border: 4px solid var(--c); }
 .adv-meter .g { width: 1.25em; height: 1.25em; border-radius: 50%; border: 3px solid var(--c); background: #f3f0fa; position: relative; }
 .adv-meter .g.full { background: var(--c); animation: adv-wobble .5s ease; }
 .adv-meter .g.full::after { content: ''; position: absolute; left: 22%; right: 22%; top: 45%; height: 28%; border-radius: 0 0 99px 99px; background: #fff; }
-.adv-duel-tag { font-weight: 700; color: #fff; font-size: clamp(18px, 2vw, 32px); paint-order: stroke fill; -webkit-text-stroke: 0.22em #ff6fae; }
+.adv-duel-tag { white-space: nowrap; font-weight: 700; color: #fff; font-size: clamp(18px, 2vw, 32px); paint-order: stroke fill; -webkit-text-stroke: 0.22em #ff6fae; }
 @keyframes adv-wobble { 0% { transform: scale(1.5) rotate(-20deg); } 100% { transform: none; } }
 .adv-title { left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(255,250,240,.96); border-radius: 36px;
   padding: clamp(18px, 3vw, 40px) clamp(26px, 4.5vw, 70px); text-align: center; box-shadow: 0 10px 0 rgba(43,35,64,.22);
@@ -231,6 +233,7 @@ export class AdvUI {
     const html = `${head ? `<div class="head">${head}</div>` : ''}${list.map((o, i) =>
       `<div class="adv-choice ${i === index ? 'on' : ''} ${o.used ? 'used' : ''}">${esc(o.text)}</div>`).join('')}`;
     this.set('choices', this.choices, html);
+    this.choices.classList.toggle('many', list.length > 6);
     this.show(this.choices, true);
   }
 

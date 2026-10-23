@@ -17,7 +17,11 @@ export const THEMES = {
   cave: { floor: ['#8a7764', '#7f6c5a'], wall: 0x5e4c40, wallTop: 0x7d6a5a, bg: 0x120d0a },
   cellar: { floor: ['#958aa8', '#8a7f9d'], wall: 0x6d6084, wallTop: 0x9a8db5, bg: 0x17121f },
   grotto: { floor: ['#e3d3a8', '#d9c89c'], wall: 0x3f8ea3, wallTop: 0x7fd0db, bg: 0x0d2630 },
+  // part 2: the stormy cliffs (outdoors, grey-green under rain clouds) and the Stormcliff Ruins
+  cliff: { floor: ['#9cc38a', '#93ba82'], wall: 0x9a93a8, wallTop: 0x6f9a63, bg: 0x4f6a88, sea: 0x3d7fa6, outdoor: true },
+  ruins: { floor: ['#a9b4a6', '#a0ab9d'], wall: 0x76848c, wallTop: 0xa9b5b2, bg: 0x111a22 },
 };
+THEMES.over.outdoor = true;
 
 const TILE_PX = 32;
 const _m = new THREE.Matrix4();
@@ -71,16 +75,23 @@ function paintFloor(grid, theme, rand) {
       if (!PAINTED.has(ch)) ch = groundOf(lines, c, r, '.');
       const x = c * TILE_PX, y = r * TILE_PX;
       let col = T.floor[(c + r) % 2];
-      if (ch === ',') col = theme === 'over' ? '#e8c890' : shade(parseInt(T.floor[0].slice(1), 16), 0.9);
+      if (ch === ',') col = theme === 'over' ? '#e8c890' : theme === 'cliff' ? '#cdb990' : shade(parseInt(T.floor[0].slice(1), 16), 0.9);
       else if (ch === 's') col = '#f5dfa2';
       else if (ch === 'w') col = '#9fe0f5';
-      else if (ch === '~') col = theme === 'over' ? '#4fb8e8' : '#2f86b8';
-      else if (ch === 'o') col = '#110b18';
+      else if (ch === '~') col = T.outdoor ? `#${new THREE.Color(T.sea).getHexString()}` : '#2f86b8';
+      else if (ch === 'o') col = T.outdoor ? '#1c2433' : '#110b18';
       else if (ch === ' ') col = `#${new THREE.Color(T.bg).getHexString()}`;
       else if (ch === '#' || ch === 'H') col = shade(T.wall, 0.7);
       g.fillStyle = col;
       g.fillRect(x, y, TILE_PX, TILE_PX);
-      if (ch === 'o') {
+      if (ch === 'o' && T.outdoor) {
+        // a cliff drop: the sea far below, the cliff face at the top edge
+        g.fillStyle = '#2b4a6a';
+        g.fillRect(x, y, TILE_PX, TILE_PX);
+        g.fillStyle = 'rgba(255,255,255,0.18)';
+        g.fillRect(x + ((c * 13 + r * 7) % 20), y + ((c * 5 + r * 11) % 22) + 4, 7, 2);
+        if (at(c, r - 1) !== 'o') { g.fillStyle = '#5e5870'; g.fillRect(x, y, TILE_PX, 12); g.fillStyle = '#463f57'; g.fillRect(x, y + 12, TILE_PX, 4); }
+      } else if (ch === 'o') {
         // a hole: dark with a lit back rim, so it reads as a drop
         g.fillStyle = '#2a2138';
         if (at(c, r - 1) !== 'o') g.fillRect(x, y, TILE_PX, 7);
@@ -109,14 +120,14 @@ function paintFloor(grid, theme, rand) {
           if (vertical) g.fillRect(x + 2, y + 4 + i * 7, TILE_PX - 4, 2);
           else g.fillRect(x + 4 + i * 7, y + 2, 2, TILE_PX - 4);
         }
-      } else if (theme === 'over' && (ch === '.' || ch === 'f' || ch === 'g')) {
+      } else if (T.outdoor && (ch === '.' || ch === 'f' || ch === 'g')) {
         g.fillStyle = 'rgba(60,140,50,0.35)';
         for (let i = 0; i < 3; i++) {
           const px = x + 4 + rand() * (TILE_PX - 8), py = y + 4 + rand() * (TILE_PX - 8);
           g.fillRect(px, py, 2, 5);
           g.fillRect(px + 3, py + 1, 2, 4);
         }
-      } else if (['cellar', 'grotto', 'cave', 'tower'].includes(theme) && ch !== '#' && ch !== 's' && ch !== ',') {
+      } else if (['cellar', 'grotto', 'cave', 'tower', 'ruins'].includes(theme) && ch !== '#' && ch !== 's' && ch !== ',') {
         // stone slab seams
         g.strokeStyle = 'rgba(0,0,0,0.12)';
         g.lineWidth = 1.5;
@@ -142,10 +153,11 @@ function addWall(B, theme, c, r, grid) {
   const T = THEMES[theme];
   const x = tileX(c), z = tileZ(r);
   const edge = r === 0 || c === 0 || c === W - 1;
-  let h = theme === 'over' ? 1.25 : edge ? 1.15 : 0.95;
-  if (r === H - 1 || (grid[r + 1]?.[c] === ' ' && theme !== 'over')) h = theme === 'over' ? 0.6 : 0.42; // walls facing the camera stay low
-  if (r === 0 && theme !== 'over') h = 1.35;
-  if (theme === 'over') {
+  const out = !!T.outdoor;
+  let h = out ? 1.25 : edge ? 1.15 : 0.95;
+  if (r === H - 1 || (grid[r + 1]?.[c] === ' ' && !out)) h = out ? 0.6 : 0.42; // walls facing the camera stay low
+  if (r === 0 && !out) h = 1.35;
+  if (out) {
     const rnd = ((c * 928371 + r * 12377) % 100) / 100;
     B.add(box(1.02, h, 1.02), T.wall, x, h / 2, z);
     B.add(box(1.04, 0.14, 1.04), T.wallTop, x, h + 0.02, z);
@@ -166,6 +178,14 @@ function addWall(B, theme, c, r, grid) {
     if ((c * 7 + r * 3) % 4 === 0) B.add(ico(0.22, 0), 0xff9fb8, x + 0.2, h + 0.1, z + 0.2);
   } else if (theme === 'tower') {
     B.add(box(1.01, 0.18, 1.01), 0xff6b7d, x, h * 0.55, z);
+  } else if (theme === 'ruins') {
+    // old carved blocks with moss and a broken top here and there
+    if (h > 0.6 && grid[r + 1]?.[c] !== '#') {
+      B.add(box(1.01, 0.05, 0.02), 0x5d6a72, x, h * 0.5, z + 0.505);
+      B.add(box(0.05, h * 0.45, 0.02), 0x5d6a72, x + ((c + r) % 2 ? 0.25 : -0.25), h * 0.27, z + 0.505);
+    }
+    if ((c * 5 + r * 11) % 7 === 0) B.add(ico(0.2, 0), 0x6fae5f, x - 0.2, h + 0.12, z + 0.15);
+    else if ((c * 3 + r * 7) % 9 === 0) B.add(box(0.5, 0.18, 0.5), T.wall, x + 0.18, h + 0.16, z - 0.1);
   }
 }
 
@@ -183,16 +203,6 @@ function addStatic(B, theme, ch, c, r, grid, rand) {
   switch (ch) {
     case '#': addWall(B, theme, c, r, grid); break;
     case 'T': addTree(B, c, r, rand); break;
-    case 'R':
-      B.add(ico(0.62, 1), COLORS.rockDark, x, 0.5, z, { sy: 0.85 });
-      B.add(ico(0.3, 0), COLORS.rock, x - 0.2, 0.85, z + 0.2);
-      break;
-    case 'C':
-      B.add(box(0.96, 0.95, 0.96), C.stone, x, 0.47, z);
-      B.add(box(0.06, 0.6, 0.02), COLORS.ink, x - 0.1, 0.5, z + 0.49, { rz: 0.5 });
-      B.add(box(0.06, 0.4, 0.02), COLORS.ink, x + 0.15, 0.55, z + 0.49, { rz: -0.6 });
-      B.add(box(0.3, 0.05, 0.02), COLORS.ink, x + 0.05, 0.35, z + 0.49, { rz: 0.2 });
-      break;
     case 'F':
       B.add(box(0.12, 0.6, 0.12), C.wood, x - 0.38, 0.3, z);
       B.add(box(0.12, 0.6, 0.12), C.wood, x + 0.38, 0.3, z);
@@ -283,6 +293,41 @@ function addWell(B, p) {
   B.add(cyl(0.65, 0.65, 0.9, 3), 0xe0564f, x, 1.35, z, { rz: Math.PI / 2, rx: -Math.PI / 2, sz: 0.5 });
 }
 
+/** The front of the Stormcliff Ruins: a broken temple wall with an arch over the door. */
+function addRuins(B, p) {
+  const x = tileX(p.c), z = tileZ(p.r);
+  const stone = 0x8a95a0, dark = 0x5d6a72, moss = 0x6fae5f;
+  B.add(box(7.0, 1.7, 1.6), stone, x, 0.85, z - 0.2);
+  B.add(box(7.2, 0.2, 1.8), dark, x, 1.75, z - 0.2);
+  for (const s of [-3, -1.6, 1.6, 3]) {
+    B.add(cyl(0.3, 0.34, 2.6, 10), 0xc9d0d6, x + s, 1.3, z + 0.65);
+    B.add(box(0.8, 0.2, 0.8), dark, x + s, 2.65, z + 0.65);
+  }
+  B.add(box(4.2, 0.35, 0.5), 0xc9d0d6, x, 2.85, z + 0.65);
+  B.add(cone(1.2, 0.8, 4), stone, x, 3.4, z + 0.5, { ry: Math.PI / 4, sz: 0.5 });
+  // the dark arch
+  B.add(box(1.0, 1.25, 0.1), 0x1a1426, x, 0.62, z + 0.62);
+  B.add(cyl(0.5, 0.5, 0.1, 12), 0x1a1426, x, 1.25, z + 0.62, { rx: Math.PI / 2 });
+  // broken bits and moss
+  B.add(box(0.9, 0.5, 0.7), stone, x - 2.4, 2.0, z - 0.4, { rz: 0.3 });
+  B.add(ico(0.35, 0), moss, x + 2.3, 1.9, z - 0.2);
+  B.add(ico(0.28, 0), moss, x - 3.3, 1.85, z + 0.1);
+}
+
+/** A little sailing ship (the ending: the light brings the ships home). */
+export function makeShip() {
+  const g = new THREE.Group();
+  g.add(mesh(box(2.2, 0.5, 0.9), 0xb5835a, 0, 0.25, 0));
+  g.add(mesh(box(2.4, 0.12, 1.0), 0x8a5a3a, 0, 0.52, 0));
+  g.add(mesh(cone(0.45, 0.9, 4), 0xb5835a, 1.3, 0.28, 0, true));
+  g.children[2].rotation.z = -Math.PI / 2;
+  g.add(mesh(cyl(0.05, 0.06, 2.0, 6), 0x8a5a3a, 0, 1.5, 0));
+  const sail = mesh(box(0.06, 1.3, 1.3), 0xfff3dc, 0.15, 1.6, 0);
+  g.add(sail);
+  g.add(mesh(box(0.05, 0.25, 0.4), 0xff5d73, 0, 2.55, 0.18));
+  return g;
+}
+
 function addStall(B, p) {
   const x = tileX(p.c), z = tileZ(p.r);
   for (const sx of [-1.4, 1.4]) B.add(box(0.1, 1.6, 0.1), C.woodDark, x + sx, 0.8, z - 0.3);
@@ -318,6 +363,7 @@ export function buildRoomStatic(def, grid, group, doors) {
     else if (p.kind === 'lighthouse') lampTop = addLighthouse(B, p);
     else if (p.kind === 'well') addWell(B, p);
     else if (p.kind === 'stall') addStall(B, p);
+    else if (p.kind === 'ruins') addRuins(B, p);
   }
   B.build(group);
 
@@ -330,7 +376,7 @@ export function buildRoomStatic(def, grid, group, doors) {
   group.add(floor);
 
   // Sea (overworld) or darkness around the room, so screen edges never show the void.
-  const under = new THREE.Mesh(new THREE.PlaneGeometry(W * 3, H * 3), toon(theme === 'over' ? T.sea : T.bg));
+  const under = new THREE.Mesh(new THREE.PlaneGeometry(W * 3, H * 3), toon(T.outdoor ? T.sea : T.bg));
   under.rotation.x = -Math.PI / 2;
   under.position.y = -0.04;
   group.add(under);

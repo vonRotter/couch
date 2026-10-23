@@ -7,6 +7,10 @@ SONGS.lhOver ??= { bpm: 112, root: 62, chords: [0, 5, 7, 5], seed: 77, lead: 'tr
 SONGS.lhCave ??= { bpm: 84, root: 57, chords: [0, 3, 5, 3], seed: 91, lead: 'sine' };
 SONGS.lhDungeon ??= { bpm: 96, root: 55, chords: [0, 3, 8, 7], seed: 123, lead: 'square' };
 SONGS.lhBoss ??= { bpm: 150, root: 52, chords: [0, 1, 0, 6], seed: 201, lead: 'square' };
+// part 2: the stormy cliffs and ruins, the final fight in the lamp room, and the ending
+SONGS.lhStorm ??= { bpm: 104, root: 53, chords: [0, 3, 10, 8], seed: 311, lead: 'triangle' };
+SONGS.lhFinal ??= { bpm: 158, root: 50, chords: [0, 8, 3, 10], seed: 377, lead: 'square' };
+SONGS.lhEnd ??= { bpm: 88, root: 60, chords: [0, 5, 9, 7], seed: 409, lead: 'sine' };
 
 const NOTE = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
@@ -45,6 +49,24 @@ export function sfx(audio, name) {
     case 'save': [0, 7, 12, 16].forEach((n, i) => audio.tone(NOTE(72 + n), 0.2, { type: 'sine', vol: 0.09, delay: i * 0.1 })); break;
     case 'text': audio.tone(NOTE(79), 0.04, { type: 'square', vol: 0.03 }); break;
     case 'menu': audio.tone(NOTE(76), 0.06, { type: 'triangle', vol: 0.1 }); break;
+    // part 2
+    case 'boom': audio.noise(0.6, { vol: 0.3, freq: 180, q: 0.4, type: 'lowpass' }); audio.tone(60, 0.5, { type: 'sine', vol: 0.25, slide: 0.4 }); audio.noise(0.25, { vol: 0.12, freq: 1800, q: 0.5 }); break;
+    case 'fuse': audio.noise(0.4, { vol: 0.05, freq: 5000, q: 2 }); audio.tone(NOTE(84), 0.05, { type: 'square', vol: 0.03 }); break;
+    case 'arrow': audio.noise(0.12, { vol: 0.1, freq: 3500, q: 1.5 }); audio.tone(900 * r, 0.08, { type: 'triangle', vol: 0.05, slide: 0.6 }); break;
+    case 'clink': audio.tone(1800 * r, 0.06, { type: 'square', vol: 0.04 }); break;
+    case 'splash': audio.noise(0.3, { vol: 0.14, freq: 1200, q: 0.5 }); audio.tone(300, 0.15, { type: 'sine', vol: 0.05, slide: 1.6 }); break;
+    case 'wind': audio.tone(600, 0.9, { type: 'sine', vol: 0.04, slide: 1.4 }); audio.noise(0.9, { vol: 0.05, freq: 900, q: 0.4 }); break;
+    case 'gust': audio.noise(1.3, { vol: 0.12, freq: 500, q: 0.3 }); break;
+    case 'thunder': audio.noise(1.1, { vol: 0.22, freq: 120, q: 0.3, type: 'lowpass' }); audio.tone(45, 0.8, { type: 'sine', vol: 0.15, slide: 0.7 }); break;
+    case 'screech': audio.tone(1400 * r, 0.25, { type: 'sawtooth', vol: 0.05, slide: 0.7 }); audio.tone(1900 * r, 0.2, { type: 'square', vol: 0.03, slide: 0.6, delay: 0.05 }); break;
+    case 'heave': audio.tone(140, 0.25, { type: 'triangle', vol: 0.12, slide: 1.4 }); audio.noise(0.2, { vol: 0.08, freq: 300, type: 'lowpass' }); break;
+    case 'flip': audio.tone(500, 0.12, { type: 'square', vol: 0.06, slide: 1.8 }); audio.tone(300, 0.15, { type: 'triangle', vol: 0.06, delay: 0.1 }); break;
+    case 'crack': audio.noise(0.3, { vol: 0.2, freq: 2200, q: 0.6 }); audio.tone(200, 0.2, { type: 'square', vol: 0.06, slide: 0.5 }); break;
+    case 'rumble': audio.noise(0.7, { vol: 0.12, freq: 150, q: 0.6, type: 'lowpass' }); break;
+    case 'dig': audio.noise(0.3, { vol: 0.12, freq: 400, q: 0.6, type: 'lowpass' }); audio.tone(220, 0.2, { type: 'triangle', vol: 0.06, slide: 0.5 }); break;
+    case 'meow': audio.tone(700, 0.12, { type: 'sine', vol: 0.08, slide: 1.4 }); audio.tone(950, 0.22, { type: 'sine', vol: 0.07, slide: 0.7, delay: 0.1 }); break;
+    case 'ark': [0, 0.18].forEach((d) => audio.tone(330, 0.12, { type: 'square', vol: 0.05, slide: 1.3, delay: d })); break;
+    case 'horn': audio.tone(NOTE(55), 0.9, { type: 'sawtooth', vol: 0.06 }); audio.tone(NOTE(62), 0.9, { type: 'triangle', vol: 0.06 }); break;
     default: audio.play(name); break;
   }
 }

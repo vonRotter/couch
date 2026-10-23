@@ -25,6 +25,11 @@ import { makeSpoon } from './props.js';
 // Rooms are data (see rooms.js): build(s, group) makes the diorama and returns props; walk is a
 // list of rectangles [x0, z0, x1, z1]; hotspots have a name, a hit box, a stand point and
 // handlers per verb. Saving: game.roster.progress.adventure = { room, inventory, flags, ... }.
+//
+// Scenes: save.scene is the scene being played (1, 2, ...); save.done / save.done2 mark scenes
+// finished. When scene 1 is done, the title card's Continue starts the next scene through
+// `scenes[n].start(engine)` (see scene2.js). Say/choice vars may be functions, so text built from
+// other strings (a to-do list) is rebuilt in the right language after a language switch.
 
 export const SAVE_VERSION = 1;
 const PIP_SPEED = 3.3;
@@ -56,18 +61,27 @@ const SET = {
 };
 
 export function freshSave(room) {
-  return { v: SAVE_VERSION, room, inventory: ['spoon'], flags: {}, comebacks: [], pos: null, done: false };
+  return { v: SAVE_VERSION, scene: 1, room, inventory: ['spoon'], flags: {}, comebacks: [], pos: null, done: false };
+}
+
+/** t() with vars that may be functions (evaluated now, in the current language). */
+function tv(key, vars) {
+  if (!vars) return t(key);
+  const v = {};
+  for (const k of Object.keys(vars)) v[k] = typeof vars[k] === 'function' ? vars[k]() : vars[k];
+  return t(key, v);
 }
 
 const isIter = (x) => x && typeof x.next === 'function';
 
 export class AdventureEngine {
-  constructor(host, { rooms, start, intro }) {
+  constructor(host, { rooms, start, intro, scenes = {} }) {
     this.host = host;
     this.game = host.game;
     this.rooms = rooms;
     this.startRoom = start;
     this.introScript = intro;
+    this.scenes = scenes;
     this.ui = new AdvUI(this.game);
     this.mode = 'title';
     this.time = 0;
@@ -91,6 +105,7 @@ export class AdventureEngine {
     this.save.flags ||= {};
     this.save.inventory ||= [];
     this.save.comebacks ||= [];
+    this.save.scene ||= 1;
 
     this.makePip();
     this.bindMouse();
@@ -131,7 +146,7 @@ export class AdventureEngine {
   /** Put something on Pip's head (removed again when the room unloads). */
   attachToHead(obj) {
     this.headSlot.add(obj);
-    this.attached.push(obj);
+    if (!this.attached.includes(obj)) this.attached.push(obj);
   }
 
   // ---------- rooms ----------
@@ -143,9 +158,11 @@ export class AdventureEngine {
     this.host.scene.add(group);
     this.room = { id, def, group, props: {}, time: 0 };
     this.save.room = id;
-    if (def.sky) {
+    this.camDY = 0;
+    const sky = typeof def.sky === 'function' ? def.sky(this) : def.sky;
+    if (sky) {
       this.host.scene.background?.dispose?.();
-      this.host.scene.background = skyTexture(def.sky[0], def.sky[1]);
+      this.host.scene.background = skyTexture(sky[0], sky[1]);
     }
     def.lights?.(this, this.host.lights);
     this.room.props = def.build(this, group) || {};
@@ -194,8 +211,9 @@ export class AdventureEngine {
     const dist = this.host.fitDistance(c.viewW, c.viewH || c.viewW * 0.5);
     const pitch = c.pitch ?? 0.15;
     const x = this.camX ?? c.x ?? 0;
-    cam.position.set(x, c.lookY + Math.sin(pitch) * dist, Math.cos(pitch) * dist);
-    cam.lookAt(x, c.lookY, 0);
+    const ly = c.lookY + (this.camDY || 0); // camDY: a room may nudge the camera (the ship rising)
+    cam.position.set(x, ly + Math.sin(pitch) * dist, Math.cos(pitch) * dist);
+    cam.lookAt(x, ly, 0);
   }
 
   // ---------- walking ----------
@@ -393,6 +411,11 @@ export class AdventureEngine {
     if (this.mode === 'title') return;
     this.save.room = this.room.id;
     this.save.pos = [+this.pip.position.x.toFixed(2), +this.pip.position.z.toFixed(2)];
+    this.writeSave();
+  }
+
+  /** Store the save as it is (persist() first updates the room and Pip's position). */
+  writeSave() {
     this.game.roster.progress.adventure = JSON.parse(JSON.stringify(this.save));
     this.game.roster.save();
   }
@@ -485,6 +508,11 @@ export class AdventureEngine {
       case 'tickle': a.noise(0.12, { vol: 0.08, freq: 4000, q: 2 }); a.tone(1200 * r, 0.06, { type: 'sine', vol: 0.06, slide: 1.6, delay: 0.05 }); break;
       case 'lid': a.tone(240, 0.12, { type: 'triangle', vol: 0.18, slide: 1.6 }); a.noise(0.08, { vol: 0.12, freq: 900 }); break;
       case 'knock': a.tone(150, 0.06, { type: 'triangle', vol: 0.25 }); a.tone(150, 0.06, { type: 'triangle', vol: 0.25, delay: 0.16 }); break;
+      case 'bloop': a.tone(260 * r, 0.16, { type: 'sine', vol: 0.22, slide: 2.4 }); a.tone(520 * r, 0.12, { type: 'sine', vol: 0.14, slide: 1.6, delay: 0.14 }); break;
+      case 'snip': a.noise(0.05, { vol: 0.18, freq: 5200, q: 3 }); a.noise(0.05, { vol: 0.18, freq: 6000, q: 3, delay: 0.09 }); break;
+      case 'clack': a.tone(1700 * r, 0.03, { type: 'square', vol: 0.04 }); a.tone(1500 * r, 0.03, { type: 'square', vol: 0.04, delay: 0.08 }); break;
+      case 'creak': a.tone(120 * r, 0.45, { type: 'sawtooth', vol: 0.04, slide: 1.4 }); break;
+      case 'flap': for (let i = 0; i < 3; i++) a.noise(0.07, { vol: 0.1, freq: 700, q: 0.8, delay: i * 0.11 }); break;
       default: a.play(name);
     }
   }
@@ -518,6 +546,7 @@ export class AdventureEngine {
   run(h, ctx = {}) {
     const it = this.toIter(h, ctx);
     if (!it) return;
+    if (this.script) this.clearDuel(); // a script replaced mid-duel never cleans up after itself
     this.pending = null;
     this.script = { it, cmd: null };
     this.mode = 'script';
@@ -540,10 +569,17 @@ export class AdventureEngine {
     }
   }
 
+  /** Hide Tickle Fencing's giggle meters. */
+  clearDuel() {
+    this.ui.setMeters(null);
+    this.duelMeters = null;
+  }
+
   endScript() {
     this.script = null;
     this.hideSpeech();
     this.ui.setChoices(null);
+    this.clearDuel();
     if (this.mode === 'script') this.mode = 'play';
     this.persist();
   }
@@ -572,7 +608,7 @@ export class AdventureEngine {
       case 'end':
         this.mode = 'end';
         this.hideSpeech();
-        this.ui.showTbc(t('adv.tbc'), t('adv.tbcSub'));
+        this.ui.showTbc(t('adv.tbc'), t(this.save.scene >= 2 ? 'adv.tbcSub2' : 'adv.tbcSub'));
         this.game.audio.play('fanfare');
         speak(t('adv.tbc'));
         break;
@@ -600,7 +636,7 @@ export class AdventureEngine {
       case 'choose': return this.updateChoose(cmd, inp);
       case 'room': return !!cmd.ready;
       case 'end':
-        if (cmd.t > 3.6 && !cmd.finished) { cmd.finished = true; this.host.completeScene(); }
+        if (cmd.t > 3.6 && !cmd.finished) { cmd.finished = true; this.host.completeScene(this.save.scene); }
         return false;
       default: return true;
     }
@@ -610,7 +646,7 @@ export class AdventureEngine {
 
   startSay(cmd) {
     const actor = this.actors[cmd.who] || this.actors.pip;
-    const text = t(cmd.key, cmd.vars);
+    const text = tv(cmd.key, cmd.vars);
     cmd.text = text;
     const chars = text.length;
     cmd.dur = Math.min(9, Math.max(2, 1.2 + chars * (voiceOn() ? 0.07 : 0.055)));
@@ -661,7 +697,7 @@ export class AdventureEngine {
       if (i >= 0 && i !== cmd.index && this.mouse.moved) cmd.index = i;
       if (i >= 0 && inp.click) { cmd.index = i; clicked = true; }
     }
-    this.ui.setChoices(cmd.options.map((o) => ({ text: t(o.text, o.vars), used: o.used })), cmd.index, cmd.head ? (typeof cmd.head === 'function' ? cmd.head() : cmd.head) : '');
+    this.ui.setChoices(cmd.options.map((o) => ({ text: tv(o.text, o.vars), used: o.used })), cmd.index, cmd.head ? (typeof cmd.head === 'function' ? cmd.head() : cmd.head) : '');
     if ((inp.a && cmd.t > 0.15) || clicked) {
       this.game.audio.play('select');
       cmd.result = cmd.index;
@@ -694,7 +730,7 @@ export class AdventureEngine {
 
   handlerFor(h, verb, item) {
     if (item) {
-      const u = h.useItem?.[item] ?? h.useItem?.any;
+      const u = h.useItem?.[item] ?? h.useItem?.any ?? ITEMS[item]?.useOn;
       if (u) return u;
       return this.generic('useOn', { i: this.itemName(item) });
     }
@@ -722,20 +758,34 @@ export class AdventureEngine {
 
   // ---------- title card ----------
 
+  /** The scene Continue leads to: the next one once the saved scene is finished and it exists. */
+  nextScene() {
+    const n = this.save.scene || 1;
+    const finished = n === 1 ? this.save.done : this.save[`done${n}`];
+    return finished && this.scenes[n + 1] ? n + 1 : n;
+  }
+
+  titleSub() {
+    if (!this.hasSave) return t('adv.scene1');
+    const n = this.nextScene();
+    if (n === 2 && this.save.done2) return t('adv.done2');
+    return t(`adv.scene${n}`);
+  }
+
   showTitle() {
     this.mode = 'title';
     const opts = [];
     if (this.hasSave) opts.push({ id: 'continue', text: 'adv.continue' });
     opts.push({ id: 'new', text: 'adv.new', sub: this.hasSave ? 'adv.newSub' : '' });
     this.title = { options: opts, index: 0 };
-    speak(`${t('adv.title')}. ${t('adv.scene1')}`);
+    speak(`${t('adv.title')}. ${this.titleSub()}`);
   }
 
   renderTitle() {
     const c = this.title;
     this.ui.setTitle({
       logo: t('adv.title'),
-      sub: this.save.done ? t('adv.done') : t('adv.scene1'),
+      sub: this.titleSub(),
       options: c.options.map((o) => ({ text: t(o.text), sub: o.sub ? t(o.sub) : '' })),
       index: c.index,
       foot: t('adv.titleHint'),
@@ -760,13 +810,20 @@ export class AdventureEngine {
     const choice = c.options[c.index].id;
     if (choice === 'continue') {
       this.mode = 'play';
+      const next = this.nextScene();
+      if (next !== (this.save.scene || 1)) {
+        // Scene 1 is done: on to scene 2.
+        this.scenes[next].start(this);
+        return;
+      }
       this.hint('adv.loaded', 3);
       this.persist();
     } else {
-      // Starting over keeps only the memory that scene 1's stars were already given.
-      const starsGiven = this.save.starsGiven;
+      // Starting over keeps only the memory that each scene's stars were already given.
+      const { starsGiven, starsGiven2 } = this.save;
       this.save = freshSave(this.startRoom);
-      this.save.starsGiven = starsGiven;
+      if (starsGiven) this.save.starsGiven = starsGiven;
+      if (starsGiven2) this.save.starsGiven2 = starsGiven2;
       this.mode = 'play';
       this.loadRoom(this.startRoom, 'intro');
       this.persist();

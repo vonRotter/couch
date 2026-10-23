@@ -1,21 +1,25 @@
 import * as THREE from 'three';
 import { toon } from '../../core/palette.js';
-import { W, H, DOOR_TILES, DIRS, SOLID, TALL, FLOORISH, tileX, tileZ, colOf, rowOf, inGrid, pegUp, parseMap, groundOf } from './tiles.js';
+import { W, H, DOOR_TILES, DIRS, SOLID, TALL, FLOORISH, BLAST, tileX, tileZ, colOf, rowOf, inGrid, pegUp, parseMap, groundOf } from './tiles.js';
 import { ROOMS, AREAS, DOORS, neighbor } from './rooms.js';
 import { buildRoomStatic, floorPatch } from './build.js';
 import {
   makeBlock, makePot, makeLiftRock, makeChest, makeSign, makeSaveStone, makeTorch, makeSwitch, makePeg, makePlate, makeBush,
-  makeGrass, makeGate, makeDoorLeaf, makeNpc, makeDecor, makeLamp, makeShopItem, makeItem, mesh, box, cyl, sph,
+  makeGrass, makeGate, makeDoorLeaf, makeNpc, makeDecor, makeLamp, makeShopItem, makeItem, makeBoulder, makeCracked, makeEye,
+  mesh, box, cyl, sph,
 } from './models.js';
-import { makeEnemy } from './enemies.js';
+import { basic } from '../../core/palette.js';
+import { makeEnemy } from './foes.js';
 
 // Room runtime: turns room data into a live room (meshes, entities, doors, puzzle state) and
 // answers "can something stand / walk / fly here?". Mixed into LighthouseEngine.
 // Rooms are rebuilt from data every time you enter, so pushed blocks, thrown pots, cut bushes and
-// enemies reset when you leave a room (no block can stay stuck in a corner). Chests, keys, doors,
-// solved puzzles and defeated bosses are remembered in the save.
+// enemies reset when you leave a room (no block can stay stuck in a corner), and so do lifted
+// boulders. Chests, keys, doors, solved puzzles, defeated bosses, burnt thorns and cracked rock
+// broken by bombs are remembered in the save.
 
-const DYN = new Set(['b', '*', 'g', 't', 'L', 'x', 'y', '_']);
+const DYN = new Set(['b', '*', 'g', 't', 'L', 'x', 'y', '_', 'R', 'C']);
+const RAIN_DROPS = 70;
 const STATIC_CACHE = {};
 
 /** Parsed (unchanging) grid of a room, for looking past the screen edge. */
@@ -34,7 +38,7 @@ export const WorldMixin = {
     if (this.room && this.room.trapActive && (this.room.id === roomId || this.room.id === door.to)) return false;
     if (door.type === 'open') return true;
     if (door.type === 'shut') return !!this.save.solved[door.owner];
-    return !!this.save.doors[door.id];
+    return !!this.save.doors[door.id]; // key, boss and cracked (bomb) doors once opened
   },
 
   makeRoom(id, origin) {
@@ -50,13 +54,16 @@ export const WorldMixin = {
       id, def, area, origin: origin.clone(), group, grid, ents: [], occ: new Map(), enemies: [], projs: [], pickups: [], thrown: [],
       torches: [], plates: [], pegs: [], tileMeshes: new Map(), doors: {}, doorAt: new Map(), solved, time: 0,
       lit: !def.dark || (def.lightOnSolve && solved), trapActive: false, bossSpawned: false, pegSafe: new Set(), anim: [],
+      eyes: [], bombs: [], arrows: [], regrow: [], rain: null, wind: null,
     };
-    // Burnt thorns stay gone
-    for (const k of Object.keys(this.save.burnt || {})) {
-      const [rid, pos] = k.split(':');
-      if (rid !== id) continue;
-      const [c, r] = pos.split(',').map(Number);
-      if (grid[r]?.[c] === '*') grid[r][c] = '.';
+    // Burnt thorns and blown-up cracked rock stay gone
+    for (const [list, ch] of [[this.save.burnt, '*'], [this.save.blown, 'C']]) {
+      for (const k of Object.keys(list || {})) {
+        const [rid, pos] = k.split(':');
+        if (rid !== id) continue;
+        const [c, r] = pos.split(',').map(Number);
+        if (grid[r]?.[c] === ch) grid[r][c] = ch === 'C' ? groundOf(def.map, c, r, def.floor || '.') : '.';
+      }
     }
     // Door gaps
     for (const [d, door] of Object.entries(DOORS[id] || {})) {
@@ -98,7 +105,13 @@ export const WorldMixin = {
         const ch = grid[r][c];
         if (!DYN.has(ch)) continue;
         const x = tileX(c), z = tileZ(r);
-        if (ch === 'b' || ch === '*' || ch === 'g') {
+        if (ch === 'R' || ch === 'C') {
+          const m = ch === 'R' ? makeBoulder() : makeCracked(def.theme);
+          m.position.set(x, 0, z);
+          if (ch === 'R') m.rotation.y = ((c * 7 + r * 3) % 6) * 1.1;
+          group.add(m);
+          room.tileMeshes.set(keyOf(c, r), m);
+        } else if (ch === 'b' || ch === '*' || ch === 'g') {
           const m = ch === 'g' ? makeGrass() : makeBush(ch === '*');
           m.position.set(x, 0, z);
           m.rotation.y = ((c * 7 + r * 13) % 10) * 0.6;
@@ -142,6 +155,9 @@ export const WorldMixin = {
       dr.leaf = leaf;
       dr.leafType = type || 'shut';
     }
+    // Weather: rain on the stormy cliffs, gusts of wind
+    if (def.rain) this.makeRain(room);
+    if (def.wind) room.wind = { ...def.wind, t: Math.random() * def.wind.calm, phase: 'calm', streaks: [] };
     // Entities
     for (const spec of ents) this.addEntity(room, spec);
     if (solved && def.reward) this.spawnReward(room, false);
@@ -194,6 +210,7 @@ export const WorldMixin = {
         return null;
       }
       case 'warp': {
+        if (spec.placed && (this.save.placed || 0) < spec.placed) return null;
         let m;
         if (spec.look === 'stairsDown' || spec.look === 'stairsUp') {
           m = new THREE.Group();
@@ -214,7 +231,21 @@ export const WorldMixin = {
           m.add(mesh(box(0.8, 0.03, 0.6), toon(0x8a5a3a), 0, 0.02, 0, false));
         }
         const e = put(m, false);
-        if (spec.under) m.visible = false;
+        if (spec.under) m.visible = room.grid[spec.r][spec.c] !== spec.under;
+        return e;
+      }
+      case 'well': return put(new THREE.Group());
+      case 'eye': {
+        // set into a wall, facing into the room
+        const m = makeEye();
+        const e = put(m, false);
+        const off = { s: [0, 0.52], n: [0, -0.52], w: [-0.52, 0], e: [0.52, 0] }[spec.face || 's'];
+        m.position.set(x + off[0], 0.75, z + off[1]);
+        m.rotation.y = { s: 0, n: Math.PI, w: -Math.PI / 2, e: Math.PI / 2 }[spec.face || 's'];
+        e.hit = room.solved;
+        e.timer = 0;
+        this.syncEye(e, true);
+        room.eyes.push(e);
         return e;
       }
       case 'npc': {
@@ -308,6 +339,7 @@ export const WorldMixin = {
     const ch = room.grid[r][c];
     if (ch === 'x' || ch === 'y') return pegUp(ch, this.sw(room.area)) && !room.pegSafe.has(keyOf(c, r));
     if (ch === 'v') return dz <= 0;
+    if (ch === '~') return !this.save.items.fins;
     if (SOLID.has(ch)) return true;
     const e = room.occ.get(keyOf(c, r));
     return !!(e && e.solid);
@@ -325,6 +357,8 @@ export const WorldMixin = {
     const [dc, dr] = DOOR_TILES[opp];
     if (DOORS[nb]?.[opp] && dc === tc && dr === tr) return !this.doorIsOpen(nb, opp);
     const ch = staticGrid(nb)[tr][tc];
+    if (ch === '~') return !this.save.items.fins;
+    if (ch === 'C') return !this.save.blown[`${nb}:${tc},${tr}`];
     return SOLID.has(ch) || ch === 'x' || ch === 'y';
   },
 
@@ -558,6 +592,25 @@ export const WorldMixin = {
         }
       }
     }
+    // stone eyes that close again after a while (rooms with eyeTime)
+    for (const e of room.eyes) {
+      if (e.hit && e.timer > 0 && !room.solved) {
+        e.timer -= dt;
+        if (e.timer <= 0) { e.hit = false; this.sfx('dash'); }
+      }
+      this.syncEye(e);
+    }
+    // lifted boulders grow back in rooms that need them (the Stormbeak fight)
+    if (room.regrow.length) {
+      room.regrow = room.regrow.filter((g) => {
+        g.t -= dt;
+        if (g.t > 0) return true;
+        if (this.heroOnTile(g.c, g.r) || room.enemies.some((en) => !en.dead && !en.fly && colOf(en.x) === g.c && rowOf(en.z) === g.r)) { g.t = 0.5; return true; }
+        this.restoreBoulder(room, g.c, g.r);
+        return false;
+      });
+    }
+    this.updateWeather(room, dt);
     // little animations (grow / shrink)
     room.anim = room.anim.filter((a) => {
       a.t += dt;
@@ -567,8 +620,179 @@ export const WorldMixin = {
       else if (a.kind === 'lid') a.m.rotation.x = -1.9 * p;
       else if (a.kind === 'spin') a.m.rotation.y += dt * 0.8;
       else if (a.kind === 'sink') { a.m.position.y = -p * 1.2; a.m.scale.setScalar(1 - p * 0.5); }
+      else if (a.kind === 'pop') a.m.scale.setScalar(Math.max(0.01, 1 + Math.sin(p * Math.PI) * 0.3 - p));
       return p < 1;
     });
+  },
+
+  // ---------- part 2: boulders, cracks, eyes and weather ----------
+
+  /** Lift the boulder at (c, r): the tile becomes ground and its mesh is handed to the hero. */
+  liftTile(room, c, r) {
+    const k = keyOf(c, r);
+    const m = room.tileMeshes.get(k);
+    room.grid[r][c] = groundOf(room.def.map, c, r, room.def.floor || '.');
+    room.tileMeshes.delete(k);
+    if (room.def.regrow) room.regrow.push({ c, r, t: 7 });
+    return m;
+  },
+
+  restoreBoulder(room, c, r) {
+    if (room.grid[r][c] === 'R' || room.occ.get(keyOf(c, r))) return;
+    room.grid[r][c] = 'R';
+    const m = makeBoulder();
+    m.position.set(tileX(c), 0, tileZ(r));
+    room.group.add(m);
+    room.tileMeshes.set(keyOf(c, r), m);
+    m.scale.setScalar(0.01);
+    room.anim.push({ m, t: 0, dur: 0.4, kind: 'grow' });
+    this.puffAt(tileX(c), tileZ(r), 0x9a94b2, 10);
+  },
+
+  /** A bomb goes off at (x, z): cracks break, cracked walls open, things nearby get hit. */
+  blast(room, x, z) {
+    this.sfx('boom');
+    this.shake(0.3);
+    const o = room.origin;
+    this.host.puffs.burst(new THREE.Vector3(o.x + x, 0.6, o.z + z), 0xffb347, { count: 26, size: 0.5, life: 0.6, speed: 4.5 });
+    this.host.puffs.burst(new THREE.Vector3(o.x + x, 0.5, o.z + z), 0x5a4d7a, { count: 14, size: 0.6, life: 0.9, speed: 2.5 });
+    this.host.confetti.burst(new THREE.Vector3(o.x + x, 0.6, o.z + z), 0, { count: 18, speed: 7, up: 3, colors: [0xffd23f, 0xff7a2e, 0xffffff], life: 0.5, size: 0.1 });
+    const near = (c, r, extra = 0) => Math.hypot(tileX(c) - x, tileZ(r) - z) <= BLAST + extra;
+    const c0 = colOf(x), r0 = rowOf(z);
+    for (let r = r0 - 2; r <= r0 + 2; r++) {
+      for (let c = c0 - 2; c <= c0 + 2; c++) {
+        if (!inGrid(c, r) || !near(c, r)) continue;
+        const ch = room.grid[r][c];
+        if (ch === 'C') this.breakCrack(room, c, r);
+        else if ((ch === 'b' || ch === 'g') && near(c, r, -0.4)) this.cutTile(room, c, r);
+        const dr = room.doorAt.get(keyOf(c, r));
+        if (dr && dr.door.type === 'bomb' && !this.save.doors[dr.door.id]) {
+          this.save.doors[dr.door.id] = true;
+          this.later(0.3, () => this.sfx('secret'));
+          this.persist();
+        }
+        const e = room.occ.get(keyOf(c, r));
+        if (e && e.t === 'switch') this.toggleSwitch(room);
+        if (e && e.t === 'pot' && near(c, r, -0.3)) this.smashPot(room, e);
+      }
+    }
+    for (const en of room.enemies) {
+      if (en.dead || (en.fly && en.y > 2.2)) continue;
+      const part = en.parts().find((pt) => Math.hypot(pt.x - x, pt.z - z) < BLAST + pt.r * 0.6);
+      if (part) en.hurt(2, x, z, 'bomb', part.part);
+    }
+    for (const b of room.bombs) if (b.fuse > 0.12 && Math.hypot(b.x - x, b.z - z) < BLAST + 0.3) b.fuse = 0.12;
+    const h = this.hero;
+    if (Math.hypot(h.x - x, h.z - z) < 1.25) this.hurtHero(1, x, z, 9);
+  },
+
+  breakCrack(room, c, r) {
+    const x = tileX(c), z = tileZ(r);
+    room.grid[r][c] = groundOf(room.def.map, c, r, room.def.floor || '.');
+    const m = room.tileMeshes.get(keyOf(c, r));
+    if (m) { room.tileMeshes.delete(keyOf(c, r)); room.anim.push({ m, t: 0, dur: 0.3, kind: 'shrink' }); this.later(0.3, () => m.parent?.remove(m)); }
+    this.save.blown[`${room.id}:${c},${r}`] = true;
+    this.puffAt(x, z, 0xbdb8cf, 16, 0.5);
+    for (const e of room.ents) if (e.t === 'warp' && e.c === c && e.r === r && e.under) { e.mesh.visible = true; this.later(0.35, () => this.sfx('secret')); }
+    this.persist();
+  },
+
+  smashPot(room, e) {
+    room.occ.delete(keyOf(e.c, e.r));
+    room.ents = room.ents.filter((x) => x !== e);
+    e.mesh.parent?.remove(e.mesh);
+    this.sfx('shatter');
+    this.puffAt(e.x, e.z, 0xd9805a, 10);
+    if (e.has) this.addPickup(room, e.has, e.x, e.z, { pop: true, persist: e.has === 'key' });
+    else if (Math.random() < 0.35) this.addPickup(room, Math.random() < 0.6 ? 'shell' : 'heart', e.x, e.z, { pop: true });
+  },
+
+  /** An arrow found a stone eye. */
+  hitEye(room, e) {
+    if (e.hit) { this.sfx('clang'); return; }
+    e.hit = true;
+    e.timer = room.def.eyeTime || 0;
+    this.sfx('switch');
+    this.sparkAt(e.x, e.z);
+  },
+
+  syncEye(e, snap = false) {
+    const lid = e.mesh.userData.lid;
+    const ty = e.hit ? 0.12 : 1;
+    lid.scale.y = snap ? ty * 0.85 : lid.scale.y + (ty * 0.85 - lid.scale.y) * 0.2;
+    lid.position.y = e.hit ? 0.2 : 0;
+  },
+
+  // ---------- weather ----------
+
+  makeRain(room) {
+    const drops = [];
+    const mat = basic(0xd6e6ff, { transparent: true, opacity: 0.55 });
+    const geo = box(0.035, 0.55, 0.035);
+    for (let i = 0; i < RAIN_DROPS; i++) {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set((Math.random() - 0.5) * W, Math.random() * 7, (Math.random() - 0.5) * H);
+      room.group.add(m);
+      drops.push(m);
+    }
+    room.rain = { drops, flashT: 6 + Math.random() * 8 };
+  },
+
+  /** Rain falls, lightning flashes now and then, and wind gusts push the hero (unless sheltered). */
+  updateWeather(room, dt) {
+    const w = room.wind;
+    const gust = w && w.phase === 'gust';
+    const wv = w ? DIRS[w.dir] : { dx: 0, dz: 0 };
+    if (room.rain) {
+      const slant = gust ? 0.55 : 0.18;
+      for (const m of room.rain.drops) {
+        m.position.y -= dt * 13;
+        m.position.x += wv.dx * dt * 13 * slant;
+        m.position.z += wv.dz * dt * 13 * slant;
+        m.rotation.z = -wv.dx * slant;
+        m.rotation.x = wv.dz * slant;
+        if (m.position.y < 0) m.position.set((Math.random() - 0.5) * (W + 2), 6 + Math.random() * 2, (Math.random() - 0.5) * (H + 2));
+      }
+      room.rain.flashT -= dt;
+      if (room.rain.flashT <= 0) {
+        room.rain.flashT = 9 + Math.random() * 9;
+        this.hud.flash(0.35);
+        this.later(0.35, () => { if (this.room === room) this.sfx('thunder'); });
+      }
+    }
+    if (!w) return;
+    w.t += dt;
+    if (w.phase === 'calm' && w.t >= w.calm) { w.phase = 'warn'; w.t = 0; this.sfx('wind'); }
+    else if (w.phase === 'warn' && w.t >= w.warn) { w.phase = 'gust'; w.t = 0; this.sfx('gust'); }
+    else if (w.phase === 'gust' && w.t >= w.gust) { w.phase = 'calm'; w.t = 0; }
+    // streaks show where the wind blows: a few during the warning, many in the gust
+    if ((w.phase === 'warn' && Math.random() < dt * 10) || (gust && Math.random() < dt * 40)) {
+      const along = (Math.random() - 0.5) * (wv.dx ? H : W);
+      const sx = wv.dx ? -wv.dx * 9 : along, sz = wv.dz ? -wv.dz * 6 : along;
+      const m = mesh(box(wv.dx ? 1.4 : 0.06, 0.05, wv.dz ? 1.4 : 0.06), basic(0xffffff, { transparent: true, opacity: 0.7 }), sx, 0.4 + Math.random() * 1.6, sz, false);
+      room.group.add(m);
+      w.streaks.push({ m, life: 1.4 });
+    }
+    w.streaks = w.streaks.filter((st) => {
+      st.life -= dt;
+      st.m.position.x += wv.dx * dt * 16;
+      st.m.position.z += wv.dz * dt * 16;
+      if (st.life <= 0) { st.m.parent?.remove(st.m); return false; }
+      return true;
+    });
+    if (gust && this.mode === 'play' && this.room === room) {
+      const h = this.hero;
+      if (h.mode === 'rope' || h.mode === 'get' || h.mode === 'fall' || h.mode === 'dead') return;
+      // sheltered right behind something tall
+      const c = colOf(h.x) - wv.dx, r = rowOf(h.z) - wv.dz;
+      const ch = inGrid(c, r) ? room.grid[r][c] : '#';
+      const e = inGrid(c, r) ? room.occ.get(keyOf(c, r)) : null;
+      const shelter = TALL.has(ch) || (e && e.solid) || ((ch === 'x' || ch === 'y') && pegUp(ch, this.sw(room.area)));
+      if (!shelter) {
+        this.pushHero(wv.dx * w.power, wv.dz * w.power);
+        if (w.t > 0.5) this.hintOnce('lh.wind.hint');
+      }
+    }
   },
 
   /** Try to push a block one tile. */

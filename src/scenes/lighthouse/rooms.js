@@ -5,6 +5,8 @@ import { W, H, DIRS, DOOR_TILES } from './tiles.js';
 import { OVER_ROOMS, INSIDE_ROOMS, CAVE_ROOMS } from './rooms-over.js';
 import { D1_ROOMS } from './rooms-d1.js';
 import { D2_ROOMS } from './rooms-d2.js';
+import { D3_ROOMS } from './rooms-d3.js';
+import { WELL_ROOMS } from './rooms-well.js';
 
 export const AREAS = {
   over: { name: 'lh.area.over', theme: 'over', music: 'lhOver', scroll: true },
@@ -12,12 +14,27 @@ export const AREAS = {
   cave: { name: 'lh.area.cave', theme: 'cave', music: 'lhCave', scroll: true },
   d1: { name: 'lh.area.d1', theme: 'cellar', music: 'lhDungeon', scroll: true, dungeon: true, cols: [1, 3], rows: [0, 4] },
   d2: { name: 'lh.area.d2', theme: 'grotto', music: 'lhDungeon', scroll: true, dungeon: true, cols: [0, 3], rows: [0, 4] },
+  well: { name: 'lh.area.well', theme: 'cave', music: 'lhCave', scroll: true },
+  d3: { name: 'lh.area.d3', theme: 'ruins', music: 'lhStorm', scroll: true, dungeon: true, cols: [0, 4], rows: [0, 4] },
 };
+
+// Heart pieces and golden shells for the 100% counters (ids as in the room data).
+export const HEART_PIECES = ['hp.shop', 'hp.islet', 'hp.secret', 'hp.shrine', 'hp.well', 'hp.cliff', 'hp.peak', 'hp.seal', 'hp.tobi', 'hp.d3', 'hp.cove', 'hp.point'];
+export const GOLD_SHELLS = ['gs.woods', 'gs.well', 'gs.peak', 'gs.seal', 'gs.d2', 'gs.cove', 'gs.d3', 'gs.village', 'gs.north', 'gs.cliff'];
+
+// Townsfolk who hand out things (used by the game and by the reachability checker):
+// talk to `npc` (with `need`) to get `item` (saved as `id`) or to set `flag`.
+export const QUESTS = [
+  { npc: 'mitten', flag: 'catFound' },
+  { npc: 'olga', need: { flag: 'catFound' }, item: 'fins', id: 'q.fins' },
+  { npc: 'tobi', need: { gshells: 5 }, item: 'heartpiece', id: 'hp.tobi' },
+  { npc: 'tobi', need: { gshells: GOLD_SHELLS.length }, item: 'container', id: 'hc.tobi' },
+];
 
 export const START = { room: 'h_keeper', at: [8, 4], face: 's' };
 
 export const ROOMS = {};
-for (const [area, list] of [['over', OVER_ROOMS], ['in', INSIDE_ROOMS], ['cave', CAVE_ROOMS], ['d1', D1_ROOMS], ['d2', D2_ROOMS]]) {
+for (const [area, list] of [['over', OVER_ROOMS], ['in', INSIDE_ROOMS], ['cave', CAVE_ROOMS], ['d1', D1_ROOMS], ['d2', D2_ROOMS], ['well', WELL_ROOMS], ['d3', D3_ROOMS]]) {
   for (const [id, def] of Object.entries(list)) ROOMS[id] = { id, area, ...def, theme: def.theme || AREAS[area].theme };
 }
 
@@ -67,7 +84,7 @@ export function validateRooms() {
       if (door && r.map[inner[1]][inner[0]] === '#') out.push(`${r.id}.${d}: tile inside the door is a wall`);
     }
     for (const e of Object.values(r.at || {})) {
-      if (e.t === 'warp' && !ROOMS[e.to]) out.push(`${r.id}: warp to missing room ${e.to}`);
+      if ((e.t === 'warp' || e.t === 'well') && !ROOMS[e.to]) out.push(`${r.id}: warp to missing room ${e.to}`);
     }
   }
   return out;
