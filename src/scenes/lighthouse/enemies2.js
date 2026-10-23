@@ -447,8 +447,8 @@ class Golem extends Enemy {
   constructor(eng, x, z) {
     super(eng, x, z);
     this.boss = true;
-    this.hp = 6;
-    this.max = 6;
+    this.hp = 8;
+    this.max = 8;
     this.r = 0.85;
     this.dmg = 2;
     const stone = 0x8f9aa0, dark = 0x5d6a72;
@@ -492,7 +492,7 @@ class Golem extends Enemy {
   }
 
   think(dt) {
-    if (this.phase === 1 && this.hp <= 3) { this.phase = 2; this.eng.sfx('roar'); }
+    if (this.phase === 1 && this.hp <= 4) { this.phase = 2; this.eng.sfx('roar'); }
     const { dx, dz, d } = this.toHero();
     this.alert.visible = this.state === 'aim';
     this.touch = this.state !== 'cracked';
@@ -687,6 +687,8 @@ class Stormbeak extends Enemy {
     const p = this.hp <= 3 ? 3 : this.hp <= 6 ? 2 : 1;
     if (p > this.phase) {
       this.phase = p;
+      // the new attack comes first: a gale in phase 2, lightning in phase 3
+      this.cycle = p === 3 ? 2 : 1;
       this.eng.sfx('roar');
       this.eng.shake(0.3);
     }
@@ -863,8 +865,10 @@ class Stormbeak extends Enemy {
       this.hits++;
       this.eng.sfx('hit');
       if (this.hp <= 0) { this.die(); return 'hit'; }
+      const was = this.phase;
       this.setPhase();
-      if (this.hits >= 3) { this.go('rise', 0.6); this.eng.sfx('screech'); }
+      // two hits per fall, and a new phase always starts in the air
+      if (this.hits >= 2 || this.phase !== was) { this.go('rise', 0.6); this.eng.sfx('screech'); }
       return 'hit';
     }
     if ((this.state === 'hover' || this.state === 'rest') && (src === 'arrow' || src === 'fire')) return knock();

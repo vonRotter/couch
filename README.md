@@ -62,14 +62,16 @@ per profile; the title card offers Continue or New game. Rooms, characters, item
 in `scenes/adventure/`, so more islands can be added without changing the engine.
 
 **Lighthouse Caves** (solo island; a top-down Zelda-style adventure with metroidvania structure, the
-first part so far). The old keeper's lighthouse went dark and its three lamp crystals were taken into
-the caves. Explore the island and village (shop, secrets, heart pieces), then two dungeons: the Lantern
-Cellar (item: the Lantern, which lights dark rooms and torches and burns thorns) and the Tidepool Grotto
-(item: the Grapple Rope, which pulls you across gaps and pulls things to you). Each has small keys, a
-map, a compass, a big key, a mini-boss and a boss with telegraphed attacks. Stick to walk, A sword
-(hold for a spin), B talk/lift/open, C use the item (hold C for the item and map screen, with a
-"restart room" option). Hearts, heart pieces, shells as money, beacon stones to save; fainting sends
-you back to the last beacon with your items. Progress is saved per profile.
+whole first act). The old keeper's lighthouse went dark and its three lamp crystals were taken into
+the caves. Explore the island (13 screens, a village with a shop, caves and side quests), then the
+Lantern Cellar (Lantern), the Tidepool Grotto (Grapple Rope), the Old Well (Strong Gloves) and the
+Stormcliff Ruins (Wind Bow, with fire arrows through lit torches), plus Bombs and Swim Fins from the
+island. Each dungeon has keys, a map, a compass, a big key, a mini-boss and a boss with telegraphed
+phases; the finale is a fight against the Gloom at the top of the lighthouse, then an ending and
+credits, and the island stays open: 12 heart pieces and 10 golden shells to find. Stick to walk, A
+sword (hold for a spin), B talk/lift/throw/open, C use the item (hold C for the item and map screen,
+with "restart room"). Beacon stones save; fainting sends you back to the last one with your items.
+Progress is saved per profile (part-1 saves carry over).
 
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.

@@ -144,6 +144,9 @@ export class LighthouseEngine {
     const dim = room.def.rain ? 0.72 : this.dusk ? 0.55 : 1;
     this.hemi.intensity += ((dark ? 0.07 : (over ? 1.5 : 1.25) * dim) - this.hemi.intensity) * k;
     this.sun.intensity += ((dark ? 0.04 : (over ? 1.9 : 1.35) * dim) - this.sun.intensity) * k;
+    // the ending's evening light is warm and pink
+    this.hemi.color.setHex(this.dusk ? 0xffb08a : 0xffffff);
+    this.sun.color.setHex(this.dusk ? 0xff9a6a : 0xfff2dd);
     this.sun.position.copy(this.camTarget).add(_v.set(-14, 34, 18));
     this.sun.target.position.copy(this.camTarget);
     const list = [];
