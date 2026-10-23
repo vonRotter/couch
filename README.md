@@ -51,13 +51,15 @@ and clicks for player 1, like a light gun. Three shots per flight, ten ducks per
 needs a rising number of hits (6, then 7, 8 and 9); miss it and the game is over. The dog fetches
 what you hit and laughs when everyone misses. The best score is saved (per profile on the solo island).
 
-**The Secret of Pudding Island** (solo island; a Monkey Island-style point-and-click adventure, scene 1 so
-far). Pip, a small bean with a wooden spoon and a lot of confidence, wants to be a pirate. Move the
-pointer with the stick (or the mouse): A does the obvious thing (talk, take, use, walk), B looks, and C
-opens the inventory to use an item on something. Dialog choices, speech bubbles read aloud, and Tickle
-Fencing: answer each boast with the right comeback. Progress is saved per profile; the title card offers
-Continue or New game. Rooms, characters, items and dialog are data in `scenes/adventure/`, so more
-islands can be added without changing the engine.
+**The Secret of Pudding Island** (solo island; a Monkey Island-style point-and-click adventure, two
+scenes so far). Pip, a small bean with a wooden spoon and a lot of confidence, wants to be a pirate.
+Scene 1, The Dock: a seagull for a hat and pet, and Tickle Fencing against Harbor Master Grumbleton.
+Scene 2, All Hands on Deck: raise the half-sunk ship, find a sail and recruit a crew, in any order;
+lose to Granny Grumbleton, learn her comebacks from her giggly pupil, then beat her. Move the pointer
+with the stick (or the mouse): A does the obvious thing (talk, take, use, walk), B looks, and C opens
+the inventory to use an item on something. Dialog choices, speech bubbles read aloud, progress saved
+per profile; the title card offers Continue or New game. Rooms, characters, items and dialog are data
+in `scenes/adventure/`, so more islands can be added without changing the engine.
 
 **Lighthouse Caves** (solo island; a top-down Zelda-style adventure with metroidvania structure, the
 first part so far). The old keeper's lighthouse went dark and its three lamp crystals were taken into
