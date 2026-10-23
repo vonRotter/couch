@@ -180,7 +180,7 @@ addStrings({
 
     // Tickle Fencing
     'adv.duel.title': 'Tickle Fencing!',
-    'adv.duel.help': 'Pick the comeback that fits his boast!',
+    'adv.duel.help': 'Pick the comeback that fits the boast!',
     'adv.duel.learned': 'Pip thought of a comeback!',
     'adv.duel.start1': 'En garde! First one to giggle three times loses!',
     'adv.duel.start2': "I'll try not to giggle.",
@@ -389,7 +389,7 @@ addStrings({
     'adv.item.duckNote': 'Anda leser lappen. Han ser skamfull ut. Han var jo i tønna, han også.',
 
     'adv.duel.title': 'Kildefekting!',
-    'adv.duel.help': 'Velg svaret som passer til skrytet hans!',
+    'adv.duel.help': 'Velg svaret som passer til skrytet!',
     'adv.duel.learned': 'Pip kom på et svar!',
     'adv.duel.start1': 'En garde! Den første som fniser tre ganger, har tapt!',
     'adv.duel.start2': 'Jeg skal prøve å ikke fnise.',

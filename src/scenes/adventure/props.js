@@ -322,16 +322,19 @@ export function makeShip() {
   sail.material.side = THREE.DoubleSide;
   sail.material.userData = {};
   g.add(sail);
-  // Patches and a biscuit emblem on the sail
-  g.add(mesh(boxG(0.4, 0.35, 0.02), toon(0xff9fd0), -0.3, 2.7, 0.33, false));
-  g.add(mesh(boxG(0.3, 0.3, 0.02), toon(0x8fd8ff), 1.15, 4.1, 0.3, false));
+  // Patches and a biscuit emblem on the sail (sailParts: hidden once the sail is gone, scene 2)
+  const sailParts = [sail];
+  sailParts.push(mesh(boxG(0.4, 0.35, 0.02), toon(0xff9fd0), -0.3, 2.7, 0.33, false));
+  sailParts.push(mesh(boxG(0.3, 0.3, 0.02), toon(0x8fd8ff), 1.15, 4.1, 0.3, false));
   const biscuit = mesh(cylG(0.45, 0.45, 0.04, 20), toon(0xe2b06a), 0.4, 3.5, 0.42, false);
   biscuit.rotation.x = Math.PI / 2;
-  g.add(biscuit);
+  sailParts.push(biscuit);
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2;
-    g.add(mesh(sph(0.04, 6, 4), toon(0x9a6440), 0.4 + Math.cos(a) * 0.24, 3.5 + Math.sin(a) * 0.24, 0.45, false));
+    sailParts.push(mesh(sph(0.04, 6, 4), toon(0x9a6440), 0.4 + Math.cos(a) * 0.24, 3.5 + Math.sin(a) * 0.24, 0.45, false));
   }
+  g.add(...sailParts.slice(1));
+  g.userData.sailParts = sailParts;
   const flag = mesh(coneG(0.25, 0.7, 3), toon(0xff5d73), 0.75, 5.55, 0);
   flag.rotation.z = -Math.PI / 2;
   flag.scale.set(1, 1, 0.2);

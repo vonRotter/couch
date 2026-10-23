@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import { t } from '../../core/i18n.js';
 import { toon, basic, sharedGeo } from '../../core/palette.js';
-import { seeded } from '../../core/world.js';
+import { seeded, makeCloud } from '../../core/world.js';
 import {
   mesh, boxG, cylG, coneG, makeBarrel, drawBarrelLabel, makeSeagull, makeGrumbleton, makeShip, makeDuck, makeNote,
   makePinkCloud, makeIsland, makePalm, decalMaterial, drawCanvas, redrawDecal, fitText, WOOD, WOOD_DARK,
 } from './props.js';
 import { runDialog } from './dialog.js';
 import { tickleDuel } from './duel.js';
+import { putGullOnHead, animateGull, GRUM_CSS, GULL_CSS } from './shared.js';
+import { SCENE2_ROOMS, DOCK2, SELF_ITEMS, isS2 } from './scene2.js';
 
 // The rooms of The Secret of Pudding Island. Each room is data plus little generator scripts:
 //
@@ -23,11 +25,12 @@ import { tickleDuel } from './duel.js';
 // To add a room: write another entry like `dock`, give a hotspot `kind: 'exit', to: 'roomId',
 // entry: 'entryName'` (or yield s.goRoom('roomId', 'entry') from a script), and keep puzzle state
 // in s.flag()/s.setFlag() so build() can restore it after a reload.
+//
+// Scene 2's rooms live in scene2.js; the dock asks DOCK2 (scene2.js) what to do once scene 2 is on
+// (the gangway leads aboard, the town is open, Grumbleton has new things to say).
 
 export const START_ROOM = 'dock';
 
-const GRUM_CSS = '#7b6cf6';
-const GULL_CSS = '#4a9fd8';
 const SEA_Y = -0.35;
 
 // ---------- signs (redrawn when the language changes) ----------
@@ -219,12 +222,17 @@ const GRUM_TREE = {
 };
 
 function talkGrum(s) {
+  if (isS2(s)) return DOCK2.talkGrum(s);
   if (s.flag('duelWon')) return [['grum', 'adv.dock.g.water']];
   s.face('grum', -1);
   return runDialog(s, GRUM_TREE);
 }
 
 function* boardShip(s) {
+  if (isS2(s)) {
+    yield* DOCK2.board(s);
+    return;
+  }
   if (s.flag('duelWon')) {
     yield* ending(s, true);
     return;
@@ -306,29 +314,18 @@ function* duckOnGull(s) {
   yield s.say('pip', 'adv.dock.p.havePet');
 }
 
-function putGullOnHead(s, P) {
-  const gull = P.gull;
-  gull.parent?.remove(gull);
-  gull.position.set(-0.05, -0.06, -0.02);
-  gull.rotation.set(0, -Math.PI / 2, 0);
-  gull.scale.setScalar(0.8);
-  gull.userData.head.rotation.set(0, 0, 0);
-  s.attachToHead(gull);
-  const duck = makeDuck();
-  duck.scale.setScalar(0.42);
-  duck.position.set(0.24, -0.02, 0.12);
-  duck.rotation.y = -1.2;
-  s.attachToHead(duck);
-  P.gullDuck = duck;
-}
-
 // ---------- the dock ----------
 
 const dock = {
   name: 'adv.room.dock',
-  sky: ['#6f5fd0', '#ffb877'],
+  // Sunset in scene 1; the next morning in scene 2
+  sky: (s) => (isS2(s) ? ['#7cc6f2', '#fff0d0'] : ['#6f5fd0', '#ffb877']),
   camera: { viewW: 14.8, viewH: 7.8, lookY: 1.45, pitch: 0.2, fov: 30 },
-  entries: { start: { x: -2.3, z: 0.4, face: 1 }, intro: { x: -2.3, z: 0.4, face: 1 } },
+  entries: {
+    start: { x: -2.3, z: 0.4, face: 1 }, intro: { x: -2.3, z: 0.4, face: 1 },
+    // Scene 2: back from the ship, back from town, and the ending (Pip rides the ship)
+    ship: { x: 2.2, z: -0.25, face: -1 }, town: { x: -5.4, z: 0.8, face: 1 }, sail: { x: 2.2, z: -0.25, face: 1 },
+  },
   walk: (s) => {
     const r = [[-5.8, -0.95, 1.35, 1.45]];
     if (s.flag('duelWon')) r.push([1.35, -0.7, 2.8, 0.2]);
@@ -337,26 +334,34 @@ const dock = {
 
   lights(s, L) {
     if (!L) return;
-    L.hemi.color.set(0xffe2cc);
-    L.hemi.groundColor.set(0x7a6aa8);
-    L.hemi.intensity = 1.45;
-    L.sun.color.set(0xffd2a6);
-    L.sun.intensity = 1.75;
+    const morning = isS2(s);
+    L.hemi.color.set(morning ? 0xfff6e8 : 0xffe2cc);
+    L.hemi.groundColor.set(morning ? 0x8a90b8 : 0x7a6aa8);
+    L.hemi.intensity = morning ? 1.5 : 1.45;
+    L.sun.color.set(morning ? 0xfff1d6 : 0xffd2a6);
+    L.sun.intensity = morning ? 1.9 : 1.75;
   },
 
   build(s, g) {
     const P = {};
     const rand = seeded(7);
+    const morning = isS2(s);
 
     // Sea, sun and far islands
-    const sea = mesh(sharedGeo('adv-sea', () => new THREE.PlaneGeometry(240, 140)), toon(0x5b86d6), 0, SEA_Y, -50, false);
+    const sea = mesh(sharedGeo('adv-sea', () => new THREE.PlaneGeometry(240, 140)), toon(morning ? 0x4f9be0 : 0x5b86d6), 0, SEA_Y, -50, false);
     sea.rotation.x = -Math.PI / 2;
     sea.receiveShadow = true;
     g.add(sea);
-    const sun = new THREE.Mesh(sharedGeo('adv-sun', () => new THREE.CircleGeometry(5, 40)), basic(0xffd46b));
-    sun.position.set(-6, 1.4, -95);
-    const halo = new THREE.Mesh(sharedGeo('adv-halo', () => new THREE.CircleGeometry(7.5, 40)), basic(0xffe6a0, { transparent: true, opacity: 0.35 }));
-    halo.position.set(-6, 1.4, -96);
+    const sun = new THREE.Mesh(sharedGeo('adv-sun', () => new THREE.CircleGeometry(5, 40)), basic(morning ? 0xfff3b0 : 0xffd46b));
+    const halo = new THREE.Mesh(sharedGeo('adv-halo', () => new THREE.CircleGeometry(7.5, 40)), basic(morning ? 0xffffff : 0xffe6a0, { transparent: true, opacity: 0.35 }));
+    if (morning) {
+      sun.position.set(16, 22, -95);
+      halo.position.set(16, 22, -96);
+      sun.scale.setScalar(0.8);
+    } else {
+      sun.position.set(-6, 1.4, -95);
+      halo.position.set(-6, 1.4, -96);
+    }
     g.add(sun, halo);
     P.glints = [];
     for (let i = 0; i < 26; i++) {
@@ -366,18 +371,18 @@ const dock = {
       g.add(gl);
       P.glints.push(gl);
     }
-    for (const [x, z, w, h, c] of [[-24, -70, 9, 3.4, 0x6a5a9a], [-13, -60, 5, 2, 0x7a68aa], [20, -75, 12, 4.2, 0x6a5a9a], [9, -55, 4, 1.5, 0x8573b5]]) {
-      const isl = makeIsland(c, w, h);
+    for (const [x, z, w, h, c, cm] of [[-24, -70, 9, 3.4, 0x6a5a9a, 0x7fae9a], [-13, -60, 5, 2, 0x7a68aa, 0x8fbfa8], [20, -75, 12, 4.2, 0x6a5a9a, 0x7fae9a], [9, -55, 4, 1.5, 0x8573b5, 0x9fcfb8]]) {
+      const isl = makeIsland(morning ? cm : c, w, h);
       isl.position.set(x, SEA_Y, z);
       g.add(isl);
     }
-    const palm = makePalm(0x5a4a8a);
+    const palm = makePalm(morning ? 0x5f8f7a : 0x5a4a8a);
     palm.position.set(-22.5, SEA_Y + 2.6, -69);
     palm.scale.setScalar(1.3);
     g.add(palm);
     P.clouds = [];
     for (const [x, y, z, sc] of [[-14, 9.5, -45, 2], [6, 11, -60, 2.6], [18, 8.2, -40, 1.6], [-2, 7.4, -35, 1.2]]) {
-      const c = makePinkCloud(rand, sc);
+      const c = morning ? makeCloud(rand, sc) : makePinkCloud(rand, sc);
       c.position.set(x, y, z);
       g.add(c);
       P.clouds.push(c);
@@ -464,6 +469,7 @@ const dock = {
     for (const z of [-0.42, 0.42]) gang.add(mesh(boxG(1.9, 0.03, 0.03), toon(0xe8d5a8), 0.95, 0.5, z, false));
     for (const x of [0.05, 1.85]) for (const z of [-0.42, 0.42]) gang.add(mesh(cylG(0.025, 0.025, 0.5, 5), toon(WOOD_DARK), x, 0.25, z, false));
     g.add(gang);
+    P.gang = gang;
 
     // Harbor Master Grumbleton
     P.grum = makeGrumbleton();
@@ -481,6 +487,7 @@ const dock = {
     else g.add(P.gull);
 
     P.next = { gullLook: 1, giggle: 4, bubble: 1, grumGiggle: 2 };
+    if (isS2(s)) DOCK2.build(s, P);
     return P;
   },
 
@@ -516,6 +523,7 @@ const dock = {
       spoon: 'adv.dock.pip.spoon',
       duck: function* duck(s) { s.sfx('squeak'); yield s.say('pip', 'adv.dock.pip.duck'); },
       note: 'adv.dock.pip.note',
+      ...SELF_ITEMS,
     },
   },
 
@@ -542,9 +550,10 @@ const dock = {
       talk: talkGrum,
       take: 'adv.dock.grum.take',
       useItem: {
-        spoon: (s) => (s.flag('gullOnHead') && !s.flag('duelWon') ? talkGrum(s) : [['grum', 'adv.dock.g.spoon']]),
+        ...DOCK2.grumItems,
+        spoon: (s) => (s.flag('gullOnHead') && !s.flag('duelWon') ? talkGrum(s) : [['grum', isS2(s) ? 'adv.g2.spoon' : 'adv.dock.g.spoon']]),
         duck: [['grum', 'adv.dock.g.duck']],
-        note: [['grum', 'adv.dock.g.note1'], ['grum', 'adv.dock.g.note2']],
+        note: (s) => [['grum', 'adv.dock.g.note1'], ['grum', isS2(s) ? 'adv.g2.note' : 'adv.dock.g.note2']],
       },
     },
     {
@@ -583,9 +592,9 @@ const dock = {
     {
       id: 'ship', name: 'adv.dock.ship', kind: 'object', box: [6.1, 2.0, -2.2, 6.6, 5.0, 2.6], priority: -1,
       walk: (s) => (s.flag('duelWon') ? [2.6, -0.35] : [0.6, -0.3]), face: 1,
-      look: (s) => (s.flag('duelWon') ? 'adv.dock.ship.lookAfter' : 'adv.dock.ship.look'),
+      look: (s) => (isS2(s) ? DOCK2.shipLook(s) : s.flag('duelWon') ? 'adv.dock.ship.lookAfter' : 'adv.dock.ship.look'),
       use: boardShip,
-      useItem: { duck: 'adv.dock.ship.duck', note: 'adv.dock.ship.note', spoon: 'adv.dock.ship.spoon' },
+      useItem: { duck: 'adv.dock.ship.duck', note: 'adv.dock.ship.note', spoon: 'adv.dock.ship.spoon', ...DOCK2.shipItems },
     },
     {
       id: 'harbor', name: 'adv.dock.harbor', kind: 'object', box: [-1, SEA_Y - 0.3, 3.4, 22, 0.8, 2.2], priority: -1,
@@ -611,7 +620,8 @@ const dock = {
     },
     {
       id: 'town', name: 'adv.dock.town', kind: 'exit', box: [-6.1, 1.0, 1.0, 1.3, 2.0, 0.8], walk: [-5.6, 0.8], face: -1,
-      look: 'adv.dock.town.look', go: 'adv.dock.town.go',
+      look: (s) => (isS2(s) ? DOCK2.townLook : 'adv.dock.town.look'),
+      go: (s) => (isS2(s) ? DOCK2.town(s) : 'adv.dock.town.go'),
     },
     {
       id: 'planks', name: 'adv.dock.planks', kind: 'object', box: [-1.4, -0.25, 2.25, 6, 0.4, 0.3], priority: -1,
@@ -653,15 +663,8 @@ const dock = {
     }
 
     // The seagull: beady head jerks, MINE beak, a flap now and then
-    const gu = P.gull.userData;
-    gu.jaw.rotation.z = s.isTalking('gull') ? -Math.abs(Math.sin(tm * 12)) * 0.6 : 0;
-    if ((P.next.gullLook -= dt) <= 0) {
-      P.next.gullLook = 0.8 + Math.random() * 2.2;
-      if (!s.tweens.some((tw) => tw.obj === gu.head)) gu.head.rotation.y = (Math.random() - 0.5) * 1.2;
-    }
-    const flap = Math.max(0, Math.sin(tm * 0.9)) > 0.97 || s.isTalking('gull') ? Math.sin(tm * 30) * 0.5 : 0;
-    gu.wings[0].rotation.x = flap;
-    gu.wings[1].rotation.x = -flap;
+    animateGull(s, dt, P);
+    if (isS2(s)) DOCK2.update(s, dt, P);
 
     // Faint giggling from under the dock, once you know about it
     if (s.flag('knowRules') && !s.flag('duelWon') && (P.next.giggle -= dt) <= 0) {
@@ -671,7 +674,7 @@ const dock = {
   },
 };
 
-export const ROOMS = { dock };
+export const ROOMS = { dock, ...SCENE2_ROOMS };
 
 /** New game: Pip walks onto the dock and introduces himself. */
 export function* intro(s) {
