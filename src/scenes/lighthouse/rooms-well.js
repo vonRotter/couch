@@ -37,7 +37,7 @@ export const WELL_ROOMS = {
       '#################',
       '#t...........1.t#',
       '#.......|.......#',
-      '###ooooo.oooooo##',
+      '###oooo...ooooo##',
       '#..oooooooooooo.#',
       '...oooooooooooo.#',
       '#..oooooooooooo.#',

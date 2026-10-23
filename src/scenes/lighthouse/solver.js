@@ -104,7 +104,9 @@ function line(R, c, r, v, range, sw, st, visit) {
   for (let k = 1; k <= range; k++) {
     const cc = c + v.dx * k, rr = r + v.dz * k;
     if (cc < 0 || rr < 0 || cc >= W || rr >= H) return;
-    if (visit(cc, rr, k)) return;
+    const seen = visit(cc, rr, k);
+    if (seen === true) return;
+    if (seen === 'pass') continue; // an arrow flying through a lit torch
     const i = rr * W + cc;
     const e = R.at[i];
     if (e && SOLID_ENTS.has(e.t)) return;
@@ -140,6 +142,8 @@ function edges(ri, c, r, sw, st, pulled, flips, out) {
     }
     out.push(node(ri, nc, nr, sw));
   }
+  // no sword or items while swimming
+  if (here === '~') return;
   const flipTo = (how) => { out.push(node(ri, c, r, sw ^ R.swBit)); flips.add(`${R.id}:${how}`); };
   const isSwitch = (cc, rr) => R.at[rr * W + cc]?.t === 'switch';
   if (R.swBit) {
@@ -232,6 +236,8 @@ function settle(st, start, withGraph = false) {
     const res = reach(st, start, withGraph);
     const tileReached = (ri, c, r) => c >= 0 && r >= 0 && c < W && r < H && res.tiles[ri * T + r * W + c] === 1;
     const adj = (ri, c, r) => DV.some((v) => tileReached(ri, c + v.dx, r + v.dz));
+    // standing next to it on land (no opening chests while swimming)
+    const adjLand = (ri, c, r) => DV.some((v) => tileReached(ri, c + v.dx, r + v.dz) && P[ri].grid[r + v.dz][c + v.dx] !== '~');
     /** A reached tile in line with (tc, tr) throws / shoots and the line ends there (fire: passed a lit torch). */
     const lineFrom = (ri, tc, tr, range, ok) => {
       const R = P[ri];
@@ -244,7 +250,7 @@ function settle(st, start, withGraph = false) {
           line(R, c, r, v, range, 0, st, (cc, rr) => {
             if (cc === tc && rr === tr) { hit = ok(fire); return true; }
             const ch = R.grid[rr][cc];
-            if (ch === 'L' || st.lit.has(`${R.id}:${cc},${rr}`)) { fire = true; return false; }
+            if (ch === 'L' || st.lit.has(`${R.id}:${cc},${rr}`)) { fire = true; return 'pass'; }
             return ch === 't';
           });
           if (hit) return true;
@@ -267,10 +273,11 @@ function settle(st, start, withGraph = false) {
       const area = R.def.area;
       for (const e of R.ents) {
         if (e.future) continue;
-        if (e.t === 'chest' && adj(ri, e.c, e.r)) take(e.id || `${room}:${e.c},${e.r}`, e.item, area, room);
+        if (e.t === 'chest' && adjLand(ri, e.c, e.r)) take(e.id || `${room}:${e.c},${e.r}`, e.item, area, room);
         if (e.t === 'item' && (tileReached(ri, e.c, e.r) || res.pulled.has(e.id))) take(e.id, e.item, area, room);
         // townsfolk quests
-        if (e.t === 'npc' && adj(ri, e.c, e.r)) {
+        const here = (x) => (!x.when || st.flags.has(x.when)) && (!x.unless || !st.flags.has(x.unless));
+        if (e.t === 'npc' && here(e) && adj(ri, e.c, e.r)) {
           for (const q of QUESTS) {
             if (q.npc !== e.id) continue;
             if (q.flag) { if (!st.flags.has(q.flag)) { st.flags.add(q.flag); st.log.push(`quest: ${q.flag}`); changed = true; } continue; }
@@ -317,7 +324,7 @@ function settle(st, start, withGraph = false) {
         const rw = R.def.reward;
         if (rw && !st.got.has(rw.id)) {
           const [c, r] = rw.at;
-          if (rw.t === 'chest' ? adj(ri, c, r) : tileReached(ri, c, r)) take(rw.id, rw.item, area, `${room} reward`);
+          if (rw.t === 'chest' ? adjLand(ri, c, r) : tileReached(ri, c, r)) take(rw.id, rw.item, area, `${room} reward`);
         }
         const v = R.def.victory;
         if (v?.crystal && !st.got.has(`crystal${v.crystal}`)) { st.got.add(`crystal${v.crystal}`); st.crystals++; st.log.push(`crystal ${v.crystal}`); changed = true; }
@@ -366,11 +373,13 @@ export function checkWorld({ goal = 'finale' } = {}) {
 
   // 1) one good order of key doors (depth first, stops at the first success)
   const memo0 = new Set();
+  let deepest = null;
   const find = (st) => {
     const sig = [...st.doors].sort().join(',');
     if (memo0.has(sig)) return null;
     memo0.add(sig);
     const { adj } = settle(st, start);
+    if (!deepest || st.log.length > deepest.log.length) deepest = st;
     if (done(st, goal)) return st;
     for (const [id, area] of keyDoorsInReach(st, adj)) {
       if (!keyLeft(st, area)) continue;
@@ -385,7 +394,7 @@ export function checkWorld({ goal = 'finale' } = {}) {
     return null;
   };
   const bestSt = find(newState());
-  if (!bestSt) return { ok: false, branches: 0, failures: [{ log: ['no way to the end at all'] }], unreached: [], traps: [], flips: [], log: [], pieces: 0, gshells: 0 };
+  if (!bestSt) return { ok: false, branches: 0, failures: [{ log: ['no way to the end at all; got this far:', ...(deepest?.log.slice(-25) || [])], items: [...(deepest?.items || [])], keys: deepest?.keys, used: deepest?.used }], unreached: [], traps: [], flips: [], log: [], pieces: 0, gshells: 0 };
   const goodOrder = {};
   for (const id of bestSt.keyLog) (goodOrder[ROOMS[id.split('|')[0]].area] ||= []).push(id);
 
