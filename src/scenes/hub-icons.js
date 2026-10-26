@@ -410,6 +410,17 @@ const ICONS = {
     c.scale.y = 1.5;
     g.add(c);
   },
+  starhop(g) {
+    // A ringed planet with a little ship hopping over it.
+    g.add(mesh(sph(0.6), toon(0x7ad65a), 0, -0.2, 0));
+    const ring = mesh(sharedGeo('icon-shRing', () => new THREE.TorusGeometry(0.9, 0.06, 8, 32)), toon(0xbfe3ff), 0, -0.2, 0);
+    ring.rotation.x = 1.2;
+    g.add(ring);
+    const ship = mesh(sharedGeo('icon-shShip', () => new THREE.ConeGeometry(0.16, 0.5, 6)), toon(0xffc93c), 0.55, 0.75, 0.2);
+    ship.rotation.z = -0.9;
+    g.add(ship);
+    g.add(mesh(sph(0.08), toon(0xffffff, { emissive: 0x666600 }), -0.6, 0.8, 0.1));
+  },
   party(g) {
     g.add(mesh(box('gift', 1.2, 1.0, 1.2, 0.1), toon(0xb5179e), 0, -0.2, 0));
     g.add(mesh(box('giftLid', 1.34, 0.26, 1.34, 0.08), toon(0xd94cc0), 0, 0.38, 0));

@@ -375,7 +375,7 @@ and a color). Everything on the solo island is saved per profile in this browser
 every game's progress, apart from the shared island's save.
 
 - Games: Sky Hop, Crystal Caves, Pillow Keep, Grumble Guides, Knights & Builders: The Golden
-  Bean, Laser Ducks, The Secret of Pudding Island and Lighthouse Caves, plus guest games (Tachyon, Starlite, Foothold) that open as their own pages on the same
+  Bean, Laser Ducks, The Secret of Pudding Island and Lighthouse Caves, plus guest games (Tachyon, Starlite, Foothold, Starhop) that open as their own pages on the same
   site and come back here.
 - A new controller pressing jump takes over the one player.
 - C opens the start menu to switch back to the shared island or the Story.

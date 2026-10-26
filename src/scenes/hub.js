@@ -67,6 +67,7 @@ const SOLO_PADS = [
   { key: 'tachyon', color: 0x2f3e8f, css: '#3b4fbf', guest: 'tachyon' },
   { key: 'starlite', color: 0xff6fb5, css: '#e0459a', guest: 'starlite' },
   { key: 'foothold', color: 0x6b8f3a, css: '#5a7d2a', guest: 'foothold' },
+  { key: 'starhop', color: 0x5b4fd8, css: '#4a3fc0', guest: 'starhop' },
 ];
 
 function layoutPads(list) {
