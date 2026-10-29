@@ -159,7 +159,7 @@ export class SoloIslandScene extends BaseScene {
     this.player = null;
     const place = this.map.places.find((p) => p.key === fromGame) || (S.last.place && !since(S.last.at, 6 * HOUR) && this.map.places.find((p) => p.id === S.last.place));
     this.spawnAt = place ? { x: place.door.x, z: place.door.z + (place.cabinet !== undefined ? 1.6 : 1.2) } : { x: HOME.x + 0.8, z: HOME.z + 4.2 };
-    if (fromGame === 'dive') this.spawnAt = { x: DIVE_BOAT.x - 1.2, z: DIVE_BOAT.z };
+    if (fromGame === 'dive') this.spawnAt = { x: DIVE_BOAT.x - 1.0, z: DIVE_BOAT.z + 1.0 };
     if (this.players.length) this.spawn(this.players[0]);
     S.last.place = null;
     this.applyUnlocks(true);
@@ -846,7 +846,7 @@ export class SoloIslandScene extends BaseScene {
       out.b = rosa.sleep ? { text: t('isl.h.asleep', { name: t('isl.npc.rosa') }), fn: () => this.talkTo(rosa) } : { text: nm('isl.h.shop'), fn: () => this.talkTo(rosa) };
     }
     // the dive boat's ladder
-    if (!out.b && Math.hypot(P.x - (DIVE_BOAT.x - 1.9), P.z - DIVE_BOAT.z) < 1.5) {
+    if (!out.b && Math.hypot(P.x - (DIVE_BOAT.x - 1.0), P.z - (DIVE_BOAT.z + 1.1)) < 1.4) {
       out.b = S.sea.suit ? { text: nm('isl.h.dive'), fn: () => this.startDive() } : { text: t('isl.h.diveNeed'), fn: () => this.game.audio.play('bump') };
     }
     // the café (repair, stove, counter)
@@ -1172,9 +1172,9 @@ export class SoloIslandScene extends BaseScene {
     const P = this.player;
     const st = this.walkState;
     const deck = this.map.deckAt(P.x, P.z, st.bridge);
-    for (const d of [3.2, 2.2, 1.4]) {
+    for (const d of [3.2, 4.4, 2.2, 1.4]) {
       const x = P.x + P.fx * d, z = P.z + P.fz * d;
-      if (heightAt(x, z) > -0.5 || this.map.deckAt(x, z, st.bridge)) continue;
+      if (heightAt(x, z) > -0.55 || this.map.deckAt(x, z, st.bridge)) continue;
       const where = deck?.boat ? 'boat' : riverDist(x, z) < 4 && z < 34 ? 'river' : 'pier';
       return { where, x, z };
     }

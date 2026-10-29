@@ -597,6 +597,10 @@ export class IslandMap {
     // the dive boat moored at the pier end (fish from it, or dive from its ladder)
     this.diveBoat = this.live(makeDiveBoat(), DIVE_BOAT.x, DIVE_BOAT.z, 0, SEA_Y - 0.05);
     this.decks.push({ x0: DIVE_BOAT.x - 2.5, x1: DIVE_BOAT.x + 2.6, z0: DIVE_BOAT.z - 1.7, z1: DIVE_BOAT.z + 1.7, y: SEA_Y + 0.5, boat: true });
+    this.boxObs(DIVE_BOAT.x + 0.3, DIVE_BOAT.z - 1.0, 0.65, 0.55);
+    this.boxObs(DIVE_BOAT.x + 1.9, DIVE_BOAT.z - 1.3, 0.45, 0.25);
+    this.circObs(DIVE_BOAT.x - 1.9, DIVE_BOAT.z - 1.1, 0.45);
+    this.circObs(DIVE_BOAT.x + 2.2, DIVE_BOAT.z + 1.3, 0.15);
     this.buoys = this.scene.children.slice(-3);
     // the Driftwood Café (closed, a restaurant for later) and the dive spot sign
     this.put(makeCafe(M), -10, 37.4);

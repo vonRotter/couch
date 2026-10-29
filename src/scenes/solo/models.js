@@ -643,16 +643,24 @@ export function makeCafeOpen(M) {
 /** The dive boat: a flat wooden boat with a ladder, air tanks and a diver-down flag. Deck at y ≈ 0.6. */
 export function makeDiveBoat() {
   const g = new THREE.Group();
-  const hull = mesh(box(5.2, 0.9, 3.6), 0xff7a59, 0, 0, 0);
-  g.add(hull, mesh(box(5.4, 0.12, 3.8), 0xffffff, 0, 0.42, 0));
+  g.add(mesh(box(5.2, 0.9, 3.6), 0xff7a59, 0, 0, 0), mesh(box(5.4, 0.12, 3.8), 0xffffff, 0, 0.42, 0));
   g.add(mesh(box(5.0, 0.08, 3.4), WOOD, 0, 0.5, 0));
-  // ladder on the west side
-  for (const z of [-0.35, 0.35]) g.add(mesh(box(0.08, 1.6, 0.08), 0xbdb8cf, -2.7, 0.1, z));
-  for (let i = 0; i < 4; i++) g.add(mesh(box(0.08, 0.06, 0.7), 0xbdb8cf, -2.7, -0.5 + i * 0.35, 0, false));
-  // tanks and a crate
-  for (let i = 0; i < 2; i++) g.add(mesh(cyl(0.18, 0.18, 0.8, 10), 0xffc93c, 1.6 + i * 0.45, 0.95, -1.3));
-  g.add(mesh(box(0.7, 0.5, 0.6), WOOD_DARK, -1.4, 0.8, -1.2));
-  // flag: red with a white stripe
+  // a pointed bow to the west
+  const bow = mesh(cone(1.9, 1.6, 3), 0xff7a59, -3.3, 0, 0);
+  bow.rotation.set(0, 0, Math.PI / 2);
+  bow.scale.set(1, 1, 0.95);
+  g.add(bow, mesh(box(1.0, 0.1, 2.2), WOOD, -2.9, 0.5, 0, false));
+  // rail along the north side
+  g.add(mesh(box(5.0, 0.08, 0.08), 0xffffff, 0, 1.05, -1.75, false));
+  for (let i = 0; i < 6; i++) g.add(mesh(cyl(0.04, 0.04, 0.55, 5), 0xffffff, -2.2 + i * 0.88, 0.78, -1.75, false));
+  // ladder on the south side, down into the water
+  for (const x of [-1.35, -0.65]) g.add(mesh(box(0.08, 1.7, 0.08), 0xbdb8cf, x, 0.1, 1.9));
+  for (let i = 0; i < 4; i++) g.add(mesh(box(0.7, 0.06, 0.08), 0xbdb8cf, -1.0, -0.5 + i * 0.35, 1.9, false));
+  // wheelhouse, air tanks and a crate
+  g.add(mesh(box(1.2, 1.1, 1.0), 0xffffff, 0.3, 1.05, -1.0), mesh(box(1.4, 0.12, 1.2), 0x4c8bd6, 0.3, 1.66, -1.0), mesh(box(0.9, 0.4, 0.06), 0x9fdcff, 0.3, 1.25, -0.48, false));
+  for (let i = 0; i < 2; i++) g.add(mesh(cyl(0.18, 0.18, 0.8, 10), 0xffc93c, 1.7 + i * 0.45, 0.95, -1.3));
+  g.add(mesh(box(0.7, 0.5, 0.6), WOOD_DARK, -1.9, 0.8, -1.1));
+  // flag: red with a white stripe (diver down)
   g.add(mesh(cyl(0.04, 0.04, 2.6, 6), 0xffffff, 2.2, 1.8, 1.3));
   const flag = mesh(box(0.9, 0.6, 0.03), 0xff3b3b, 2.67, 2.75, 1.3);
   g.add(flag, mesh(box(0.95, 0.1, 0.035), 0xffffff, 2.67, 2.75, 1.3, false).rotateZ(-0.55));
