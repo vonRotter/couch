@@ -188,7 +188,7 @@ export class Isle2 {
     this.boat.visible = true;
     this.boat.rotation.y = dir === 'isle' ? -Math.PI / 2 : Math.PI / 2;
     host.game.audio.play('whoosh');
-    for (const el of [host.hud.hotbar, host.hud.selname, host.hud.tasks]) el.style.visibility = 'hidden'; // a clear view of the sea
+    host.hud.setCinema(true); // a clear view of the sea
     const txt = t(dir === 'isle' ? 'isl.isle.sailing' : 'isl.isle.sailingHome');
     speak(txt, { pitch: 0.55, rate: 0.9 });
     host.game.ui.toast(txt, 2600);
@@ -250,7 +250,7 @@ export class Isle2 {
     this.sail = null;
     host.mode = 'walk';
     host.camView = null;
-    for (const el of [host.hud.hotbar, host.hud.selname, host.hud.tasks]) el.style.visibility = '';
+    host.hud.setCinema(false);
     host.scene.fog.near = 60;
     host.scene.fog.far = 150;
     g.yOverride = null;

@@ -9,6 +9,7 @@ import { heightAt, HOME, FIELD } from './map.js';
 import { mesh, box, cone, makeDeco, makeSign } from './models.js';
 import { makeCraft, makeDeco2, makeRoom, makePorch, makeStoneNode, makeTallGrass } from './models2.js';
 import { makeDeco3, DECO3, makeSprinkler, makeScarecrow } from './models3.js';
+import { makeDeco4, DECO4 } from './models4.js';
 
 // Building and decorating (milestone B2).
 // - Gathering: break rock piles with the pickaxe (stone), cut tall grass with the scythe (hay and fiber).
@@ -164,6 +165,7 @@ export class Builder {
     if (id === 'sprinkler') return makeSprinkler();
     if (id === 'scarecrow') return makeScarecrow();
     if (DECO3.has(id)) return makeDeco3(id, this.host.M);
+    if (DECO4.has(id)) return makeDeco4(id, this.host.M);
     if (CRAFTS[id]) return makeCraft(id, this.host.M);
     if (DECO2.has(id)) return makeDeco2(id, this.host.M);
     return makeDeco(id, this.host.M);
@@ -214,7 +216,7 @@ export class Builder {
       v.rotation.y = (p.r || 0) * (Math.PI / 2);
       this.host.decoViews?.set(`y${p.u}`, v);
       if (this.solid(p.id)) map.obstacles.push({ x: p.x, z: p.z, r: 0.38, yard: true });
-      if (p.id === 'yardLamp' || p.id === 'lhLamp' || p.id === 'starLamp') map.lampSpots.push({ x: p.x, y: this.groundAt(p.x, p.z) + 2.3, z: p.z, yard: true });
+      if (p.id === 'yardLamp' || p.id === 'lhLamp' || p.id === 'starLamp' || p.id === 'miniLighthouse') map.lampSpots.push({ x: p.x, y: this.groundAt(p.x, p.z) + 2.3, z: p.z, yard: true });
     }
   }
 

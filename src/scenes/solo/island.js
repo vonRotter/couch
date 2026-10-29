@@ -35,6 +35,8 @@ import { Museum } from './museum.js';
 import { Isle2 } from './isle2.js';
 import { Photo } from './photo.js';
 import { Tournament } from './contest.js';
+import { Story } from './story.js';
+import { LightTop } from './lighttop.js';
 import { mesh, box, sph, makeTool, makeDeco, makeBranch, makeSign } from './models.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
@@ -178,6 +180,8 @@ export class SoloIslandScene extends BaseScene {
     this.farm.objModel = (id) => this.builder.model(id); // sprinklers and scarecrows on the field
     this.seasons = new Seasons(this);
     this.spawnNpcs();
+    this.story = new Story(this); // milestone B4: the lighthouse story and the lighthouse top
+    this.lightTop = new LightTop(this);
     this.checkRewards();
 
     // the player
@@ -353,12 +357,13 @@ export class SoloIslandScene extends BaseScene {
     this.seasons.tick(at);
     this.isle2.tick(at);
     this.photo.check();
+    this.story.tick(at);
     this.applySky(false);
     this.chooseLamps();
   }
 
   applySky() {
-    const h = hourOf();
+    const h = this.forceHour ?? hourOf(); // the Lamp Festival happens at night, whatever the clock says
     this.hour = h;
     const s = this.seasons ? this.seasons.weatherSky(skyAt(h)) : skyAt(h);
     this.night = s.night;
@@ -381,6 +386,8 @@ export class SoloIslandScene extends BaseScene {
     this.M.beam.opacity = lit ? 0.22 : 0;
     this.M.screen.color.setHex(lit ? 0x8ff0ff : 0x5ad6ff);
     for (const l of this.lamps) l.intensity = lit ? 14 * Math.min(1, (s.night - 0.3) * 2 + 0.3) : 0;
+    this.story?.applyLamp(lit); // dark while the story is on, a long beam after the festival
+    this.lightTop?.afterSky();
   }
 
   /** Put the few real point lights on the lamps closest to the player. */
@@ -576,6 +583,7 @@ export class SoloIslandScene extends BaseScene {
     if ((S.quests.hazel?.n === 2) && !count(S, 'stone')) out.push(t('isl.task.bench'));
     out.unshift(...this.seasons.tasks());
     out.unshift(...this.tour.tasks());
+    out.unshift(...this.story.tasks());
     if (this.isle2.here()) out.unshift(t('isl.task.isle'));
     if (count(S, 'seaChart') && !S.isle2.chart) out.unshift(t('isl.task.chart'));
     return out.slice(0, 5);
@@ -763,6 +771,7 @@ export class SoloIslandScene extends BaseScene {
     const st = npcState(S, id);
     const def = NPCS[id];
     if (!st.met && S.intro) return true;
+    if (this.story?.hasNews(id)) return true;
     if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3) || (count(S, 'seaChart') && !S.isle2?.chart) || this.tour?.available(now()))) return true;
     const ev = def.events[st.ev];
     if (ev && heartsOf(st) >= ev.at) return true;
@@ -782,6 +791,12 @@ export class SoloIslandScene extends BaseScene {
       return;
     }
     n.talking = true;
+    // the lighthouse story first (milestone B4)
+    if (this.story.talk(n, () => { n.talking = false; this.markDirty(); })) {
+      st.met = true;
+      if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
+      return;
+    }
     const L = (k, vars, fx) => ({ who: id, key: `isl.${id}.${k}`, vars, fx });
     const lines = [];
     let after = null;
@@ -813,7 +828,7 @@ export class SoloIslandScene extends BaseScene {
       after = () => { S.quests[id] = { n: qn }; this.game.ui.toast(t('isl.t.quest')); this.game.audio.play('beep'); };
     } else if (!lines.length) {
       if (id === 'grumbleton' && S.sea.quest === 1) lines.push(L('fishWait', { n: S.sea.caught - (S.sea.questBase || 0) }));
-      else lines.push(this.chatLine(n, st));
+      else lines.push(this.story.waitLine(n) || this.chatLine(n, st));
     }
     if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
     this.say(lines, () => {
@@ -964,6 +979,7 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.builder.interactions(P, out, nm);
     if (!out.b) this.greenhouse.interactions(P, out, nm);
     if (!out.b) this.museum.interactions(P, out, nm);
+    if (!out.b) this.story.interactions(P, out, nm);
     if (!out.b) this.seasons.interactions(P, out, nm);
     if (!out.b) this.seasons.shellAction(P, out, nm);
     // Shell Isle: the boat trip, and the palms, pools and treasure there
@@ -1326,7 +1342,7 @@ export class SoloIslandScene extends BaseScene {
     const card = r.id === 'postcard' ? this.photo.letterHtml(r) : '';
     this.hud.setPanel(`<h2>${esc(t(r.id === 'postcard' ? 'isl.photo.title' : 'isl.mail.title', { name: this.playerName }))}</h2>
       ${card}<div class="isl-letter">${esc(body)}<div class="from">${esc(t('isl.mail.from', { name: t(`isl.from.${r.from}`) }))}</div></div>
-      <div class="isl-gifts">${gifts}</div><div class="isl-foot">${esc(tFor(this.player?.p, r.id === 'postcard' ? 'isl.ok' : 'isl.mail.hint'))}</div>`);
+      <div class="isl-gifts">${gifts}</div><div class="isl-foot">${esc(tFor(this.player?.p, r.id === 'postcard' || !gifts ? 'isl.ok' : 'isl.mail.hint'))}</div>`);
     const v = r.from === 'lh' || r.from === 'cave' ? NPCS.bram.voice : r.from === 'adv' ? NPCS.grumbleton.voice : r.from === 'hop' ? NPCS.pip.voice : NPCS[r.from]?.voice || { pitch: 1, rate: 0.95 };
     speak(body, v);
     this.game.audio.play('select');
@@ -1509,6 +1525,7 @@ export class SoloIslandScene extends BaseScene {
     if (this.mode === 'cook') this.cafe.renderCook();
     if (this.mode === 'log') this.renderLog();
     if (this.mode === 'dialog' && this.dlg) this.showLine();
+    this.lightTop?.onLanguage();
   }
 
   // ---------- frame ----------
@@ -1704,6 +1721,8 @@ export class SoloIslandScene extends BaseScene {
         case 'album': this.photo.updateAlbum(inp, dt); break;
         case 'tourEnd': this.tour.updateEnd(inp, dt); break;
         case 'board': this.cafe.updateMenu(inp, dt); break;
+        case 'top': case 'scope': this.lightTop.update(inp, dt); break;
+        case 'festival': break; // the Lamp Festival plays by itself
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();
@@ -1720,6 +1739,7 @@ export class SoloIslandScene extends BaseScene {
     this.seasons.update(dt);
     this.isle2.update(dt, this.time);
     this.tour.update(dt);
+    this.story.update(dt);
     this.updatePlayerLook(dt);
     this.farm.animate(dt, this.time);
     this.life.update(dt, this.night || 0, P || { x: 0, z: 0 });
@@ -1740,6 +1760,8 @@ export class SoloIslandScene extends BaseScene {
     this.toasts.dispose();
     this.cafe?.dispose();
     this.fishing?.dispose();
+    this.story?.dispose();
+    this.lightTop?.dispose();
     setPictures(null);
     this.flush();
     this.game.roster.save();

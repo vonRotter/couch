@@ -347,17 +347,21 @@ export class Seasons {
       const marks = [d.festival ? `<i class="f">${esc(t(`isl.fest.${d.festival}`))}</i>` : '', d.bday ? `<i class="b">🎂 ${esc(t(`isl.npc.${d.bday}`))}</i>` : '', d.rain ? `<i class="r">${d.season === 'winter' ? '❄' : '☂'}</i>` : ''].join('');
       // every week has its season: the days get its color, Mondays its icon
       const dow = (md.first + d.day - 1) % 7;
-      return `<div class="isl-cald ${d.today ? 'on' : ''}" style="background:${SEASON_CSS[d.season]}"><b>${d.day}${dow === 0 || d.day === 1 ? ` <small>${SEASON_ICON[d.season]}</small>` : ''}</b>${marks}</div>`;
+      // the day of the Lamp Festival (milestone B4)
+      const lamp = host.save.story?.festDay === `${md.year}-${String(md.month + 1).padStart(2, '0')}-${String(d.day).padStart(2, '0')}` ? `<i class="f">🏮 ${esc(t('story.fest.name'))}</i>` : '';
+      return `<div class="isl-cald ${d.today ? 'on' : ''}" style="background:${SEASON_CSS[d.season]}"><b>${d.day}${dow === 0 || d.day === 1 ? ` <small>${SEASON_ICON[d.season]}</small>` : ''}</b>${lamp}${marks}</div>`;
     }).join('');
     const today = md.days.find((d) => d.today);
     const sub = [this.seasonText(), today.festival ? t(`isl.fest.${today.festival}`) : '', today.bday ? t('isl.cal.bday', { name: t(`isl.npc.${today.bday}`) }) : '', today.rain ? t(today.season === 'winter' ? 'isl.cal.snow' : 'isl.cal.rain') : ''].filter(Boolean).join(' · ');
+    const story = host.story?.calendarLine() || ''; // the lighthouse story's chapter (milestone B4)
     const legend = SEASONS.map((sn) => `<span style="background:${SEASON_CSS[sn]};border-radius:999px;padding:1px 10px;margin:0 3px">${SEASON_ICON[sn]} ${esc(t(`isl.season.${sn}`))} · ${esc(t(`isl.fest.${SEASON_FEST[sn]}`))}</span>`).join('');
     host.hud.setPanel(`<h2>${esc(t('isl.cal.title'))} <small style="font-size:.5em;opacity:.7">${esc(title)}</small></h2>
       <div class="isl-cal">${head}${blanks}${cells}</div>
       <div class="isl-foot" style="opacity:1;font-size:clamp(11px,1vw,15px);margin-top:6px">${legend}</div>
       <div class="isl-foot" style="opacity:1;font-size:clamp(14px,1.4vw,20px);margin-top:6px">${esc(t('isl.cal.today'))}: ${esc(sub || '—')}</div>
+      ${story ? `<div class="isl-foot" style="opacity:1;font-size:clamp(13px,1.25vw,18px);margin-top:4px">📖 ${esc(story)}</div>` : ''}
       <div class="isl-foot">${esc(tFor(host.player?.p, 'isl.cal.hint'))}</div>`);
-    if (sub) speak(`${t('isl.cal.today')}: ${sub}`);
+    if (sub || story) speak([sub ? `${t('isl.cal.today')}: ${sub}` : '', story].filter(Boolean).join('. '));
     host.game.audio.play('select');
   }
 

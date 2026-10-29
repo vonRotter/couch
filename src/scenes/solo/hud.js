@@ -137,6 +137,11 @@ export class IslandHud {
 
   setVisible(on) { this.root.style.display = on ? '' : 'none'; }
 
+  /** Cut-scene look (boat trip, Lamp Festival): only the dialog and the prompt stay. */
+  setCinema(on) {
+    for (const el of [this.top, this.tasks, this.keys, this.hotbar, this.selname]) el.style.visibility = on ? 'hidden' : '';
+  }
+
   setTop({ time, night, coins, phase }) {
     this.set('top', this.top, `<div class="isl-pill"><span class="isl-sun ${night ? 'moon' : ''}"></span>${esc(time)}<small>${esc(phase)}</small></div>
       <div class="isl-pill"><span class="i">${icon('coin')}</span>${coins}</div>`);
