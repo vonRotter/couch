@@ -7,7 +7,7 @@ import { now } from './save.js';
 // Seasons (milestone B3, the owner's choice): ONE SEASON PER REAL WEEK. Weeks start on Monday; spring,
 // summer, autumn and winter take turns week by week. Each season has its festival from Friday to Sunday of
 // its week: the Spring Planting Fair, the Summer Beach Day, the Harvest Fair and Lantern Night. The
-// Fishing Derby keeps the first weekend of every month (it wins on its days), birthdays keep their dates.
+// Fishing Derby keeps the first Saturday of every month and the Sunday after (it wins on its days), birthdays keep their dates.
 
 /** Local date key "YYYY-MM-DD". */
 export function dayKey(ms = now()) {
@@ -56,14 +56,15 @@ export function birthdayOf(npc, ms = now()) {
 }
 
 /**
- * Festivals: derby (the first weekend of every month, fishing at the pier), and each season's festival on
+ * Festivals: derby (the first Saturday of every month and the Sunday after, fishing at the pier), and each season's festival on
  * Friday, Saturday and Sunday of its week: plant (spring planting fair in the square), beach (summer beach
  * day), fair (harvest fair, autumn) and lanterns (lantern night by the lighthouse, winter).
  */
 export function festivalOn(ms = now()) {
   const d = new Date(ms);
   const day = d.getDate(), dow = d.getDay();
-  if (day <= 7 && (dow === 6 || dow === 0)) return 'derby';
+  // the first Saturday of the month and the Sunday after it (never two derbies in one month)
+  if ((dow === 6 && day <= 7) || (dow === 0 && day >= 2 && day <= 8)) return 'derby';
   if (dow === 5 || dow === 6 || dow === 0) return SEASON_FEST[seasonOf(ms)];
   return null;
 }

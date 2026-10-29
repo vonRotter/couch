@@ -419,7 +419,7 @@ night match yours and crops grow while you are away.
   year, the rest only in their season outdoors; planted crops never wither) and some seasonal fish and
   dive critters (the fish log shows when). Every season has a festival from Friday to Sunday of its
   week: the Spring Planting Fair (plant 5 seeds for Rosa), the Summer Beach Day (find 4 shells for
-  Pip), the Harvest Fair and Lantern Night; the Fishing Derby keeps the first weekend of each month.
+  Pip), the Harvest Fair and Lantern Night; the Fishing Derby keeps the first Saturday of each month and the Sunday after.
   In winter you can ride a sled down kite hill (hot cocoa for the first ride each winter week), and
   snowy days water the crops like rain. The calendar board colors the weeks by season.
 - **The island grows:** the museum east of the square (donate fish, sea finds and crystals to Curator

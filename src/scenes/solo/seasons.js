@@ -18,7 +18,7 @@ import { Sled } from './sled.js';
 // Milestone B3: one season per real week (see calendar.js) with its own look (seasonlook.js), crops,
 // fish, sledding in winter (sled.js) and festival: the Spring Planting Fair (Rosa, plant 5 seeds), the
 // Summer Beach Day (Pip, find 4 shells), the Harvest Fair (Hazel) and Lantern Night (Bram). The Fishing
-// Derby (Grumbleton) stays on the first weekend of every month. On winter days "rain" falls as snow.
+// Derby (Grumbleton) stays on the first Saturday of every month and the Sunday after. On winter days "rain" falls as snow.
 
 const CAL_BOARD = { x: 17.8, z: -9.8 };
 const SHELLS = [[12, 41.2], [16.5, 42.4], [20.5, 38.6], [25, 41.6], [29.5, 40.2], [31.5, 37.8]];

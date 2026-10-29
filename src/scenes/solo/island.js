@@ -1634,8 +1634,11 @@ export class SoloIslandScene extends BaseScene {
     const h = this.hour ?? hourOf();
     const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
     const sea = this.seasons;
-    const weather = sea.festival ? t(`isl.fest.${sea.festival}`) : sea.rainy ? (sea.season === 'winter' ? `❄ ${t('isl.weather.snow')}` : `☂ ${t('isl.weather.rain')}`) : '';
-    this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), `${SEASON_ICON[sea.season]} ${t(`isl.season.${sea.season}`)}`, weather].filter(Boolean).join(' · ') });
+    // Shell Isle is warm all year: no season or weather label there
+    const isle = this.isle2.here();
+    const weather = isle ? '' : sea.festival ? t(`isl.fest.${sea.festival}`) : sea.rainy ? (sea.season === 'winter' ? `❄ ${t('isl.weather.snow')}` : `☂ ${t('isl.weather.rain')}`) : '';
+    const season = isle ? '' : `${SEASON_ICON[sea.season]} ${t(`isl.season.${sea.season}`)}`;
+    this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), season, weather].filter(Boolean).join(' · ') });
     this.hud.setTasks(this.mode === 'walk' || this.mode === 'bag' ? this.tasks() : []);
     const items = S.inv.map((it) => ({ ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) }));
     if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
