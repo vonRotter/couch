@@ -23,7 +23,7 @@ export class Life {
       const g = makeSeagull();
       g.scale.setScalar(0.9);
       scene.add(g);
-      this.gulls.push({ g, a: i * 2.1, r: 6 + i * 2.5, cx: PIER.x + 3, cz: PIER.z0 + 9 + i * 2, y: 6 + i, sp: 0.35 + i * 0.07 });
+      this.gulls.push({ g, a: i * 2.1, r: 7 + i * 2.5, cx: PIER.x - 6 + i * 8, cz: PIER.z0 + 18 + i * 2, y: 3.5 + i * 0.6, sp: 0.35 + i * 0.07 });
     }
     // butterflies
     this.butterflies = [];

@@ -213,6 +213,7 @@ export class IslandMap {
     this.buildPlaces();
     this.buildFarmYard();
     this.buildBeach();
+    this.roadLamps();
     this.buildNature();
 
     const { group, keepers } = bake(this.statics);
@@ -297,6 +298,21 @@ export class IslandMap {
     fall.rotation.y = -0.05;
     this.scene.add(fall);
     this.waterfall = { x: wx, z: wz + 0.6 };
+  }
+
+  /** Street lamps every ~16 units along the longer roads (cozy at night). */
+  roadLamps() {
+    for (const k of [4, 5, 6, 9, 12, 13, 11]) {
+      const pts = this.pathPts[k];
+      for (let i = 14; i < pts.length - 8; i += 26) {
+        const a = pts[i - 1], b = pts[i + 1];
+        let dx = b.x - a.x, dz = b.z - a.z;
+        const L = Math.hypot(dx, dz) || 1;
+        const x = pts[i].x - (dz / L) * 1.7, z = pts[i].z + (dx / L) * 1.7;
+        if (this.obstacles.some((o) => o.r !== undefined && o.x !== undefined && Math.hypot(o.x - x, o.z - z) < o.r + 0.8)) continue;
+        this.lamp(x, z);
+      }
+    }
   }
 
   buildPaths() {
@@ -457,6 +473,7 @@ export class IslandMap {
     this.put(makeBench(), 48.5, 30.5, -0.5);
     this.circObs(48.5, 30.5, 0.8);
     this.sign(46.6, 31.2, 0x1f7f8f);
+    this.lamp(41.4, 30.6);
     // fairground tent
     const tent = makeTent(M);
     this.live(tent, P.tent.x, P.tent.z, 0, 0.02);

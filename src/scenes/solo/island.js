@@ -11,7 +11,7 @@ import { SKYHOP_LEVELS } from '../skyhop-levels.js';
 import './strings.js';
 import { now, hourOf, since, loadIsland, count, give, take, MIN, HOUR } from './save.js';
 import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon } from './items.js';
-import { IslandMap, heightAt, HOME, FIELD, BIN, MAILBOX, STORE, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
+import { IslandMap, heightAt, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
 import { Farm, tileAt, tileCenter, stageOf, minutesLeft } from './farm.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
 import { IslandHud, heartsHtml } from './hud.js';
@@ -51,7 +51,7 @@ const SIGNS = [
 ];
 
 // Day and night from the real clock: [hour, look].
-const NIGHT = { hemi: 0x6a78c8, ground: 0x2a3060, hi: 0.6, sun: 0x8fa4ff, si: 0.4, fog: 0x1c2550, water: 0x2f5f9f, night: 1 };
+const NIGHT = { hemi: 0x7a88d8, ground: 0x3a4070, hi: 0.8, sun: 0x9fb4ff, si: 0.5, fog: 0x1c2550, water: 0x3a6aa8, night: 1 };
 const DAY = { hemi: 0xffffff, ground: 0x9ad48a, hi: 1.45, sun: 0xfff2dd, si: 1.85, fog: 0xbfeeff, water: 0x56c6f0, night: 0 };
 const SKY = [
   [0, NIGHT], [4.6, NIGHT],
@@ -197,6 +197,8 @@ export class SoloIslandScene extends BaseScene {
       return { pl, el, pos: new THREE.Vector3(pl.door.x, heightAt(pl.door.x, pl.door.z) + (pl.cabinet !== undefined ? 3.8 : 2.6), pl.door.z) };
     });
     this.markEl = this.game.ui.label('label isl-mark');
+    this.hallTag = this.game.ui.label('label isl-tag');
+    this.hallPos = new THREE.Vector3(HALL.x, 5.6, HALL.z + 2.8);
   }
 
   put(obj, x, z, y = null) {
@@ -1242,9 +1244,18 @@ export class SoloIslandScene extends BaseScene {
     const P = this.player;
     const S = this.save;
     const cam = this.camera;
+    // arcade cabinets: only the nearest one gets a label, else the hall's own name
+    let cab = null, cd = 3.2;
+    for (const tg of this.placeTags) if (tg.pl.cabinet !== undefined && P) { const d = Math.hypot(P.x - tg.pl.door.x, P.z - tg.pl.door.z); if (d < cd) { cd = d; cab = tg; } }
+    const hallVis = P && !cab && Math.hypot(P.x - HALL.x, P.z - HALL.z) < 12;
+    if (hallVis) {
+      const html = esc(t('isl.hall'));
+      if (this.hallTag.innerHTML !== html) this.hallTag.innerHTML = html;
+      this.game.ui.place(this.hallTag, this.hallPos, cam);
+    } else this.hallTag.style.display = 'none';
     for (const tg of this.placeTags) {
       const pl = tg.pl;
-      const vis = P && (pl.id !== 'burrow' || S.unlocks.burrow) && Math.hypot(P.x - pl.door.x, P.z - pl.door.z) < 11;
+      const vis = P && (pl.id !== 'burrow' || S.unlocks.burrow) && Math.hypot(P.x - pl.door.x, P.z - pl.door.z) < 11 && (pl.cabinet === undefined || tg === cab);
       if (!vis) { tg.el.style.display = 'none'; continue; }
       const sub = this.placeOpen(pl) ? this.placeInfo(pl) : t(`isl.locked.${pl.lock}`);
       const html = `${esc(t(`game.${pl.key}`))}${sub ? `<small>${esc(sub)}</small>` : ''}`;
