@@ -10,7 +10,7 @@ import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { glyphMaterial } from '../core/edu.js';
 import { makeGameIcon } from './hub-icons.js';
-import { ProfilePicker } from '../core/profiles.js';
+import { ProfilePicker, getProfile, activeProfileId } from '../core/profiles.js';
 
 const ISLAND_R = 45;
 const RING_R = 38;
@@ -654,7 +654,12 @@ export class HubScene extends BaseScene {
     if (!this.modeAsked && this.players.length) {
       this.modeAsked = true;
       // Coming back from a guest game (#solo link): straight to the profiles.
-      if (this.game.bootSolo) { this.game.bootSolo = false; this.openProfiles(); } else this.openMode(0);
+      // Coming back from a guest game (#solo link): straight back to that profile's island.
+      if (this.game.bootSolo) {
+        this.game.bootSolo = false;
+        const prof = getProfile(activeProfileId());
+        if (prof) { this.launching = true; this.game.enterSolo(prof, this.players[0].deviceId); } else this.openProfiles();
+      } else this.openMode(0);
     }
   }
 

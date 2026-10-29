@@ -10,6 +10,7 @@ import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
 import { t, setLang, getLang, setButtonSource } from './core/i18n.js';
 import { HubScene } from './scenes/hub.js';
+import { SoloIslandScene } from './scenes/solo/island.js';
 import { BubbleScene } from './scenes/bubble.js';
 import { PlatformerScene } from './scenes/platformer.js';
 import { PaintScene } from './scenes/paint.js';
@@ -140,7 +141,9 @@ class Game {
   goHub(fromGame = null) {
     if (this.campaign) { this.backToStory(); return; }
     // Leaving the story goes back to the start menu (Island or Story). Solo games return to the solo island.
-    const make = () => new HubScene(this, { fromGame: fromGame === 'story' ? null : fromGame, chooseMode: fromGame === 'story', solo: !!this.solo });
+    const make = this.solo
+      ? () => new SoloIslandScene(this, { fromGame })
+      : () => new HubScene(this, { fromGame: fromGame === 'story' ? null : fromGame, chooseMode: fromGame === 'story' });
     if (!this.current) this.setScene(make);
     else this.transition(make);
   }
@@ -182,7 +185,7 @@ class Game {
     if (keep) this.applyProfile(keep);
     setVoice(profile.voice);
     if (profile.voice) say(t('solo.welcome', { name: profile.name }));
-    this.transition(() => new HubScene(this, { solo: true }));
+    this.transition(() => new SoloIslandScene(this, {}));
   }
 
   /** Give a player the solo profile's name, color and hat. */
@@ -319,7 +322,7 @@ class Game {
     if (this.input.mutePressed) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
     if (this.input.pressed.has('KeyN')) this.toggleLanguage();
     if (this.input.pressed.has('KeyV')) this.toggleVoice();
-    if (this.input.menuPressed && !this.switching && this.current && !(this.current instanceof HubScene)) {
+    if (this.input.menuPressed && !this.switching && this.current && !(this.current instanceof HubScene) && !this.current.ownMenu) {
       if (this.pause) this.closePause();
       else this.openPause();
     }
