@@ -54,19 +54,19 @@ function dotTexture() {
 }
 
 const CSS = `
-.isl-top { position: absolute; inset: 0; pointer-events: none; font-weight: 700; }
-.isl-top .ttl { position: absolute; left: 50%; top: 2vh; transform: translateX(-50%); background: rgba(255,250,240,.93); border-radius: 999px; padding: 4px 22px;
+.ltop-ui { position: absolute; inset: 0; pointer-events: none; font-weight: 700; }
+.ltop-ui .ttl { position: absolute; left: 50%; top: 2vh; transform: translateX(-50%); background: rgba(255,250,240,.93); border-radius: 999px; padding: 4px 22px;
   font-size: clamp(16px, 1.7vw, 26px); color: #8a5a32; box-shadow: 0 3px 0 rgba(43,35,64,.2); white-space: nowrap; }
-.isl-top .ttl small { font-weight: 600; opacity: .75; margin-left: 10px; font-size: .78em; color: #2b2340; }
-.isl-top .hint { position: absolute; left: 50%; bottom: 3vh; transform: translateX(-50%); background: rgba(255,255,255,.93); border-radius: 999px; padding: 4px 18px;
+.ltop-ui .ttl small { font-weight: 600; opacity: .75; margin-left: 10px; font-size: .78em; color: #2b2340; }
+.ltop-ui .hint { position: absolute; left: 50%; bottom: 3vh; transform: translateX(-50%); background: rgba(255,255,255,.93); border-radius: 999px; padding: 4px 18px;
   font-size: clamp(14px, 1.4vw, 22px); white-space: nowrap; box-shadow: 0 3px 0 rgba(43,35,64,.2); }
-.isl-top .say { position: absolute; left: 50%; bottom: 10vh; transform: translateX(-50%); background: #ffd84a; border-radius: 999px; padding: 4px 18px;
+.ltop-ui .say { position: absolute; left: 50%; bottom: 10vh; transform: translateX(-50%); background: #ffd84a; border-radius: 999px; padding: 4px 18px;
   font-size: clamp(14px, 1.4vw, 22px); white-space: nowrap; box-shadow: 0 3px 0 rgba(43,35,64,.2); }
-.isl-top .vig { position: absolute; inset: 0; background: radial-gradient(circle at 50% 48%, rgba(0,0,0,0) 0 39vh, rgba(8,10,28,.98) 41vh); }
-.isl-top .ring { position: absolute; left: 50%; top: 48%; width: 9vh; height: 9vh; margin: -4.5vh 0 0 -4.5vh; border-radius: 50%; border: 3px solid rgba(255,255,255,.85);
+.ltop-ui .vig { position: absolute; inset: 0; background: radial-gradient(circle at 50% 48%, rgba(0,0,0,0) 0 39vh, rgba(8,10,28,.98) 41vh); }
+.ltop-ui .ring { position: absolute; left: 50%; top: 48%; width: 9vh; height: 9vh; margin: -4.5vh 0 0 -4.5vh; border-radius: 50%; border: 3px solid rgba(255,255,255,.85);
   box-shadow: 0 0 12px rgba(255,255,255,.3); transition: border-color .3s, box-shadow .3s; }
-.isl-top .ring.warm { border-color: #ffb347; box-shadow: 0 0 16px rgba(255,179,71,.6); }
-.isl-top .ring.hot { border-color: #ffe14a; box-shadow: 0 0 26px rgba(255,225,74,.95); }
+.ltop-ui .ring.warm { border-color: #ffb347; box-shadow: 0 0 16px rgba(255,179,71,.6); }
+.ltop-ui .ring.hot { border-color: #ffe14a; box-shadow: 0 0 26px rgba(255,225,74,.95); }
 .label.isl-star { color: #ffe9a8; font-weight: 700; font-size: clamp(13px, 1.3vw, 20px); paint-order: stroke fill; -webkit-text-stroke: .2em #0b1030; white-space: nowrap; }
 `;
 function injectStyle() {
@@ -234,7 +234,7 @@ export class LightTop {
 
   showOverlay() {
     const host = this.host, P = host.player?.p;
-    if (!this.el) { this.el = document.createElement('div'); this.el.className = 'isl-top'; host.game.ui.labels.insertBefore(this.el, host.hud.root); } // under the dialog box
+    if (!this.el) { this.el = document.createElement('div'); this.el.className = 'ltop-ui'; host.game.ui.labels.insertBefore(this.el, host.hud.root); } // under the dialog box
     const scope = this.mode === 'scope';
     const count = t('story.top.count', { n: this.found, m: CONSTELLATIONS.length });
     this.el.innerHTML = `${scope ? '<div class="vig"></div><div class="ring"></div>' : ''}
