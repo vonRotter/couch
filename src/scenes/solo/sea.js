@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { ITEMS } from './items.js';
+import { now } from './save.js';
+import { seasonOf } from './calendar.js';
 import { mesh, box, cyl, sph, cone, ico } from './models.js';
 
 // The sea side of the island (milestone B1): fish for the rod, critters and finds from diving,
@@ -28,6 +30,13 @@ export const FISH = {
   lanternfish: { where: 'boat', hours: [20, 4], rare: 2, sell: 180, color: 0x2b2a5a, color2: 0x8ff0ff, shape: 'lantern', size: 0.8, speed: 1.8, zone: 0.15, hits: 4 },
   moonfish: { where: 'boat', hours: [22, 2], rare: 2, sell: 300, color: 0xe9e2ff, color2: 0xffe14a, shape: 'round', size: 1.1, speed: 2.0, zone: 0.13, hits: 5, glow: true },
   bream: { where: 'reef', hours: [0, 24], rare: 0, sell: 45, color: 0xff8a8a, color2: 0xffd0d0, shape: 'fish', size: 0.8, speed: 1.2, zone: 0.24, hits: 3 },
+  // milestone B3: seasonal fish (only in their season) and the fish of Shell Isle's hidden cove
+  rainbowTrout: { where: 'river', hours: [5, 19], rare: 1, sell: 70, color: 0x8fc0a0, color2: 0xff8fb8, shape: 'fish', size: 0.85, speed: 1.3, zone: 0.22, hits: 3, seasons: ['spring'], stripes: true },
+  flyingfish: { where: 'pier', hours: [7, 18], rare: 1, sell: 65, color: 0x4c8fd8, color2: 0xd8f0ff, shape: 'fish', size: 0.7, speed: 1.5, zone: 0.22, hits: 3, seasons: ['summer'], wings: true },
+  salmon: { where: 'river', hours: [0, 24], rare: 1, sell: 75, color: 0xd86a5a, color2: 0xffc0a8, shape: 'fish', size: 1.0, speed: 1.4, zone: 0.2, hits: 3, seasons: ['autumn'] },
+  icefish: { where: 'pier', hours: [0, 24], rare: 1, sell: 70, color: 0xdff4ff, color2: 0x9fd8ff, shape: 'fish', size: 0.7, speed: 1.3, zone: 0.22, hits: 3, seasons: ['winter'], glow: true },
+  parrotfish: { where: 'cove', hours: [0, 24], rare: 0, sell: 50, color: 0x3ddcb0, color2: 0xff7eb6, shape: 'fish', size: 0.9, speed: 1.2, zone: 0.24, hits: 3, spots: true },
+  rainbowfish: { where: 'cove', hours: [9, 17], rare: 2, sell: 220, color: 0xff5d73, color2: 0xffd23f, shape: 'fish', size: 0.8, speed: 1.8, zone: 0.15, hits: 4, stripes: true },
 };
 export const FISH_IDS = Object.keys(FISH);
 export const isRiverFish = (id) => FISH[id]?.where === 'river';
@@ -36,6 +45,9 @@ export const isRiverFish = (id) => FISH[id]?.where === 'river';
 export const SEA = {
   seaweed: { sell: 8, color: 0x3fae6a }, clam: { sell: 12, color: 0xe8d8c8 }, shrimp: { sell: 20, color: 0xff9a7a },
   crab: { sell: 35, color: 0xff6a4a }, lobster: { sell: 90, color: 0xd94a3a },
+  // milestone B3: seasonal dive critters and Shell Isle's beach finds
+  seahorse: { sell: 45, color: 0xffb03a, seasons: ['spring', 'summer'] }, snowCrab: { sell: 50, color: 0xe8f4ff, seasons: ['winter'] },
+  starfish: { sell: 20, color: 0xff8c42 }, seaGlass: { sell: 25, color: 0x8fe0c0 }, seaShell: { sell: 10, color: 0xffd8c8 },
 };
 export const TREASURE = { oldcoin: { sell: 40 }, pearl: { sell: 90 }, goldcup: { sell: 220 }, crystalShell: { sell: 400 } };
 
@@ -87,9 +99,12 @@ export function inHours(f, h) {
   return a <= b ? h >= a && h < b : h >= a || h < b;
 }
 
-/** Choose a fish for a place and hour (rare ones are rare). */
-export function pickFish(where, hour, rand = Math.random) {
-  const list = FISH_IDS.filter((id) => FISH[id].where === where && inHours(FISH[id], hour));
+/** Is a fish (or sea critter) around in this season? */
+export const inSeasonFish = (def, season = seasonOf(now())) => !def.seasons || def.seasons.includes(season);
+
+/** Choose a fish for a place, hour and season (rare ones are rare). */
+export function pickFish(where, hour, rand = Math.random, season = seasonOf(now())) {
+  const list = FISH_IDS.filter((id) => FISH[id].where === where && inHours(FISH[id], hour) && inSeasonFish(FISH[id], season));
   const w = list.map((id) => [10, 5, 1.6][FISH[id].rare]);
   let r = rand() * w.reduce((a, b) => a + b, 0);
   for (let i = 0; i < list.length; i++) if ((r -= w[i]) <= 0) return list[i];
@@ -199,6 +214,8 @@ export function makeFish(id) {
       g.add(fin);
       if (f.stripes) for (let i = 0; i < 3; i++) g.add(mesh(box(0.05, 0.25, 0.4), INK, -0.15 + i * 0.15, 0.08, 0, false));
       if (f.spots) for (const [x, y] of [[0.1, 0.12], [-0.2, 0.05], [0.25, -0.02]]) g.add(scaled(mesh(sph(0.1, 8, 6), toon(f.color2), x, y, 0.13, false), 1, 1, 0.4));
+      if (f.wings) for (const s2 of [-1, 1]) { const w = mesh(cone(0.18, 0.55, 4), belly, 0.05, 0.05, s2 * 0.22, false); w.rotation.set(s2 * 1.2, 0, Math.PI / 2 + 0.4); w.scale.set(1, 1, 0.25); g.add(w); }
+      if (f.glow && f.shape === 'fish') g.add(scaled(mesh(sph(0.28, 10, 8), toon(f.color2, { transparent: true, opacity: 0.45, emissive: 0x224455 }), 0, 0, 0, false), 1.3, 0.75, 0.55));
       if (f.whiskers) for (const s2 of [-1, 1]) g.add(mesh(cyl(0.012, 0.012, 0.35, 4), INK, 0.6, -0.05, s2 * 0.1, false).rotateZ(Math.PI / 2 + s2 * 0.3));
       eye(0.3, 0.08, 0.15); eye(0.3, 0.08, -0.15);
       if (f.shape === 'lantern') {
@@ -233,9 +250,9 @@ export function makeSeaThing(id) {
       g.add(mesh(cyl(0.01, 0.01, 0.4, 3), 0xff7a5a, 0.2, 0.1, 0.04, false).rotateZ(-0.8), mesh(sph(0.03, 6, 4), INK, 0.08, 0.06, 0.08, false));
       break;
     }
-    case 'crab': case 'lobster': {
+    case 'crab': case 'lobster': case 'snowCrab': {
       const lob = id === 'lobster';
-      const c = lob ? 0xd94a3a : 0xff6a4a;
+      const c = lob ? 0xd94a3a : id === 'snowCrab' ? 0xe8f4ff : 0xff6a4a;
       const b = mesh(sph(0.3, 12, 8), c, 0, 0.15, 0);
       b.scale.set(lob ? 1.5 : 1.2, 0.6, lob ? 0.7 : 0.9);
       g.add(b);
@@ -245,6 +262,29 @@ export function makeSeaThing(id) {
         for (let i = 0; i < 3; i++) { const l = mesh(cyl(0.025, 0.02, 0.28, 4), c, -0.1 + i * 0.12, 0.06, s * 0.3, false); l.rotation.x = s * 1.0; g.add(l); }
         g.add(mesh(sph(0.045, 6, 5), 0xffffff, 0.22, 0.32, s * 0.08, false), mesh(sph(0.025, 6, 4), INK, 0.25, 0.33, s * 0.09, false));
       }
+      break;
+    }
+    case 'seahorse': {
+      const c = 0xffb03a;
+      const b = mesh(sph(0.16, 10, 8), c, 0, 0.45, 0);
+      b.scale.set(0.9, 1.5, 0.8);
+      g.add(b, mesh(sph(0.13, 10, 8), c, 0.06, 0.78, 0), mesh(cyl(0.035, 0.05, 0.22, 6), c, 0.2, 0.76, 0).rotateZ(Math.PI / 2));
+      for (let i = 0; i < 4; i++) g.add(mesh(sph(0.08 - i * 0.012, 8, 6), c, -0.04 - i * 0.03, 0.22 - i * 0.08, 0));
+      g.add(mesh(cone(0.08, 0.14, 4), 0xffd27a, -0.12, 0.5, 0, false).rotateZ(1.2), mesh(sph(0.03, 6, 4), INK, 0.12, 0.82, 0.08, false), mesh(sph(0.03, 6, 4), INK, 0.12, 0.82, -0.08, false));
+      break;
+    }
+    case 'starfish': {
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const arm = mesh(cone(0.11, 0.38, 6), 0xff8c42, Math.cos(a) * 0.17, 0.06, Math.sin(a) * 0.17); arm.rotation.set(0, -a, -Math.PI / 2); arm.rotateZ(0); g.add(arm); }
+      g.add(mesh(sph(0.13, 8, 6), 0xff9f5a, 0, 0.06, 0));
+      g.children.forEach((m) => m.scale.y *= 0.5);
+      break;
+    }
+    case 'seaGlass':
+      for (const [x, z, c] of [[-0.1, 0, 0x8fe0c0], [0.14, 0.06, 0x8fc0ff], [0.02, -0.14, 0xc0f0a0]]) { const p = mesh(ico(0.13, 0), toon(c, { transparent: true, opacity: 0.8, emissive: 0x112222 }), x, 0.08, z); p.scale.y = 0.55; g.add(p); }
+      break;
+    case 'seaShell': {
+      for (let i = 0; i < 7; i++) { const a = -0.9 + (i / 6) * 1.8; const r = mesh(cyl(0.035, 0.06, 0.42, 5), i % 2 ? 0xffd8c8 : 0xffc0b0, Math.sin(a) * 0.18, 0.06, Math.cos(a) * 0.18 - 0.12); r.rotation.set(Math.PI / 2, 0, -a); g.add(r); }
+      g.add(mesh(box(0.14, 0.06, 0.1), 0xffc0b0, 0, 0.04, -0.2));
       break;
     }
     case 'oldcoin': {

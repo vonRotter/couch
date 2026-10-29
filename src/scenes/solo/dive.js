@@ -8,7 +8,8 @@ import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import './strings.js';
 import './strings2.js';
-import { loadIsland, give } from './save.js';
+import { loadIsland, give, now } from './save.js';
+import { seasonOf } from './calendar.js';
 import { ITEMS, setPictures, icon } from './items.js';
 import { FISH, seaModel, makeFish, makeSeaThing } from './sea.js';
 import { thumb } from './thumbs.js';
@@ -39,7 +40,9 @@ export function floorY(x) {
 const zoneOf = (y) => (y > -10 ? 1 : y > -22 ? 2 : 3);
 
 // What lives where: [id, count, zone, onFloor]
-const CRITTERS = [['shrimp', 5, 1, false], ['crab', 3, 1, true], ['bream', 4, 2, false], ['lobster', 2, 2, true], ['squid', 2, 3, false], ['lanternfish', 2, 3, false], ['octopus', 1, 3, true]];
+// (a fifth entry lists the seasons a critter shows up in: milestone B3)
+const CRITTERS = [['shrimp', 5, 1, false], ['crab', 3, 1, true], ['bream', 4, 2, false], ['lobster', 2, 2, true], ['squid', 2, 3, false], ['lanternfish', 2, 3, false], ['octopus', 1, 3, true],
+  ['seahorse', 3, 1, false, ['spring', 'summer']], ['snowCrab', 3, 1, true, ['winter']]];
 const CHESTS = [{ x: -30, zone: 1, coins: 20, item: 'oldcoin' }, { x: 9.5, zone: 2, coins: 50, item: 'pearl' }, { x: -1.5, zone: 3, coins: 120, item: 'goldcup' }, { x: 57, zone: 4, coins: 150, item: 'crystalShell' }];
 
 const CSS = `
@@ -257,7 +260,9 @@ export class DiveScene extends BaseScene {
     });
     // critters
     this.critters = [];
-    for (const [id, n, zone, floor] of CRITTERS) {
+    const season = seasonOf(now());
+    for (const [id, n, zone, floor, seasons] of CRITTERS) {
+      if (seasons && !seasons.includes(season)) continue;
       for (let i = 0; i < n; i++) {
         const x = xIn(zone);
         const fy = floorY(x);

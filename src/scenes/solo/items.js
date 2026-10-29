@@ -1,20 +1,34 @@
-import { MIN, HOUR } from './save.js';
+import { MIN, HOUR, now } from './save.js';
+import { seasonOf } from './calendar.js';
+
+const ALL = ['spring', 'summer', 'autumn', 'winter'];
 
 // Items on the solo island: tools, seeds, crops, materials, gifts and quest finds.
 // Crops grow in REAL time while their soil is wet (see farm.js). Fast crops ripen in one sitting,
 // pumpkins and star fruit are the slow "come back later" crops.
 
 export const CROPS = {
-  radish: { grow: 4 * MIN, seed: 5, sell: 12, color: 0xff4f6d, leaf: 0x58b947 },
-  carrot: { grow: 8 * MIN, seed: 8, sell: 20, color: 0xff8c2a, leaf: 0x4cc46a },
-  lettuce: { grow: 12 * MIN, seed: 10, sell: 26, color: 0x9be05a, leaf: 0x6fcf4a },
-  strawberry: { grow: 20 * MIN, regrow: 10 * MIN, seed: 20, sell: 18, color: 0xff3b5c, leaf: 0x3fae4a },
-  tomato: { grow: 25 * MIN, regrow: 12 * MIN, seed: 15, sell: 30, color: 0xf2402e, leaf: 0x3f9a32 },
-  corn: { grow: 30 * MIN, seed: 20, sell: 45, color: 0xffd23f, leaf: 0x7ac943 },
-  pumpkin: { grow: 2 * HOUR, seed: 40, sell: 120, color: 0xff9f1c, leaf: 0x58b947 },
-  starfruit: { grow: 8 * HOUR, seed: 80, sell: 300, color: 0xffe14a, leaf: 0x6a8fd8, glow: true },
+  radish: { grow: 4 * MIN, seed: 5, sell: 12, color: 0xff4f6d, leaf: 0x58b947, seasons: ALL },
+  carrot: { grow: 8 * MIN, seed: 8, sell: 20, color: 0xff8c2a, leaf: 0x4cc46a, seasons: ALL },
+  lettuce: { grow: 12 * MIN, seed: 10, sell: 26, color: 0x9be05a, leaf: 0x6fcf4a, seasons: ['spring', 'winter'] },
+  strawberry: { grow: 20 * MIN, regrow: 10 * MIN, seed: 20, sell: 18, color: 0xff3b5c, leaf: 0x3fae4a, seasons: ['spring'] },
+  tomato: { grow: 25 * MIN, regrow: 12 * MIN, seed: 15, sell: 30, color: 0xf2402e, leaf: 0x3f9a32, seasons: ['summer'] },
+  corn: { grow: 30 * MIN, seed: 20, sell: 45, color: 0xffd23f, leaf: 0x7ac943, seasons: ['summer', 'autumn'] },
+  pumpkin: { grow: 2 * HOUR, seed: 40, sell: 120, color: 0xff9f1c, leaf: 0x58b947, seasons: ['autumn'] },
+  starfruit: { grow: 8 * HOUR, seed: 80, sell: 300, color: 0xffe14a, leaf: 0x6a8fd8, glow: true, seasons: ['summer'] },
+  // milestone B3: new seasonal crops (one quick crop in every season)
+  pea: { grow: 6 * MIN, regrow: 4 * MIN, seed: 10, sell: 10, color: 0x7ad04a, leaf: 0x4cb84a, seasons: ['spring'] },
+  blueberry: { grow: 5 * MIN, regrow: 4 * MIN, seed: 10, sell: 9, color: 0x4a6fd8, leaf: 0x3f9a4a, seasons: ['summer'] },
+  beet: { grow: 5 * MIN, seed: 6, sell: 14, color: 0xa8204f, leaf: 0x58b947, seasons: ['autumn'] },
+  sunflower: { grow: 40 * MIN, seed: 25, sell: 60, color: 0xffc93c, leaf: 0x4cb84a, seasons: ['autumn'] },
+  cabbage: { grow: 20 * MIN, seed: 15, sell: 40, color: 0xa8dc8a, leaf: 0x6fbf6a, seasons: ['winter'] },
+  snowberry: { grow: 6 * MIN, regrow: 4 * MIN, seed: 12, sell: 11, color: 0xf4f8ff, leaf: 0x3f8a6a, seasons: ['winter'] },
 };
 export const CROP_IDS = Object.keys(CROPS);
+
+/** Can this crop be planted outside in this season? (Radishes and carrots are hardy: every season.) */
+export const inSeason = (crop, season = seasonOf(now())) => CROPS[crop].seasons.includes(season);
+export const isHardy = (crop) => CROPS[crop].seasons.length === 4;
 
 /** How long one watering keeps the soil wet (growth only counts while wet). */
 export const WET_MS = 6 * HOUR;
@@ -30,6 +44,7 @@ export const ITEMS = {
   feather: { kind: 'find' },
   starmap: { kind: 'find' },
   lens: { kind: 'find' },
+  cocoa: { kind: 'gift', sell: 20 }, // hot cocoa after the first winter sled ride of the week
 };
 for (const c of CROP_IDS) {
   ITEMS[`${c}Seed`] = { kind: 'seed', crop: c, buy: CROPS[c].seed };
@@ -39,10 +54,9 @@ for (const c of CROP_IDS) {
 export const TOOLS = ['hoe', 'can', 'scythe', 'pickaxe'];
 export const isGift = (id) => ['crop', 'gift', 'fish', 'dish', 'produce'].includes(ITEMS[id]?.kind);
 
-/** The store's shelf: seeds, wood and flowers. Star fruit seeds appear once Pip has shown you the stars. */
-export function shopStock(save) {
-  const list = ['radishSeed', 'carrotSeed', 'lettuceSeed', 'strawberrySeed', 'tomatoSeed', 'cornSeed', 'pumpkinSeed'];
-  if (save.unlocks.starfruit) list.push('starfruitSeed');
+/** The store's shelf: seeds of the season, wood and flowers. Star fruit seeds appear once Pip has shown you the stars. */
+export function shopStock(save, season = seasonOf(now())) {
+  const list = CROP_IDS.filter((c) => inSeason(c, season) && (c !== 'starfruit' || save.unlocks.starfruit)).map((c) => `${c}Seed`);
   list.push('wood', 'bouquet');
   if (save.sea?.suit) for (const g of ['flippers', 'tank']) if (!save.sea[g]) list.push(g);
   if (save.sea?.flippers && save.sea?.tank) for (const g of ['seaLamp', 'scooter']) if (!save.sea[g]) list.push(g);
@@ -69,6 +83,11 @@ function cropSvg(id) {
     case 'corn': return `<ellipse cx="12" cy="13" rx="4" ry="8" fill="${col}" stroke="${INK}" stroke-width="1.2"/><path d="M8 20 Q5 12 7 6 M16 20 Q19 12 17 6" fill="none" stroke="${leaf}" stroke-width="2.2"/>`;
     case 'pumpkin': return `<ellipse cx="12" cy="14" rx="9" ry="7" fill="${col}" stroke="${INK}" stroke-width="1.2"/><path d="M12 7 V21 M7 9 Q5 14 7 19 M17 9 Q19 14 17 19" fill="none" stroke="#d9780a" stroke-width="1"/><rect x="11" y="4" width="2" height="4" rx="1" fill="#7a4a2e"/>`;
     case 'starfruit': return `<path d="M12 3 L14.6 9.2 L21 9.6 L16 13.8 L17.6 20.4 L12 16.8 L6.4 20.4 L8 13.8 L3 9.6 L9.4 9.2 Z" fill="${col}" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`;
+    case 'pea': return `<path d="M5 15 Q12 5 19 9 Q14 18 5 15Z" fill="${col}" stroke="${INK}" stroke-width="1.2"/><circle cx="9" cy="13" r="1.6" fill="#b8f08a"/><circle cx="12.5" cy="11.5" r="1.6" fill="#b8f08a"/><circle cx="16" cy="10.5" r="1.4" fill="#b8f08a"/>`;
+    case 'blueberry': case 'snowberry': return `<circle cx="9" cy="15" r="4" fill="${col}" stroke="${INK}" stroke-width="1.1"/><circle cx="15" cy="15" r="4" fill="${col}" stroke="${INK}" stroke-width="1.1"/><circle cx="12" cy="10" r="4" fill="${col}" stroke="${INK}" stroke-width="1.1"/><path d="M10 6 L12 8 L14 6" fill="none" stroke="${leaf}" stroke-width="1.6"/>`;
+    case 'sunflower': return `<path d="M12 22 V12" stroke="${leaf}" stroke-width="2"/>${[0, 45, 90, 135, 180, 225, 270, 315].map((a) => `<ellipse cx="12" cy="5.5" rx="2" ry="3.4" fill="${col}" stroke="${INK}" stroke-width=".7" transform="rotate(${a} 12 10)"/>`).join('')}<circle cx="12" cy="10" r="3.4" fill="#7a4a2e" stroke="${INK}" stroke-width="1"/>`;
+    case 'cabbage': return `<circle cx="12" cy="14" r="8" fill="${col}" stroke="${INK}" stroke-width="1.2"/><path d="M12 6 Q8 14 12 22 M12 6 Q16 14 12 22 M5 12 Q12 16 19 12" fill="none" stroke="#6fa85a" stroke-width="1"/>`;
+    case 'beet': return `<path d="M12 21 Q5 17 7 12 Q12 9 17 12 Q19 17 12 21Z" fill="${col}" stroke="${INK}" stroke-width="1.2"/><path d="M12 21 v2" stroke="${INK}"/>${leaves}`;
     case 'tomato': return `<circle cx="12" cy="14" r="7" fill="${col}" stroke="${INK}" stroke-width="1.2"/><path d="M8 8 L12 10 L16 8 L12 7Z" fill="${leaf}" stroke="${INK}" stroke-width="1"/><ellipse cx="9.5" cy="12" rx="1.6" ry="1" fill="#fff" opacity=".6"/>`;
     default: return `<circle cx="12" cy="15" r="6" fill="${col}" stroke="${INK}" stroke-width="1.2"/><path d="M12 21 v2" stroke="${INK}"/>${leaves}<ellipse cx="10" cy="13.5" rx="1.5" ry="1" fill="#fff" opacity=".6"/>`;
   }
@@ -84,6 +103,7 @@ const SVG = {
   feather: `<path d="M6 20 Q8 8 19 4 Q16 14 6 20Z" fill="#ff9fd0" stroke="${INK}" stroke-width="1.2"/><path d="M6 20 L16 8" stroke="#ff6fae" stroke-width="1.2"/>`,
   starmap: `<rect x="4" y="5" width="16" height="14" rx="2" fill="#2e3b6b" stroke="${INK}" stroke-width="1.2"/><circle cx="8" cy="9" r="1" fill="#ffe14a"/><circle cx="14" cy="8" r="1.2" fill="#ffe14a"/><circle cx="16" cy="14" r="1" fill="#ffe14a"/><circle cx="9" cy="15" r="1.3" fill="#ffe14a"/><path d="M8 9 L14 8 L16 14 L9 15Z" fill="none" stroke="#8fd8ff" stroke-width=".7"/>`,
   lens: `<circle cx="12" cy="12" r="8" fill="#bff6ff" stroke="#ffd23f" stroke-width="2.4"/><ellipse cx="9.5" cy="9.5" rx="2.5" ry="1.6" fill="#fff"/>`,
+  cocoa: `<path d="M5 8 H17 V18 Q17 21 14 21 H8 Q5 21 5 18Z" fill="#ff7a59" stroke="${INK}" stroke-width="1.2"/><path d="M17 11 Q21 11 21 14 Q21 17 17 17" fill="none" stroke="${INK}" stroke-width="1.4"/><ellipse cx="11" cy="8.5" rx="5.5" ry="1.6" fill="#7a4a2e"/><circle cx="9" cy="7.5" r="1.2" fill="#fff"/><circle cx="12.5" cy="7" r="1.2" fill="#fff"/><path d="M9 5 Q8 3 9.5 1.5 M13 5 Q12 3 13.5 1.5" fill="none" stroke="#bdb8cf" stroke-width="1"/>`,
   coin: `<circle cx="12" cy="12" r="8" fill="#ffd23f" stroke="${INK}" stroke-width="1.4"/><circle cx="12" cy="12" r="5" fill="none" stroke="#e0a400" stroke-width="1.2"/>`,
   heart: `<path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.5 5c2.1 0 3.5 1.2 5.5 3.2C14 6.2 15.4 5 17.5 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" fill="#ff5d73" stroke="${INK}" stroke-width="1.4"/>`,
   heartEmpty: `<path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.5 5c2.1 0 3.5 1.2 5.5 3.2C14 6.2 15.4 5 17.5 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" fill="rgba(255,255,255,.55)" stroke="${INK}" stroke-width="1.4"/>`,

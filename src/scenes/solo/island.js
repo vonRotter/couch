@@ -16,7 +16,7 @@ import { Ranch } from './animals.js';
 import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
 import { now, hourOf, since, loadIsland, count, give, take, MIN, HOUR } from './save.js';
-import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures } from './items.js';
+import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures, inSeason } from './items.js';
 import { FISH, FISH_IDS, RECIPES, seaModel, makeDish, hasSeaModel } from './sea.js';
 import { thumb } from './thumbs.js';
 import { Fishing } from './fishing.js';
@@ -27,6 +27,7 @@ import { Farm, tileAt, tileCenter, stageOf, minutesLeft } from './farm.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
 import { IslandHud, heartsHtml } from './hud.js';
 import { Life } from './life.js';
+import { SEASON_ICON } from './calendar.js';
 import { ToastQueue } from './toasts.js';
 import { mesh, box, sph, makeTool, makeDeco, makeBranch, makeSign } from './models.js';
 
@@ -922,6 +923,7 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.ranch.interactions(P, out, nm);
     if (!out.b) this.builder.interactions(P, out, nm);
     if (!out.b) this.seasons.interactions(P, out, nm);
+    if (!out.b) this.seasons.shellAction(P, out, nm);
     // the dive boat's ladder
     if (!out.b && Math.hypot(P.x - (DIVE_BOAT.x - 1.0), P.z - (DIVE_BOAT.z + 1.1)) < 1.4) {
       out.b = S.sea.suit ? { text: nm('isl.h.dive'), fn: () => this.startDive() } : { text: t('isl.h.diveNeed'), fn: () => this.game.audio.play('bump') };
@@ -951,8 +953,9 @@ export class SoloIslandScene extends BaseScene {
     if (!S.unlocks.mine && Math.hypot(P.x - ROCKFALL.x, P.z - ROCKFALL.z) < 3.4) {
       out.a = held?.id === 'pickaxe' ? { text: nm('isl.h.rocks'), fn: () => this.hitRocks() } : { text: t('isl.h.rocksNeed'), fn: () => this.game.audio.play('bump') };
     }
-    // rock piles and tall grass
+    // rock piles and tall grass, the winter sled
     if (!out.a) out.a = this.builder.gatherAction(P, held?.id, nm);
+    this.seasons.sled.interactions(P, out, nm);
     // fishing, and the books
     if (!out.a && held?.id === 'rod') {
       const spot = this.fishSpot();
@@ -973,6 +976,7 @@ export class SoloIslandScene extends BaseScene {
       else if (weed) out.a = id === 'scythe' ? { text: nm('isl.h.cut'), fn: () => this.doTool('scythe', tile), ok: true } : { text: t('isl.h.weed'), fn: () => this.doTool(id, tile), bad: true };
       else if (id === 'hoe') out.a = !tl ? { text: nm('isl.h.till'), fn: () => this.doTool('hoe', tile), ok: true } : { text: '', fn: () => this.doTool('hoe', tile) };
       else if (id === 'can') out.a = tl ? { text: nm('isl.h.water'), fn: () => this.doTool('can', tile), ok: true } : { text: '', fn: () => this.doTool('can', tile) };
+      else if (it?.kind === 'seed' && tl && !tl.crop && !this.canPlantHere(tile, it.crop)) out.a = { text: this.offSeasonText(it.crop), fn: () => this.offSeason(it.crop), bad: true };
       else if (it?.kind === 'seed') out.a = tl && !tl.crop ? { text: nm('isl.h.plant', { item: itemName(id) }), fn: () => this.doPlant(tile, id), ok: true } : !tl ? { text: t('isl.t.tillFirst'), fn: () => this.game.audio.play('bump'), bad: true } : null;
       else if (!tl) out.a = { text: t('isl.h.pickTool'), fn: () => this.game.audio.play('bump') };
       if (tl?.crop && stage < 3) {
@@ -1034,11 +1038,29 @@ export class SoloIslandScene extends BaseScene {
     this.markDirty();
   }
 
+  /** Outside, seeds only go in during their season (radishes and carrots grow all year). */
+  canPlantHere(tile, crop) {
+    return !!tile.f || inSeason(crop, this.seasons.season);
+  }
+
+  offSeasonText(crop) {
+    const list = CROPS[crop].seasons.map((sn) => t(`isl.seasonIn.${sn}`)).join(t('isl.or'));
+    return t(this.save.unlocks.greenhouse ? 'isl.h.offSeasonGh' : 'isl.h.offSeason', { item: itemName(crop), list });
+  }
+
+  offSeason(crop) {
+    const txt = this.offSeasonText(crop);
+    this.game.ui.toast(txt, 2600);
+    speak(txt);
+    this.game.audio.play('bump');
+  }
+
   doPlant(tile, seedId) {
     const S = this.save;
     const crop = ITEMS[seedId].crop;
     if (this.farm.plant(tile.c, tile.r, crop, now()) !== 'planted') return;
     take(S, seedId, 1);
+    this.seasons.onPlant();
     this.swingTool();
     const { x, z } = tileCenter(tile.c, tile.r);
     this.puffs.burst(new THREE.Vector3(x, heightAt(x, z) + 0.3, z), 0x7a4a2e, { count: 6, speed: 2, size: 0.2, life: 0.5 });
@@ -1322,11 +1344,13 @@ export class SoloIslandScene extends BaseScene {
     const cells = FISH_IDS.map((id, i) => {
       const got = !!L[id];
       const img = got ? `<img src="${this.picture(id)}" alt="">` : `<img src="${this.picture(id)}" alt="" style="filter:brightness(0) opacity(.35)">`;
-      return `<div class="isl-logcell ${i === this.log.i ? 'on' : ''}">${img}<span>${esc(got ? t(`isl.i.${id}`) : t('isl.log.unknown'))}</span></div>`;
+      const sea = FISH[id].seasons ? `<i style="position:absolute;right:4px;top:2px;font-style:normal">${FISH[id].seasons.map((sn) => SEASON_ICON[sn]).join('')}</i>` : '';
+      return `<div class="isl-logcell ${i === this.log.i ? 'on' : ''}" style="position:relative">${sea}${img}<span>${esc(got ? t(`isl.i.${id}`) : t('isl.log.unknown'))}</span></div>`;
     }).join('');
     const id = FISH_IDS[this.log.i], f = FISH[id], got = !!L[id];
     const when = f.hours[0] === 0 && f.hours[1] === 24 ? t('isl.when.any') : t('isl.when.hours', { a: f.hours[0], b: f.hours[1] });
-    const info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t(`isl.where.${f.where}`))} · ${esc(when)}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}${f.rare === 2 ? ' · ★' : ''}`;
+    const seasons = f.seasons ? ` · ${f.seasons.map((sn) => SEASON_ICON[sn]).join('')} ${esc(t('isl.log.seasons', { list: f.seasons.map((sn) => t(`isl.seasonIn.${sn}`)).join(t('isl.or')) }))}` : '';
+    const info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t(`isl.where.${f.where}`))} · ${esc(when)}${seasons}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}${f.rare === 2 ? ' · ★' : ''}`;
     this.hud.setPanel(`<h2>${esc(t('isl.log.title'))} <small style="font-size:.5em;opacity:.7">${esc(t('isl.log.count', { n, m: FISH_IDS.length }))}</small></h2>
       <div class="isl-loggrid">${cells}</div><div class="isl-foot" style="font-size:clamp(14px,1.4vw,20px);opacity:1">${info}</div>
       <div class="isl-foot">${esc(tFor(this.player?.p, 'isl.log.hint'))}</div>`);
@@ -1522,7 +1546,9 @@ export class SoloIslandScene extends BaseScene {
     const S = this.save;
     const h = this.hour ?? hourOf();
     const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
-    this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), this.seasons.festival ? t(`isl.fest.${this.seasons.festival}`) : this.seasons.rainy ? `☂ ${t('isl.weather.rain')}` : ''].filter(Boolean).join(' · ') });
+    const sea = this.seasons;
+    const weather = sea.festival ? t(`isl.fest.${sea.festival}`) : sea.rainy ? (sea.season === 'winter' ? `❄ ${t('isl.weather.snow')}` : `☂ ${t('isl.weather.rain')}`) : '';
+    this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), `${SEASON_ICON[sea.season]} ${t(`isl.season.${sea.season}`)}`, weather].filter(Boolean).join(' · ') });
     this.hud.setTasks(this.mode === 'walk' || this.mode === 'bag' ? this.tasks() : []);
     const items = S.inv.map((it) => ({ ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) }));
     if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
@@ -1532,7 +1558,7 @@ export class SoloIslandScene extends BaseScene {
       const parts = [ia.a?.text, ia.b?.text].filter(Boolean);
       prompt = parts.join(' · ');
     }
-    if (this.mode !== 'fish' && this.mode !== 'deco') this.hud.setPrompt(prompt);
+    if (!['fish', 'deco', 'sled'].includes(this.mode)) this.hud.setPrompt(prompt);
     const mb = this.map.mailbox.userData;
     mb.flag.rotation.z = S.mail.length ? 0 : -Math.PI / 2;
     mb.letter.visible = S.mail.length > 0 && this.mode !== 'letter';
@@ -1567,6 +1593,7 @@ export class SoloIslandScene extends BaseScene {
         case 'bench': this.builder.updateBench(inp, dt); break;
         case 'deco': this.builder.updateDecorate(inp, dt); break;
         case 'cal': this.seasons.updateCalendar(inp, dt); break;
+        case 'sled': this.seasons.sled.update(inp, dt); break;
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();

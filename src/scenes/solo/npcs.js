@@ -6,6 +6,7 @@ import { makeGrumbleton } from '../adventure/props.js';
 import { mesh, box, cyl, sph, cone } from './models.js';
 import { SPOTS } from './map.js';
 import { hourOf, since, HOUR } from './save.js';
+import { festivalOn } from './calendar.js';
 
 // The island's people. Each has a home spot, a real-time daily routine (where they are depends on the
 // hour), a voice for read-aloud, gift likes, friendship hearts with two small heart events, and two
@@ -26,6 +27,7 @@ export const NPCS = {
   hazel: {
     voice: { pitch: 1.2, rate: 0.9, css: '#4f9a1f' },
     sched: [[0, 'hazelPorch', true], [6, 'hazelGarden'], [11, 'plazaBench'], [14, 'farmFence'], [19, 'hazelPorch'], [22, 'hazelPorch', true]],
+    fest: { fair: [9, 18, 'plazaBench'] },
     loves: ['tomato', 'carrotSoup'], likes: ['pumpkin', 'bouquet', 'lettuce'], dislikes: ['wood'],
     quests: [
       { need: [['radish', 1]], reward: { items: [['strawberrySeed', 2], ['tomatoSeed', 2]], coins: 10 } },
@@ -39,6 +41,7 @@ export const NPCS = {
   rosa: {
     voice: { pitch: 1.4, rate: 1.05, css: '#e0459a' },
     sched: [[0, 'storeHome', true], [7, 'storeCounter'], [18, 'plazaFountain'], [21, 'storeHome', true]],
+    fest: { plant: [9, 18, 'plazaFountain'] }, // [from hour, to hour, spot] on festival days
     loves: ['bouquet', 'strawberryShake'], likes: ['lettuce', 'strawberry', 'starfruit'], dislikes: ['corn'],
     quests: [
       { need: [['radish', 3]], reward: { items: [['cornSeed', 2]], coins: 40 } },
@@ -75,6 +78,7 @@ export const NPCS = {
   pip: {
     voice: { pitch: 1.6, rate: 1.1, css: '#4a3fc0' },
     sched: [[0, 'rocket', true], [8, 'pad'], [12, 'hallFront'], [15, 'pad'], [19, 'hillTop'], [23, 'rocket', true]],
+    fest: { beach: [10, 18, 'beachDay'] },
     loves: ['starfruit', 'tempura'], likes: ['corn', 'strawberry', 'pumpkin'], dislikes: ['lettuce'],
     quests: [
       { find: 'starmap', reward: { items: [['starfruitSeed', 1]], unlock: 'starfruit' } },
@@ -103,9 +107,11 @@ export function npcState(save, id) {
 
 export const heartsOf = (st) => Math.min(MAX_HEARTS, Math.floor(st.pts / PTS_PER_HEART));
 
-/** Where the npc should be now: { spot, sleep }. */
+/** Where the npc should be now: { spot, sleep }. Festival hosts stand at their festival during the day. */
 export function scheduleNow(id, at) {
   const h = hourOf(at);
+  const f = NPCS[id].fest?.[festivalOn(at)];
+  if (f && h >= f[0] && h < f[1]) return { spot: SPOTS[f[2]], sleep: false, name: f[2] };
   let cur = NPCS[id].sched[0];
   for (const e of NPCS[id].sched) if (h >= e[0]) cur = e;
   return { spot: SPOTS[cur[1]], sleep: !!cur[2], name: cur[1] };

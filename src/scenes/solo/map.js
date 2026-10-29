@@ -23,7 +23,7 @@ export const SEA_Y = -0.45;
 const CLIFF_H = 4.6;
 
 export const RIVER = new THREE.CatmullRomCurve3([[-23, -48], [-23, -36], [-22, -28], [-24.5, -18], [-23, -6], [-26, 6], [-24, 18], [-28, 30], [-31, 42], [-33, 60]].map(([x, z]) => new THREE.Vector3(x, 0, z)));
-const RIVER_W = 2.6;
+export const RIVER_W = 2.6;
 
 export const cliffZ = (x) => -33 - 2 * Math.sin(x * 0.09);
 const HILLS = [{ x: 8, z: -25.5, r: 8, h: 2.0 }, { x: -44, z: -6, r: 7, h: 1.0 }, { x: 40, z: 2, r: 6, h: 0.8 }];
@@ -43,6 +43,7 @@ export const PAD = { x: 40, z: -16 };
 export const BRIDGE = { x: -24.2, z: -19, len: 11.5 };
 export const ROCKFALL = { x: 26, z: -32.4 };
 export const PIER = { x: 4, z0: 40.5, len: 19 };
+export const HILLS_LIST = HILLS;
 
 /**
  * Game places. door: where you stand to enter. lock: an unlock flag in save.unlocks (closed until set).
@@ -89,6 +90,7 @@ export const SPOTS = {
   cafe: { x: -8.2, z: 41.2 }, shipDeck: { x: 4.6, z: 52 },
   pad: { x: 37.4, z: -12.4 }, hallFront: { x: 30.5, z: -11.2 }, hillTop: { x: 10.4, z: -26.4 }, rocket: { x: 38.6, z: -13.2 },
   meadow: { x: 47, z: -11 },
+  beachDay: { x: 16.5, z: 39.6 },
 };
 
 // Branch spots (wood for the bridge), quest finds and dive/fish spots for later.
@@ -103,7 +105,7 @@ export const CAFE = { x: -10, z: 37.4 };
 const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // Sampled river for fast distance checks.
-const RIVER_PTS = RIVER.getSpacedPoints(160).map((p) => ({ x: p.x, z: p.z }));
+export const RIVER_PTS = RIVER.getSpacedPoints(160).map((p) => ({ x: p.x, z: p.z }));
 function distToPts(pts, x, z) {
   let best = Infinity;
   for (let i = 0; i < pts.length - 1; i++) {
@@ -220,6 +222,7 @@ export class IslandMap {
 
     const { group, keepers } = bake(this.statics);
     this.scene.add(group);
+    this.baked = group; // seasons recolor its leaves (see seasonlook.js)
     for (const k of keepers) { k.removeFromParent(); this.scene.add(k); }
     this.statics = null;
     this.buildGraph();
@@ -278,6 +281,7 @@ export class IslandMap {
     const ground = new THREE.Mesh(geo, mat);
     ground.receiveShadow = true;
     this.scene.add(ground);
+    this.ground = ground;
 
     const wmat = new THREE.MeshToonMaterial({ color: 0x56c6f0, transparent: true, opacity: 0.86, gradientMap: toon(0xffffff).gradientMap });
     this.water = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), wmat);

@@ -28,7 +28,7 @@ const STONE = 0xc9c3d6;
 const STONE_DARK = 0x9a94b2;
 
 /** A triangular roof prism: ridge along x, slopes facing front and back. */
-function roofGeo(w, d, h) {
+export function roofGeo(w, d, h) {
   return sharedGeo(`isl-roof${w}|${d}|${h}`, () => {
     const s = new THREE.Shape();
     s.moveTo(-d / 2, 0);
@@ -780,9 +780,26 @@ export function makeCrop(id, stage) {
       }
       break;
     }
+    case 'sunflower': {
+      const h = big ? 1.7 : 0.9;
+      g.add(mesh(cyl(0.04, 0.05, h, 5), leaf, 0, h / 2, 0));
+      for (const s of [-1, 1]) { const l = mesh(sph(0.16, 8, 6), leaf, s * 0.14, h * 0.45, 0, false); l.scale.set(1.2, 0.3, 0.7); l.rotation.z = s * 0.4; g.add(l); }
+      if (big) {
+        const head = new THREE.Group();
+        for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; const p = mesh(sph(0.12, 6, 4), c.color, Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0, false); p.scale.set(1, 1, 0.3); head.add(p); }
+        head.add(mesh(cyl(0.2, 0.2, 0.08, 12), 0x7a4a2e, 0, 0, 0.02, false).rotateX(Math.PI / 2));
+        head.position.set(0, h + 0.1, 0.08);
+        head.rotation.x = -0.35;
+        g.add(head);
+      } else g.add(mesh(sph(0.12, 8, 6), 0x9be05a, 0, h + 0.05, 0, false));
+      break;
+    }
     case 'tomato':
+    case 'pea':
+    case 'blueberry':
+    case 'snowberry':
     case 'strawberry': {
-      const tall = id === 'tomato';
+      const tall = id === 'tomato' || id === 'pea';
       if (tall) g.add(mesh(cyl(0.025, 0.025, 1.1, 4), WOOD, 0.15, 0.55, -0.1, false));
       const r = big ? 0.3 : 0.22;
       for (let i = 0; i < 4; i++) {
@@ -791,7 +808,9 @@ export function makeCrop(id, stage) {
       }
       if (big) for (let i = 0; i < 5; i++) {
         const a = (i / 5) * Math.PI * 2 + 0.3;
-        g.add(mesh(sph(tall ? 0.11 : 0.08, 8, 6), c.color, Math.cos(a) * 0.27, (tall ? 0.55 : 0.2) + (i % 3) * 0.12, Math.sin(a) * 0.27, false));
+        const fruit = mesh(sph(tall ? 0.11 : 0.08, 8, 6), c.color, Math.cos(a) * 0.27, (tall ? 0.55 : 0.2) + (i % 3) * 0.12, Math.sin(a) * 0.27, false);
+        if (id === 'pea') fruit.scale.set(0.7, 1.9, 0.7); // pea pods hang down
+        g.add(fruit);
       }
       break;
     }
@@ -834,16 +853,18 @@ export function makeCrop(id, stage) {
     }
     default: {
       // radish, carrot, lettuce: leafy tops, the crop peeking out when ripe
-      const n = id === 'lettuce' ? 6 : 4;
+      const head = id === 'lettuce' || id === 'cabbage';
+      const n = head ? 6 : 4;
       for (let i = 0; i < n; i++) {
         const a = (i / n) * Math.PI * 2;
-        const l = mesh(sph(id === 'lettuce' ? 0.16 : 0.1, 8, 6), id === 'lettuce' ? c.color : leaf, Math.cos(a) * 0.1, (id === 'lettuce' ? 0.15 : 0.3), Math.sin(a) * 0.1, false);
-        l.scale.set(id === 'lettuce' ? 1.2 : 0.6, id === 'lettuce' ? 0.8 : 1.6, id === 'lettuce' ? 1.2 : 0.6);
+        const l = mesh(sph(head ? 0.16 : 0.1, 8, 6), head ? c.color : leaf, Math.cos(a) * 0.1, (head ? 0.15 : 0.3), Math.sin(a) * 0.1, false);
+        l.scale.set(head ? 1.2 : 0.6, head ? 0.8 : 1.6, head ? 1.2 : 0.6);
         l.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5);
         g.add(l);
       }
       if (big) {
-        if (id === 'radish') g.add(mesh(sph(0.2, 10, 8), c.color, 0, 0.1, 0));
+        if (id === 'radish' || id === 'beet') g.add(mesh(sph(id === 'beet' ? 0.24 : 0.2, 10, 8), c.color, 0, 0.1, 0));
+        else if (id === 'cabbage') { const h = mesh(ico(0.36, 1), c.color, 0, 0.3, 0); h.scale.set(1, 0.85, 1); g.add(h); }
         else if (id === 'carrot') g.add(mesh(cone(0.16, 0.3, 8), c.color, 0, 0.06, 0).rotateX(Math.PI));
         else { const h = mesh(sph(0.3, 12, 8), c.color, 0, 0.22, 0); h.scale.set(1, 0.8, 1); g.add(h); }
       }
