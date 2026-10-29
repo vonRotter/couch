@@ -104,7 +104,7 @@ export class Ranch {
     let best = null, bd = Math.min(1.7, Math.hypot(P.x - TROUGH.x, P.z - TROUGH.z) - 0.2, Math.hypot(P.x - NEST.x, P.z - NEST.z) - 0.2);
     for (const a of this.R.animals) {
       const v = this.views.get(a.u);
-      const d = Math.hypot(P.x - v.x, P.z - v.z);
+      const d = Math.hypot(P.x - v.x, P.z - v.z) - (a.kind === 'chicken' ? 0 : 0.7); // big animals are easier to reach
       if (d < bd) { bd = d; best = a; }
     }
     if (best) {
