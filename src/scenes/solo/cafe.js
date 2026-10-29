@@ -23,7 +23,7 @@ const ENTER = { x: CAFE.x + 4.4, z: CAFE.z + 2.55 };
 const PATIENCE = 30;
 const FRIENDS = ['rosa', 'hazel', 'bram', 'grumbleton', 'pip', 'mumble'];
 const FAVORITE = { hazel: 'carrotSoup', rosa: 'strawberryShake', bram: 'fishStew', grumbleton: 'sushi', pip: 'tempura', mumble: 'radishSalad' };
-export const OPEN_HOURS = [11, 22];
+export const OPEN_HOURS = [8, 22];
 
 const CSS = `
 .label.isl-order { background: rgba(255,250,240,.96); border-radius: 16px; padding: 4px 8px 6px; border: 3px solid #3ddc97; text-align: center; font-weight: 700; font-size: clamp(11px, 1vw, 15px); }

@@ -389,6 +389,14 @@ night match yours and crops grow while you are away.
 - **Villagers:** Aunt Hazel, Rosa, Keeper Bram, Grumbleton, Pip the astronaut and Mumble walk their
   own daily routines, talk (read aloud), react to your progress in their games, like some gifts more
   than others, and have friendship hearts, heart events and small quests.
+- **Fishing:** Grumbleton gives you a rod. Cast, wait for the bite, then reel in by pressing A
+  in the green zone; 16 fish by place and real time of day (river, pier, shore and the dive boat),
+  with a fish log of pictures.
+- **Diving:** from the dive boat, swim a side-view sea: pick kelp and clams, open treasure chests and
+  catch sea critters with a bubble net. Air never punishes; running out just pulls you up with your
+  haul. Flippers and a big tank open the coral reef and the deep trench.
+- **The Driftwood Café:** repair it with wood and coins, cook 12 dishes from crops and fish, and serve
+  guests at the counter (8:00 to 22:00): the right dish in time gives coins, tips and friendship.
 - **Rewards from games** arrive as letters in the mailbox: decorations, seeds, trophies and a pirate
   flag for the house.
 - Stick to walk, A uses the held tool (or goes in at doors), B talks, picks up and opens the bag,
