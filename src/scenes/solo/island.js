@@ -23,12 +23,15 @@ import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
 import { DiveScene } from './dive.js';
 import { IslandMap, heightAt, riverDist, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
-import { Farm, tileAt, tileCenter, stageOf, minutesLeft } from './farm.js';
+import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS } from './farm.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
 import { IslandHud, heartsHtml } from './hud.js';
 import { Life } from './life.js';
-import { SEASON_ICON } from './calendar.js';
+import { SEASON_ICON, dayKey, dayRand } from './calendar.js';
 import { ToastQueue } from './toasts.js';
+import { Greenhouse } from './greenhouse.js';
+import { Museum } from './museum.js';
+import { Isle2 } from './isle2.js';
 import { mesh, box, sph, makeTool, makeDeco, makeBranch, makeSign } from './models.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
@@ -42,7 +45,8 @@ const PR = 0.42;
 const CAM_UP = 12.5, CAM_BACK = 13; // a bit further than the shared island's closest framing (10.4 / 10.4)
 const MODES = ['island', 'story', 'solo'];
 const BRIDGE_WOOD = 10;
-const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce']);
+const FARM_OBJS = ['sprinkler', 'scarecrow'];
+const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
 const PARTY = [0xff5d73, 0xffc93c, 0x3ddc97, 0x4cc9f0, 0x9b5de5];
 const ROCK_HITS = 5;
 const BRANCH_RESPAWN = 15 * MIN;
@@ -91,6 +95,7 @@ function gameRewards(p) {
   const lh = p.lighthouse || {};
   if (lh.crystals > 0) out.push({ id: 'lh1', from: 'lh', items: [['pumpkinSeed', 2]], deco: 'lhLamp' });
   if (lh.flags?.finale) out.push({ id: 'lh2', from: 'lh', items: [['starfruitSeed', 1]], deco: 'lhTrophy' });
+  if (lh.crystals > 0) out.push({ id: 'lhc1', from: 'lh', items: [['lampCrystal', 1]] }); // milestone B3: for the museum
   const adv = p.adventure || {};
   if (adv.done) out.push({ id: 'adv1', from: 'adv', items: [['strawberrySeed', 3]], deco: 'flag' });
   if (adv.done2) out.push({ id: 'adv2', from: 'adv', items: [['tomatoSeed', 3]], coins: 100 });
@@ -162,6 +167,10 @@ export class SoloIslandScene extends BaseScene {
     this.buildDynamic();
     this.ranch = new Ranch(this);
     this.builder = new Builder(this);
+    this.greenhouse = new Greenhouse(this);
+    this.museum = new Museum(this);
+    this.isle2 = new Isle2(this);
+    this.farm.objModel = (id) => this.builder.model(id); // sprinklers and scarecrows on the field
     this.seasons = new Seasons(this);
     this.spawnNpcs();
     this.checkRewards();
@@ -184,6 +193,7 @@ export class SoloIslandScene extends BaseScene {
       this.later(0.8, () => this.game.ui.toast(t('isl.t.got', { item: `${n} × ${t('dive.title')}` }), 1800));
       S.sea.haul = null;
     }
+    if (fromGame === 'cave') this.caveCrystal();
     if (!S.intro) this.later(0.9, () => this.startIntro());
     else if (S.mail.length) this.later(1.2, () => this.mailToast());
     game.audio.playMusic('hub');
@@ -269,7 +279,7 @@ export class SoloIslandScene extends BaseScene {
     this.npcs = NPC_IDS.map((id) => {
       const model = makeNpcModel(id);
       const at = now();
-      const s = scheduleNow(id, at);
+      const s = scheduleNow(id, at, this.save);
       const n = { id, def: NPCS[id], model, x: s.spot.x, z: s.spot.z, y: 0, route: [], spotName: s.name, sleep: s.sleep, moving: false, wanderT: 2, hop: 0 };
       model.group.position.set(n.x, heightAt(n.x, n.z), n.z);
       model.face?.(0, 1);
@@ -335,6 +345,7 @@ export class SoloIslandScene extends BaseScene {
     this.ranch.tick(at);
     this.builder.tickGather(at);
     this.seasons.tick(at);
+    this.isle2.tick(at);
     this.applySky(false);
     this.chooseLamps();
   }
@@ -379,10 +390,16 @@ export class SoloIslandScene extends BaseScene {
   // ---------- NPC life ----------
 
   scheduleNpc(n, at) {
-    if (n.talking || n.intro) return;
-    const s = scheduleNow(n.id, at);
+    if (n.talking || n.intro || n.busy) return;
+    const s = scheduleNow(n.id, at, this.save);
     n.sleep = s.sleep;
     let tx = s.spot.x, tz = s.spot.z;
+    // between the islands (Shelby's weekend visits): hop over instead of walking on the sea
+    if (Math.hypot(tx - n.x, tz - n.z) > 60) {
+      n.x = tx; n.z = tz; n.route = []; n.wanderAt = null; n.spotName = s.name;
+      this.puffs.burst(new THREE.Vector3(n.x, 0.8, n.z), 0xffffff, { count: 10, speed: 3, size: 0.35 });
+      return;
+    }
     if (n.def.wander && !n.sleep) {
       n.wanderT -= 1;
       if (n.wanderT <= 0 || !n.wanderAt) {
@@ -420,7 +437,7 @@ export class SoloIslandScene extends BaseScene {
       }
       n.moving = moving;
       n.hop = Math.max(0, n.hop - dt * 2.5);
-      n.y = this.map.floorAt(n.x, n.z, this.save.unlocks.bridge) + Math.sin(n.hop * Math.PI) * 0.8;
+      n.y = (n.yOverride ?? this.map.floorAt(n.x, n.z, this.save.unlocks.bridge)) + Math.sin(n.hop * Math.PI) * 0.8;
       n.model.group.position.set(n.x, n.y, n.z);
       n.model.update(dt, { moving: moving ? 0.5 : 0, grounded: true, vy: 0 });
       if (n.sleep && !moving) {
@@ -551,6 +568,8 @@ export class SoloIslandScene extends BaseScene {
     if (S.unlocks.barn && S.ranch.animals.length && S.ranch.trough <= 0) out.push(t('isl.task.hay'));
     if ((S.quests.hazel?.n === 2) && !count(S, 'stone')) out.push(t('isl.task.bench'));
     out.unshift(...this.seasons.tasks());
+    if (this.isle2.here()) out.unshift(t('isl.task.isle'));
+    if (count(S, 'seaChart') && !S.isle2.chart) out.unshift(t('isl.task.chart'));
     return out.slice(0, 5);
   }
 
@@ -639,7 +658,8 @@ export class SoloIslandScene extends BaseScene {
     const S = this.save;
     if (S.unlocks[key]) return;
     S.unlocks[key] = true;
-    const msg = { bridge: 'isl.t.bridge', mine: 'isl.t.mine', burrow: 'isl.t.burrow', bigCan: 'isl.t.bigCan', discount: 'isl.t.discount', starfruit: 'isl.t.starfruit', barn: 'isl.t.barn', rosaHelps: 'isl.t.rosaHelps', goldRod: 'isl.t.goldRod' }[key];
+    const msg = { bridge: 'isl.t.bridge', mine: 'isl.t.mine', burrow: 'isl.t.burrow', bigCan: 'isl.t.bigCan', discount: 'isl.t.discount', starfruit: 'isl.t.starfruit', barn: 'isl.t.barn', rosaHelps: 'isl.t.rosaHelps', goldRod: 'isl.t.goldRod', greenhouse: 'isl.t.greenhouse' }[key];
+    if (key === 'greenhouse') this.greenhouse.fix();
     if (key === 'barn') { this.ranch.addAnimal('chicken'); this.ranch.addAnimal('chicken'); this.ranch.refresh(); }
     if (msg) { this.game.ui.toast(t(msg), 3000); speak(t(msg)); }
     this.game.audio.play('fanfare');
@@ -686,6 +706,18 @@ export class SoloIslandScene extends BaseScene {
     this.markDirty();
   }
 
+  /** Back from Crystal Caves: once a day, Keeper Bram sends a crystal you found (new kinds first). */
+  caveCrystal() {
+    const S = this.save, today = dayKey();
+    if (!S.museum) S.museum = { got: {}, steps: 0 };
+    if (S.museum.caveDay === today) return;
+    S.museum.caveDay = today;
+    const kinds = ['roseQuartz', 'skyTopaz', 'sunCitrine'];
+    const id = kinds.find((k) => !S.museum.got[k] && !count(S, k) && !S.mail.some((m) => m.items?.[0]?.[0] === k)) || kinds[Math.floor(dayRand(`cave:${today}`) * 3)];
+    S.mail.push({ id: 'cave', from: 'cave', items: [[id, 1]] });
+    this.markDirty();
+  }
+
   markDirty() { this.dirty = true; }
 
   flush() {
@@ -723,7 +755,7 @@ export class SoloIslandScene extends BaseScene {
     const st = npcState(S, id);
     const def = NPCS[id];
     if (!st.met && S.intro) return true;
-    if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3))) return true;
+    if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3) || (count(S, 'seaChart') && !S.isle2?.chart))) return true;
     const ev = def.events[st.ev];
     if (ev && heartsOf(st) >= ev.at) return true;
     const q = S.quests[id];
@@ -799,7 +831,7 @@ export class SoloIslandScene extends BaseScene {
     const S = this.save;
     const held = S.inv[S.sel];
     const st = npcState(S, n.id);
-    const shop = () => { n.talking = false; if (n.id === 'rosa') this.openShop(); };
+    const shop = () => { n.talking = false; if (n.id === 'rosa') this.openShop(); if (n.id === 'hoot' && !n.sleep) this.museum.open(); };
     if (held && isGift(held.id)) {
       this.say([{ who: n.id, key: 'isl.giftAsk', vars: { name: t(`isl.npc.${n.id}`), item: itemName(held.id) }, choices: ['isl.yes', 'isl.no'], onChoice: (i) => {
         if (i !== 0) { shop(); return; }
@@ -922,8 +954,13 @@ export class SoloIslandScene extends BaseScene {
     // the barn, the workbench, the cottage door, the calendar board
     if (!out.b) this.ranch.interactions(P, out, nm);
     if (!out.b) this.builder.interactions(P, out, nm);
+    if (!out.b) this.greenhouse.interactions(P, out, nm);
+    if (!out.b) this.museum.interactions(P, out, nm);
     if (!out.b) this.seasons.interactions(P, out, nm);
     if (!out.b) this.seasons.shellAction(P, out, nm);
+    // Shell Isle: the boat trip, and the palms, pools and treasure there
+    if (!out.b) this.isle2.boatAction(P, out, nm);
+    this.isle2.interactions(P, out, nm);
     // the dive boat's ladder
     if (!out.b && Math.hypot(P.x - (DIVE_BOAT.x - 1.0), P.z - (DIVE_BOAT.z + 1.1)) < 1.4) {
       out.b = S.sea.suit ? { text: nm('isl.h.dive'), fn: () => this.startDive() } : { text: t('isl.h.diveNeed'), fn: () => this.game.audio.play('bump') };
@@ -964,15 +1001,18 @@ export class SoloIslandScene extends BaseScene {
     if (!out.a && held?.id === 'fishlog') out.a = { text: nm('isl.h.log'), fn: () => this.openLog() };
     if (!out.a && held?.id === 'recipes') out.a = { text: nm('isl.h.book'), fn: () => this.cafe.openCook(true) };
     // the field
-    const tile = tileAt(fx, fz);
+    const tile = tileAt(fx, fz, !!S.unlocks.greenhouse);
     if (tile && !out.a) {
       out.tile = tile;
-      const tl = this.farm.tile(tile.c, tile.r);
-      const weed = this.farm.hasWeed(tile.c, tile.r);
+      const tl0 = this.farm.tile(tile.c, tile.r, tile.f);
+      const tl = tl0 && !tl0.grass ? tl0 : null; // grass under a sprinkler counts as untilled
+      const weed = this.farm.hasWeed(tile.c, tile.r, tile.f);
       const stage = tl ? stageOf(tl) : -1;
       const id = held?.id;
       const it = ITEMS[id];
       if (stage === 3) out.a = { text: nm('isl.h.harvest'), fn: () => this.doHarvest(tile), ok: true };
+      else if (tl0?.obj) out.a = { text: nm('isl.h.takeObj', { item: itemName(tl0.obj) }), fn: () => this.takeFarmObj(tile), ok: true };
+      else if (FARM_OBJS.includes(id) && !weed && !tl?.crop) out.a = { text: nm('isl.h.placeObj', { item: itemName(id) }), fn: () => this.placeFarmObj(tile, id), ok: true };
       else if (weed) out.a = id === 'scythe' ? { text: nm('isl.h.cut'), fn: () => this.doTool('scythe', tile), ok: true } : { text: t('isl.h.weed'), fn: () => this.doTool(id, tile), bad: true };
       else if (id === 'hoe') out.a = !tl ? { text: nm('isl.h.till'), fn: () => this.doTool('hoe', tile), ok: true } : { text: '', fn: () => this.doTool('hoe', tile) };
       else if (id === 'can') out.a = tl ? { text: nm('isl.h.water'), fn: () => this.doTool('can', tile), ok: true } : { text: '', fn: () => this.doTool('can', tile) };
@@ -1001,24 +1041,25 @@ export class SoloIslandScene extends BaseScene {
     if (!TOOLS.includes(id)) return;
     this.swingTool();
     if (!tile) { this.game.audio.play('dash'); return; }
-    const { x, z } = tileCenter(tile.c, tile.r);
+    const { x, z } = tileCenter(tile.c, tile.r, tile.f);
     const pos = new THREE.Vector3(x, heightAt(x, z) + 0.3, z);
     if (id === 'hoe') {
-      const r = this.farm.till(tile.c, tile.r, at);
+      const r = this.farm.till(tile.c, tile.r, at, tile.f);
       if (r === 'tilled') { this.puffs.burst(pos, 0xa8703f, { count: 10, speed: 3, size: 0.3, life: 0.6 }); this.game.audio.play('land'); if (S.tut === 1) this.setTut(2); }
       else if (r === 'weedFirst') { this.game.ui.toast(t('isl.t.weedFirst')); this.game.audio.play('bump'); }
     } else if (id === 'can') {
       const list = [tile];
       if (S.unlocks.bigCan) {
         const side = Math.abs(this.player.fx) > Math.abs(this.player.fz) ? [[0, -1], [0, 1]] : [[-1, 0], [1, 0]];
-        for (const [dc, dr] of side) list.push({ c: tile.c + dc, r: tile.r + dr });
+        for (const [dc, dr] of side) list.push({ c: tile.c + dc, r: tile.r + dr, f: tile.f });
       }
       let any = false;
       for (const tl of list) {
-        if (tl.c < 0 || tl.r < 0 || tl.c >= FIELD.cols || tl.r >= FIELD.rows) continue;
-        if (this.farm.water(tl.c, tl.r, at)) {
+        const F = FIELDS[tl.f || 0];
+        if (tl.c < 0 || tl.r < 0 || tl.c >= F.cols || tl.r >= F.rows) continue;
+        if (this.farm.water(tl.c, tl.r, at, tl.f)) {
           any = true;
-          const c = tileCenter(tl.c, tl.r);
+          const c = tileCenter(tl.c, tl.r, tl.f);
           this.puffs.burst(new THREE.Vector3(c.x, heightAt(c.x, c.z) + 0.6, c.z), 0x6fd0ff, { count: 10, speed: 2, up: 1, size: 0.18, life: 0.6, gravity: -12 });
         }
       }
@@ -1035,6 +1076,25 @@ export class SoloIslandScene extends BaseScene {
         }
       } else this.game.audio.play('dash');
     } else this.game.audio.play('dash');
+    this.markDirty();
+  }
+
+  placeFarmObj(tile, id) {
+    if (!this.farm.placeObj(tile.c, tile.r, id, now(), tile.f)) { this.game.audio.play('bump'); return; }
+    take(this.save, id, 1);
+    this.swingTool();
+    const { x, z } = tileCenter(tile.c, tile.r, tile.f);
+    this.puffs.burst(new THREE.Vector3(x, heightAt(x, z) + 0.4, z), 0xffffff, { count: 10, speed: 3, size: 0.3 });
+    this.game.audio.play('land');
+    if (id === 'sprinkler') this.game.ui.toast(t('isl.t.sprinkler'), 2400);
+    this.markDirty();
+  }
+
+  takeFarmObj(tile) {
+    const id = this.farm.takeObj(tile.c, tile.r, now(), tile.f);
+    if (!id) return;
+    give(this.save, id, 1);
+    this.game.audio.play('pop');
     this.markDirty();
   }
 
@@ -1058,11 +1118,11 @@ export class SoloIslandScene extends BaseScene {
   doPlant(tile, seedId) {
     const S = this.save;
     const crop = ITEMS[seedId].crop;
-    if (this.farm.plant(tile.c, tile.r, crop, now()) !== 'planted') return;
+    if (this.farm.plant(tile.c, tile.r, crop, now(), tile.f) !== 'planted') return;
     take(S, seedId, 1);
     this.seasons.onPlant();
     this.swingTool();
-    const { x, z } = tileCenter(tile.c, tile.r);
+    const { x, z } = tileCenter(tile.c, tile.r, tile.f);
     this.puffs.burst(new THREE.Vector3(x, heightAt(x, z) + 0.3, z), 0x7a4a2e, { count: 6, speed: 2, size: 0.2, life: 0.5 });
     this.game.audio.play('pop');
     if (S.tut === 2) this.setTut(3);
@@ -1072,12 +1132,18 @@ export class SoloIslandScene extends BaseScene {
 
   doHarvest(tile) {
     const S = this.save;
-    const crop = this.farm.harvest(tile.c, tile.r, now());
+    const crop = this.farm.harvest(tile.c, tile.r, now(), tile.f);
     if (!crop) return;
     give(S, crop, 1);
     S.stats.harvested++;
     this.swingTool();
-    const { x, z } = tileCenter(tile.c, tile.r);
+    const { x, z } = tileCenter(tile.c, tile.r, tile.f);
+    // a scarecrow nearby sometimes finds one more
+    if (this.farm.nearScarecrow(tile.c, tile.r, tile.f) && Math.random() < 0.3) {
+      give(S, crop, 1);
+      S.stats.harvested++;
+      this.later(0.5, () => this.game.ui.toast(t('isl.t.scarecrow', { item: itemName(crop) }), 2000));
+    }
     this.confetti.burst(new THREE.Vector3(x, heightAt(x, z) + 0.8, z), 0, { count: 18, speed: 4, up: 4, colors: [CROPS[crop].color, 0xffffff, 0x9be05a], life: 0.9, gravity: -10 });
     this.game.audio.play('star');
     this.game.ui.toast(t('isl.t.harvest', { item: itemName(crop) }));
@@ -1250,7 +1316,7 @@ export class SoloIslandScene extends BaseScene {
     this.hud.setPanel(`<h2>${esc(t('isl.mail.title', { name: this.playerName }))}</h2>
       <div class="isl-letter">${esc(body)}<div class="from">${esc(t('isl.mail.from', { name: t(`isl.from.${r.from}`) }))}</div></div>
       <div class="isl-gifts">${gifts}</div><div class="isl-foot">${esc(tFor(this.player?.p, 'isl.mail.hint'))}</div>`);
-    const v = r.from === 'lh' ? NPCS.bram.voice : r.from === 'adv' ? NPCS.grumbleton.voice : r.from === 'hop' ? NPCS.pip.voice : { pitch: 1, rate: 0.95 };
+    const v = r.from === 'lh' || r.from === 'cave' ? NPCS.bram.voice : r.from === 'adv' ? NPCS.grumbleton.voice : r.from === 'hop' ? NPCS.pip.voice : { pitch: 1, rate: 0.95 };
     speak(body, v);
     this.game.audio.play('select');
     const mb = this.map.mailbox.userData;
@@ -1277,7 +1343,7 @@ export class SoloIslandScene extends BaseScene {
     for (const d of [3.2, 4.4, 2.2, 1.4]) {
       const x = P.x + P.fx * d, z = P.z + P.fz * d;
       if (heightAt(x, z) > -0.55 || this.map.deckAt(x, z, st.bridge)) continue;
-      const where = deck?.boat ? 'boat' : riverDist(x, z) < 4 && z < 34 ? 'river' : 'pier';
+      const where = z > 150 ? this.isle2.fishWhere(x, z) : deck?.boat ? 'boat' : riverDist(x, z) < 4 && z < 34 ? 'river' : 'pier';
       return { where, x, z };
     }
     return null;
@@ -1293,6 +1359,12 @@ export class SoloIslandScene extends BaseScene {
   seaTalk(n, L) {
     const S = this.save;
     if (!S.intro) return null;
+    if (count(S, 'seaChart') && !S.isle2.chart) {
+      return {
+        lines: [L('chart1', null, () => this.celebrate(n)), L('chart2'), L('chart3')],
+        after: () => { this.isle2.learnChart(); this.game.ui.toast(t('isl.t.chart'), 2800); },
+      };
+    }
     if (!S.sea.rod) {
       return {
         lines: [L('rod1', null, () => { n.hop = 1; }), L('rod2'), L('rod3')],
@@ -1540,6 +1612,7 @@ export class SoloIslandScene extends BaseScene {
       }
     }
     if (!markShown) this.markEl.style.display = 'none';
+    this.museum.updateLabel(P);
   }
 
   updateHud(ia) {
@@ -1594,6 +1667,8 @@ export class SoloIslandScene extends BaseScene {
         case 'deco': this.builder.updateDecorate(inp, dt); break;
         case 'cal': this.seasons.updateCalendar(inp, dt); break;
         case 'sled': this.seasons.sled.update(inp, dt); break;
+        case 'museum': this.museum.update(inp, dt); break;
+        case 'sail': this.isle2.updateSail(inp, dt); break;
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();
@@ -1608,6 +1683,7 @@ export class SoloIslandScene extends BaseScene {
     this.updateNpcs(dt);
     this.ranch.update(dt);
     this.seasons.update(dt);
+    this.isle2.update(dt, this.time);
     this.updatePlayerLook(dt);
     this.farm.animate(dt, this.time);
     this.life.update(dt, this.night || 0, P || { x: 0, z: 0 });

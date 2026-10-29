@@ -163,10 +163,11 @@ export class Seasons {
 
   /** Sky tweaks for rain (grayer, darker) and a cooler light in winter. */
   weatherSky(s) {
-    if (this.season === 'winter' && !this.host.indoors) {
+    const away = this.host.indoors || this.host.isle2?.here(); // indoors, or on warm Shell Isle
+    if (this.season === 'winter' && !away) {
       const cool = (c, k) => new THREE.Color(c).lerp(new THREE.Color(0xdfeeff), k).getHex();
       s = { ...s, hemi: cool(s.hemi, 0.25), fog: cool(s.fog, 0.35), water: new THREE.Color(s.water).lerp(new THREE.Color(0x8fb8d8), 0.35).getHex() };
-    } else if (this.season === 'autumn' && !this.host.indoors) {
+    } else if (this.season === 'autumn' && !away) {
       s = { ...s, sun: new THREE.Color(s.sun).lerp(new THREE.Color(0xffc890), 0.25).getHex() };
     }
     if (!this.rainy || this.host.indoors) return s;
@@ -177,7 +178,7 @@ export class Seasons {
   update(dt) {
     const host = this.host;
     const show = this.rainy && !host.indoors && this.season !== 'winter'; // winter: snow instead
-    this.look.update(dt, { indoors: host.indoors, heavy: this.rainy });
+    this.look.update(dt, { indoors: host.indoors || host.isle2?.here(), heavy: this.rainy }); // Shell Isle is always warm
     this.sled.animate(dt, host.time);
     for (const sh of this.shells) if (sh.g.visible) { sh.g.userData.glint.rotation.y += dt * 3; sh.g.userData.glint.scale.y = 0.6 + Math.sin(host.time * 5 + sh.i) * 0.4; }
     this.rain.visible = show;

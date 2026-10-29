@@ -50,6 +50,12 @@ export const SEA = {
   starfish: { sell: 20, color: 0xff8c42 }, seaGlass: { sell: 25, color: 0x8fe0c0 }, seaShell: { sell: 10, color: 0xffd8c8 },
 };
 export const TREASURE = { oldcoin: { sell: 40 }, pearl: { sell: 90 }, goldcup: { sell: 220 }, crystalShell: { sell: 400 } };
+/** Crystals for the museum (milestone B3): from Lighthouse Caves and Crystal Caves (letters), the glow cave and Shell Isle. */
+export const CRYSTALS = {
+  lampCrystal: { sell: 120, color: 0xfff3b0, glow: 0x665522 }, roseQuartz: { sell: 60, color: 0xff9fd0, glow: 0x442233 },
+  skyTopaz: { sell: 60, color: 0x8fd8ff, glow: 0x224455 }, sunCitrine: { sell: 60, color: 0xffc93c, glow: 0x553300 },
+  glowShard: { sell: 80, color: 0x8ff0c8, glow: 0x226644 }, starCrystal: { sell: 150, color: 0xc9a8ff, glow: 0x332255 },
+};
 
 /** The café's recipe book. need: [[item or tag, n]]; tags: fish (any), seafish (not from the river). */
 export const RECIPES = {
@@ -77,6 +83,7 @@ export const RECIPE_IDS = Object.keys(RECIPES);
 for (const [id, f] of Object.entries(FISH)) ITEMS[id] = { kind: 'fish', sell: f.sell };
 for (const [id, s] of Object.entries(SEA)) ITEMS[id] = { kind: 'sea', sell: s.sell };
 for (const [id, s] of Object.entries(TREASURE)) ITEMS[id] = { kind: 'treasure', sell: s.sell };
+for (const [id, s] of Object.entries(CRYSTALS)) ITEMS[id] = { kind: 'crystal', sell: s.sell };
 for (const [id, r] of Object.entries(RECIPES)) ITEMS[id] = { kind: 'dish', sell: Math.round(r.price * 0.6) };
 Object.assign(ITEMS, {
   rod: { kind: 'tool' },
@@ -287,6 +294,17 @@ export function makeSeaThing(id) {
       g.add(mesh(box(0.14, 0.06, 0.1), 0xffc0b0, 0, 0.04, -0.2));
       break;
     }
+    case 'lampCrystal': case 'roseQuartz': case 'skyTopaz': case 'sunCitrine': case 'glowShard': case 'starCrystal': {
+      const c = CRYSTALS[id];
+      const m = toon(c.color, { emissive: c.glow });
+      const main = mesh(sharedGeo('isl-oct', () => new THREE.OctahedronGeometry(0.3, 0)), m, 0, 0.42, 0);
+      main.scale.set(0.8, 1.4, 0.8);
+      g.add(main);
+      for (const [x, z, k] of [[0.22, 0.05, 0.6], [-0.2, 0.08, 0.5], [0.02, -0.2, 0.45]]) { const b = mesh(sharedGeo('isl-oct', () => new THREE.OctahedronGeometry(0.3, 0)), m, x, 0.2, z); b.scale.set(0.5 * k, 1.2 * k, 0.5 * k); b.rotation.z = x * 1.5; g.add(b); }
+      if (id === 'starCrystal') g.add(mesh(sph(0.08, 8, 6), toon(0xffffff, { emissive: 0x666666 }), 0, 0.95, 0, false));
+      g.add(mesh(cyl(0.3, 0.34, 0.1, 8), 0x7a7090, 0, 0.05, 0));
+      break;
+    }
     case 'oldcoin': {
       const c = mesh(cyl(0.3, 0.3, 0.06, 18), COLORS.gold, 0, 0.3, 0);
       c.rotation.x = Math.PI / 2;
@@ -355,4 +373,4 @@ export function seaModel(id) {
   if (RECIPES[id]) return makeDish(id);
   return makeSeaThing(id);
 }
-export const hasSeaModel = (id) => !!(FISH[id] || RECIPES[id] || SEA[id] || TREASURE[id] || id === 'egg' || id === 'milk');
+export const hasSeaModel = (id) => !!(FISH[id] || RECIPES[id] || SEA[id] || TREASURE[id] || CRYSTALS[id] || id === 'egg' || id === 'milk');

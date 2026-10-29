@@ -8,6 +8,7 @@ import { count, give, take, now, since, MIN } from './save.js';
 import { heightAt, HOME, FIELD } from './map.js';
 import { mesh, box, cone, makeDeco, makeSign } from './models.js';
 import { makeCraft, makeDeco2, makeRoom, makePorch, makeStoneNode, makeTallGrass } from './models2.js';
+import { makeDeco3, DECO3, makeSprinkler, makeScarecrow } from './models3.js';
 
 // Building and decorating (milestone B2).
 // - Gathering: break rock piles with the pickaxe (stone), cut tall grass with the scythe (hay and fiber).
@@ -30,6 +31,9 @@ export const CRAFTS = {
   rug: { need: [['fiber', 5]] },
   plant: { need: [['fiber', 2], ['stone', 1]], solid: true },
   shelf: { need: [['wood', 5]], solid: true },
+  // milestone B3: farm helpers (they go into the bag and stand on field tiles, see farm.js)
+  sprinkler: { need: [['stone', 5], ['wood', 3]], bag: true },
+  scarecrow: { need: [['wood', 3], ['fiber', 3], ['hay', 2]], bag: true },
 };
 export const CRAFT_IDS = Object.keys(CRAFTS);
 const DECO2 = new Set(['quilt', 'gardenArch', 'portrait', 'photo', 'shipWheel', 'scope', 'anchor', 'starLamp', 'derbyTrophy', 'ribbon', 'paperLantern']);
@@ -157,6 +161,9 @@ export class Builder {
   // ---------- yard pieces ----------
 
   model(id) {
+    if (id === 'sprinkler') return makeSprinkler();
+    if (id === 'scarecrow') return makeScarecrow();
+    if (DECO3.has(id)) return makeDeco3(id, this.host.M);
     if (CRAFTS[id]) return makeCraft(id, this.host.M);
     if (DECO2.has(id)) return makeDeco2(id, this.host.M);
     return makeDeco(id, this.host.M);
@@ -326,7 +333,8 @@ export class Builder {
       if (r.id === 'decorate') return `<div class="isl-row ${on}">${icon('deco')}<div>${esc(t('isl.bench.decorateRow'))}<div><small>${esc(t('isl.bench.decorateSub'))}</small></div></div><small></small><div></div></div>`;
       const ings = (r.need || []).map(([n, k2]) => `<span class="isl-cook-ing ${this.have(n) < k2 ? 'no' : ''}">${icon(n === 'coin' ? 'coin' : n)}<small>${esc(n === 'coin' ? '' : t(`isl.i.${n}`))} ${Math.min(this.have(n), k2)}/${k2}</small></span>`).join('');
       const nm = r.id === 'upgrade' ? t(r.done ? 'isl.bench.upgraded' : 'isl.bench.upgradeRow') : t(`isl.i.${r.id}`);
-      const owned = CRAFTS[r.id] ? esc(t('isl.shop.owned', { n: (this.S.store[r.id] || 0) + this.S.yard.filter((p) => p.id === r.id).length })) : '';
+      const placed = CRAFTS[r.id]?.bag ? count(this.S, r.id) + Object.values(this.S.tiles).filter((tl) => tl.obj === r.id).length : (this.S.store[r.id] || 0) + this.S.yard.filter((p) => p.id === r.id).length;
+      const owned = CRAFTS[r.id] ? esc(t('isl.shop.owned', { n: placed })) : '';
       return `<div class="isl-row ${on}">${r.id === 'upgrade' ? icon('deco') : this.icon3d(r.id)}<div>${esc(nm)}<div>${ings}</div></div><small>${owned}</small><div></div></div>`;
     }).join('');
     host.hud.setPanel(`<h2>${esc(t('isl.bench.title'))}</h2><div class="isl-tabs">${tabs}</div><div class="isl-rows">${list}</div>
@@ -356,7 +364,8 @@ export class Builder {
     const host = this.host, S = this.S;
     if (!CRAFTS[id].need.every(([n, k]) => this.have(n) >= k)) { host.game.ui.toast(t('isl.cook.missing'), 1200); host.game.audio.play('bump'); return false; }
     for (const [n, k] of CRAFTS[id].need) take(S, n, k);
-    S.store[id] = (S.store[id] || 0) + 1;
+    if (CRAFTS[id].bag) give(S, id, 1); // sprinklers and scarecrows: into the bag, for the field
+    else S.store[id] = (S.store[id] || 0) + 1;
     host.puffs.burst(new THREE.Vector3(this.bench.x, 1.4, this.bench.z), 0xc68a52, { count: 12, speed: 3, size: 0.3 });
     host.game.audio.play('star');
     host.game.ui.toast(t('isl.t.crafted', { item: t(`isl.i.${id}`) }), 1400);

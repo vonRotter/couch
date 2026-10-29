@@ -4,6 +4,7 @@ import { Character } from '../../core/character.js';
 import { makeGrumble } from '../../core/critters.js';
 import { makeGrumbleton } from '../adventure/props.js';
 import { mesh, box, cyl, sph, cone } from './models.js';
+import { makeOwl, makeHermit } from './models3.js';
 import { SPOTS } from './map.js';
 import { hourOf, since, HOUR } from './save.js';
 import { festivalOn } from './calendar.js';
@@ -33,6 +34,7 @@ export const NPCS = {
       { need: [['radish', 1]], reward: { items: [['strawberrySeed', 2], ['tomatoSeed', 2]], coins: 10 } },
       { need: [['carrot', 1], ['lettuce', 1]], minHearts: 1, reward: { items: [['pumpkinSeed', 1]], coins: 50, deco: 'gnome' } },
       { need: [['wood', 15], ['stone', 10]], minHearts: 2, reward: { unlock: 'barn', items: [['hay', 6]] } },
+      { need: [['wood', 20], ['stone', 10], ['fiber', 8]], minHearts: 3, reward: { unlock: 'greenhouse', items: [['starfruitSeed', 1]] } }, // milestone B3
     ],
     events: [{ at: 2, lines: 4, reward: { items: [['bouquet', 2], ['lettuceSeed', 3]] } }, { at: 4, lines: 4, reward: { unlock: 'bigCan' } },
       { at: 6, lines: 4, reward: { deco: 'quilt' } }, { at: 8, lines: 4, reward: { deco: 'gardenArch' } }],
@@ -97,6 +99,26 @@ export const NPCS = {
     events: [],
     game: (p) => ((p.guides?.stars || []).some((s) => s > 0) ? 'game1' : null),
   },
+  // milestone B3: the museum's curator, and Shelby from Shell Isle (who visits the beach on weekends)
+  hoot: {
+    voice: { pitch: 0.95, rate: 0.85, css: '#8a5a32' },
+    sched: [[0, 'museumDoor', true], [7, 'museumDoor'], [22, 'museumDoor', true]],
+    loves: ['pearl', 'moonfish'], likes: ['seaGlass', 'starfish', 'cocoa', 'pumpkinPie'], dislikes: ['hay'],
+    quests: [], events: [],
+    game: () => null,
+  },
+  shelby: {
+    voice: { pitch: 1.5, rate: 1.05, css: '#e0557a' },
+    sched: [[0, 'shelbyHut', true], [7, 'shelbyHut'], [9, 'tidepools'], [13, 'shelbyHut'], [16, 'isleBeach'], [20, 'shelbyHut', true]],
+    wander: 1.6,
+    isle: true, // lives on Shell Isle
+    // Saturdays and Sundays 10-17, once you have met: a day out on the main island's beach
+    visit: (at, save) => { const d = new Date(at), h = hourOf(at); return save?.npcs?.shelby?.met && (d.getDay() === 6 || d.getDay() === 0) && h >= 10 && h < 17 ? 'shelbyVisit' : null; },
+    loves: ['coconut', 'seaGlass'], likes: ['wildBerry', 'seaShell', 'blueberry', 'sushi'], dislikes: ['wood'],
+    quests: [{ need: [['seaGlass', 2]], reward: { deco: 'shellChime', coins: 40 } }],
+    events: [],
+    game: () => null,
+  },
 };
 export const NPC_IDS = Object.keys(NPCS);
 
@@ -108,8 +130,10 @@ export function npcState(save, id) {
 export const heartsOf = (st) => Math.min(MAX_HEARTS, Math.floor(st.pts / PTS_PER_HEART));
 
 /** Where the npc should be now: { spot, sleep }. Festival hosts stand at their festival during the day. */
-export function scheduleNow(id, at) {
+export function scheduleNow(id, at, save = null) {
   const h = hourOf(at);
+  const v = NPCS[id].visit?.(at, save);
+  if (v) return { spot: SPOTS[v], sleep: false, name: v };
   const f = NPCS[id].fest?.[festivalOn(at)];
   if (f && h >= f[0] && h < f[1]) return { spot: SPOTS[f[2]], sleep: false, name: f[2] };
   let cur = NPCS[id].sched[0];
@@ -207,6 +231,16 @@ export function makeNpcModel(id) {
       p.add(mesh(box(0.55, 0.6, 0.3), 0x9a94b2, 0, 0.6, -0.42), mesh(cyl(0.015, 0.015, 0.4, 4), COLORS.ink, 0.2, 1.5, 0, false), mesh(sph(0.06, 8, 6), 0xff5d73, 0.2, 1.72, 0, false));
       p.add(mesh(sph(0.08, 8, 6), 0xffc93c, -0.2, 0.5, 0.4, false));
     });
+    case 'hoot': {
+      const pup = new Puppet(makeOwl(), 0.06);
+      pup.model.scale.setScalar(0.95);
+      return pup;
+    }
+    case 'shelby': {
+      const pup = new Puppet(makeHermit(), 0.05);
+      pup.model.scale.setScalar(0.85);
+      return pup;
+    }
     case 'mumble': {
       const g = makeGrumble(0x6fbf73);
       const leaf = mesh(sph(0.12, 8, 6), 0x3f9a32, 0.05, 0.98, 0, false);

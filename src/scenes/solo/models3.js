@@ -178,4 +178,209 @@ export function makeDeco3(id, M) {
   return g;
 }
 
+// ---------- farm helpers ----------
+
+/** A sprinkler: a little pipe with a spinning head (userData.spin). */
+export function makeSprinkler() {
+  const g = new THREE.Group();
+  g.add(mesh(cyl(0.2, 0.26, 0.12, 10), 0x9a94b2, 0, 0.06, 0), mesh(cyl(0.05, 0.05, 0.55, 8), 0x4cc9f0, 0, 0.35, 0));
+  const head = new THREE.Group();
+  head.add(mesh(sph(0.1, 10, 8), 0xffd23f, 0, 0, 0));
+  for (const s of [-1, 1]) head.add(mesh(cyl(0.03, 0.03, 0.34, 6), 0xbdb8cf, s * 0.17, 0, 0, false).rotateZ(Math.PI / 2));
+  for (const s of [-1, 1]) head.add(mesh(sph(0.05, 6, 4), toon(0x8fe0ff, { transparent: true, opacity: 0.7 }), s * 0.42, 0.06, 0, false));
+  head.position.y = 0.66;
+  g.add(head);
+  g.userData.spin = head;
+  return g;
+}
+
+/** A small scarecrow for the field. */
+export function makeScarecrow() {
+  const g = new THREE.Group();
+  g.add(mesh(cyl(0.04, 0.04, 1.5, 5), WOOD_DARK, 0, 0.75, 0), mesh(cyl(0.03, 0.03, 1.0, 5), WOOD_DARK, 0, 1.05, 0).rotateZ(Math.PI / 2));
+  g.add(mesh(box(0.45, 0.5, 0.2), 0xff7a59, 0, 0.98, 0), mesh(ico(0.2, 1), 0xf3d9a4, 0, 1.42, 0), mesh(cyl(0.34, 0.34, 0.04, 10), 0xe2b06a, 0, 1.58, 0), mesh(cyl(0.16, 0.2, 0.2, 10), 0xe2b06a, 0, 1.68, 0));
+  for (const s of [-1, 1]) g.add(mesh(sph(0.025, 6, 4), INK, s * 0.07, 1.46, 0.18, false), mesh(cone(0.06, 0.2, 4), 0xf0d060, s * 0.52, 1.05, 0, false).rotateZ(s * Math.PI / 2));
+  return g;
+}
+
+// ---------- the museum ----------
+
+/** The island museum: steps, white columns, a pediment with a fish and a crystal, display windows. Door at +z. */
+export function makeMuseum(M) {
+  const g = new THREE.Group();
+  const W = 7, D = 4.4, H = 3.0;
+  g.add(mesh(box(W + 0.6, 0.3, D + 0.6), 0xc9c3d6, 0, 0.15, 0), mesh(box(W, H, D), 0xf3ead2, 0, 0.3 + H / 2, 0));
+  for (let i = 0; i < 3; i++) g.add(mesh(box(2.6 - i * 0.3, 0.14, 0.5), 0xd9d3e6, 0, 0.07 + i * 0.14, D / 2 + 1.1 - i * 0.35));
+  for (const x of [-2.6, -1.0, 1.0, 2.6]) {
+    g.add(mesh(cyl(0.2, 0.22, H, 10), 0xffffff, x, 0.3 + H / 2, D / 2 + 0.55), mesh(box(0.55, 0.14, 0.55), 0xe8e2f0, x, 0.37, D / 2 + 0.55), mesh(box(0.55, 0.14, 0.55), 0xe8e2f0, x, 0.25 + H, D / 2 + 0.55));
+  }
+  g.add(mesh(box(W + 0.4, 0.25, D + 1.5), 0xe8e2f0, 0, 0.42 + H, 0.5));
+  // pediment (triangle) and roof
+  const tri = new THREE.Shape();
+  tri.moveTo(-W / 2 - 0.2, 0); tri.lineTo(W / 2 + 0.2, 0); tri.lineTo(0, 1.4); tri.closePath();
+  const ped = new THREE.Mesh(new THREE.ExtrudeGeometry(tri, { depth: D + 1.5, bevelEnabled: false }), toon(0xf8f4ea));
+  ped.position.set(0, 0.55 + H, -D / 2 - 0.25);
+  ped.castShadow = true;
+  g.add(ped);
+  const emblem = new THREE.Group();
+  const fish = mesh(sph(0.22, 10, 8), 0x4cc9f0, -0.3, 0, 0, false);
+  fish.scale.set(1.4, 0.7, 0.3);
+  emblem.add(fish, mesh(cone(0.14, 0.2, 4), 0x4cc9f0, -0.68, 0, 0, false).rotateZ(Math.PI / 2));
+  const cr = mesh(sharedGeo('isl3-oct', () => new THREE.OctahedronGeometry(0.22, 0)), toon(0xc9a8ff, { emissive: 0x332255 }), 0.45, 0.02, 0, false);
+  cr.scale.y = 1.5;
+  emblem.add(cr);
+  emblem.position.set(0, 0.95 + H, D / 2 + 1.3);
+  g.add(emblem);
+  // door and two display windows with little exhibits
+  g.add(mesh(box(1.3, 2.0, 0.1), 0x8a5a32, 0, 1.3, D / 2 + 0.03), mesh(sph(0.06, 8, 6), COLORS.gold, 0.4, 1.3, D / 2 + 0.1, false));
+  for (const sx of [-1, 1]) {
+    g.add(mesh(box(1.5, 1.1, 0.08), M ? M.win : 0x9fdcff, sx * 1.8, 1.7, D / 2 + 0.03, false), mesh(box(1.7, 0.12, 0.2), WOOD, sx * 1.8, 1.12, D / 2 + 0.1));
+  }
+  g.add(mesh(box(0.08, 0.6, 0.06), WOOD_DARK, -1.8, 1.7, D / 2 + 0.08, false), mesh(box(0.08, 0.6, 0.06), WOOD_DARK, 1.8, 1.7, D / 2 + 0.08, false));
+  return g;
+}
+
+// ---------- villagers ----------
+
+/** Curator Hoot, a round little owl with glasses and a bow tie (faces +z). */
+export function makeOwl() {
+  const g = new THREE.Group();
+  const body = mesh(sph(0.5, 14, 10), 0xa0704a, 0, 0.55, 0);
+  body.scale.set(1, 1.15, 0.95);
+  g.add(body, mesh(sph(0.34, 12, 8), 0xf3d9a4, 0, 0.45, 0.24));
+  g.children[1].scale.set(1, 1.1, 0.6);
+  for (const s of [-1, 1]) {
+    g.add(mesh(sph(0.16, 10, 8), 0xffffff, s * 0.18, 0.86, 0.36, false), mesh(sph(0.08, 8, 6), INK, s * 0.18, 0.86, 0.48, false));
+    g.add(mesh(tor(0.17, 0.025), 0x5a4d7a, s * 0.18, 0.86, 0.45, false));
+    g.add(mesh(cone(0.08, 0.26, 4), 0x8a5a32, s * 0.3, 1.18, 0.05, false).rotateZ(-s * 0.35));
+    const wing = mesh(sph(0.22, 8, 6), 0x8a5a32, s * 0.48, 0.55, -0.02);
+    wing.scale.set(0.4, 1.1, 0.8);
+    g.add(wing);
+    g.add(mesh(cone(0.05, 0.12, 4), 0xffb020, s * 0.12, 0.03, 0.2, false));
+  }
+  g.add(mesh(cone(0.06, 0.14, 4), 0xffb020, 0, 0.74, 0.5, false).rotateX(Math.PI / 2 + 0.4), mesh(box(0.3, 0.12, 0.06), 0xff5d73, 0, 0.62, 0.52, false), mesh(sph(0.05, 6, 4), 0xff5d73, 0, 0.62, 0.55, false));
+  return g;
+}
+
+/** Shelby, a hermit crab who lives in a pink shell on Shell Isle (faces +z). */
+export function makeHermit() {
+  const g = new THREE.Group();
+  const shell = new THREE.Group();
+  for (let i = 0; i < 4; i++) {
+    const r = 0.5 - i * 0.11;
+    const b = mesh(sph(r, 12, 8), i % 2 ? 0xffb8d0 : 0xff9fc0, 0, 0.55 + i * 0.22, -0.15 - i * 0.05);
+    b.scale.set(1, 0.8, 1);
+    shell.add(b);
+  }
+  shell.add(mesh(cone(0.12, 0.3, 8), 0xffd0e0, 0, 1.4, -0.3));
+  g.add(shell);
+  g.add(mesh(sph(0.3, 10, 8), 0xff7a59, 0, 0.3, 0.25));
+  for (const s of [-1, 1]) {
+    g.add(mesh(cyl(0.025, 0.025, 0.3, 4), 0xff7a59, s * 0.1, 0.65, 0.38, false), mesh(sph(0.07, 8, 6), 0xffffff, s * 0.1, 0.82, 0.4, false), mesh(sph(0.04, 6, 4), INK, s * 0.1, 0.83, 0.46, false));
+    const claw = mesh(sph(0.14, 8, 6), 0xff5d3a, s * 0.32, 0.25, 0.45);
+    claw.scale.set(0.8, 0.6, 1.2);
+    g.add(claw);
+    for (let k = 0; k < 2; k++) g.add(mesh(cyl(0.03, 0.025, 0.3, 4), 0xff7a59, s * 0.3, 0.1, 0.1 - k * 0.2, false).rotateZ(s * 1.0));
+  }
+  return g;
+}
+
+// ---------- Shell Isle ----------
+
+/** A palm tree; userData.nuts are the coconuts (hidden once shaken down). */
+export function makePalm(rand = Math.random) {
+  const g = new THREE.Group();
+  let x = 0, y = 0;
+  for (let i = 0; i < 6; i++) {
+    const seg = mesh(cyl(0.16 - i * 0.012, 0.19 - i * 0.012, 0.62, 7), i % 2 ? 0xb0804a : 0xc6955a, x, y + 0.31, 0);
+    seg.rotation.z = -0.06 * i;
+    g.add(seg);
+    x += 0.05 * i; y += 0.6;
+  }
+  const top = new THREE.Group();
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + rand();
+    const leaf = mesh(box(1.5, 0.05, 0.42), i % 2 ? 0x3fae4a : 0x58c45a, Math.cos(a) * 0.7, -0.15, Math.sin(a) * 0.7);
+    leaf.rotation.y = -a;
+    leaf.rotation.z = -0.35;
+    top.add(leaf);
+  }
+  const nuts = new THREE.Group();
+  for (let i = 0; i < 3; i++) nuts.add(mesh(sph(0.15, 8, 6), 0x7a4a2e, Math.cos(i * 2.1) * 0.2, -0.3, Math.sin(i * 2.1) * 0.2));
+  top.add(nuts);
+  top.position.set(x, y, 0);
+  g.add(top);
+  g.userData.nuts = nuts;
+  g.userData.top = top;
+  return g;
+}
+
+/** A wild berry bush; userData.berries hide when picked. */
+export function makeBerryBush() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 3; i++) g.add(mesh(ico(0.45, 1), 0x3f9a4a, (i - 1) * 0.4, 0.4 + (i === 1 ? 0.15 : 0), 0));
+  const berries = new THREE.Group();
+  for (let i = 0; i < 8; i++) { const a = i * 0.8; berries.add(mesh(sph(0.07, 6, 4), i % 2 ? 0xb5179e : 0xd9368f, Math.cos(a) * 0.55, 0.45 + (i % 3) * 0.15, Math.sin(a) * 0.32 + 0.12, false)); }
+  g.add(berries);
+  g.userData.berries = berries;
+  return g;
+}
+
+/** A ring of rocks and a starfish around a tide pool (the water is the sea plane in a dip). */
+export function makePoolRim() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2;
+    const r = mesh(ico(0.28 + (i % 3) * 0.08, 0), 0x9a94b2, Math.cos(a) * 1.35, 0.05, Math.sin(a) * 1.35);
+    r.scale.y = 0.6;
+    g.add(r);
+  }
+  const find = new THREE.Group();
+  find.add(mesh(sph(0.1, 8, 6), 0xffffff, 0, 0.1, 0, false));
+  const glint = mesh(cone(0.05, 0.45, 4), 0xffffff, 0, 0.55, 0, false);
+  find.add(glint);
+  g.add(find);
+  g.userData.find = find;
+  return g;
+}
+
+/** A treasure spot in the sand: an X of shells and a sparkle. */
+export function makeDigSpot() {
+  const g = new THREE.Group();
+  for (const r of [0.7, -0.7]) { const b = mesh(box(0.9, 0.04, 0.16), 0xc8a060, 0, 0.03, 0, false); b.rotation.y = r; g.add(b); }
+  const glint = mesh(cone(0.06, 0.5, 4), 0xffe14a, 0, 0.5, 0, false);
+  g.add(glint);
+  g.userData.glint = glint;
+  return g;
+}
+
+/** Shelby's little shell hut, door facing +z. */
+export function makeShellHut() {
+  const g = new THREE.Group();
+  const dome = mesh(sph(1.6, 16, 10), 0xffc0d0, 0, 0.4, 0);
+  dome.scale.set(1, 0.95, 0.9);
+  g.add(dome);
+  for (let i = 0; i < 6; i++) { const r = mesh(box(0.12, 2.6, 0.12), 0xff9fc0, Math.cos(i * 0.52 + 0.3) * 0.2, 1.2, 0, false); r.rotation.z = -1.3 + i * 0.52; g.add(r); }
+  g.add(mesh(box(0.8, 1.1, 0.1), 0x8a5a32, 0, 0.55, 1.42), mesh(cone(0.3, 0.6, 8), 0xffd0e0, 0, 2.1, 0));
+  g.add(mesh(box(0.5, 0.4, 0.06), 0xfff3dc, 0.95, 1.0, 1.1, false));
+  return g;
+}
+
+/** Grumbleton's little sailboat (bow toward +x). */
+export function makeSailboat() {
+  const g = new THREE.Group();
+  const hull = mesh(box(4.2, 0.7, 1.8), 0x3f8fd6, 0, 0.2, 0);
+  g.add(hull, mesh(box(4.3, 0.12, 1.9), 0xffffff, 0, 0.58, 0), mesh(cone(0.9, 1.3, 4), 0x3f8fd6, 2.6, 0.22, 0).rotateZ(-Math.PI / 2).rotateY(Math.PI / 4));
+  g.add(mesh(box(3.8, 0.08, 1.5), 0xe2b06a, 0, 0.56, 0, false));
+  g.add(mesh(cyl(0.07, 0.07, 3.6, 6), WOOD_DARK, 0.2, 2.3, 0));
+  const sail = new THREE.Shape();
+  sail.moveTo(0, 0); sail.lineTo(0, 3.0); sail.lineTo(1.9, 0); sail.closePath();
+  const sm = new THREE.Mesh(new THREE.ShapeGeometry(sail), new THREE.MeshToonMaterial({ color: 0xfff8ec, gradientMap: toon(0xffffff).gradientMap, side: THREE.DoubleSide }));
+  sm.position.set(0.3, 0.75, 0);
+  sm.rotation.y = 0.7; // the wind fills the sail a little to the side (so you can see it from above)
+  g.add(sm);
+  g.add(mesh(box(0.5, 0.3, 0.06), 0xff5d73, 0.2, 4.2, 0, false));
+  return g;
+}
+
 export const DECO3 = new Set(['tulips', 'sandcastle', 'fishTrophy', 'fishStatue', 'crystalLamp', 'goldShell', 'shellChime', 'snowGlobe']);

@@ -45,6 +45,9 @@ export const ITEMS = {
   starmap: { kind: 'find' },
   lens: { kind: 'find' },
   cocoa: { kind: 'gift', sell: 20 }, // hot cocoa after the first winter sled ride of the week
+  seaChart: { kind: 'key' }, // found in the glow cave: Grumbleton can sail to Shell Isle
+  coconut: { kind: 'forage', sell: 30 }, wildBerry: { kind: 'forage', sell: 12 }, // Shell Isle
+  camera: { kind: 'gadget' }, album: { kind: 'book' }, // photos and postcards
 };
 for (const c of CROP_IDS) {
   ITEMS[`${c}Seed`] = { kind: 'seed', crop: c, buy: CROPS[c].seed };
@@ -52,7 +55,7 @@ for (const c of CROP_IDS) {
 }
 
 export const TOOLS = ['hoe', 'can', 'scythe', 'pickaxe'];
-export const isGift = (id) => ['crop', 'gift', 'fish', 'dish', 'produce'].includes(ITEMS[id]?.kind);
+export const isGift = (id) => ['crop', 'gift', 'fish', 'dish', 'produce', 'forage'].includes(ITEMS[id]?.kind) || ['seaGlass', 'starfish', 'seaShell', 'pearl'].includes(id);
 
 /** The store's shelf: seeds of the season, wood and flowers. Star fruit seeds appear once Pip has shown you the stars. */
 export function shopStock(save, season = seasonOf(now())) {
@@ -103,6 +106,11 @@ const SVG = {
   feather: `<path d="M6 20 Q8 8 19 4 Q16 14 6 20Z" fill="#ff9fd0" stroke="${INK}" stroke-width="1.2"/><path d="M6 20 L16 8" stroke="#ff6fae" stroke-width="1.2"/>`,
   starmap: `<rect x="4" y="5" width="16" height="14" rx="2" fill="#2e3b6b" stroke="${INK}" stroke-width="1.2"/><circle cx="8" cy="9" r="1" fill="#ffe14a"/><circle cx="14" cy="8" r="1.2" fill="#ffe14a"/><circle cx="16" cy="14" r="1" fill="#ffe14a"/><circle cx="9" cy="15" r="1.3" fill="#ffe14a"/><path d="M8 9 L14 8 L16 14 L9 15Z" fill="none" stroke="#8fd8ff" stroke-width=".7"/>`,
   lens: `<circle cx="12" cy="12" r="8" fill="#bff6ff" stroke="#ffd23f" stroke-width="2.4"/><ellipse cx="9.5" cy="9.5" rx="2.5" ry="1.6" fill="#fff"/>`,
+  seaChart: `<path d="M4 5 Q12 3 20 5 V19 Q12 17 4 19Z" fill="#f3d9a4" stroke="${INK}" stroke-width="1.2"/><path d="M7 15 Q10 9 13 12 T18 8" fill="none" stroke="#d9583a" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M16 14 l2 2 M18 14 l-2 2" stroke="#d9583a" stroke-width="1.4"/><ellipse cx="8" cy="9" rx="2.4" ry="1.5" fill="#8ac926" stroke="${INK}" stroke-width=".6"/>`,
+  coconut: `<circle cx="12" cy="13" r="8" fill="#8a5a32" stroke="${INK}" stroke-width="1.2"/><path d="M6 11 Q12 6 18 11" fill="none" stroke="#6a4024" stroke-width="1"/><circle cx="10" cy="10" r="1" fill="#3a2414"/><circle cx="14" cy="10" r="1" fill="#3a2414"/><circle cx="12" cy="13" r="1" fill="#3a2414"/>`,
+  wildBerry: `<circle cx="9" cy="14" r="4" fill="#b5179e" stroke="${INK}" stroke-width="1.1"/><circle cx="15" cy="14" r="4" fill="#d9368f" stroke="${INK}" stroke-width="1.1"/><circle cx="12" cy="9.5" r="4" fill="#9b1d8a" stroke="${INK}" stroke-width="1.1"/><path d="M12 5 L10 2 M12 5 L15 3" stroke="#58b947" stroke-width="1.6"/>`,
+  camera: `<rect x="3" y="7" width="18" height="12" rx="2.5" fill="#4c8bd6" stroke="${INK}" stroke-width="1.2"/><rect x="7" y="4.5" width="5" height="3" rx="1" fill="#2e5a8f" stroke="${INK}" stroke-width="1"/><circle cx="12" cy="13" r="4" fill="#bff6ff" stroke="${INK}" stroke-width="1.2"/><circle cx="12" cy="13" r="1.8" fill="#2b2340"/><circle cx="17.5" cy="9.5" r="1" fill="#ffd23f"/>`,
+  album: `<rect x="4" y="3" width="16" height="18" rx="2" fill="#ff9fd0" stroke="${INK}" stroke-width="1.3"/><rect x="6" y="3" width="2" height="18" fill="#e07ab0"/><rect x="10" y="7" width="8" height="6" fill="#fff" stroke="${INK}" stroke-width="1"/><path d="M10.5 12.5 L13 9.5 L15 11.5 L16.5 10 L17.5 12.5Z" fill="#4cc9f0"/><path d="M10 16 H18" stroke="${INK}" stroke-width="1"/>`,
   cocoa: `<path d="M5 8 H17 V18 Q17 21 14 21 H8 Q5 21 5 18Z" fill="#ff7a59" stroke="${INK}" stroke-width="1.2"/><path d="M17 11 Q21 11 21 14 Q21 17 17 17" fill="none" stroke="${INK}" stroke-width="1.4"/><ellipse cx="11" cy="8.5" rx="5.5" ry="1.6" fill="#7a4a2e"/><circle cx="9" cy="7.5" r="1.2" fill="#fff"/><circle cx="12.5" cy="7" r="1.2" fill="#fff"/><path d="M9 5 Q8 3 9.5 1.5 M13 5 Q12 3 13.5 1.5" fill="none" stroke="#bdb8cf" stroke-width="1"/>`,
   coin: `<circle cx="12" cy="12" r="8" fill="#ffd23f" stroke="${INK}" stroke-width="1.4"/><circle cx="12" cy="12" r="5" fill="none" stroke="#e0a400" stroke-width="1.2"/>`,
   heart: `<path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.5 5c2.1 0 3.5 1.2 5.5 3.2C14 6.2 15.4 5 17.5 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" fill="#ff5d73" stroke="${INK}" stroke-width="1.4"/>`,
@@ -128,7 +136,7 @@ const SVG = {
 // Pictures of 3D models for sea things and dishes (set by the island scene: see thumbs.js).
 let pictureFn = null;
 export function setPictures(fn) { pictureFn = fn; }
-const PICTURED = new Set(['fish', 'sea', 'treasure', 'dish', 'produce']);
+const PICTURED = new Set(['fish', 'sea', 'treasure', 'dish', 'produce', 'crystal']);
 
 /** Inline SVG icon for an item id (seed packets get a little crop picture on a paper bag). */
 export function icon(id) {

@@ -9,6 +9,7 @@ import {
   makeCrate, makeMailbox, makeShippingBin, makeWell, makeFountain, makeNoticeBoard, makeBunting, makeCafe, makeBarn, makePier, makeBuoy, makeDiveBoat,
   makeRowboat, makeTelescope, makeWaterfall, makeCrop,
 } from './models.js';
+import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
 
 // The hand-made island town. North is -z (the cliffs), south is +z (the beach and the dock), the camera
 // looks north. A river runs from the waterfall in the cliffs down to the sea and cuts off the west bank
@@ -32,6 +33,10 @@ const HILLS = [{ x: 8, z: -25.5, r: 8, h: 2.0 }, { x: -44, z: -6, r: 7, h: 1.0 }
 
 export const HOME = { x: -12, z: -15 };
 export const FIELD = { x0: -18.25, z0: -8.5, cols: 8, rows: 6, size: 1.25 };
+// milestone B3: the greenhouse east of the farm (its beds are a second, small field) and the museum
+export const GREENHOUSE = { x: 0.3, z: -3.6, w: 6.2, d: 4.6 };
+export const GREEN = { x0: -2.2, z0: -5.4, cols: 4, rows: 2, size: 1.25, green: true };
+export const MUSEUM = { x: 26, z: -2.8 };
 export const BIN = { x: -7.2, z: -11.6 };
 export const MAILBOX = { x: -15, z: -11.2 };
 export const WELL = { x: -5, z: -5.2 };
@@ -91,6 +96,8 @@ export const SPOTS = {
   pad: { x: 37.4, z: -12.4 }, hallFront: { x: 30.5, z: -11.2 }, hillTop: { x: 10.4, z: -26.4 }, rocket: { x: 38.6, z: -13.2 },
   meadow: { x: 47, z: -11 },
   beachDay: { x: 16.5, z: 39.6 },
+  museumDoor: { x: 23.4, z: 1.2 },
+  ...ISLE2_SPOTS,
 };
 
 // Branch spots (wood for the bridge), quest finds and dive/fish spots for later.
@@ -130,6 +137,7 @@ function coast(x, z) {
 
 /** Ground height (without bridges or the pier). */
 export function heightAt(x, z) {
+  if (z > 120) return isle2Height(x, z); // Shell Isle, far to the south (milestone B3)
   const c = coast(x, z);
   let h = c < 0 ? -1.2 + c * 18 : -1.2 + 1.2 * sstep(0, 0.11, c);
   if (c > 0.05) {

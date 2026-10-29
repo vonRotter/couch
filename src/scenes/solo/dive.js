@@ -245,6 +245,24 @@ export class DiveScene extends BaseScene {
       sc.add(g);
       this.clams.push({ g, x, y: y + 0.3, picked: false, pearl: true });
     }
+    // milestone B3: in the glow cave a crystal shard for the museum (every dive) and, once, an old sea chart in a bottle
+    this.cavePicks = [];
+    if (this.save.sea.seaLamp) {
+      const shard = makeSeaThing('glowShard');
+      shard.position.set(54.5, floorY(54.5) + 0.05, 0);
+      sc.add(shard);
+      this.cavePicks.push({ id: 'glowShard', g: shard, x: 54.5, y: floorY(54.5) + 0.4, picked: false });
+      if (!this.save.isle2?.chart && !this.save.inv.some((it) => it.id === 'seaChart')) {
+        const b = new THREE.Group();
+        const glass = mesh(sph(0.22, 10, 8), toon(0xbff6ff, { transparent: true, opacity: 0.55 }), 0, 0.25, 0, false);
+        glass.scale.set(1.8, 1, 1);
+        b.add(glass, mesh(cyl(0.08, 0.08, 0.2, 8), 0x9a6440, 0.45, 0.25, 0).rotateZ(Math.PI / 2), mesh(box(0.35, 0.16, 0.16), 0xf3d9a4, 0, 0.25, 0, false));
+        b.position.set(60.5, floorY(60.5) + 0.05, 0.3);
+        b.rotation.z = 0.2;
+        sc.add(b);
+        this.cavePicks.push({ id: 'seaChart', g: b, x: 60.5, y: floorY(60.5) + 0.4, picked: false });
+      }
+    }
     // treasure chests
     this.chests = CHESTS.map((c) => {
       const y = floorY(c.x);
@@ -470,6 +488,7 @@ export class DiveScene extends BaseScene {
     const D = this.diver, P = this.players[0];
     const d = (x, y) => Math.hypot(D.x - x, D.y - y);
     for (const c of this.chests) if (!c.open && d(c.x, c.y) < 1.8) return { text: tFor(P, 'dive.open'), fn: () => this.openChest(c) };
+    for (const c of this.cavePicks) if (!c.picked && d(c.x, c.y) < 1.6) return { text: tFor(P, 'dive.pick', { item: t(`isl.i.${c.id}`) }), fn: () => this.pickCave(c) };
     for (const c of this.clams) if (!c.picked && d(c.x, c.y) < 1.5) return { text: tFor(P, 'dive.pick', { item: t('isl.i.clam') }), fn: () => this.pickClam(c) };
     for (const k of this.kelps) if (!k.picked && Math.abs(D.x - k.x) < 1.2 && D.y < k.top + 0.5 && D.y > k.y - 0.5) return { text: tFor(P, 'dive.pick', { item: t('isl.i.seaweed') }), fn: () => this.pickKelp(k) };
     return null;
@@ -482,6 +501,17 @@ export class DiveScene extends BaseScene {
     if (c.pearl) this.bag('pearl');
     this.game.audio.play(c.pearl ? 'star' : 'pop');
     this.game.ui.toast(t('dive.caught', { item: t(c.pearl ? 'isl.i.pearl' : 'isl.i.clam') }), 900);
+  }
+
+  pickCave(c) {
+    c.picked = true;
+    c.g.visible = false;
+    this.bag(c.id);
+    this.confetti.burst(new THREE.Vector3(c.x, c.y + 0.6, 0.5), 0, { count: 30, speed: 4, up: 3, life: 1.2, gravity: -3, colors: [0x8ff0c8, 0xbff6ff, 0xffffff] });
+    this.game.audio.play(c.id === 'seaChart' ? 'fanfare' : 'star');
+    const txt = t(c.id === 'seaChart' ? 'dive.chart' : 'dive.caught', { item: t(`isl.i.${c.id}`) });
+    this.game.ui.toast(txt, 2600);
+    speak(txt);
   }
 
   pickKelp(k) {
