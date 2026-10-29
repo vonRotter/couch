@@ -435,6 +435,31 @@ night match yours and crops grow while you are away.
   animals (happy hens hatch chicks, happy cows and goats have a baby; babies grow up in 3 days).
   Pop-up messages wait in a queue (at most two at a time, paused under panels), and decorate mode has
   a free cursor that the stick moves.
+- **The lighthouse story, "Why did the lamp go dark?":** after the tutorial, once Keeper Bram has two
+  hearts or you have visited Lighthouse Caves, Bram writes that his lamp went dark (from then on it stays
+  dark at night until the story ends). Six chapters, each with a short read-aloud opening scene (friends
+  pop in next to you, the view slides to them or tilts up to the lamp), a small quest, and a closing scene
+  with a reward; a letter then says who to see next. The task list shows the next step (📖) and the
+  calendar board shows the chapter. 1 *The lamp went dark*: ask Hazel, Rosa and Grumbleton about that
+  night. 2 *Down in the caves*: find a crystal in Lighthouse Caves. 3 *The moon lens*: Hoot's book sends
+  you to Shelby on Shell Isle (Grumbleton learns the way if you have no sea chart yet), who trades her
+  window lens for two coconuts. 4 *The pudding gear*: finish the first part of The Secret of Pudding
+  Island to get back the gear Grumbleton traded for a pudding. 5 *The green glow*: fly one Sky Hop level
+  with Pip, follow the glowing crumbs to the meadow and find out who borrowed the old crystal (Mumble, who
+  was scared of the dark; he keeps it as a nightlight). 6 *The Lamp Festival*: wood and stone for the
+  stairs, invite four friends, then a night festival with everyone (lanterns, music, fireworks, the lamp
+  lights up) and a mini lighthouse for the yard. Game steps read the games' saves and count at once if you
+  already got there earlier. Afterwards a long beam sweeps every night, with a path of light on the
+  ground and the water.
+- **The lighthouse top:** after the festival the little door on the side of the tower leads up. The view
+  is your own (the stick walks around the lamp, names float over the places), and Bram's telescope shows
+  a night sky (Pip's star filter makes it work in the daytime too) with eight star pictures: center one
+  in the ring, look closer and pick its name from three funny ideas. Each gives coins, all eight a star
+  globe.
+- **B4 polish:** the boat trip to Shell Isle swings the view from the island you leave to the one you
+  sail to, with lighter fog, buoys, gulls, a waving seal and the dolphin; in winter the paths and the
+  field turn snowy and every roof has snow (Shell Isle stays warm and sunny); Shelby comes to the café as
+  a regular at 3 hearts (seaweed salad) and writes letters like the other friends.
 - Stick to walk, A uses the held tool (or goes in at doors), B talks, picks up and opens the bag,
   1–9 pick a bag slot, C opens the start menu. A new controller pressing jump takes over.
 
