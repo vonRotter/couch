@@ -3,7 +3,7 @@ import { t } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { count, give, take, hourOf, now } from './save.js';
-import { dayKey } from './calendar.js';
+import { dayKey, dayIndex, dayRand } from './calendar.js';
 import { heightAt } from './map.js';
 import { mesh, box } from './models.js';
 import { makeChicken, makeCow, makeTrough, makeNest } from './models2.js';
@@ -14,13 +14,16 @@ import { heartsHtml } from './hud.js';
 // the trough eats and makes something (eggs in the nest, milk from the cow and goat). A hungry animal just
 // skips that day: nobody gets sick or sad. Pet each animal once a day for animal hearts (up to 5); happy
 // chickens sometimes lay two eggs.
+// Milestone B3, babies: a hen with 5 hearts sometimes hatches a chick on a day she eats; a cow or goat that
+// has had 5 hearts for two days has a baby. Babies are small, need no hay, and grow up after three days.
 
 export const PADDOCK = { x0: -18.6, x1: -9.4, z0: 3.4, z1: 8.6 };
 const TROUGH = { x: -11, z: 4 };
 const NEST = { x: -17.6, z: 9.3 };
 const BARN_DOOR = { x: -14, z: 10.3 };
-export const LIMITS = { chicken: 4, goat: 1, cow: 1 };
-const NAMES = { chicken: ['Clucky', 'Nugget', 'Pebble', 'Sunny', 'Popcorn', 'Dotty'], goat: ['Billy', 'Clover'], cow: ['Daisy', 'Bella'] };
+export const LIMITS = { chicken: 6, goat: 2, cow: 2 }; // the store sells up to 4 / 1 / 1: babies fill the rest
+const NAMES = { chicken: ['Clucky', 'Nugget', 'Pebble', 'Sunny', 'Popcorn', 'Dotty', 'Peep', 'Chirpy'], goat: ['Billy', 'Clover', 'Button'], cow: ['Daisy', 'Bella', 'Buttercup'] };
+const GROW_DAYS = 3;
 const TROUGH_MAX = 20;
 
 export class Ranch {
@@ -52,22 +55,24 @@ export class Ranch {
     // models for the animals
     for (const a of this.R.animals) {
       if (this.views.has(a.u)) continue;
-      const m = a.kind === 'chicken' ? makeChicken([0xffffff, 0xf0c890, 0xb07a4a][a.u % 3]) : makeCow(a.kind === 'goat');
+      const m = a.kind === 'chicken' ? makeChicken(a.chick ? 0xffe47a : [0xffffff, 0xf0c890, 0xb07a4a][a.u % 3]) : makeCow(a.kind === 'goat');
       const x = PADDOCK.x0 + 1 + Math.random() * (PADDOCK.x1 - PADDOCK.x0 - 2), z = PADDOCK.z0 + 1 + Math.random() * (PADDOCK.z1 - PADDOCK.z0 - 2);
       m.position.set(x, heightAt(x, z), z);
       this.host.scene.add(m);
       const tag = this.host.game.ui.label('label isl-tag');
-      this.views.set(a.u, { m, x, z, tx: x, tz: z, wait: Math.random() * 3, t: Math.random() * 5, tag, hop: 0 });
+      this.views.set(a.u, { m, x, z, tx: x, tz: z, wait: Math.random() * 3, t: Math.random() * 5, tag, hop: 0, base: m.scale.x });
     }
   }
 
-  /** A new animal (from the barn quest or Rosa's store). */
-  addAnimal(kind) {
+  /** A new animal (from the barn quest or Rosa's store), or a baby (born: its day index). */
+  addAnimal(kind, born = null) {
     const R = this.R;
     if (R.animals.filter((a) => a.kind === kind).length >= LIMITS[kind]) return false;
     const used = new Set(R.animals.map((a) => a.name));
     const name = NAMES[kind].find((n) => !used.has(n)) || NAMES[kind][0];
-    R.animals.push({ u: (R.next = (R.next || 0) + 1), kind, name, hearts: 0, petDay: '', day: '', ready: false });
+    const a = { u: (R.next = (R.next || 0) + 1), kind, name, hearts: 0, petDay: '', day: '', ready: false };
+    if (born !== null) { a.baby = born; if (kind === 'chicken') a.chick = true; }
+    R.animals.push(a);
     this.refresh();
     const v = this.views.get(R.animals[R.animals.length - 1].u);
     this.host.puffs.burst(new THREE.Vector3(v.x, 0.8, v.z), 0xffffff, { count: 14, speed: 3, size: 0.4 });
@@ -81,18 +86,41 @@ export class Ranch {
 
   /** Once per real day each animal eats one hay (if there is any) and makes eggs or milk. */
   tick(at) {
-    const today = dayKey(at);
+    const today = dayKey(at), di = dayIndex(at);
     let changed = false;
-    for (const a of this.R.animals) {
+    const n = (k) => this.R.animals.filter((x) => x.kind === k).length;
+    for (const a of [...this.R.animals]) {
+      // babies grow up after a few days (and need no hay until then)
+      if (a.baby !== undefined) {
+        if (di - a.baby >= GROW_DAYS) { delete a.baby; changed = true; this.say('isl.baby.grown', a); }
+        continue;
+      }
+      // a cow or goat that has been very happy for two days has a baby (once)
+      if (a.kind !== 'chicken' && a.hearts >= 5) {
+        if (a.happy === undefined || a.happy > di) a.happy = di;
+        if (!a.hadBaby && di - a.happy >= 2 && n(a.kind) < LIMITS[a.kind]) {
+          a.hadBaby = true;
+          if (this.addAnimal(a.kind, di)) { changed = true; this.say(a.kind === 'cow' ? 'isl.baby.calf' : 'isl.baby.kid', a, this.R.animals[this.R.animals.length - 1]); }
+        }
+      }
       if (a.day > today) { a.day = today; continue; } // the clock went backwards: wait for a new day
       if (a.day === today || this.R.trough <= 0) continue;
       this.R.trough--;
       a.day = today;
-      if (a.kind === 'chicken') this.R.nest = Math.min(4, this.R.nest + (a.hearts >= 5 && (a.u + today.length) % 2 ? 2 : 1));
-      else a.ready = true;
+      if (a.kind === 'chicken') {
+        this.R.nest = Math.min(4, this.R.nest + (a.hearts >= 5 && (a.u + today.length) % 2 ? 2 : 1));
+        // a very happy hen sometimes hatches a chick
+        if (a.hearts >= 5 && dayRand(`chick:${today}:${a.u}`) < 0.25 && n('chicken') < LIMITS.chicken && this.addAnimal('chicken', di)) this.say('isl.baby.chick', a, this.R.animals[this.R.animals.length - 1]);
+      } else a.ready = true;
       changed = true;
     }
     if (changed) { this.refresh(); this.host.markDirty(); }
+  }
+
+  /** News about the babies (a toast, read aloud). */
+  say(key, a, baby = null) {
+    const txt = t(key, { name: a.name, baby: baby?.name || '' });
+    this.host.later(1.0, () => { this.host.game.ui.toast(txt, 2600); speak(txt); });
   }
 
   /** [B] actions at the ranch. */
@@ -195,11 +223,12 @@ export class Ranch {
       if (d > 0.1) { v.x += (dx / d) * Math.min(d, sp * dt); v.z += (dz / d) * Math.min(d, sp * dt); v.m.rotation.y = Math.atan2(dx, dz); }
       v.hop = Math.max(0, v.hop - dt * 3);
       v.m.position.set(v.x, heightAt(v.x, v.z) + Math.sin(v.hop * Math.PI) * 0.4 + (d > 0.1 && a.kind === 'chicken' ? Math.abs(Math.sin(v.t * 12)) * 0.05 : 0), v.z);
+      v.m.scale.setScalar(v.base * (a.baby !== undefined ? 0.55 : 1));
       if (v.m.userData.head) v.m.userData.head.rotation.x = d > 0.1 ? 0 : Math.sin(v.t * 1.5) * 0.25 + 0.2;
       // name tag with animal hearts when you are close
       const close = P && host.mode === 'walk' && Math.hypot(P.x - v.x, P.z - v.z) < 4.5;
       if (close) {
-        const html = `${esc(a.name)}${heartsHtml(a.hearts, 5)}${a.ready ? ' 🥛' : ''}`;
+        const html = `${esc(a.name)}${a.baby !== undefined ? ' 🍼' : ''}${heartsHtml(a.hearts, 5)}${a.ready ? ' 🥛' : ''}`;
         if (v.tag.innerHTML !== html) v.tag.innerHTML = html;
         host.game.ui.place(v.tag, new THREE.Vector3(v.x, a.kind === 'chicken' ? 1.2 : 2.3, v.z), host.camera);
       } else v.tag.style.display = 'none';

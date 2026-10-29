@@ -8,7 +8,7 @@ import { ITEMS, icon } from './items.js';
 import { RECIPES, RECIPE_IDS, matches, isRiverFish } from './sea.js';
 import { count, give, take, hourOf, now } from './save.js';
 import { CAFE, heightAt } from './map.js';
-import { makeCafeBoards, makeCafeOpen, makeCafeTable } from './models.js';
+import { makeCafeBoards, makeCafeOpen, makeCafeTable, mesh, box } from './models.js';
 import { NPCS, npcState, makeNpcModel } from './npcs.js';
 
 // The Driftwood Café on the beach: fix it (wood + coins), cook dishes at the stove from the recipe book,
@@ -19,6 +19,8 @@ const WOOD_NEED = 10, COIN_NEED = 100;
 const SEATS = [-11.4, -10, -8.6].map((x) => ({ x, z: CAFE.z + 2.55 }));
 const SERVE_SPOT = { x: CAFE.x, z: CAFE.z + 4.35 };
 const STOVE = { x: CAFE.x - 3.3, z: CAFE.z + 2.9 };
+const MENU = { x: CAFE.x + 2.9, z: CAFE.z + 4.2 }; // the chalkboard with today's specials (milestone B3)
+const MAX_SPECIALS = 4, SPECIAL_BONUS = 1.3;
 const ENTER = { x: CAFE.x + 4.4, z: CAFE.z + 2.55 };
 const PATIENCE = 30;
 const FRIENDS = ['rosa', 'hazel', 'bram', 'grumbleton', 'pip', 'mumble'];
@@ -59,6 +61,14 @@ export class Cafe {
       map.circObs(x, z, 0.6);
     }
     map.boxObs(CAFE.x, CAFE.z + 3.4, 2.15, 0.35, { cafe: true });
+    // the specials board: a little chalkboard on legs
+    if (!host.save.cafe.specials) host.save.cafe.specials = [];
+    const mb = new THREE.Group();
+    for (const s of [-1, 1]) { const leg = mesh(box(0.08, 1.3, 0.08), 0x8a5a32, s * 0.45, 0.6, 0); leg.rotation.x = 0.12; mb.add(leg); }
+    mb.add(mesh(box(1.1, 0.8, 0.08), 0x8a5a32, 0, 1.0, 0.06), mesh(box(0.96, 0.66, 0.09), 0x2f4a3a, 0, 1.0, 0.07, false));
+    for (let i = 0; i < 3; i++) mb.add(mesh(box(0.6 - i * 0.1, 0.05, 0.1), 0xffffff, -0.1, 1.2 - i * 0.16, 0.08, false), mesh(box(0.08, 0.08, 0.1), 0xffd23f, 0.32, 1.2 - i * 0.16, 0.08, false));
+    this.menuBoard = map.live(mb, MENU.x, MENU.z, 0.2);
+    map.circObs(MENU.x, MENU.z, 0.45, { cafe: true });
     map.circObs(STOVE.x, STOVE.z, 0.7, { cafe: true });
     this.svc = null;
     this.refresh();
@@ -70,6 +80,56 @@ export class Cafe {
   refresh() {
     this.boards.visible = !this.repaired;
     this.open.visible = this.repaired;
+    this.menuBoard.visible = this.repaired;
+  }
+
+  // ---------- today's specials ----------
+
+  get specials() { return this.save.cafe.specials; }
+  isSpecial(id) { return this.specials.includes(id); }
+  priceOf(id) { return Math.round(RECIPES[id].price * (this.isSpecial(id) ? SPECIAL_BONUS : 1)); }
+
+  openMenu() {
+    const host = this.host;
+    host.mode = 'board';
+    this.menu = { i: this.menu?.i || 0, t: 0 };
+    this.renderMenu();
+    host.game.audio.play('select');
+    speak(t('isl.menu.intro', { n: MAX_SPECIALS }));
+  }
+
+  renderMenu() {
+    const host = this.host, M = this.menu;
+    const start = Math.max(0, Math.min(M.i - 3, RECIPE_IDS.length - 7));
+    const rows = RECIPE_IDS.slice(start, start + 7).map((id, k) => {
+      const on = this.isSpecial(id);
+      return `<div class="isl-row ${start + k === M.i ? 'on' : ''}">${icon(id)}<div>${on ? '★ ' : ''}${esc(t(`isl.i.${id}`))} <small>${esc(t('isl.shop.owned', { n: count(this.save, id) }))}</small></div>
+        <small>${on ? esc(t('isl.menu.special')) : ''}</small><div class="p">${icon('coin')}${this.priceOf(id)}</div></div>`;
+    }).join('');
+    const list = this.specials.map((id) => t(`isl.i.${id}`)).join(', ') || '—';
+    host.hud.setPanel(`<h2>${esc(t('isl.menu.title'))}</h2>
+      <div class="isl-foot" style="opacity:1;margin:0 0 6px">${esc(t('isl.menu.today', { list, n: this.specials.length, m: MAX_SPECIALS }))}</div>
+      <div class="isl-rows">${rows}</div>
+      <div class="isl-foot">${esc(tFor(host.player?.p, 'isl.menu.hint'))}</div>`);
+  }
+
+  updateMenu(inp, dt) {
+    const M = this.menu, host = this.host, sp = this.specials;
+    M.t += dt;
+    if (inp.stepY) { M.i = THREE.MathUtils.clamp(M.i - inp.stepY, 0, RECIPE_IDS.length - 1); host.game.audio.play('select'); this.renderMenu(); }
+    if (M.t < 0.25) return;
+    if (inp.bPressed) { host.hud.setPanel(null); host.mode = 'walk'; host.markDirty(); return; }
+    if (inp.aPressed) {
+      const id = RECIPE_IDS[M.i];
+      if (this.isSpecial(id)) sp.splice(sp.indexOf(id), 1);
+      else {
+        if (sp.length >= MAX_SPECIALS) sp.shift(); // the oldest special makes room
+        sp.push(id);
+      }
+      host.game.audio.play('pop');
+      host.markDirty();
+      this.renderMenu();
+    }
   }
 
   isOpenHour(h = hourOf()) { return h >= OPEN_HOURS[0] && h < OPEN_HOURS[1]; }
@@ -82,7 +142,8 @@ export class Cafe {
       if (near({ x: CAFE.x, z: CAFE.z + 2.6 }, 2.6) || near({ x: -5.2, z: 40.6 }, 1.4)) out.b = { text: nm('isl.h.repair', { w: count(S, 'wood') }), fn: () => this.askRepair() };
       return;
     }
-    if (near(STOVE, 1.8)) out.b = { text: nm('isl.h.cook'), fn: () => this.openCook(false) };
+    if (near(MENU, 1.5)) out.b = { text: nm('isl.h.menu'), fn: () => this.openMenu() };
+    else if (near(STOVE, 1.8)) out.b = { text: nm('isl.h.cook'), fn: () => this.openCook(false) };
     else if (near(SERVE_SPOT, 1.5)) out.b = { text: nm('isl.h.serve'), fn: () => this.askService() };
   }
 
@@ -145,8 +206,8 @@ export class Cafe {
         const ic = ITEMS[n] ? icon(n) : icon(n === 'seafish' ? 'tuna' : 'trout');
         return `<span class="isl-cook-ing ${have < need ? 'no' : ''}">${ic}${need > 1 ? `×${need}` : ''} <small>${esc(t(`isl.i.${n}`))} ${Math.min(have, need)}/${need}</small></span>`;
       }).join('');
-      return `<div class="isl-row ${start + k === C.i ? 'on' : ''}" style="grid-template-columns: clamp(34px,3.2vw,46px) 1fr auto auto">${icon(id)}<div>${esc(t(`isl.i.${id}`))}<div>${ings}</div></div>
-        <small>${esc(t('isl.shop.owned', { n: count(this.save, id) }))}</small><div class="p">${icon('coin')}${r.price}</div></div>`;
+      return `<div class="isl-row ${start + k === C.i ? 'on' : ''}" style="grid-template-columns: clamp(34px,3.2vw,46px) 1fr auto auto">${icon(id)}<div>${this.isSpecial(id) ? '★ ' : ''}${esc(t(`isl.i.${id}`))}<div>${ings}</div></div>
+        <small>${esc(t('isl.shop.owned', { n: count(this.save, id) }))}</small><div class="p">${icon('coin')}${this.priceOf(id)}</div></div>`;
     }).join('');
     const regs = this.regulars().map((id) => `${t(`isl.npc.${id}`)}: ${t(`isl.i.${FAVORITE[id]}`)}`).join(', ');
     host.hud.setPanel(`<h2>${esc(t('isl.cook.title'))}</h2>${regs ? `<div class="isl-foot" style="opacity:1;margin:0 0 6px">${esc(t('isl.cafe.regulars', { list: regs }))}</div>` : ''}<div class="isl-rows">${rows}</div>
@@ -235,7 +296,9 @@ export class Cafe {
       model = new Character(c.hex, { hat: Math.floor(Math.random() * 5) });
     }
     const fav = who && FAVORITE[who];
-    const order = fav && avail.includes(fav) ? fav : avail[Math.floor(Math.random() * avail.length)];
+    // today's specials are popular: most guests without a favorite ask for one
+    const specials = avail.filter((id) => this.isSpecial(id));
+    const order = fav && avail.includes(fav) ? fav : specials.length && Math.random() < 0.65 ? specials[Math.floor(Math.random() * specials.length)] : avail[Math.floor(Math.random() * avail.length)];
     model.group.position.set(ENTER.x, heightAt(ENTER.x, ENTER.z), ENTER.z);
     host.scene.add(model.group);
     const tag = host.game.ui.label('label isl-order');
@@ -259,7 +322,7 @@ export class Cafe {
       return;
     }
     take(S, dish, 1);
-    const price = RECIPES[dish].price;
+    const price = this.priceOf(dish); // specials sell for more
     const tip = Math.round(price * 0.5 * (g.pat / PATIENCE) * (S.unlocks.rosaHelps ? 1.25 : 1) * (g.regular ? 2 : 1));
     S.coins += price + tip;
     S.cafe.earned += price + tip;
@@ -339,7 +402,7 @@ export class Cafe {
     // the order bubble
     let html;
     if (g.sayT > 0) html = `<div class="say">${esc(g.say)}</div>`;
-    else if (g.state === 'wait') html = `<img src="${host.picture(g.order)}" alt=""><div class="pat"><i style="width:${Math.round((g.pat / PATIENCE) * 100)}%"></i></div>`;
+    else if (g.state === 'wait') html = `${this.isSpecial(g.order) ? '<div class="say">★</div>' : ''}<img src="${host.picture(g.order)}" alt=""><div class="pat"><i style="width:${Math.round((g.pat / PATIENCE) * 100)}%"></i></div>`;
     else html = '';
     if (!html) g.tag.style.display = 'none';
     else {

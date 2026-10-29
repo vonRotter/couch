@@ -110,6 +110,39 @@ addStrings({
     'isl.shelby.q1.ask': 'Could you find me two pieces of sea glass? They sparkle so nicely in my window!',
     'isl.shelby.q1.wait': 'Two pieces of sea glass, please! The tide pools sometimes have some.',
     'isl.shelby.q1.done': 'Sea glass! Now my window sparkles! Here, I made you a wind chime!',
+    // photos and postcards
+    'isl.i.camera': 'Camera', 'isl.i.album': 'Postcard album',
+    'isl.h.photo': '[A] take a photo', 'isl.h.album': '[B] look at your postcards', 'isl.h.albumBook': '[A] look at your postcards',
+    'isl.photo.hint': 'stick: look around · [A]: click! · [B]: back',
+    'isl.photo.sent': 'Click! A postcard of your island is on its way to your mailbox.',
+    'isl.photo.sentFull': 'Click! A postcard is on its way. Your album keeps the newest {n}.',
+    'isl.photo.title': 'A postcard!', 'isl.photo.card': 'Taken on {date}', 'isl.photo.gone': 'This postcard has made room for newer ones.',
+    'isl.photo.album': 'Postcard album', 'isl.photo.albumHint': 'stick: choose · [A] or [B]: close', 'isl.photo.none': 'No postcards yet. Take a photo with the camera!',
+    'isl.mail.postcard': 'Greetings from the island! Wish you were here. (You are!)', 'isl.from.photo': 'You',
+    'isl.mail.camera': 'Mission report: I found my old camera in the rocket. Take pictures of the island and they come back to you as postcards! Over and out, Pip.',
+    // the fishing tournament
+    'isl.tour.ask': 'Hee! How about a fishing contest? Three minutes, most fish wins! Ready, matey?',
+    'isl.tour.later': 'Another time then. My hook is always ready! Hee!',
+    'isl.tour.go': 'The tournament starts! Three minutes: catch more fish than Grumbleton!',
+    'isl.tour.you': 'Your fish: {n}! (Grumbleton: {m})', 'isl.tour.him': 'Grumbleton caught a {item}! ({n})',
+    'isl.tour.score': 'You {n} · Grumbleton {m}', 'isl.task.tour': 'Fishing tournament: you {n}, Grumbleton {m}',
+    'isl.tour.title': 'Fishing tournament', 'isl.tour.final': 'You caught {n} fish. Grumbleton caught {m}.',
+    'isl.tour.win': 'You win! Hee hee, you are the best fisher on the island! Here is your prize!',
+    'isl.tour.draw': 'A draw! Hee! Two champions! Some coins for you, matey.',
+    'isl.tour.lose': 'I won this time, hee! But you fished so well. Here are some coins for bait. Again next time?',
+    'isl.d.fishTrophy': 'Golden fish trophy',
+    // café specials
+    'isl.h.menu': '[B] today\'s specials',
+    'isl.menu.title': 'Today\'s specials', 'isl.menu.special': 'special',
+    'isl.menu.today': 'Specials: {list} ({n}/{m}). They sell for more, and guests love to order them!',
+    'isl.menu.hint': 'up/down: choose · [A]: special on or off · [B]: done',
+    'isl.menu.intro': 'Pick up to {n} dishes as today\'s specials. They sell for more!',
+    // baby animals
+    'isl.baby.chick': 'A chick hatched! {name} is a mom. Say hello to {baby}!',
+    'isl.baby.calf': '{name} had a baby calf! Say hello to {baby}!',
+    'isl.baby.kid': '{name} had a baby goat! Say hello to {baby}!',
+    'isl.baby.grown': '{name} is all grown up!',
+
 
 
 
@@ -220,6 +253,39 @@ addStrings({
     'isl.shelby.q1.ask': 'Kan du finne to biter havglass til meg? De glitrer så fint i vinduet mitt!',
     'isl.shelby.q1.wait': 'To biter havglass, takk! Fjærepyttene har noen ganger.',
     'isl.shelby.q1.done': 'Havglass! Nå glitrer vinduet mitt! Her, jeg har laget et klokkespill til deg!',
+    // bilder og postkort
+    'isl.i.camera': 'Kamera', 'isl.i.album': 'Postkortalbum',
+    'isl.h.photo': '[A] ta et bilde', 'isl.h.album': '[B] se på postkortene dine', 'isl.h.albumBook': '[A] se på postkortene dine',
+    'isl.photo.hint': 'pinnen: se deg rundt · [A]: klikk! · [B]: tilbake',
+    'isl.photo.sent': 'Klikk! Et postkort av øya di er på vei til postkassa.',
+    'isl.photo.sentFull': 'Klikk! Et postkort er på vei. Albumet tar vare på de {n} nyeste.',
+    'isl.photo.title': 'Et postkort!', 'isl.photo.card': 'Tatt {date}', 'isl.photo.gone': 'Dette postkortet har gjort plass til nyere kort.',
+    'isl.photo.album': 'Postkortalbum', 'isl.photo.albumHint': 'pinnen: velg · [A] eller [B]: lukk', 'isl.photo.none': 'Ingen postkort ennå. Ta et bilde med kameraet!',
+    'isl.mail.postcard': 'Hilsen fra øya! Skulle ønske du var her. (Det er du jo!)', 'isl.from.photo': 'Deg',
+    'isl.mail.camera': 'Oppdragsrapport: Jeg fant det gamle kameraet mitt i raketten. Ta bilder av øya, så kommer de tilbake til deg som postkort! Over og ut, Pip.',
+    // fiskekonkurransen
+    'isl.tour.ask': 'Hi! Hva med en fiskekonkurranse? Tre minutter, flest fisker vinner! Klar, kompis?',
+    'isl.tour.later': 'En annen gang da. Kroken min er alltid klar! Hi!',
+    'isl.tour.go': 'Konkurransen starter! Tre minutter: fang flere fisker enn Grumbleton!',
+    'isl.tour.you': 'Dine fisker: {n}! (Grumbleton: {m})', 'isl.tour.him': 'Grumbleton fikk en {item}! ({n})',
+    'isl.tour.score': 'Du {n} · Grumbleton {m}', 'isl.task.tour': 'Fiskekonkurranse: du {n}, Grumbleton {m}',
+    'isl.tour.title': 'Fiskekonkurranse', 'isl.tour.final': 'Du fanget {n} fisker. Grumbleton fanget {m}.',
+    'isl.tour.win': 'Du vant! Hi hi, du er øyas beste fisker! Her er premien din!',
+    'isl.tour.draw': 'Uavgjort! Hi! To mestere! Noen mynter til deg, kompis.',
+    'isl.tour.lose': 'Jeg vant denne gangen, hi! Men du fisket så bra. Her er noen mynter til agn. En gang til neste gang?',
+    'isl.d.fishTrophy': 'Gyllen fiskepokal',
+    // kafeens dagens retter
+    'isl.h.menu': '[B] dagens retter',
+    'isl.menu.title': 'Dagens retter', 'isl.menu.special': 'dagens',
+    'isl.menu.today': 'Dagens retter: {list} ({n}/{m}). De selges dyrere, og gjestene elsker å bestille dem!',
+    'isl.menu.hint': 'opp/ned: velg · [A]: dagens rett av eller på · [B]: ferdig',
+    'isl.menu.intro': 'Velg opptil {n} retter som dagens retter. De selges dyrere!',
+    // dyrebabyer
+    'isl.baby.chick': 'En kylling har klekket! {name} er blitt mamma. Si hei til {baby}!',
+    'isl.baby.calf': '{name} har fått en kalv! Si hei til {baby}!',
+    'isl.baby.kid': '{name} har fått et kje! Si hei til {baby}!',
+    'isl.baby.grown': '{name} er blitt stor!',
+
 
 
 

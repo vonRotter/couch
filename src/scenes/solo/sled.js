@@ -173,6 +173,7 @@ export class Sled {
       host.gotToast(t('isl.i.cocoa'));
       host.grant({ coins: 25 + n * 5 });
     }
+    if (!S.deco.snowGlobe) host.addDeco('snowGlobe'); // a keepsake from the very first ride
     host.markDirty();
   }
 
