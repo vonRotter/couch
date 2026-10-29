@@ -62,7 +62,7 @@ const CSS = `
   font-size: clamp(14px, 1.4vw, 22px); white-space: nowrap; box-shadow: 0 3px 0 rgba(43,35,64,.2); }
 .isl-top .say { position: absolute; left: 50%; bottom: 10vh; transform: translateX(-50%); background: #ffd84a; border-radius: 999px; padding: 4px 18px;
   font-size: clamp(14px, 1.4vw, 22px); white-space: nowrap; box-shadow: 0 3px 0 rgba(43,35,64,.2); }
-.isl-top .vig { position: absolute; inset: 0; background: radial-gradient(circle at 50% 48%, rgba(0,0,0,0) 0 31vh, rgba(8,10,28,.97) 33vh); }
+.isl-top .vig { position: absolute; inset: 0; background: radial-gradient(circle at 50% 48%, rgba(0,0,0,0) 0 39vh, rgba(8,10,28,.98) 41vh); }
 .isl-top .ring { position: absolute; left: 50%; top: 48%; width: 9vh; height: 9vh; margin: -4.5vh 0 0 -4.5vh; border-radius: 50%; border: 3px solid rgba(255,255,255,.85);
   box-shadow: 0 0 12px rgba(255,255,255,.3); transition: border-color .3s, box-shadow .3s; }
 .isl-top .ring.warm { border-color: #ffb347; box-shadow: 0 0 16px rgba(255,179,71,.6); }
@@ -120,7 +120,7 @@ export class LightTop {
     const pm = (size, color) => new THREE.PointsMaterial({ size, color, map: this.tex, transparent: true, depthWrite: false, fog: false });
     const bgGeo = new THREE.BufferGeometry();
     bgGeo.setAttribute('position', new THREE.Float32BufferAttribute(bg, 3));
-    this.sky3.add(new THREE.Points(bgGeo, pm(0.9, 0xcfd8ff)));
+    this.sky3.add(new THREE.Points(bgGeo, pm(1.5, 0xdfe6ff)));
     // the star pictures
     this.cons = CONSTELLATIONS.map((c) => {
       const pts = c.stars.map(([dx, dy]) => {
@@ -128,7 +128,7 @@ export class LightTop {
         return dirOf(yaw, pitch).multiplyScalar(SKY_R);
       });
       const g = new THREE.BufferGeometry().setFromPoints(pts);
-      const stars = new THREE.Points(g, pm(2.0, 0xfff6d8));
+      const stars = new THREE.Points(g, pm(3.4, 0xfff6d8));
       const seg = [];
       for (const [a, b] of c.lines) seg.push(pts[a], pts[b]);
       const lm = new THREE.LineBasicMaterial({ color: 0xffd36a, transparent: true, opacity: 0, fog: false, depthWrite: false });
@@ -160,7 +160,7 @@ export class LightTop {
       this.pitch = -0.2;
       host.player.ch.group.visible = false;
       host.map.lighthouse.userData.beam.visible = false; // the beam would sweep through our eyes
-      host.hud.setVisible(false);
+      host.hud.setCinema(true); // the dialog box stays for the talking up here
       this.showOverlay();
       this.place();
       host.story.fadeTo(0, 0.45, '', () => {
@@ -187,7 +187,7 @@ export class LightTop {
       P.ch.face(P.fx, P.fz);
       P.ch.group.visible = true;
       host.map.lighthouse.userData.beam.visible = true;
-      host.hud.setVisible(true);
+      host.hud.setCinema(false);
       host.camView = null;
       host.mode = 'walk';
       host.snapCamera();
@@ -234,7 +234,7 @@ export class LightTop {
 
   showOverlay() {
     const host = this.host, P = host.player?.p;
-    if (!this.el) { this.el = document.createElement('div'); this.el.className = 'isl-top'; host.game.ui.labels.appendChild(this.el); }
+    if (!this.el) { this.el = document.createElement('div'); this.el.className = 'isl-top'; host.game.ui.labels.insertBefore(this.el, host.hud.root); } // under the dialog box
     const scope = this.mode === 'scope';
     const count = t('story.top.count', { n: this.found, m: CONSTELLATIONS.length });
     this.el.innerHTML = `${scope ? '<div class="vig"></div><div class="ring"></div>' : ''}
@@ -318,7 +318,7 @@ export class LightTop {
       // found ones: lines drawn in, name below
       k.glow = Math.min(1, k.glow + dt * (got ? 1.5 : -3));
       k.lines.material.opacity = 0.9 * Math.max(0, k.glow);
-      if (got && ang < 30) {
+      if (got && ang < 12) { // only inside the telescope's circle
         const html = esc(this.nameOf(k.c.id));
         if (k.label.innerHTML !== html) k.label.innerHTML = html;
         host.game.ui.place(k.label, k.labelPos, host.camera);
@@ -343,6 +343,7 @@ export class LightTop {
   discover(k) {
     const host = this.host, S = this.S, id = k.c.id;
     host.game.audio.play('star');
+    this.setSay('');
     k.glow = 0;
     S.stars[id] = 0; // drawn in while you choose (the name is set below)
     host.say([{ key: `story.star.${id}.look`, choices: [1, 2, 3].map((i) => `story.star.${id}.n${i}`), onChoice: (i) => {

@@ -125,6 +125,17 @@ export class Story {
     this.beam2 = this.beam.clone();
     this.beam2.rotation.z = -Math.PI / 2;
     pivot.add(this.beam2);
+    // ...and where they sweep, a soft path of light on the ground and the water
+    const shape = new THREE.Shape([new THREE.Vector2(4, -0.5), new THREE.Vector2(24, -2.6), new THREE.Vector2(24, 2.6), new THREE.Vector2(4, 0.5)]);
+    this.pathMat = new THREE.MeshBasicMaterial({ color: 0xfff3b0, transparent: true, opacity: 0, depthWrite: false });
+    this.paths = [1, -1].map((s) => {
+      const m = new THREE.Mesh(new THREE.ShapeGeometry(shape), this.pathMat);
+      m.rotation.set(-Math.PI / 2, 0, s > 0 ? 0 : Math.PI);
+      m.position.y = -pivot.position.y + 0.1;
+      m.renderOrder = 2;
+      pivot.add(m);
+      return m;
+    });
     // the stairs door on the tower's side
     this.door = makeStairsDoor();
     this.door.position.set(LH.x + Math.cos(DOOR_A) * 2.02, 0.7, LH.z + Math.sin(DOOR_A) * 2.02); // on the stone base, like the front door
@@ -244,6 +255,8 @@ export class Story {
     this.beam2.scale.set(R, L, R);
     this.beam2.position.x = -(0.1 + 4.5 * L);
     this.beam2.visible = bright;
+    this.pathMat.opacity = bright && lit ? 0.2 : 0;
+    for (const m of this.paths) m.visible = bright && lit;
   }
 
   // ---------- talking ----------
@@ -455,13 +468,19 @@ export class Story {
     if (!c) return [];
     const title = t(`story.c${S.ch}.title`);
     if (S.phase === 'ready') return [`📖 ${t('story.task.ready', { name: t(`isl.npc.${c.opener}`), title })}`];
-    if (S.phase === 'report') return [`📖 ${t('story.task.report', { name: t(`isl.npc.${c.closer}`) })}`];
+    if (S.phase === 'report') {
+      const own = `story.c${S.ch}.task.report`; // a chapter can say it its own way
+      return [`📖 ${t(own) !== own ? t(own) : t('story.task.report', { name: t(`isl.npc.${c.closer}`) })}`];
+    }
     if (S.phase !== 'quest') return [];
     const out = [];
     for (const g of this.stageGoals()) {
       if (S.goals[g.id]) continue;
       const vars = {};
-      if (g.need) vars.list = g.need.map(([it, k]) => `${k} ${t(`isl.i.${it}`)} (${Math.min(k, count(this.host.save, it))}/${k})`).join(', ');
+      if (g.need) {
+        vars.list = g.need.map(([it, k]) => `${k} ${t(`isl.i.${it}`)} (${Math.min(k, count(this.host.save, it))}/${k})`).join(', ');
+        vars.n = Math.min(g.need[0][1], count(this.host.save, g.need[0][0]));
+      }
       if (g.find) vars.n = S.crumbs.filter(Boolean).length;
       out.push(`📖 ${t(`story.c${S.ch}.task.${g.id}`, vars)}`);
     }

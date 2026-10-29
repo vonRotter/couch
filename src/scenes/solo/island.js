@@ -650,7 +650,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd'].includes(this.mode) || !!this.helpEl;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   /** The usual spot of a decoration (the trophy garden), or null. */

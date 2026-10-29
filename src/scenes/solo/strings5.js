@@ -72,7 +72,7 @@ addStrings({
     'story.c3.close.1': 'The moon lens! I can see my own nose through it. It is enormous.',
     'story.c3.close.2': 'Crystal: yes. Lens: yes. Now the lamp can shine again. Well, almost.',
     'story.c3.wait': 'Shelby lives on Shell Isle. Grumbleton sails there from the end of the pier. Hoo!',
-    'story.c3.task.coconuts': 'Bring Shelby on Shell Isle 2 coconuts for her moon lens: {list}',
+    'story.c3.task.coconuts': 'Bring Shelby on Shell Isle 2 coconuts for her moon lens ({n}/2)',
 
     // 4 The pudding gear
     'story.c4.title': 'The pudding gear',
@@ -103,6 +103,7 @@ addStrings({
     'story.c5.wait': 'Fly a Sky Hop level, then we know where the glow went. Over!',
     'story.c5.task.skyhop': 'Sky Hop: fly one level (the balloon on kite hill)',
     'story.c5.task.crumbs': 'Follow the glowing crumbs to the meadow ({n}/3)',
+    'story.c5.task.report': 'Who is at the end of the trail? Talk to Mumble in the meadow',
     'story.crumb': 'glowing crumb', 'story.crumbFound': 'A glowing radish crumb! ({n}/{m})',
     'story.crumbLast': 'The last crumb! The trail ends at the meadow. Who lives there?',
 
@@ -124,6 +125,7 @@ addStrings({
     'story.c6.close.1': 'Everyone is coming! Then tonight we light the lamp!',
     'story.c6.wait': 'Invite everyone to the festival! Then come back to me.',
     'story.c6.task.stairs': 'Bring Keeper Bram wood and stone for the stairs: {list}',
+    'story.c6.task.report': 'Everyone is invited! Go back to Keeper Bram',
     'story.c6.task.pip': 'Invite Pip to the Lamp Festival',
     'story.c6.task.grumbleton': 'Invite Grumbleton to the Lamp Festival',
     'story.c6.task.hoot': 'Invite Curator Hoot to the Lamp Festival',
@@ -242,7 +244,7 @@ addStrings({
     'story.c3.close.1': 'Månelinsen! Jeg kan se min egen nese gjennom den. Den er enorm.',
     'story.c3.close.2': 'Krystall: ja. Linse: ja. Nå kan lampen lyse igjen. Nesten.',
     'story.c3.wait': 'Shelby bor på Skjelløya. Grumbleton seiler dit fra enden av brygga. Hu!',
-    'story.c3.task.coconuts': 'Gi Shelby på Skjelløya 2 kokosnøtter for månelinsen: {list}',
+    'story.c3.task.coconuts': 'Gi Shelby på Skjelløya 2 kokosnøtter for månelinsen ({n}/2)',
 
     'story.c4.title': 'Puddingtannhjulet',
     'story.c4.open.1': 'Lampen til Bram trenger et stort messingtannhjul for å snurre rundt og rundt. Uten det står lyset bare stille.',
@@ -271,6 +273,7 @@ addStrings({
     'story.c5.wait': 'Fly et brett i Skyhopp, så vet vi hvor lyset ble av. Over!',
     'story.c5.task.skyhop': 'Skyhopp: fly ett brett (ballongen på drakebakken)',
     'story.c5.task.crumbs': 'Følg de lysende smulene til enga ({n}/3)',
+    'story.c5.task.report': 'Hvem er ved enden av sporet? Snakk med Mumle på enga',
     'story.crumb': 'lysende smule', 'story.crumbFound': 'En lysende reddiksmule! ({n}/{m})',
     'story.crumbLast': 'Den siste smula! Sporet ender på enga. Hvem bor der?',
 
@@ -291,6 +294,7 @@ addStrings({
     'story.c6.close.1': 'Alle kommer! Da tenner vi lampen i kveld!',
     'story.c6.wait': 'Inviter alle til festen! Så kommer du tilbake til meg.',
     'story.c6.task.stairs': 'Gi Fyrvokter Bram ved og stein til trappa: {list}',
+    'story.c6.task.report': 'Alle er invitert! Gå tilbake til Fyrvokter Bram',
     'story.c6.task.pip': 'Inviter Pip til Lampefesten',
     'story.c6.task.grumbleton': 'Inviter Grumbleton til Lampefesten',
     'story.c6.task.hoot': 'Inviter Kurator Hu til Lampefesten',
