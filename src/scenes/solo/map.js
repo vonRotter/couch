@@ -10,6 +10,7 @@ import {
   makeRowboat, makeTelescope, makeWaterfall, makeCrop,
 } from './models.js';
 import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
+import { makeGarage } from './models5.js';
 
 // The hand-made island town. North is -z (the cliffs), south is +z (the beach and the dock), the camera
 // looks north. A river runs from the waterfall in the cliffs down to the sea and cuts off the west bank
@@ -17,7 +18,8 @@ import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
 //
 //   west bank (forest, castle gate, Pillow Keep) | river | home + farm, Aunt Hazel, kite hill (balloon),
 //   village square (store, fountain, game hall), Pip's launch pad, fairground tent, mine in the cliffs,
-//   grumble meadow (burrow), lighthouse point, beach with the café, the dock and the pirate ship.
+//   grumble meadow (burrow), the mech garage on the east hill, lighthouse point, beach with the café,
+//   the dock and the pirate ship.
 
 const A = 60, B = 46; // island half size (super-ellipse)
 export const SEA_Y = -0.45;
@@ -63,6 +65,7 @@ export const PLACES = [
   { id: 'keep', key: 'keep', x: -45, z: 7.5, door: { x: -45, z: 11.4 }, lock: 'bridge' },
   { id: 'castle', key: 'castle', opts: { mode: 'campaign' }, x: -44, z: -25, door: { x: -44, z: -22.6 }, lock: 'bridge' },
   { id: 'burrow', key: 'guides', x: 47, z: -23, door: { x: 47, z: -19.6 }, lock: 'burrow' },
+  { id: 'garage', key: 'breach', x: 46, z: 3.2, door: { x: 46, z: 6.8 } }, // Bean Brigade's mech garage on the east hill
   // the four arcade cabinets in the game hall (filled in by build)
   ...['tachyon', 'starlite', 'foothold', 'starhop'].map((g, i) => ({ id: g, key: g, guest: g, x: HALL.x - 3.9 + i * 2.6, z: HALL.z - 1.2, door: { x: HALL.x - 3.9 + i * 2.6, z: HALL.z + 0.2 }, cabinet: i })),
 ];
@@ -84,6 +87,7 @@ const PATHS = [
   [[17.5, -9.5], [21, -20], [25, -26], [26, -31.6]],
   [[33, -10.5], [41, -14.5], [47, -19.6]],
   [[4.5, 38.5], [-4, 39], [-10, 39.4]],
+  [[34, 15.6], [39.5, 11.8], [44, 8.4], [46, 6.8]], // to the mech garage
 ];
 
 // Named spots for NPC routines and props.
@@ -526,6 +530,14 @@ export class IslandMap {
     this.circObs(P.keep.x, P.keep.z, 2.6);
     this.circObs(P.keep.x - 2.0, P.keep.z + 2.2, 0.8);
     this.sign(P.keep.x + 3.4, P.keep.z + 3.4, 0xb79fd6);
+    // Bean Brigade's mech garage with its lookout tower and practice board
+    const gar = makeGarage(M);
+    this.live(gar, P.garage.x, P.garage.z, 0);
+    this.garage = gar;
+    this.boxObs(P.garage.x, P.garage.z - 0.1, 2.6, 2.4);
+    this.circObs(P.garage.x + 3.4, P.garage.z - 0.6, 0.9);
+    this.boxObs(P.garage.x - 3.3, P.garage.z + 1.6, 0.95, 0.95);
+    this.sign(P.garage.x + 2.6, P.garage.z + 3.9, 0xff5d73);
     // the burrow (hidden until Mumble trusts you)
     this.burrow = this.live(makeBurrow(), P.burrow.x, P.burrow.z);
     this.burrowObs = this.circObs(P.burrow.x, P.burrow.z, 2.4, { burrow: true });

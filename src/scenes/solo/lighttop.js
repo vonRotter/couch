@@ -95,7 +95,7 @@ export class LightTop {
       poi('story.poi.home', HOME.x, HOME.z, 4.5), poi('story.poi.farm', FIELD.x0 + 5, FIELD.z0 + 3.7, 1.5), poi('isl.museum.title', MUSEUM.x, MUSEUM.z, 5.5),
       poi('story.poi.square', PLAZA.x, PLAZA.z, 3), poi('isl.hall', HALL.x, HALL.z, 6), poi('story.poi.cafe', CAFE.x, CAFE.z, 4), poi('story.poi.pad', PAD.x, PAD.z, 4),
       poi('game.adventure', P.ship.x, P.ship.z, 7), poi('game.duckhunt', P.tent.x, P.tent.z, 6), poi('game.platformer', P.balloon.x, P.balloon.z, 8),
-      poi('game.castle', P.castle.x, P.castle.z, 8), poi('game.keep', P.keep.x, P.keep.z, 9), poi('game.cave', P.mine.x, P.mine.z, 5), poi('story.poi.meadow', 47, -11, 2),
+      poi('game.castle', P.castle.x, P.castle.z, 8), poi('game.breach', P.garage.x, P.garage.z, 6), poi('game.keep', P.keep.x, P.keep.z, 9), poi('game.cave', P.mine.x, P.mine.z, 5), poi('story.poi.meadow', 47, -11, 2),
       poi('story.poi.isle', 0, 190, 3, true),
     ].map((p) => ({ ...p, el: host.game.ui.label('label isl-tag') }));
     for (const p of this.pois) p.el.style.display = 'none';

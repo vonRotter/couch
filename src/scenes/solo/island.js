@@ -13,6 +13,8 @@ import './strings2.js';
 import './strings3.js';
 import './strings4.js';
 import './strings5.js';
+import './strings6.js';
+import { BATTLE_COUNT, ISLANDS as BREACH_ISLANDS } from '../breach/levels.js';
 import { Ranch } from './animals.js';
 import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
@@ -94,6 +96,8 @@ function skyAt(h) {
   return { hemi: col('hemi'), ground: col('ground'), sun: col('sun'), fog: col('fog'), water: col('water'), hi: a.hi + (b.hi - a.hi) * k, si: a.si + (b.si - a.si) * k, night: a.night + (b.night - a.night) * k };
 }
 
+const BREACH_ISLAND1 = BREACH_ISLANDS[0].battles.length; // Bean Brigade: Clover Isle cleared
+
 /** Rewards the games send by mail, from the profile's game progress. */
 function gameRewards(p) {
   const out = [];
@@ -113,6 +117,9 @@ function gameRewards(p) {
   if (p.castleCampaign?.won?.some(Boolean)) out.push({ id: 'castle1', from: 'castle', items: [['pumpkinSeed', 1]], deco: 'banner' });
   const gs = (p.guides?.stars || []).reduce((a, b) => a + (b || 0), 0);
   if (gs >= 3) out.push({ id: 'guides1', from: 'guides', items: [['radishSeed', 5]], deco: 'statue' });
+  const br = p.breach || {};
+  if (br.bestBattles >= BREACH_ISLAND1) out.push({ id: 'breach1', from: 'breach', deco: 'bugPlush', coins: 30 });
+  if (br.done) out.push({ id: 'breach2', from: 'breach', items: [['starfruitSeed', 1]], deco: 'mechStatue', coins: 100 });
   return out;
 }
 
@@ -905,6 +912,7 @@ export class SoloIslandScene extends BaseScene {
       case 'platformer': return p.skyhop ? t('isl.best.hop', { n: p.skyhop, m: SKYHOP_LEVELS.length }) : t('isl.best.new');
       case 'castle': { const w = (p.castleCampaign?.won || []).filter(Boolean).length; return w ? t('isl.best.castle', { n: w }) : t('isl.best.new'); }
       case 'guides': { const s = (p.guides?.stars || []).reduce((a, b) => a + (b || 0), 0); return s ? t('isl.best.guides', { n: s }) : t('isl.best.new'); }
+      case 'breach': return p.breach?.done ? t('isl.best.breachDone') : p.breach?.bestBattles ? t('isl.best.breach', { n: p.breach.bestBattles, m: BATTLE_COUNT }) : t('isl.best.new');
       default: return S_VISITED(this.save, pl.id) ? '' : t('isl.best.new');
     }
   }

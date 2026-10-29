@@ -195,6 +195,7 @@ export class Life {
       b.rotation.y = Math.sin(t * 0.3) * 0.2;
     }
     if (map.lighthouse) map.lighthouse.userData.beam.rotation.y += dt * 0.7;
+    if (map.garage) { const G = map.garage.userData; G.radar.rotation.y += dt * 1.5; G.flag.rotation.y = Math.sin(t * 2) * 0.3; G.bug.position.y = 0.12 + Math.abs(Math.sin(t * 3)) * 0.08; }
     if (map.tent) map.tent.userData.ducks.children.forEach((d, i) => { d.position.x = -1.8 + ((i * 0.8 + t * 0.6) % 4); d.rotation.z = Math.sin(t * 4 + i) * 0.1; });
     if (map.fountain) map.fountain.userData.spout.scale.setScalar(1 + Math.sin(t * 5) * 0.15);
     if (map.hall) for (const c of map.hall.userData.cabinets) c.icon.rotation.y += dt * 0.8;
