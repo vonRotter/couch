@@ -370,15 +370,29 @@ simply the newest thing to appear.
 ## Solo island
 
 Choose **Solo** in the start menu (or open the site with `#solo`) for a separate island for one
-player. Each child picks or creates a **profile** (name typed with the stick on a letter grid,
-and a color). Everything on the solo island is saved per profile in this browser: stars, hats and
-every game's progress, apart from the shared island's save.
+player. Each child picks or creates a **profile** (name typed with the stick on a letter grid, and a
+color); everything on the solo island is saved per profile in this browser.
 
-- Games: Sky Hop, Crystal Caves, Pillow Keep, Grumble Guides, Knights & Builders: The Golden
-  Bean, Laser Ducks, The Secret of Pudding Island and Lighthouse Caves, plus guest games (Tachyon, Starlite, Foothold, Starhop) that open as their own pages on the same
-  site and come back here.
-- A new controller pressing jump takes over the one player.
-- C opens the start menu to switch back to the shared island or the Story.
+The solo island is a small farming town (inspired by Stardew Valley and Dave the Diver) and also the
+menu to the solo games: every game is a place you walk into. Time follows the real clock, so day and
+night match yours and crops grow while you are away.
+
+- **Places:** Lighthouse Caves (the lighthouse), The Secret of Pudding Island (the pirate ship at
+  the dock), Laser Ducks (the fairground tent), Sky Hop (the hot-air balloon on kite hill) and the
+  Game Hall with cabinets for the guest games (Tachyon, Starlite, Foothold, Starhop). Repair the
+  bridge with 10 wood to reach Knights & Builders: The Golden Bean and Pillow Keep; trade Keeper Bram
+  a carrot for his pickaxe and clear the rockfall to open Crystal Caves; give Mumble the grumble three
+  radishes to find the burrow to Grumble Guides.
+- **Farming:** Aunt Hazel gives you a hoe, a watering can and a scythe. Till, plant, water (one
+  watering lasts six hours; dry crops wait and never die), harvest and sell in the shipping bin or at
+  Rosa's store. Eight crops, from radishes (4 minutes) to star fruit (8 hours).
+- **Villagers:** Aunt Hazel, Rosa, Keeper Bram, Grumbleton, Pip the astronaut and Mumble walk their
+  own daily routines, talk (read aloud), react to your progress in their games, like some gifts more
+  than others, and have friendship hearts, heart events and small quests.
+- **Rewards from games** arrive as letters in the mailbox: decorations, seeds, trophies and a pirate
+  flag for the house.
+- Stick to walk, A uses the held tool (or goes in at doors), B talks, picks up and opens the bag,
+  1–9 pick a bag slot, C opens the start menu. A new controller pressing jump takes over.
 
 **Read-aloud.** V turns read-aloud on or off (on by default for new solo profiles, off on the shared
 island; each profile remembers its choice). Intro cards, Party Mix how-to cards and the story and
