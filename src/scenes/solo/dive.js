@@ -88,7 +88,7 @@ export class DiveScene extends BaseScene {
   }
 
   picture(id) {
-    return thumb(this.game.renderer, id, () => seaModel(id), FISH[id] ? { ry: -0.35 } : { rx: 0.4 });
+    return thumb(this.game.renderer, id, () => seaModel(id), FISH[id] ? { ry: -0.35 } : { rx: 0.45 });
   }
 
   // ---------- world ----------
@@ -348,7 +348,7 @@ export class DiveScene extends BaseScene {
       const near = this.nearest();
       if (near) prompt = near.text;
       if (inp.bPressed && near) near.fn();
-      if (D.y > -1.0 && this.time > 1.5) {
+      if (D.y > -1.6 && this.time > 1.5) {
         prompt = tFor(P, 'dive.surface');
         if (inp.bPressed) this.endDive();
       }

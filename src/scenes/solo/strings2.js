@@ -47,7 +47,7 @@ addStrings({
     'dive.lowAir': 'Air is running low! Swim up!', 'dive.noAir': 'Out of air! Grumbleton pulls you up. You keep everything!',
     'dive.haul': 'Your dive', 'dive.haulNone': 'Nothing this time. The sea will still be there tomorrow!', 'dive.coins': '{n} coins from treasure chests',
     'dive.hint': '[A] back to the island', 'dive.zone1': 'Sunny shallows', 'dive.zone2': 'Coral reef', 'dive.zone3': 'The deep trench',
-    'dive.caught': '+1 {item}', 'dive.chest': 'Treasure! +{n} coins and a {item}',
+    'dive.caught': '+1 {item}', 'dive.chest': 'Treasure! +{n} coins · {item}',
     // café
     'isl.h.repair': '[B] fix the café ({w}/10 wood, 100 coins)', 'isl.h.cook': '[B] cook', 'isl.h.serve': '[B] open the café',
     'isl.cafe.repairAsk': 'Fix the Driftwood Café with 10 wood and 100 coins?', 'isl.cafe.repairNeed': 'The café needs 10 wood and 100 coins. You have {w} wood and {c} coins.',
@@ -107,7 +107,7 @@ addStrings({
     'dive.lowAir': 'Lufta begynner å ta slutt! Svøm opp!', 'dive.noAir': 'Tom for luft! Grumbleton drar deg opp. Du beholder alt!',
     'dive.haul': 'Dykket ditt', 'dive.haulNone': 'Ingenting denne gangen. Havet er der i morgen også!', 'dive.coins': '{n} mynter fra skattekister',
     'dive.hint': '[A] tilbake til øya', 'dive.zone1': 'Solgrunna', 'dive.zone2': 'Korallrevet', 'dive.zone3': 'Den dype grøfta',
-    'dive.caught': '+1 {item}', 'dive.chest': 'Skatt! +{n} mynter og {item}',
+    'dive.caught': '+1 {item}', 'dive.chest': 'Skatt! +{n} mynter · {item}',
     'isl.h.repair': '[B] reparer kafeen ({w}/10 ved, 100 mynter)', 'isl.h.cook': '[B] lag mat', 'isl.h.serve': '[B] åpne kafeen',
     'isl.cafe.repairAsk': 'Reparere Drivvedkafeen med 10 ved og 100 mynter?', 'isl.cafe.repairNeed': 'Kafeen trenger 10 ved og 100 mynter. Du har {w} ved og {c} mynter.',
     'isl.cafe.repaired': 'Drivvedkafeen er åpen igjen!',

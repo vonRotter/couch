@@ -12,7 +12,7 @@ import './strings.js';
 import './strings2.js';
 import { now, hourOf, since, loadIsland, count, give, take, MIN, HOUR } from './save.js';
 import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures } from './items.js';
-import { FISH, FISH_IDS, seaModel, makeDish, inHours } from './sea.js';
+import { FISH, FISH_IDS, RECIPES, seaModel, makeDish } from './sea.js';
 import { thumb } from './thumbs.js';
 import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
@@ -220,7 +220,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** Picture of a sea thing or dish (rendered once). */
   picture(id) {
-    return thumb(this.game.renderer, id, () => seaModel(id), FISH[id] ? { ry: -0.35 } : { rx: 0.45 });
+    return thumb(this.game.renderer, id, () => seaModel(id), FISH[id] ? { ry: -0.35 } : RECIPES[id] ? { rx: 0.85 } : { rx: 0.45 });
   }
 
   dishModel(id) {
@@ -1444,7 +1444,7 @@ export class SoloIslandScene extends BaseScene {
     this.hud.setTasks(this.mode === 'walk' || this.mode === 'bag' ? this.tasks() : []);
     const items = S.inv.map((it) => ({ ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) }));
     if (this.mode !== 'service') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
-    this.hud.setKeys(tFor(this.player?.p, 'isl.keys'));
+    this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : 'isl.keys'));
     let prompt = '';
     if (this.mode === 'walk' && ia) {
       const parts = [ia.a?.text, ia.b?.text].filter(Boolean);

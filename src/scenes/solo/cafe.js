@@ -5,7 +5,7 @@ import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { ITEMS, icon } from './items.js';
-import { RECIPES, RECIPE_IDS, matches } from './sea.js';
+import { RECIPES, RECIPE_IDS, matches, isRiverFish } from './sea.js';
 import { count, give, take, hourOf, now } from './save.js';
 import { CAFE, heightAt } from './map.js';
 import { makeCafeBoards, makeCafeOpen, makeCafeTable } from './models.js';
@@ -118,7 +118,9 @@ export class Cafe {
 
   /** Items that can fill a need, cheapest first. */
   supply(need) {
-    return this.save.inv.filter((it) => matches(need, it.id)).sort((a, b) => (ITEMS[a.id]?.sell || 0) - (ITEMS[b.id]?.sell || 0));
+    // river fish first for "any fish", so sea fish stay free for sushi; then the cheapest
+    const rank = (id) => (need === 'fish' && isRiverFish(id) ? -1000 : 0) + (ITEMS[id]?.sell || 0);
+    return this.save.inv.filter((it) => matches(need, it.id)).sort((a, b) => rank(a.id) - rank(b.id));
   }
 
   have(need) { return this.supply(need).reduce((a, it) => a + it.n, 0); }
@@ -263,7 +265,7 @@ export class Cafe {
     g.say = t('isl.serve.tip', { n: price + tip, t: tip });
     g.sayT = 1.6;
     const dishModel = host.dishModel(dish);
-    dishModel.position.set(SEATS[g.seat].x, 1.12, CAFE.z + 3.3);
+    dishModel.position.set(SEATS[g.seat].x, 0.72, CAFE.z + 3.3);
     host.scene.add(dishModel);
     g.plate = dishModel;
     if (g.who) host.addPts(g.who, 4);
