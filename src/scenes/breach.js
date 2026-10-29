@@ -56,6 +56,7 @@ export class BreachScene extends MiniGame {
     this.holdC = 0;
     this.side = false;
     this.mode = 'title';
+    this.view.labelsOn = false; // board labels would show through the panel
     this.showTitle();
     game.audio.playMusic('breachMap');
   }
@@ -196,6 +197,7 @@ export class BreachScene extends MiniGame {
 
   showTitle() {
     this.mode = 'title';
+    this.view.labelsOn = false; // board labels would show through the panel
     this.setSide(false);
     this.hud.hideBattle();
     if (!this.backdrop || this.view.units.size === 0) this.showBackdrop(this.save.run?.step ?? 0, this.save.run?.squad ?? 'bonk');
@@ -246,6 +248,7 @@ export class BreachScene extends MiniGame {
 
   showDiff() {
     this.mode = 'diff';
+    this.view.labelsOn = false; // board labels would show through the panel
     this.menuSel = { opts: ['easy', 'hard'], i: this.save.run?.diff === 'hard' ? 1 : 0 };
     this.renderDiff();
     this.speak(`${t('breach.diff.title')} ${t('breach.diff.easy')}: ${t('breach.diff.easySub')}`);
@@ -266,6 +269,7 @@ export class BreachScene extends MiniGame {
 
   showSquads() {
     this.mode = 'squad';
+    this.view.labelsOn = false; // board labels would show through the panel
     this.menuSel = { opts: R.SQUAD_IDS, i: 0 };
     this.renderSquads(true);
   }
@@ -308,6 +312,7 @@ export class BreachScene extends MiniGame {
     if (!run) { this.showTitle(); return; }
     if (run.shop) { this.showShop(); return; }
     this.mode = 'map';
+    this.view.labelsOn = false; // board labels would show through the panel
     this.hud.hideBattle();
     this.setSide(true);
     this.showBackdrop(run.step, run.squad);
@@ -351,6 +356,7 @@ export class BreachScene extends MiniGame {
 
   showShop() {
     this.mode = 'shop';
+    this.view.labelsOn = false; // board labels would show through the panel
     this.setSide(false);
     this.hud.hideBattle();
     this.shop = { col: 0, row: 0 };
@@ -1019,6 +1025,7 @@ export class BreachScene extends MiniGame {
   showEnding() {
     const run = this.save.run;
     this.mode = 'ending';
+    this.view.labelsOn = false; // board labels would show through the panel
     this.save.done = true;
     this.save.medals[run.squad] = (this.save.medals[run.squad] || 0) + 1;
     this.save.bestBattles = BATTLE_COUNT;
