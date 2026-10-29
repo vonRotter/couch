@@ -26,7 +26,7 @@ export const NPCS = {
   hazel: {
     voice: { pitch: 1.2, rate: 0.9, css: '#4f9a1f' },
     sched: [[0, 'hazelPorch', true], [6, 'hazelGarden'], [11, 'plazaBench'], [14, 'farmFence'], [19, 'hazelPorch'], [22, 'hazelPorch', true]],
-    loves: ['tomato'], likes: ['pumpkin', 'bouquet', 'lettuce'], dislikes: ['wood'],
+    loves: ['tomato', 'carrotSoup'], likes: ['pumpkin', 'bouquet', 'lettuce'], dislikes: ['wood'],
     quests: [
       { need: [['radish', 1]], reward: { items: [['strawberrySeed', 2], ['tomatoSeed', 2]], coins: 10 } },
       { need: [['carrot', 1], ['lettuce', 1]], minHearts: 1, reward: { items: [['pumpkinSeed', 1]], coins: 50, deco: 'gnome' } },
@@ -37,7 +37,7 @@ export const NPCS = {
   rosa: {
     voice: { pitch: 1.4, rate: 1.05, css: '#e0459a' },
     sched: [[0, 'storeHome', true], [7, 'storeCounter'], [18, 'plazaFountain'], [21, 'storeHome', true]],
-    loves: ['bouquet'], likes: ['lettuce', 'strawberry', 'starfruit'], dislikes: ['corn'],
+    loves: ['bouquet', 'strawberryShake'], likes: ['lettuce', 'strawberry', 'starfruit'], dislikes: ['corn'],
     quests: [
       { need: [['radish', 3]], reward: { items: [['cornSeed', 2]], coins: 40 } },
       { need: [['pumpkin', 1]], minHearts: 1, reward: { coins: 100, deco: 'pumpkinLamp' } },
@@ -48,7 +48,7 @@ export const NPCS = {
   bram: {
     voice: { pitch: 0.7, rate: 0.88, css: '#6b7bb0' },
     sched: [[0, 'lhDoor'], [2, 'lhDoor', true], [6, 'beach'], [9, 'lhDoor'], [17, 'plazaEast'], [20, 'lhDoor']],
-    loves: ['pumpkin'], likes: ['carrot', 'corn', 'starfruit'], dislikes: ['radish'],
+    loves: ['pumpkin', 'fishStew'], likes: ['carrot', 'corn', 'starfruit'], dislikes: ['radish'],
     quests: [
       { need: [['carrot', 1]], reward: { items: [['pickaxe', 1]] } },
       { find: 'lens', minHearts: 1, reward: { items: [['starfruitSeed', 1]], coins: 60 } },
@@ -59,7 +59,7 @@ export const NPCS = {
   grumbleton: {
     voice: { pitch: 0.55, rate: 0.9, css: '#5a4dc0' },
     sched: [[0, 'shipDeck', true], [8, 'pier'], [13, 'pierEnd'], [16, 'pier'], [20, 'cafe']],
-    loves: ['strawberry'], likes: ['tomato', 'pumpkin', 'corn'], dislikes: ['bouquet'],
+    loves: ['strawberry', 'sushi'], likes: ['tomato', 'pumpkin', 'corn'], dislikes: ['bouquet'],
     quests: [
       { find: 'feather', reward: { items: [['strawberrySeed', 3]], coins: 30 } },
       { need: [['strawberry', 3]], minHearts: 1, reward: { deco: 'bottle', coins: 40 } },
@@ -70,7 +70,7 @@ export const NPCS = {
   pip: {
     voice: { pitch: 1.6, rate: 1.1, css: '#4a3fc0' },
     sched: [[0, 'rocket', true], [8, 'pad'], [12, 'hallFront'], [15, 'pad'], [19, 'hillTop'], [23, 'rocket', true]],
-    loves: ['starfruit'], likes: ['corn', 'strawberry', 'pumpkin'], dislikes: ['lettuce'],
+    loves: ['starfruit', 'tempura'], likes: ['corn', 'strawberry', 'pumpkin'], dislikes: ['lettuce'],
     quests: [
       { find: 'starmap', reward: { items: [['starfruitSeed', 1]], unlock: 'starfruit' } },
       { need: [['corn', 2]], minHearts: 1, reward: { coins: 80, deco: 'rocket' } },
@@ -82,7 +82,7 @@ export const NPCS = {
     voice: { pitch: 1.75, rate: 1.0, css: '#3f9a32' },
     sched: [[0, 'meadow', true], [7, 'meadow'], [21, 'meadow', true]],
     wander: 3,
-    loves: ['radish'], likes: ['carrot', 'strawberry'], dislikes: ['bouquet'],
+    loves: ['radish', 'radishSalad'], likes: ['carrot', 'strawberry'], dislikes: ['bouquet'],
     quests: [{ need: [['radish', 3]], reward: { unlock: 'burrow' } }],
     events: [],
     game: (p) => ((p.guides?.stars || []).some((s) => s > 0) ? 'game1' : null),

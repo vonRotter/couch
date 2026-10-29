@@ -9,9 +9,15 @@ import { say as speak } from '../../core/voice.js';
 import { ProfilePicker } from '../../core/profiles.js';
 import { SKYHOP_LEVELS } from '../skyhop-levels.js';
 import './strings.js';
+import './strings2.js';
 import { now, hourOf, since, loadIsland, count, give, take, MIN, HOUR } from './save.js';
-import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon } from './items.js';
-import { IslandMap, heightAt, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
+import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures } from './items.js';
+import { FISH, FISH_IDS, seaModel, makeDish, inHours } from './sea.js';
+import { thumb } from './thumbs.js';
+import { Fishing } from './fishing.js';
+import { Cafe } from './cafe.js';
+import { DiveScene } from './dive.js';
+import { IslandMap, heightAt, riverDist, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
 import { Farm, tileAt, tileCenter, stageOf, minutesLeft } from './farm.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
 import { IslandHud, heartsHtml } from './hud.js';
@@ -29,6 +35,7 @@ const PR = 0.42;
 const CAM_UP = 12.5, CAM_BACK = 13; // a bit further than the shared island's closest framing (10.4 / 10.4)
 const MODES = ['island', 'story', 'solo'];
 const BRIDGE_WOOD = 10;
+const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish']);
 const PARTY = [0xff5d73, 0xffc93c, 0x3ddc97, 0x4cc9f0, 0x9b5de5];
 const ROCK_HITS = 5;
 const BRANCH_RESPAWN = 15 * MIN;
@@ -44,8 +51,8 @@ const TROPHY_SIGN = { x: -2.6, z: -0.8 };
 // Signs you can read with [B].
 const SIGNS = [
   { x: BRIDGE.x + BRIDGE.len / 2 + 1.0, z: BRIDGE.z + 2.0, key: 'isl.sign.bridge', bridge: true },
-  { x: -5.2, z: 40.6, key: 'isl.sign.cafe' },
-  { x: -2, z: 42.6, key: 'isl.sign.dive' },
+  { x: -5.2, z: 40.6, key: 'isl.sign.cafe', key2: 'isl.sign.cafe2', when: (S) => S.cafe.repaired },
+  { x: -2, z: 42.6, key: 'isl.sign.dive2' },
   { x: -7.6, z: 4.2, key: 'isl.sign.barn' },
   { x: TROPHY_SIGN.x, z: TROPHY_SIGN.z, key: 'isl.sign.trophy' },
 ];
@@ -127,6 +134,9 @@ export class SoloIslandScene extends BaseScene {
     this.farm = new Farm(this.scene, S);
     this.life = new Life(this, this.map);
     this.hud = new IslandHud(game);
+    setPictures((id) => this.picture(id));
+    this.fishing = new Fishing(this);
+    this.cafe = new Cafe(this);
 
     this.mode = 'walk';
     this.dlg = null;
@@ -149,6 +159,7 @@ export class SoloIslandScene extends BaseScene {
     this.player = null;
     const place = this.map.places.find((p) => p.key === fromGame) || (S.last.place && !since(S.last.at, 6 * HOUR) && this.map.places.find((p) => p.id === S.last.place));
     this.spawnAt = place ? { x: place.door.x, z: place.door.z + (place.cabinet !== undefined ? 1.6 : 1.2) } : { x: HOME.x + 0.8, z: HOME.z + 4.2 };
+    if (fromGame === 'dive') this.spawnAt = { x: DIVE_BOAT.x - 1.2, z: DIVE_BOAT.z };
     if (this.players.length) this.spawn(this.players[0]);
     S.last.place = null;
     this.applyUnlocks(true);
@@ -156,6 +167,12 @@ export class SoloIslandScene extends BaseScene {
     this.secondTick();
     this.snapCamera();
 
+    if (fromGame === 'dive' && S.sea.haul) {
+      const h = S.sea.haul;
+      const n = h.items.reduce((a, [, k]) => a + k, 0);
+      this.later(0.8, () => this.game.ui.toast(t('isl.t.got', { item: `${n} × ${t('dive.title')}` }), 1800));
+      S.sea.haul = null;
+    }
     if (!S.intro) this.later(0.9, () => this.startIntro());
     else if (S.mail.length) this.later(1.2, () => this.game.ui.toast(t('isl.t.mail'), 2600));
     game.audio.playMusic('hub');
@@ -199,6 +216,17 @@ export class SoloIslandScene extends BaseScene {
     this.markEl = this.game.ui.label('label isl-mark');
     this.hallTag = this.game.ui.label('label isl-tag');
     this.hallPos = new THREE.Vector3(HALL.x, 5.6, HALL.z + 2.8);
+  }
+
+  /** Picture of a sea thing or dish (rendered once). */
+  picture(id) {
+    return thumb(this.game.renderer, id, () => seaModel(id), FISH[id] ? { ry: -0.35 } : { rx: 0.45 });
+  }
+
+  dishModel(id) {
+    const m = makeDish(id);
+    m.scale.setScalar(0.7);
+    return m;
   }
 
   put(obj, x, z, y = null) {
@@ -500,6 +528,11 @@ export class SoloIslandScene extends BaseScene {
     for (const [id, q] of Object.entries(S.quests)) out.push(this.questText(id, q.n));
     if (S.intro && !S.unlocks.bridge && S.tut >= 5) out.push(t('isl.task.bridge', { n: S.unlocks.bridgeWood, m: BRIDGE_WOOD }));
     if (count(S, 'pickaxe') && !S.unlocks.mine) out.push(t('isl.task.mine'));
+    if (S.sea.quest === 1) out.push(t('isl.task.fish', { n: Math.min(3, S.sea.caught - (S.sea.questBase || 0)) }));
+    if (S.sea.suit && !S.sea.dives) out.push(t('isl.task.dive'));
+    if (S.sea.suit && S.sea.dives && !S.cafe.repaired) out.push(t('isl.task.cafe', { w: Math.min(10, count(S, 'wood')) }));
+    if (S.cafe.repaired && !S.cafe.cooked) out.push(t('isl.task.cook'));
+    if (S.cafe.repaired && S.cafe.cooked && !S.cafe.nights) out.push(t('isl.task.serve'));
     return out.slice(0, 5);
   }
 
@@ -576,7 +609,7 @@ export class SoloIslandScene extends BaseScene {
 
   get walkState() {
     const U = this.save.unlocks;
-    return { bridge: U.bridge, mine: U.mine, burrow: U.burrow };
+    return { bridge: U.bridge, mine: U.mine, burrow: U.burrow, cafe: this.save.cafe.repaired };
   }
 
   checkRewards() {
@@ -626,6 +659,7 @@ export class SoloIslandScene extends BaseScene {
     const st = npcState(S, id);
     const def = NPCS[id];
     if (!st.met && S.intro) return true;
+    if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3))) return true;
     const ev = def.events[st.ev];
     if (ev && heartsOf(st) >= ev.at) return true;
     const q = S.quests[id];
@@ -647,6 +681,13 @@ export class SoloIslandScene extends BaseScene {
     const L = (k, vars, fx) => ({ who: id, key: `isl.${id}.${k}`, vars, fx });
     const lines = [];
     let after = null;
+    const sea = id === 'grumbleton' ? this.seaTalk(n, L) : null;
+    if (sea) {
+      if (!st.met) { st.met = true; sea.lines.unshift(L('meet')); }
+      if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
+      this.say(sea.lines, () => { sea.after(); this.markDirty(); this.afterTalk(n); });
+      return;
+    }
     if (!st.met) { st.met = true; lines.push(L('meet')); }
     const ev = def.events[st.ev];
     const q = S.quests[id];
@@ -664,7 +705,8 @@ export class SoloIslandScene extends BaseScene {
       lines.push(L(`q${qn + 1}.ask`));
       after = () => { S.quests[id] = { n: qn }; this.game.ui.toast(t('isl.t.quest')); this.game.audio.play('beep'); };
     } else if (!lines.length) {
-      lines.push(this.chatLine(n, st));
+      if (id === 'grumbleton' && S.sea.quest === 1) lines.push(L('fishWait', { n: S.sea.caught - (S.sea.questBase || 0) }));
+      else lines.push(this.chatLine(n, st));
     }
     if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
     this.say(lines, () => {
@@ -786,6 +828,7 @@ export class SoloIslandScene extends BaseScene {
     // townsfolk
     let best = null, bd = TALK_R;
     for (const n of this.npcs) {
+      if (n.away) continue;
       const d = Math.hypot(P.x - n.x, P.z - n.z);
       if (d < bd) { bd = d; best = n; }
     }
@@ -796,12 +839,18 @@ export class SoloIslandScene extends BaseScene {
     const near = (x, z, r = 1.7) => Math.hypot(fx - x, fz - z) < r || Math.hypot(P.x - x, P.z - z) < r;
     if (!out.b && near(MAILBOX.x, MAILBOX.z)) out.b = S.mail.length ? { text: nm('isl.h.mail'), fn: () => this.openLetter() } : { text: t('isl.h.mailNone'), fn: () => this.game.audio.play('bump') };
     if (!out.b && near(BIN.x, BIN.z, 1.9)) {
-      out.b = held && ITEMS[held.id]?.kind === 'crop' ? { text: nm('isl.h.ship', { item: itemName(held.id) }), fn: () => this.ship(held.id) } : { text: nm('isl.h.shipNone'), fn: () => this.game.audio.play('bump') };
+      out.b = held && SELLABLE.has(ITEMS[held.id]?.kind) ? { text: nm('isl.h.ship', { item: itemName(held.id) }), fn: () => this.ship(held.id) } : { text: nm('isl.h.shipNone'), fn: () => this.game.audio.play('bump') };
     }
     if (!out.b && near(STORE.x, STORE.z + 3.2, 1.8)) {
       const rosa = this.npc('rosa');
       out.b = rosa.sleep ? { text: t('isl.h.asleep', { name: t('isl.npc.rosa') }), fn: () => this.talkTo(rosa) } : { text: nm('isl.h.shop'), fn: () => this.talkTo(rosa) };
     }
+    // the dive boat's ladder
+    if (!out.b && Math.hypot(P.x - (DIVE_BOAT.x - 1.9), P.z - DIVE_BOAT.z) < 1.5) {
+      out.b = S.sea.suit ? { text: nm('isl.h.dive'), fn: () => this.startDive() } : { text: t('isl.h.diveNeed'), fn: () => this.game.audio.play('bump') };
+    }
+    // the café (repair, stove, counter)
+    if (!out.b) this.cafe.interactions(P, out, nm);
     // the bridge
     const bx = BRIDGE.x + BRIDGE.len / 2 + 0.4;
     if (!out.b && !S.unlocks.bridge && Math.hypot(P.x - bx, P.z - BRIDGE.z) < 2.4) {
@@ -825,6 +874,13 @@ export class SoloIslandScene extends BaseScene {
     if (!S.unlocks.mine && Math.hypot(P.x - ROCKFALL.x, P.z - ROCKFALL.z) < 3.4) {
       out.a = held?.id === 'pickaxe' ? { text: nm('isl.h.rocks'), fn: () => this.hitRocks() } : { text: t('isl.h.rocksNeed'), fn: () => this.game.audio.play('bump') };
     }
+    // fishing, and the books
+    if (!out.a && held?.id === 'rod') {
+      const spot = this.fishSpot();
+      if (spot) out.a = { text: nm('isl.h.cast'), fn: () => { this.mode = 'fish'; this.fishing.start(spot.where, spot.x, spot.z); } };
+    }
+    if (!out.a && held?.id === 'fishlog') out.a = { text: nm('isl.h.log'), fn: () => this.openLog() };
+    if (!out.a && held?.id === 'recipes') out.a = { text: nm('isl.h.book'), fn: () => this.cafe.openCook(true) };
     // the field
     const tile = tileAt(fx, fz);
     if (tile && !out.a) {
@@ -936,7 +992,7 @@ export class SoloIslandScene extends BaseScene {
     const n = count(S, id);
     if (!n) return;
     take(S, id, n);
-    const coins = n * CROPS[id].sell;
+    const coins = n * ITEMS[id].sell;
     S.coins += coins;
     S.stats.shipped += n;
     S.stats.earned += coins;
@@ -1000,7 +1056,7 @@ export class SoloIslandScene extends BaseScene {
   }
 
   readSign(s) {
-    this.say([{ key: s.key, vars: { m: BRIDGE_WOOD } }]);
+    this.say([{ key: s.when?.(this.save) ? s.key2 : s.key, vars: { m: BRIDGE_WOOD } }]);
   }
 
   // ---------- bag, shop and mail ----------
@@ -1063,7 +1119,8 @@ export class SoloIslandScene extends BaseScene {
       if (sh.tab === 0) {
         if (S.coins < r.price) { this.game.ui.toast(t('isl.t.noCoins')); this.game.audio.play('bump'); return; }
         S.coins -= r.price;
-        give(S, r.id, 1);
+        if (ITEMS[r.id].kind === 'gear') S.sea[r.id] = true;
+        else give(S, r.id, 1);
         this.game.ui.toast(t('isl.t.bought', { item: itemName(r.id) }), 900);
       } else {
         take(S, r.id, 1);
@@ -1106,6 +1163,99 @@ export class SoloIslandScene extends BaseScene {
     this.mode = 'walk';
     this.grant({ items: r.items, coins: r.coins, deco: r.deco });
     if (this.save.mail.length) this.later(0.4, () => this.openLetter());
+  }
+
+  // ---------- the sea: fishing, diving, the fish log ----------
+
+  /** Water in front of the player to fish in: { where, x, z } or null. */
+  fishSpot() {
+    const P = this.player;
+    const st = this.walkState;
+    const deck = this.map.deckAt(P.x, P.z, st.bridge);
+    for (const d of [3.2, 2.2, 1.4]) {
+      const x = P.x + P.fx * d, z = P.z + P.fz * d;
+      if (heightAt(x, z) > -0.5 || this.map.deckAt(x, z, st.bridge)) continue;
+      const where = deck?.boat ? 'boat' : riverDist(x, z) < 4 && z < 34 ? 'river' : 'pier';
+      return { where, x, z };
+    }
+    return null;
+  }
+
+  /** Called by the fishing game when it ends (id = the fish, or null). */
+  afterFish() {
+    this.markDirty();
+  }
+
+  /** Grumbleton's fishing lines: the rod, then the dive suit for three fish. */
+  seaTalk(n, L) {
+    const S = this.save;
+    if (!S.intro) return null;
+    if (!S.sea.rod) {
+      return {
+        lines: [L('rod1', null, () => { n.hop = 1; }), L('rod2'), L('rod3')],
+        after: () => {
+          S.sea.rod = true;
+          S.sea.quest = 1;
+          S.sea.questBase = S.sea.caught;
+          this.giveItems([['rod', 1], ['fishlog', 1]]);
+          const i = S.inv.findIndex((it) => it.id === 'rod');
+          if (i >= 0) S.sel = i;
+          this.game.ui.toast(t('isl.t.quest'));
+        },
+      };
+    }
+    if (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3) {
+      return {
+        lines: [L('fishDone1', null, () => this.celebrate(n)), L('fishDone2'), L('fishDone3')],
+        after: () => {
+          S.sea.quest = 2;
+          S.sea.suit = true;
+          this.addPts('grumbleton', 10);
+          this.grant({ coins: 50 });
+          this.game.ui.toast(t('isl.t.got', { item: t('isl.i.suit') }), 2200);
+        },
+      };
+    }
+    return null;
+  }
+
+  startDive() {
+    if (this.launching) return;
+    this.launching = true;
+    this.save.last = { place: null, at: now() };
+    this.dirty = true;
+    this.flush();
+    this.game.transition(() => new DiveScene(this.game));
+  }
+
+  openLog() {
+    this.mode = 'log';
+    this.log = { i: this.log?.i || 0, t: 0 };
+    this.renderLog();
+    this.game.audio.play('select');
+  }
+
+  renderLog() {
+    const L = this.save.sea.log;
+    const n = FISH_IDS.filter((id) => L[id]).length;
+    const cells = FISH_IDS.map((id, i) => {
+      const got = !!L[id];
+      const img = got ? `<img src="${this.picture(id)}" alt="">` : `<img src="${this.picture(id)}" alt="" style="filter:brightness(0) opacity(.35)">`;
+      return `<div class="isl-logcell ${i === this.log.i ? 'on' : ''}">${img}<span>${esc(got ? t(`isl.i.${id}`) : t('isl.log.unknown'))}</span></div>`;
+    }).join('');
+    const id = FISH_IDS[this.log.i], f = FISH[id], got = !!L[id];
+    const when = f.hours[0] === 0 && f.hours[1] === 24 ? t('isl.when.any') : t('isl.when.hours', { a: f.hours[0], b: f.hours[1] });
+    const info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t(`isl.where.${f.where}`))} · ${esc(when)}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}${f.rare === 2 ? ' · ★' : ''}`;
+    this.hud.setPanel(`<h2>${esc(t('isl.log.title'))} <small style="font-size:.5em;opacity:.7">${esc(t('isl.log.count', { n, m: FISH_IDS.length }))}</small></h2>
+      <div class="isl-loggrid">${cells}</div><div class="isl-foot" style="font-size:clamp(14px,1.4vw,20px);opacity:1">${info}</div>
+      <div class="isl-foot">${esc(tFor(this.player?.p, 'isl.log.hint'))}</div>`);
+  }
+
+  updateLog(inp, dt) {
+    this.log.t += dt;
+    const step = inp.stepX + -inp.stepY * 8;
+    if (step) { this.log.i = (this.log.i + step + FISH_IDS.length) % FISH_IDS.length; this.game.audio.play('select'); this.renderLog(); }
+    if (this.log.t > 0.25 && (inp.bPressed || inp.aPressed)) { this.hud.setPanel(null); this.mode = 'walk'; }
   }
 
   // ---------- start menu (Island, Story or Solo), same as the shared island's ----------
@@ -1165,6 +1315,8 @@ export class SoloIslandScene extends BaseScene {
     if (this.helpEl) { this.toggleHelp(); this.toggleHelp(); }
     if (this.modeEl) this.renderMode();
     if (this.mode === 'shop') this.renderShop();
+    if (this.mode === 'cook') this.cafe.renderCook();
+    if (this.mode === 'log') this.renderLog();
     if (this.mode === 'dialog' && this.dlg) this.showLine();
   }
 
@@ -1291,14 +1443,14 @@ export class SoloIslandScene extends BaseScene {
     this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: this.phaseName(h) });
     this.hud.setTasks(this.mode === 'walk' || this.mode === 'bag' ? this.tasks() : []);
     const items = S.inv.map((it) => ({ ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) }));
-    this.hud.setHotbar(items, S.sel, this.mode === 'bag');
+    if (this.mode !== 'service') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
     this.hud.setKeys(tFor(this.player?.p, 'isl.keys'));
     let prompt = '';
     if (this.mode === 'walk' && ia) {
       const parts = [ia.a?.text, ia.b?.text].filter(Boolean);
       prompt = parts.join(' · ');
     }
-    this.hud.setPrompt(prompt);
+    if (this.mode !== 'fish') this.hud.setPrompt(prompt);
     const mb = this.map.mailbox.userData;
     mb.flag.rotation.z = S.mail.length ? 0 : -Math.PI / 2;
     mb.letter.visible = S.mail.length > 0 && this.mode !== 'letter';
@@ -1325,6 +1477,10 @@ export class SoloIslandScene extends BaseScene {
         case 'shop': this.updateShop(inp, dt); break;
         case 'letter': this.updateLetter(inp, dt); break;
         case 'menu': this.updateMode(inp, dt); break;
+        case 'fish': this.fishing.update(inp, dt); if (!this.fishing.active) this.mode = 'walk'; break;
+        case 'cook': this.cafe.updateCook(inp, dt); break;
+        case 'service': this.cafe.updateService(inp, dt); break;
+        case 'log': this.updateLog(inp, dt); break;
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();
@@ -1353,6 +1509,9 @@ export class SoloIslandScene extends BaseScene {
   }
 
   dispose() {
+    this.cafe?.dispose();
+    this.fishing?.dispose();
+    setPictures(null);
     this.flush();
     this.game.roster.save();
     super.dispose();

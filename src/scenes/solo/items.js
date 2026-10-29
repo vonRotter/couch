@@ -37,13 +37,14 @@ for (const c of CROP_IDS) {
 }
 
 export const TOOLS = ['hoe', 'can', 'scythe', 'pickaxe'];
-export const isGift = (id) => ITEMS[id] && (ITEMS[id].kind === 'crop' || ITEMS[id].kind === 'gift');
+export const isGift = (id) => ['crop', 'gift', 'fish', 'dish'].includes(ITEMS[id]?.kind);
 
 /** The store's shelf: seeds, wood and flowers. Star fruit seeds appear once Pip has shown you the stars. */
 export function shopStock(save) {
   const list = ['radishSeed', 'carrotSeed', 'lettuceSeed', 'strawberrySeed', 'tomatoSeed', 'cornSeed', 'pumpkinSeed'];
   if (save.unlocks.starfruit) list.push('starfruitSeed');
   list.push('wood', 'bouquet');
+  if (save.sea?.suit) for (const g of ['flippers', 'tank']) if (!save.sea[g]) list.push(g);
   return list;
 }
 

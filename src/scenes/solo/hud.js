@@ -25,6 +25,7 @@ const CSS = `
 @keyframes isl-pop { 30% { transform: scale(1.08); background: #fff3a8; } }
 .isl-hotbar { left: 50%; bottom: 1.4vh; transform: translateX(-50%); display: flex; gap: 6px; background: rgba(43,35,64,.55); padding: 6px; border-radius: 18px; }
 .isl-slot { width: clamp(42px, 4.2vw, 64px); height: clamp(42px, 4.2vw, 64px); border-radius: 12px; background: rgba(255,250,240,.9); position: relative; padding: 6px; box-sizing: border-box; }
+.isl-more { color: #fff; font-weight: 700; align-self: center; padding: 0 2px; }
 .isl-slot.on { background: #ffd84a; box-shadow: 0 0 0 3px #fff; transform: translateY(-4px); }
 .isl-slot .n { position: absolute; right: 3px; bottom: 0; font-weight: 700; font-size: clamp(11px, 1vw, 16px); paint-order: stroke fill; -webkit-text-stroke: .25em #fff; }
 .isl-slot .k { position: absolute; left: 4px; top: 1px; font-size: 10px; font-weight: 700; opacity: .5; }
@@ -58,6 +59,10 @@ const CSS = `
 .isl-row .p { display: flex; align-items: center; gap: 4px; font-weight: 700; }
 .isl-row .p svg { width: 1.2em; height: 1.2em; }
 .isl-foot { text-align: center; margin-top: 10px; opacity: .8; font-size: clamp(12px, 1.15vw, 17px); }
+.isl-loggrid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.isl-logcell { background: rgba(138,90,50,.1); border-radius: 12px; padding: 4px; text-align: center; font-size: clamp(10px, .9vw, 14px); font-weight: 700; }
+.isl-logcell img { width: 100%; aspect-ratio: 1; display: block; }
+.isl-logcell.on { background: #ffd84a; box-shadow: 0 3px 0 rgba(43,35,64,.2); }
 .isl-letter { font-size: clamp(16px, 1.75vw, 26px); line-height: 1.4; background: repeating-linear-gradient(#fffaf0 0 1.38em, #f0e2c8 1.38em 1.42em); padding: 8px 14px; border-radius: 10px; }
 .isl-letter .from { text-align: right; font-style: italic; margin-top: 6px; }
 .isl-gifts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 12px; }
@@ -72,6 +77,8 @@ const CSS = `
 @keyframes isl-bob { 50% { margin-top: -6px; } }
 `;
 
+export function injectHudStyle() { injectStyle(); }
+
 function injectStyle() {
   if (document.getElementById('isl-style')) return;
   const el = document.createElement('style');
@@ -79,6 +86,8 @@ function injectStyle() {
   el.textContent = CSS;
   document.head.appendChild(el);
 }
+
+const THREE_clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 const div = (cls, parent) => {
   const el = document.createElement('div');
@@ -142,8 +151,15 @@ export class IslandHud {
     if (text) this.set('prompt', this.prompt, esc(text));
   }
 
-  setHotbar(items, sel, open) {
-    const html = items.map((it, i) => `<div class="isl-slot ${i === sel ? 'on' : ''}">${i < 9 ? `<span class="k">${i + 1}</span>` : ''}${icon(it.id)}${it.n > 1 || it.kind !== 'tool' ? `<span class="n">${it.n}</span>` : ''}</div>`).join('');
+  setHotbar(all, sel, open) {
+    // long bags scroll: show a window of slots around the selection
+    const W = 11;
+    const start = all.length > W ? THREE_clamp(sel - Math.floor(W / 2), 0, all.length - W) : 0;
+    const items = all.slice(start, start + W);
+    const more = `${start > 0 ? '<div class="isl-more">◀</div>' : ''}`;
+    const more2 = `${start + W < all.length ? '<div class="isl-more">▶</div>' : ''}`;
+    sel -= start;
+    const html = more + items.map((it, j) => { const i = j + start; return `<div class="isl-slot ${j === sel ? 'on' : ''}">${i < 9 ? `<span class="k">${i + 1}</span>` : ''}${icon(it.id)}${it.n > 1 || (it.kind !== 'tool' && it.kind !== 'book') ? `<span class="n">${it.n}</span>` : ''}</div>`; }).join('') + more2;
     this.set('hotbar', this.hotbar, html);
     const cur = items[sel];
     this.set('selname', this.selname, cur ? esc(open ? `${cur.name} · ${t('isl.bag')}` : cur.name) : '');
