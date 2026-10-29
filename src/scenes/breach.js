@@ -661,7 +661,7 @@ export class BreachScene extends MiniGame {
     const first = R.mechs(s).find((m) => !m.ko);
     if (first) this.cursor = [first.x, first.y];
     this.refresh();
-    if (this.tut && this.tut.step === 8) this.later(1.0, () => this.showTip());
+    if (this.tut && this.tut.step === 8) this.showTip();
   }
 
   // ---------- battle menu ([C] tap) ----------
@@ -857,7 +857,7 @@ export class BreachScene extends MiniGame {
         const name = t(`breach.b.${u.type}`);
         const order = R.attackers(s).findIndex((b) => b.id === u.id) + 1;
         parts.push(`<h4>${esc(u.alpha ? t('breach.big', { name }) : name)} <small>${esc(t('breach.hp', { n: u.hp, m: u.maxHp }))}</small></h4>`);
-        parts.push(`<p>${esc(t(`breach.bd.${u.type}`))}${u.alpha ? ` ${esc(t('breach.bigd'))}` : ''}${order ? ` ${esc(name)} ${esc(t('breach.attackN', { n: order }))}` : ''}</p>`);
+        parts.push(`<p>${esc(t(`breach.bd.${u.type}`))}${u.alpha ? ` ${esc(t('breach.bigd'))}` : ''}${order ? ` ${esc(t('breach.attackN', { n: order }))}` : ''}</p>`);
         if (u.fire) parts.push(`<p>${esc(t('breach.st.fire'))}</p>`);
       } else {
         parts.push(`<h4>${esc(t('breach.b.rock'))}</h4><p>${esc(t('breach.bd.rock'))}</p>`);
@@ -866,14 +866,14 @@ export class BreachScene extends MiniGame {
     const sp = s.spawns.find((p) => p.x === x && p.y === y);
     const tileKey = tl.t === 'building' ? (tl.battery ? 'battery' : tl.obj ? 'obj' : 'building') : tl.t;
     const tileBits = [];
-    if (!u || tl.t !== 'ground') tileBits.push(t(`breach.t.${tileKey}`));
+    if (tl.t !== 'ground') tileBits.push(t(`breach.t.${tileKey}`));
     if (tl.t === 'building' && tl.obj && !tl.battery) tileBits.push(t('breach.t.building'));
     if (tl.fire) tileBits.push(t('breach.t.fire'));
     if (tl.smoke) tileBits.push(t('breach.t.smoke'));
     if (tl.shield) tileBits.push(t('breach.t.shield'));
     if (tl.crate) tileBits.push(t('breach.t.crate'));
     if (sp) tileBits.push(t(sp.egg ? 'breach.t.egg' : 'breach.t.spawn'));
-    if (tileBits.length && !(tileBits.length === 1 && tl.t === 'ground' && !u && !sp)) parts.push(`<p>${tileBits.map(esc).join(' ')}</p>`);
+    if (tileBits.length) parts.push(`<p>${tileBits.map(esc).join(' ')}</p>`);
     else if (!u) parts.push(`<p>${esc(t('breach.t.ground'))}</p>`);
     // the preview, in words
     if (this.pv?.diff.won) parts.push(`<p><b>${esc(t('breach.p.win'))}</b></p>`);
@@ -961,7 +961,8 @@ export class BreachScene extends MiniGame {
   }
 
   celebrateBoard() {
-    for (let i = 0; i < 3; i++) this.later(i * 0.3, () => this.confetti.burst(new THREE.Vector3((Math.random() - 0.5) * 6, 2, (Math.random() - 0.5) * 4), 0, { count: 40, speed: 7, up: 5, life: 1.6, gravity: -8, size: 0.16 }));
+    const colors = [...PLAYER_COLORS.map((c) => c.hex), 0xffd23f];
+    for (let i = 0; i < 3; i++) this.later(i * 0.3, () => this.confetti.burst(new THREE.Vector3((Math.random() - 0.5) * 6, 2, (Math.random() - 0.5) * 4), 0, { count: 40, speed: 7, up: 5, life: 1.6, gravity: -8, size: 0.16, colors }));
   }
 
   battleLost() {
@@ -1018,7 +1019,7 @@ export class BreachScene extends MiniGame {
     this.later(0.4, () => this.finish({
       title: t('breach.end.title'),
       subtitle: t('breach.end.sub'),
-      rows: [{ css: p?.css || '#ff5d73', name: t(`breach.sq.${run.squad}`), value: `${run.won} ${t('breach.end.battles')}`, detail: `★ ${run.starsTotal} ${t('breach.end.stars')} · ⚡ ${run.power} ${t('breach.end.power')}`, crown: true }],
+      rows: [{ css: p?.css || '#ff5d73', name: t(`breach.sq.${run.squad}`), value: `${run.won}/${BATTLE_COUNT}`, detail: `${t('breach.end.battles')} · ★ ${run.starsTotal} · ⚡ ${run.power}`, crown: true }],
       stars: 5,
     }));
     this.speak(`${t('breach.end.title')} ${t('breach.end.sub')}`);

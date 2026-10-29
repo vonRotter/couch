@@ -2,14 +2,16 @@
 // it for the hint ("what would a helper bean do?"). For each mech in turn it tries every move and
 // every target, plays the enemy phase on a copy and keeps the best-looking result.
 
-import { mechs, reach, mechMove, mechTargets, mechAct, endTurn, idx, unitById, objectiveStatus } from './rules.js';
+import { mechs, bugs, reach, mechMove, mechTargets, mechAct, endTurn, idx, unitById, objectiveStatus } from './rules.js';
 
 /** How good a battle state looks after the bugs have attacked. */
 function value(s, objectives = []) {
+  let bugHp = 0;
+  for (const b of bugs(s)) bugHp += b.hp * (b.boss ? 2.5 : 1.5);
   const c = structuredClone(s);
   endTurn(c);
   if (c.phase === 'lost') return -10000;
-  let v = c.power * 40 + c.kills * 6;
+  let v = c.power * 40 + c.kills * 6 - bugHp;
   for (const m of mechs(c)) v += m.ko ? -25 : m.hp * 4 + (m.shield ? 2 : 0);
   for (const o of objectives) if (objectiveStatus(c, o).done) v += o.kind === 'kills' ? 0 : 12;
   if (c.phase === 'won') v += 50;

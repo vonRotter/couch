@@ -44,7 +44,7 @@ export const BUGS = {
   burrower: { hp: 3, move: 3, atk: 'sweep', dmg: 1, burrow: true },
   firefly: { hp: 2, move: 4, atk: 'flame', dmg: 1, flying: true },
   boomer: { hp: 1, move: 3, atk: 'boom', dmg: 1 },
-  queen: { hp: 8, move: 2, atk: 'royal', dmg: 2, heavy: true, boss: true },
+  queen: { hp: 7, move: 2, atk: 'royal', dmg: 1, heavy: true, boss: true },
 };
 
 // ---------- small helpers ----------
@@ -121,7 +121,8 @@ function addUnit(s, u) {
   return unit;
 }
 
-function spawnBug(s, type, x, y, alpha = false) {
+/** A new bug on the board (also used by tests to set up a situation). */
+export function spawnBug(s, type, x, y, alpha = false) {
   const d = BUGS[type];
   const hp = d.hp + (alpha ? 2 : 0);
   return addUnit(s, { side: 'bug', type, x, y, hp, move: d.move, dmg: d.dmg + (alpha ? 1 : 0), alpha: !!alpha, flying: !!d.flying, burrow: !!d.burrow, heavy: !!d.heavy, boss: !!d.boss || !!alpha });
@@ -257,7 +258,12 @@ function tileDamage(s, x, y, n, ev, opt = {}) {
       tileEv(s, x, y, ev);
       break;
     case 'forest':
-      if (!t.fire) { t.fire = true; tileEv(s, x, y, ev); }
+      if (!t.fire) {
+        t.fire = true;
+        tileEv(s, x, y, ev);
+        const o = unitAt(s, x, y);
+        if (o && !o.flying) setFire(o, ev); // whoever stands in the burning forest catches fire too
+      }
       break;
     case 'sand':
       t.t = 'ground';
@@ -406,9 +412,9 @@ export const WEAPONS = {
       for (let d = 0; d < 4; d++) strike(s, tg.x + DIRS[d][0], tg.y + DIRS[d][1], 0, d, ev);
     },
   },
-  // Grab Hook: hooks the first thing in a line and pulls it next to you; hooked on a rock or a house, you fly to it.
+  // Grab Hook: hooks the first thing in a line (1 damage) and pulls it next to you; hooked on a rock or a house, you fly to it.
   hook: {
-    dmg: (lv) => lv,
+    dmg: (lv) => 1 + lv,
     line: true,
     targets: (s, u) => [0, 1, 2, 3].flatMap((d) => lineTiles(u, d, 1, 7)),
     fire(s, u, tg, ev) {
@@ -662,7 +668,7 @@ function scoreHits(s, b, hits) {
 function attackOptions(b) {
   const kind = BUGS[b.type].atk;
   if (kind === 'boom') return [{ d: 0, dist: 0 }];
-  if (kind === 'royal') { const out = []; for (let d = 0; d < 4; d++) for (let k = 2; k < 8; k++) out.push({ d, dist: k }); return out; }
+  if (kind === 'royal') { const out = []; for (let d = 0; d < 4; d++) for (let k = 2; k <= 5; k++) out.push({ d, dist: k }); return out; }
   return [0, 1, 2, 3].map((d) => ({ d, dist: 0 }));
 }
 
