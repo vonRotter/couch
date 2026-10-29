@@ -37,7 +37,7 @@ for (const c of CROP_IDS) {
 }
 
 export const TOOLS = ['hoe', 'can', 'scythe', 'pickaxe'];
-export const isGift = (id) => ['crop', 'gift', 'fish', 'dish'].includes(ITEMS[id]?.kind);
+export const isGift = (id) => ['crop', 'gift', 'fish', 'dish', 'produce'].includes(ITEMS[id]?.kind);
 
 /** The store's shelf: seeds, wood and flowers. Star fruit seeds appear once Pip has shown you the stars. */
 export function shopStock(save) {
@@ -45,6 +45,11 @@ export function shopStock(save) {
   if (save.unlocks.starfruit) list.push('starfruitSeed');
   list.push('wood', 'bouquet');
   if (save.sea?.suit) for (const g of ['flippers', 'tank']) if (!save.sea[g]) list.push(g);
+  if (save.sea?.flippers && save.sea?.tank) for (const g of ['seaLamp', 'scooter']) if (!save.sea[g]) list.push(g);
+  if (save.unlocks?.barn) {
+    const n = (k) => (save.ranch?.animals || []).filter((a) => a.kind === k).length;
+    for (const [k, max] of [['chicken', 4], ['goat', 1], ['cow', 1]]) if (n(k) < max) list.push(k);
+  }
   return list;
 }
 
@@ -88,6 +93,14 @@ const SVG = {
   recipes: `<rect x="4" y="3" width="16" height="18" rx="2" fill="#ff7a59" stroke="${INK}" stroke-width="1.3"/><rect x="6" y="3" width="2" height="18" fill="#d9583a"/><ellipse cx="14" cy="14" rx="4.5" ry="2" fill="#fff" stroke="${INK}" stroke-width="1"/><path d="M11 12 Q14 7 17 12" fill="#fff3dc" stroke="${INK}" stroke-width="1"/>`,
   flippers: `<path d="M6 4 L10 4 L12 20 Q8 22 4 20Z" fill="#3ddc97" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><path d="M14 4 L18 4 L20 20 Q16 22 12.5 20Z" fill="#3ddc97" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
   tank: `<rect x="7" y="5" width="10" height="16" rx="5" fill="#ffc93c" stroke="${INK}" stroke-width="1.3"/><rect x="10" y="2" width="4" height="4" fill="#9a94b2" stroke="${INK}" stroke-width="1"/><path d="M7 11 H17" stroke="${INK}" stroke-width="1"/>`,
+  seaLamp: `<path d="M8 9 H16 V18 Q12 21 8 18Z" fill="#ffd84a" stroke="${INK}" stroke-width="1.2"/><circle cx="12" cy="13" r="2.6" fill="#fff8c0"/><path d="M10 9 V6 H14 V9" fill="none" stroke="${INK}" stroke-width="1.2"/>`,
+  scooter: `<ellipse cx="11" cy="13" rx="8" ry="4.5" fill="#ffc93c" stroke="${INK}" stroke-width="1.2"/><circle cx="19" cy="13" r="2.5" fill="#9a94b2" stroke="${INK}" stroke-width="1"/><path d="M5 9 L9 9" stroke="${INK}" stroke-width="1.6"/>`,
+  chicken: `<ellipse cx="12" cy="14" rx="6" ry="5" fill="#fff" stroke="${INK}" stroke-width="1.2"/><circle cx="16" cy="9" r="3" fill="#fff" stroke="${INK}" stroke-width="1.2"/><path d="M15 6 L16 4 L17 6" fill="#ff5d73"/><path d="M19 9 L21 10 L19 11Z" fill="#ffb020"/>`,
+  cow: `<rect x="4" y="8" width="15" height="9" rx="3" fill="#fff" stroke="${INK}" stroke-width="1.2"/><circle cx="8" cy="11" r="2" fill="${INK}"/><rect x="16" y="6" width="6" height="6" rx="2" fill="#fff" stroke="${INK}" stroke-width="1.2"/><rect x="17" y="10" width="5" height="3" rx="1" fill="#ffb8c8"/><path d="M6 17 V20 M16 17 V20" stroke="${INK}" stroke-width="1.6"/>`,
+  goat: `<rect x="5" y="9" width="12" height="7" rx="3" fill="#e8e0d0" stroke="${INK}" stroke-width="1.2"/><rect x="15" y="6" width="5" height="5" rx="2" fill="#e8e0d0" stroke="${INK}" stroke-width="1.2"/><path d="M16 6 L15 3 M19 6 L20 3" stroke="${INK}" stroke-width="1.4"/><path d="M7 16 V20 M15 16 V20" stroke="${INK}" stroke-width="1.6"/>`,
+  stone: `<path d="M4 17 L7 9 L13 6 L19 9 L21 16 L15 20 L8 20Z" fill="#a8a2bf" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><path d="M9 11 L13 10" stroke="#fff" stroke-width="1"/>`,
+  fiber: `<path d="M6 21 Q8 12 6 4 M12 21 Q12 12 12 3 M18 21 Q16 12 18 4" fill="none" stroke="#6fbf4a" stroke-width="2"/><path d="M5 15 H19" stroke="#c68a52" stroke-width="2"/>`,
+  hay: `<rect x="3" y="8" width="18" height="11" rx="2" fill="#f0d060" stroke="${INK}" stroke-width="1.2"/><path d="M3 12 H21 M3 15 H21" stroke="#c8a830" stroke-width="1"/><path d="M8 8 V19 M16 8 V19" stroke="#c68a52" stroke-width="1.6"/>`,
   suit: `<path d="M8 3 H16 L18 8 L16 21 H8 L6 8Z" fill="#2f4f8f" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5" fill="#bff6ff" stroke="${INK}" stroke-width="1"/>`,
   deco: `<path d="M12 3 L14.6 9.2 L21 9.6 L16 13.8 L17.6 20.4 L12 16.8 L6.4 20.4 L8 13.8 L3 9.6 L9.4 9.2 Z" fill="#c9a8ff" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
 };
@@ -95,7 +108,7 @@ const SVG = {
 // Pictures of 3D models for sea things and dishes (set by the island scene: see thumbs.js).
 let pictureFn = null;
 export function setPictures(fn) { pictureFn = fn; }
-const PICTURED = new Set(['fish', 'sea', 'treasure', 'dish']);
+const PICTURED = new Set(['fish', 'sea', 'treasure', 'dish', 'produce']);
 
 /** Inline SVG icon for an item id (seed packets get a little crop picture on a paper bag). */
 export function icon(id) {

@@ -10,6 +10,10 @@ import { ProfilePicker } from '../../core/profiles.js';
 import { SKYHOP_LEVELS } from '../skyhop-levels.js';
 import './strings.js';
 import './strings2.js';
+import './strings3.js';
+import { Ranch } from './animals.js';
+import { Builder } from './build.js';
+import { Seasons } from './seasons.js';
 import { now, hourOf, since, loadIsland, count, give, take, MIN, HOUR } from './save.js';
 import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures } from './items.js';
 import { FISH, FISH_IDS, RECIPES, seaModel, makeDish } from './sea.js';
@@ -35,7 +39,7 @@ const PR = 0.42;
 const CAM_UP = 12.5, CAM_BACK = 13; // a bit further than the shared island's closest framing (10.4 / 10.4)
 const MODES = ['island', 'story', 'solo'];
 const BRIDGE_WOOD = 10;
-const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish']);
+const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce']);
 const PARTY = [0xff5d73, 0xffc93c, 0x3ddc97, 0x4cc9f0, 0x9b5de5];
 const ROCK_HITS = 5;
 const BRANCH_RESPAWN = 15 * MIN;
@@ -53,7 +57,7 @@ const SIGNS = [
   { x: BRIDGE.x + BRIDGE.len / 2 + 1.0, z: BRIDGE.z + 2.0, key: 'isl.sign.bridge', bridge: true },
   { x: -5.2, z: 40.6, key: 'isl.sign.cafe', key2: 'isl.sign.cafe2', when: (S) => S.cafe.repaired },
   { x: -2, z: 42.6, key: 'isl.sign.dive2' },
-  { x: -7.6, z: 4.2, key: 'isl.sign.barn' },
+  { x: -7.6, z: 4.2, key: 'isl.sign.barn', key2: 'isl.sign.barn2', when: (S) => S.unlocks.barn },
   { x: TROPHY_SIGN.x, z: TROPHY_SIGN.z, key: 'isl.sign.trophy' },
 ];
 
@@ -152,6 +156,9 @@ export class SoloIslandScene extends BaseScene {
     this.camTarget = new THREE.Vector3();
 
     this.buildDynamic();
+    this.ranch = new Ranch(this);
+    this.builder = new Builder(this);
+    this.seasons = new Seasons(this);
     this.spawnNpcs();
     this.checkRewards();
 
@@ -184,7 +191,7 @@ export class SoloIslandScene extends BaseScene {
     const S = this.save;
     // decorations
     this.decoViews = new Map();
-    for (const id of Object.keys(S.deco)) this.placeDeco(id, false);
+    if (S.deco.flag) this.placeDeco('flag', false); // other decorations are yard pieces (build.js)
     this.put(makeSign(0xc9a8ff), TROPHY_SIGN.x, TROPHY_SIGN.z);
     // hedge around the trophy garden
     for (let i = 0; i < 9; i++) this.put(mesh(sph(0.36, 8, 6), 0x4cc46a, 0, 0.25, 0), -2.4 + i * 0.85, -5.3);
@@ -320,6 +327,9 @@ export class SoloIslandScene extends BaseScene {
     for (const n of this.npcs) this.scheduleNpc(n, at);
     for (const b of this.branches) b.g.visible = since(this.save.branches[b.i], BRANCH_RESPAWN, at);
     for (const [id, f] of Object.entries(this.finds)) f.g.visible = this.findActive(id);
+    this.ranch.tick(at);
+    this.builder.tickGather(at);
+    this.seasons.tick(at);
     this.applySky(false);
     this.chooseLamps();
   }
@@ -327,7 +337,7 @@ export class SoloIslandScene extends BaseScene {
   applySky() {
     const h = hourOf();
     this.hour = h;
-    const s = skyAt(h);
+    const s = this.seasons ? this.seasons.weatherSky(skyAt(h)) : skyAt(h);
     this.night = s.night;
     const L = this.lights;
     L.hemi.color.setHex(s.hemi);
@@ -533,6 +543,9 @@ export class SoloIslandScene extends BaseScene {
     if (S.sea.suit && S.sea.dives && !S.cafe.repaired) out.push(t('isl.task.cafe', { w: Math.min(10, count(S, 'wood')) }));
     if (S.cafe.repaired && !S.cafe.cooked) out.push(t('isl.task.cook'));
     if (S.cafe.repaired && S.cafe.cooked && !S.cafe.nights) out.push(t('isl.task.serve'));
+    if (S.unlocks.barn && S.ranch.animals.length && S.ranch.trough <= 0) out.push(t('isl.task.hay'));
+    if ((S.quests.hazel?.n === 2) && !count(S, 'stone')) out.push(t('isl.task.bench'));
+    out.unshift(...this.seasons.tasks());
     return out.slice(0, 5);
   }
 
@@ -571,9 +584,20 @@ export class SoloIslandScene extends BaseScene {
     this.markDirty();
   }
 
+  /** The usual spot of a decoration (the trophy garden), or null. */
+  decoSpot(id) {
+    const sid = id === 'duckGold' ? 'duckTrophy' : id;
+    return DECO_SPOTS.find((s) => s.id === sid) || null;
+  }
+
+  picture3d(key, make) {
+    return thumb(this.game.renderer, key, make, { rx: 0.35, ry: -0.6 });
+  }
+
   addDeco(id) {
     this.save.deco[id] = true;
-    this.placeDeco(id, true);
+    if (id === 'flag') this.placeDeco(id, true);
+    else this.builder.addDecoration(id, true);
     this.game.ui.toast(t('isl.t.deco', { item: t(`isl.d.${id}`) }), 2200);
   }
 
@@ -581,7 +605,8 @@ export class SoloIslandScene extends BaseScene {
     const S = this.save;
     if (S.unlocks[key]) return;
     S.unlocks[key] = true;
-    const msg = { bridge: 'isl.t.bridge', mine: 'isl.t.mine', burrow: 'isl.t.burrow', bigCan: 'isl.t.bigCan', discount: 'isl.t.discount', starfruit: 'isl.t.starfruit' }[key];
+    const msg = { bridge: 'isl.t.bridge', mine: 'isl.t.mine', burrow: 'isl.t.burrow', bigCan: 'isl.t.bigCan', discount: 'isl.t.discount', starfruit: 'isl.t.starfruit', barn: 'isl.t.barn', rosaHelps: 'isl.t.rosaHelps', goldRod: 'isl.t.goldRod' }[key];
+    if (key === 'barn') { this.ranch.addAnimal('chicken'); this.ranch.addAnimal('chicken'); this.ranch.refresh(); }
     if (msg) { this.game.ui.toast(t(msg), 3000); speak(t(msg)); }
     this.game.audio.play('fanfare');
     this.applyUnlocks(false);
@@ -605,6 +630,11 @@ export class SoloIslandScene extends BaseScene {
     this.shownBridge = U.bridge;
     this.shownMine = U.mine;
     this.shownBurrow = U.burrow;
+  }
+
+  /** True while the player is inside the cottage. */
+  get indoors() {
+    return !!(this.player && this.builder?.inside(this.player));
   }
 
   get walkState() {
@@ -681,19 +711,22 @@ export class SoloIslandScene extends BaseScene {
     const L = (k, vars, fx) => ({ who: id, key: `isl.${id}.${k}`, vars, fx });
     const lines = [];
     let after = null;
-    const sea = id === 'grumbleton' ? this.seaTalk(n, L) : null;
+    const bday = this.seasons.birthdayLine(n);
+    const sea = (id === 'grumbleton' ? this.seaTalk(n, L) : null) || this.seasons.festTalk(n);
+    if (sea && bday) sea.lines.unshift(bday);
     if (sea) {
       if (!st.met) { st.met = true; sea.lines.unshift(L('meet')); }
       if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
-      this.say(sea.lines, () => { sea.after(); this.markDirty(); this.afterTalk(n); });
+      this.say(sea.lines, () => { sea.after?.(); this.markDirty(); this.afterTalk(n); });
       return;
     }
     if (!st.met) { st.met = true; lines.push(L('meet')); }
+    if (bday) lines.push(bday);
     const ev = def.events[st.ev];
     const q = S.quests[id];
     if (ev && heartsOf(st) >= ev.at) {
       const k = st.ev + 1;
-      for (let i = 1; i <= ev.lines; i++) lines.push(L(`ev${k}.${i}`, null, i === 1 ? () => { n.hop = 1; } : i === ev.lines ? () => this.celebrate(n) : null));
+      for (let i = 1; i <= ev.lines; i++) lines.push(L(`ev${k}.${i}`, null, i === 1 ? () => { n.hop = 1; } : ev.fx === 'rocket' && i === 3 ? () => this.seasons.launchRocket() : i === ev.lines ? () => this.celebrate(n) : null));
       after = () => { st.ev++; this.grant(ev.reward); };
     } else if (q) {
       if (this.questReady(id, q.n)) {
@@ -740,10 +773,11 @@ export class SoloIslandScene extends BaseScene {
         take(S, held.id, 1);
         st.giftAt = now();
         const ts = taste(n.id, held.id);
-        this.addPts(n.id, GIFT_PTS[ts]);
+        const bd = this.seasons.isBirthday(n.id);
+        this.addPts(n.id, GIFT_PTS[ts] * (bd ? 2 : 1) + (bd ? 4 : 0));
         if (ts === 'love' || ts === 'like') n.hop = 1;
         this.game.audio.play(ts === 'dislike' ? 'bump' : 'star');
-        this.say([{ who: n.id, key: `isl.${n.id}.${ts}` }], shop);
+        this.say([{ who: n.id, key: bd && ts !== 'dislike' ? 'isl.bday.thanks' : `isl.${n.id}.${ts}` }], shop);
       } }]);
       return;
     }
@@ -813,6 +847,12 @@ export class SoloIslandScene extends BaseScene {
     const fx = P.x + P.fx * 0.95, fz = P.z + P.fz * 0.95;
     const held = S.inv[S.sel];
     const nm = (k, v) => tFor(P.p, k, v);
+    if (this.indoors) {
+      this.builder.interactions(P, out, nm);
+      if (!out.b) out.b = { text: '', fn: () => this.openBag() };
+      if (!out.a) out.a = { text: '', fn: () => this.doTool(held?.id, null) };
+      return out;
+    }
     // game places
     for (const pl of this.map.places) {
       if (pl.id === 'burrow' && !S.unlocks.burrow) continue;
@@ -845,6 +885,10 @@ export class SoloIslandScene extends BaseScene {
       const rosa = this.npc('rosa');
       out.b = rosa.sleep ? { text: t('isl.h.asleep', { name: t('isl.npc.rosa') }), fn: () => this.talkTo(rosa) } : { text: nm('isl.h.shop'), fn: () => this.talkTo(rosa) };
     }
+    // the barn, the workbench, the cottage door, the calendar board
+    if (!out.b) this.ranch.interactions(P, out, nm);
+    if (!out.b) this.builder.interactions(P, out, nm);
+    if (!out.b) this.seasons.interactions(P, out, nm);
     // the dive boat's ladder
     if (!out.b && Math.hypot(P.x - (DIVE_BOAT.x - 1.0), P.z - (DIVE_BOAT.z + 1.1)) < 1.4) {
       out.b = S.sea.suit ? { text: nm('isl.h.dive'), fn: () => this.startDive() } : { text: t('isl.h.diveNeed'), fn: () => this.game.audio.play('bump') };
@@ -874,6 +918,8 @@ export class SoloIslandScene extends BaseScene {
     if (!S.unlocks.mine && Math.hypot(P.x - ROCKFALL.x, P.z - ROCKFALL.z) < 3.4) {
       out.a = held?.id === 'pickaxe' ? { text: nm('isl.h.rocks'), fn: () => this.hitRocks() } : { text: t('isl.h.rocksNeed'), fn: () => this.game.audio.play('bump') };
     }
+    // rock piles and tall grass
+    if (!out.a) out.a = this.builder.gatherAction(P, held?.id, nm);
     // fishing, and the books
     if (!out.a && held?.id === 'rod') {
       const spot = this.fishSpot();
@@ -1120,6 +1166,7 @@ export class SoloIslandScene extends BaseScene {
         if (S.coins < r.price) { this.game.ui.toast(t('isl.t.noCoins')); this.game.audio.play('bump'); return; }
         S.coins -= r.price;
         if (ITEMS[r.id].kind === 'gear') S.sea[r.id] = true;
+        else if (ITEMS[r.id].kind === 'animal') this.ranch.addAnimal(r.id);
         else give(S, r.id, 1);
         this.game.ui.toast(t('isl.t.bought', { item: itemName(r.id) }), 900);
       } else {
@@ -1144,7 +1191,7 @@ export class SoloIslandScene extends BaseScene {
     this.letterT = 0;
     const gifts = [...(r.items || []).map(([id, n]) => `<div>${icon(id)}${n > 1 ? `${n} ` : ''}${esc(itemName(id))}</div>`),
       ...(r.deco ? [`<div>${icon('deco')}${esc(t(`isl.d.${r.deco}`))}</div>`] : []), ...(r.coins ? [`<div>${icon('coin')}${r.coins}</div>`] : [])].join('');
-    const body = t(`isl.mail.${r.id}`);
+    const body = t(`isl.mail.${r.id}`, { name: this.playerName });
     this.hud.setPanel(`<h2>${esc(t('isl.mail.title', { name: this.playerName }))}</h2>
       <div class="isl-letter">${esc(body)}<div class="from">${esc(t('isl.mail.from', { name: t(`isl.from.${r.from}`) }))}</div></div>
       <div class="isl-gifts">${gifts}</div><div class="isl-foot">${esc(tFor(this.player?.p, 'isl.mail.hint'))}</div>`);
@@ -1182,7 +1229,8 @@ export class SoloIslandScene extends BaseScene {
   }
 
   /** Called by the fishing game when it ends (id = the fish, or null). */
-  afterFish() {
+  afterFish(id) {
+    if (id) this.seasons.onFish();
     this.markDirty();
   }
 
@@ -1337,7 +1385,8 @@ export class SoloIslandScene extends BaseScene {
       P.ch.face(mx, mz);
     }
     // never get stuck (e.g. after an unlock changes the map): nudge toward home
-    if (!this.map.walkable(P.x, P.z, PR * 0.5, st)) this.unstick(P, st);
+    if (!this.indoors && !this.map.walkable(P.x, P.z, PR * 0.5, st)) this.unstick(P, st);
+    if (this.indoors) this.builder.clampInside(P);
     P.y = this.map.floorAt(P.x, P.z, st.bridge);
     P.moving = Math.min(1, len);
   }
@@ -1440,17 +1489,17 @@ export class SoloIslandScene extends BaseScene {
     const S = this.save;
     const h = this.hour ?? hourOf();
     const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
-    this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: this.phaseName(h) });
+    this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), this.seasons.festival ? t(`isl.fest.${this.seasons.festival}`) : this.seasons.rainy ? `☂ ${t('isl.weather.rain')}` : ''].filter(Boolean).join(' · ') });
     this.hud.setTasks(this.mode === 'walk' || this.mode === 'bag' ? this.tasks() : []);
     const items = S.inv.map((it) => ({ ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) }));
-    if (this.mode !== 'service') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
+    if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
     this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : 'isl.keys'));
     let prompt = '';
     if (this.mode === 'walk' && ia) {
       const parts = [ia.a?.text, ia.b?.text].filter(Boolean);
       prompt = parts.join(' · ');
     }
-    if (this.mode !== 'fish') this.hud.setPrompt(prompt);
+    if (this.mode !== 'fish' && this.mode !== 'deco') this.hud.setPrompt(prompt);
     const mb = this.map.mailbox.userData;
     mb.flag.rotation.z = S.mail.length ? 0 : -Math.PI / 2;
     mb.letter.visible = S.mail.length > 0 && this.mode !== 'letter';
@@ -1481,6 +1530,9 @@ export class SoloIslandScene extends BaseScene {
         case 'cook': this.cafe.updateCook(inp, dt); break;
         case 'service': this.cafe.updateService(inp, dt); break;
         case 'log': this.updateLog(inp, dt); break;
+        case 'bench': this.builder.updateBench(inp, dt); break;
+        case 'deco': this.builder.updateDecorate(inp, dt); break;
+        case 'cal': this.seasons.updateCalendar(inp, dt); break;
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();
@@ -1493,6 +1545,8 @@ export class SoloIslandScene extends BaseScene {
       if (this.mode !== 'walk') this.farm.showHighlight(null);
     }
     this.updateNpcs(dt);
+    this.ranch.update(dt);
+    this.seasons.update(dt);
     this.updatePlayerLook(dt);
     this.farm.animate(dt, this.time);
     this.life.update(dt, this.night || 0, P || { x: 0, z: 0 });

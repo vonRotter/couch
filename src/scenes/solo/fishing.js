@@ -146,7 +146,7 @@ export class Fishing {
         this.prompt(`❗ ${nm('isl.fish.bite')}`);
         if (inp.aPressed) {
           const f = FISH[this.fish];
-          this.reel = { p: 0, dir: 1, zc: 0.3 + Math.random() * 0.4, w: f.zone, speed: f.speed * 0.8, need: f.hits, hits: 0, misses: 0 };
+          this.reel = { p: 0, dir: 1, zc: 0.3 + Math.random() * 0.4, w: f.zone + (host.save.unlocks.goldRod ? 0.08 : 0), speed: f.speed * 0.8, need: f.hits, hits: 0, misses: 0 };
           this.state = 'reel';
           this.t = 0;
           host.game.audio.play('dash');

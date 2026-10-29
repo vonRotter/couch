@@ -40,7 +40,7 @@ const CSS = `
   border: 4px solid var(--c, #2b2340); padding: 14px 22px 12px; box-shadow: 0 8px 0 rgba(43,35,64,.25); font-size: clamp(17px, 1.9vw, 30px); font-weight: 600; line-height: 1.3; box-sizing: border-box; }
 .isl-dialog .who { position: absolute; top: -0.95em; left: 18px; background: var(--c, #2b2340); color: #fff; border-radius: 999px; padding: 1px 14px; font-size: .62em; font-weight: 700; display: flex; gap: 6px; align-items: center; }
 .isl-dialog .who .hs { display: inline-flex; gap: 1px; }
-.isl-dialog .who .hs svg { width: 1em; height: 1em; }
+.isl-dialog .who .hs svg { width: .85em; height: .85em; }
 .isl-dialog .more { position: absolute; right: 16px; bottom: 6px; font-size: .6em; opacity: .75; animation: isl-blink 1s infinite; }
 .isl-dialog .choices { display: flex; gap: 18px; margin-top: 8px; font-size: .85em; }
 .isl-dialog .choices span { padding: 2px 16px; border-radius: 999px; }
@@ -63,6 +63,13 @@ const CSS = `
 .isl-logcell { background: rgba(138,90,50,.1); border-radius: 12px; padding: 4px; text-align: center; font-size: clamp(10px, .9vw, 14px); font-weight: 700; }
 .isl-logcell img { width: 100%; aspect-ratio: 1; display: block; }
 .isl-logcell.on { background: #ffd84a; box-shadow: 0 3px 0 rgba(43,35,64,.2); }
+.isl-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.isl-calh { text-align: center; font-weight: 700; opacity: .6; font-size: clamp(11px, 1vw, 15px); }
+.isl-cald { background: rgba(138,90,50,.08); border-radius: 8px; min-height: clamp(34px, 4.4vh, 56px); padding: 2px 4px; font-size: clamp(10px, .85vw, 13px); line-height: 1.1; overflow: hidden; }
+.isl-cald b { display: block; font-size: 1.15em; }
+.isl-cald.on { background: #ffd84a; box-shadow: 0 0 0 2px #8a5a32; }
+.isl-cald i { display: block; font-style: normal; font-weight: 700; }
+.isl-cald i.f { color: #b5179e; } .isl-cald i.b { color: #d9583a; } .isl-cald i.r { color: #3f8fd6; display: inline; }
 .isl-letter { font-size: clamp(16px, 1.75vw, 26px); line-height: 1.4; background: repeating-linear-gradient(#fffaf0 0 1.38em, #f0e2c8 1.38em 1.42em); padding: 8px 14px; border-radius: 10px; }
 .isl-letter .from { text-align: right; font-style: italic; margin-top: 6px; }
 .isl-gifts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 12px; }
@@ -71,7 +78,7 @@ const CSS = `
 .label.isl-tag { background: rgba(255,255,255,.92); color: #2b2340; border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: clamp(12px, 1.15vw, 18px); text-align: center; white-space: nowrap; }
 .label.isl-tag small { display: block; font-weight: 600; opacity: .7; font-size: .8em; }
 .label.isl-tag .hs { display: inline-flex; gap: 1px; vertical-align: -2px; margin-left: 4px; }
-.label.isl-tag .hs svg { width: .95em; height: .95em; }
+.label.isl-tag .hs svg { width: .8em; height: .8em; }
 .label.isl-mark { font-size: clamp(22px, 2.4vw, 36px); font-weight: 700; color: #ffd84a; paint-order: stroke fill; -webkit-text-stroke: .16em #2b2340; animation: isl-bob 1s infinite; }
 .label.isl-zzz { font-size: clamp(16px, 1.6vw, 24px); font-weight: 700; color: #fff; paint-order: stroke fill; -webkit-text-stroke: .16em #5a4d7a; animation: isl-bob 2s infinite; }
 @keyframes isl-bob { 50% { margin-top: -6px; } }
@@ -96,7 +103,7 @@ const div = (cls, parent) => {
   return el;
 };
 
-export function heartsHtml(n, max = 5) {
+export function heartsHtml(n, max = 10) {
   let s = '<span class="hs">';
   for (let i = 0; i < max; i++) s += icon(i < n ? 'heart' : 'heartEmpty');
   return `${s}</span>`;

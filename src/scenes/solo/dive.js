@@ -21,8 +21,10 @@ import { mesh, box, cyl, sph, cone, ico } from './models.js';
 // the boat to end early. Deeper zones open with flippers (strong current) and the big air tank.
 
 const SURFACE = 0;
-const X_MIN = -46, X_MAX = 46;
+const X_MIN = -46, X_MAX = 62;
+const CAVE_X = 46; // the glow cave behind the east reef (needs the sea lamp)
 const CURRENT_Y = -10.5, DEEP_Y = -22.5;
+function sharedCrystal() { return new THREE.OctahedronGeometry(0.4, 0); }
 const sstep = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
 
 /** The sea floor height at x: sunny shelf, coral reef slope, deep trench in the middle. */
@@ -37,7 +39,7 @@ const zoneOf = (y) => (y > -10 ? 1 : y > -22 ? 2 : 3);
 
 // What lives where: [id, count, zone, onFloor]
 const CRITTERS = [['shrimp', 5, 1, false], ['crab', 3, 1, true], ['bream', 4, 2, false], ['lobster', 2, 2, true], ['squid', 2, 3, false], ['lanternfish', 2, 3, false], ['octopus', 1, 3, true]];
-const CHESTS = [{ x: -30, zone: 1, coins: 20, item: 'oldcoin' }, { x: 9.5, zone: 2, coins: 50, item: 'pearl' }, { x: -1.5, zone: 3, coins: 120, item: 'goldcup' }];
+const CHESTS = [{ x: -30, zone: 1, coins: 20, item: 'oldcoin' }, { x: 9.5, zone: 2, coins: 50, item: 'pearl' }, { x: -1.5, zone: 3, coins: 120, item: 'goldcup' }, { x: 57, zone: 4, coins: 150, item: 'crystalShell' }];
 
 const CSS = `
 .dv-air { left: 50%; top: 1.4vh; transform: translateX(-50%); width: min(420px, 50vw); display: flex; align-items: center; gap: 10px; font-weight: 700; color: #fff; paint-order: stroke fill; -webkit-text-stroke: .2em #2b2340; font-size: clamp(14px, 1.4vw, 22px); }
@@ -58,7 +60,7 @@ export class DiveScene extends BaseScene {
     const sea = this.save.sea;
     this.airMax = sea.tank ? 100 : 60;
     this.air = this.airMax;
-    this.speed = sea.flippers ? 6.4 : 4.6;
+    this.speed = sea.scooter ? 8.8 : sea.flippers ? 6.4 : 4.6;
     this.camera.fov = 45;
     this.camera.updateProjectionMatrix();
     this.rand = seeded(1000 + (sea.dives || 0) * 7919);
@@ -79,6 +81,7 @@ export class DiveScene extends BaseScene {
     this.scene.add(this.hemi, this.sun);
 
     this.buildSea();
+    this.buildCave();
     this.spawnThings();
     this.buildDiver();
     this.buildHud();
@@ -189,6 +192,33 @@ export class DiveScene extends BaseScene {
     }
   }
 
+  /** The glow cave: a rocky roof east of the shallows, dark unless you carry the sea lamp. */
+  buildCave() {
+    const sc = this.scene;
+    const roof = new THREE.Group();
+    for (let x = CAVE_X; x <= X_MAX + 4; x += 1.6) {
+      const r = mesh(ico(1.6 + this.rand() * 0.8, 0), 0x3a3a5a, x, -2.2 - this.rand() * 0.8, -1 - this.rand() * 3);
+      r.scale.y = 0.7;
+      roof.add(r);
+    }
+    for (let i = 0; i < 10; i++) {
+      const x = CAVE_X + 2 + this.rand() * 14;
+      const c = mesh(sharedCrystal(), toon([0x8ff0ff, 0xc9a8ff, 0xff9fd0][i % 3], { emissive: 0x334455 }), x, floorY(x) + 0.3, -1.5 - this.rand() * 4, false);
+      c.scale.set(0.6, 1.4 + this.rand(), 0.6);
+      c.rotation.z = (this.rand() - 0.5) * 0.6;
+      roof.add(c);
+    }
+    sc.add(roof);
+    // the dark doorway (until you have the sea lamp)
+    this.caveDark = mesh(box(1.2, 10, 8), new THREE.MeshBasicMaterial({ color: 0x050a18, transparent: true, opacity: 0.85, depthWrite: false }), CAVE_X - 0.2, -6, -1, false);
+    this.caveDark.visible = !this.save.sea.seaLamp;
+    sc.add(this.caveDark);
+    if (this.save.sea.seaLamp) {
+      this.lampLight = new THREE.PointLight(0xfff1c0, 0, 12, 1.2);
+      sc.add(this.lampLight);
+    }
+  }
+
   spawnThings() {
     const sc = this.scene, r = this.rand;
     const xIn = (zone) => (zone === 1 ? (r() < 0.5 ? -1 : 1) * (19 + r() * 25) : zone === 2 ? (r() < 0.5 ? -1 : 1) * (8 + r() * 8) : (r() - 0.5) * 6);
@@ -202,6 +232,13 @@ export class DiveScene extends BaseScene {
         sc.add(g);
         this.clams.push({ g, x, y: y + 0.3, picked: false, pearl: r() < 0.25 });
       }
+    }
+    for (const x of [50, 54, 59]) {
+      const y = floorY(x);
+      const g = makeSeaThing('clam');
+      g.position.set(x, y + 0.05, 0);
+      sc.add(g);
+      this.clams.push({ g, x, y: y + 0.3, picked: false, pearl: true });
     }
     // treasure chests
     this.chests = CHESTS.map((c) => {
@@ -231,6 +268,15 @@ export class DiveScene extends BaseScene {
         sc.add(holder);
         this.critters.push({ id, g: holder, model, x, y, hx: x, hy: y, zone, floor, tx: x, ty: y, wait: r() * 2, dir: 1, ph: r() * 6, state: 'free' });
       }
+    }
+    for (const x of [51, 58]) {
+      const model = makeFish('lanternfish');
+      const holder = new THREE.Group();
+      holder.add(model);
+      const y = floorY(x) + 2;
+      holder.position.set(x, y, 0);
+      sc.add(holder);
+      this.critters.push({ id: 'lanternfish', g: holder, model, x, y, hx: x, hy: y, zone: 4, floor: false, tx: x, ty: y, wait: 1, dir: 1, ph: 0, state: 'free' });
     }
     // ambient life: a turtle, a school of little fish, jellyfish
     this.turtle = new THREE.Group();
@@ -268,6 +314,15 @@ export class DiveScene extends BaseScene {
     ch.pivot.add(mesh(box(0.58, 0.3, 0.12), toon(0xbff6ff, { transparent: true, opacity: 0.6 }), 0, 0.84, 0.38, false));
     ch.pivot.add(mesh(box(0.62, 0.06, 0.08), 0x2b2340, 0, 0.84, 0.36, false));
     ch.pivot.add(mesh(cyl(0.16, 0.16, 0.7, 10), this.save.sea.tank ? 0xff8c42 : 0xffc93c, 0, 0.65, -0.45));
+    if (this.save.sea.scooter) {
+      const sc = new THREE.Group();
+      const body = mesh(sph(0.35, 12, 8), 0xffc93c, 0, 0, 0);
+      body.scale.set(1.6, 0.8, 0.8);
+      sc.add(body, mesh(cyl(0.22, 0.22, 0.12, 12), 0x9a94b2, 0.55, 0, 0).rotateZ(Math.PI / 2));
+      sc.position.set(0, 0.55, 0.55);
+      sc.rotation.y = Math.PI / 2;
+      ch.pivot.add(sc);
+    }
     if (this.save.sea.flippers) for (const f of ch.feet) f.add(mesh(box(0.3, 0.05, 0.6), 0x3ddc97, 0, 0, 0.3, false));
     this.scene.add(ch.group);
     this.diver = { ch, x: 0, y: -1.6, vx: 0, vy: 0, dir: 1, tilt: 0 };
@@ -304,7 +359,7 @@ export class DiveScene extends BaseScene {
     this.hud.air.classList.toggle('low', k < 0.25);
     this.set('air', `<span>${esc(t('dive.air'))}</span><div class="bar"><i style="width:${(k * 100).toFixed(1)}%"></i></div>`);
     const depth = Math.max(0, Math.round(-this.diver.y));
-    this.set('depth', `<div class="isl-pill">${esc(t('dive.depth', { n: depth }))}<small>${esc(t(`dive.zone${zoneOf(this.diver.y)}`))}</small></div><div class="isl-pill"><span class="i">${icon('coin')}</span>${this.coins}</div>`);
+    this.set('depth', `<div class="isl-pill">${esc(t('dive.depth', { n: depth }))}<small>${esc(t(this.diver.x > CAVE_X ? 'dive.zone4' : `dive.zone${zoneOf(this.diver.y)}`))}</small></div><div class="isl-pill"><span class="i">${icon('coin')}</span>${this.coins}</div>`);
     this.set('haul', [...this.haul.entries()].map(([id, n]) => `<div>${icon(id)}${n}</div>`).join(''));
     this.set('keys', esc(tFor(P, 'dive.keys')));
   }
@@ -367,6 +422,11 @@ export class DiveScene extends BaseScene {
         if (this.warnT <= 0) { this.warnT = 4; this.game.ui.toast(t(key), 2400); speak(t(key)); this.game.audio.play('bump'); }
       }
     }
+    if (!this.save.sea.seaLamp && D.x > CAVE_X - 0.8) {
+      D.x = CAVE_X - 0.8; D.vx = Math.min(D.vx, -1);
+      if (this.warnT <= 0) { this.warnT = 4; this.game.ui.toast(t('dive.dark'), 2400); speak(t('dive.dark')); this.game.audio.play('bump'); }
+    }
+    if (this.lampLight) { this.lampLight.position.set(D.x + D.dir * 0.8, D.y + 0.4, 1.5); this.lampLight.intensity = D.x > CAVE_X - 4 ? 30 : 6; }
     this.warnT -= dt;
     this.netCd -= dt;
     this.updateDiverLook(dt);
@@ -507,7 +567,7 @@ export class DiveScene extends BaseScene {
         c.wait -= dt;
         if (c.wait <= 0) {
           c.wait = 1.5 + Math.random() * 2.5;
-          c.tx = c.hx + (Math.random() - 0.5) * 8;
+          c.tx = c.hx + (Math.random() - 0.5) * (c.zone === 4 ? 4 : 8);
           c.ty = c.floor ? c.hy : c.hy + (Math.random() - 0.5) * 3;
         }
       }
@@ -550,7 +610,7 @@ export class DiveScene extends BaseScene {
     this.camera.position.copy(this.camPos);
     this.camera.lookAt(this.camPos.x, this.camPos.y - 0.6, 0);
     // deeper water is darker and bluer
-    const k = THREE.MathUtils.clamp(-D.y / 34, 0, 1);
+    const k = Math.max(THREE.MathUtils.clamp(-D.y / 34, 0, 1), D.x > CAVE_X ? 0.85 : 0);
     const col = new THREE.Color(0x4cb8e8).lerp(new THREE.Color(0x0b1d45), k);
     if (this.camPos.y > 0.2) col.set(0x9fdcff);
     this.scene.background.copy(col);

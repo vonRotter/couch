@@ -37,7 +37,7 @@ export const SEA = {
   seaweed: { sell: 8, color: 0x3fae6a }, clam: { sell: 12, color: 0xe8d8c8 }, shrimp: { sell: 20, color: 0xff9a7a },
   crab: { sell: 35, color: 0xff6a4a }, lobster: { sell: 90, color: 0xd94a3a },
 };
-export const TREASURE = { oldcoin: { sell: 40 }, pearl: { sell: 90 }, goldcup: { sell: 220 } };
+export const TREASURE = { oldcoin: { sell: 40 }, pearl: { sell: 90 }, goldcup: { sell: 220 }, crystalShell: { sell: 400 } };
 
 /** The café's recipe book. need: [[item or tag, n]]; tags: fish (any), seafish (not from the river). */
 export const RECIPES = {
@@ -53,6 +53,11 @@ export const RECIPES = {
   strawberryShake: { need: [['strawberry', 2]], price: 70, colors: [0xff9fd0, 0xff3b5c], drink: true },
   pumpkinPie: { need: [['pumpkin', 1]], price: 200, colors: [0xff9f1c, 0xe2b06a], pie: true },
   seafoodPlatter: { need: [['lobster', 1], ['squid', 1], ['seaweed', 1]], price: 300, colors: [0xd94a3a, 0xffb0c0, 0x3fae6a] },
+  // with eggs and milk from the barn (milestone B2)
+  omelette: { need: [['egg', 2]], price: 80, colors: [0xffd23f, 0xfff3a8], pie: true },
+  pancakes: { need: [['egg', 1], ['milk', 1]], price: 120, colors: [0xffd27a, 0xe2b06a, 0xff3b5c], pie: true },
+  milkshake: { need: [['milk', 1], ['strawberry', 1]], price: 110, colors: [0xfff3f8, 0xff3b5c], drink: true },
+  custardPie: { need: [['egg', 1], ['milk', 1], ['pumpkin', 1]], price: 360, colors: [0xffc070, 0xe2b06a], pie: true },
 };
 export const RECIPE_IDS = Object.keys(RECIPES);
 
@@ -67,6 +72,13 @@ Object.assign(ITEMS, {
   recipes: { kind: 'book' },
   flippers: { kind: 'gear', buy: 80 },
   tank: { kind: 'gear', buy: 150 },
+  seaLamp: { kind: 'gear', buy: 250 },
+  scooter: { kind: 'gear', buy: 350 },
+  egg: { kind: 'produce', sell: 25 },
+  milk: { kind: 'produce', sell: 60 },
+  chicken: { kind: 'animal', buy: 80 },
+  goat: { kind: 'animal', buy: 300 },
+  cow: { kind: 'animal', buy: 400 },
 });
 
 /** Is the fish biting at this hour? */
@@ -244,6 +256,17 @@ export function makeSeaThing(id) {
     case 'pearl':
       g.add(mesh(sph(0.22, 14, 10), toon(0xfff8f0, { emissive: 0x222222 }), 0, 0.22, 0));
       break;
+    case 'crystalShell': {
+      const sh = mesh(sph(0.35, 12, 8), toon(0xbff6ff, { emissive: 0x2a5a70 }), 0, 0.2, 0);
+      sh.scale.set(1, 0.5, 0.8);
+      g.add(sh);
+      for (let i = 0; i < 5; i++) g.add(mesh(box(0.03, 0.05, 0.5), 0x8ff0ff, -0.2 + i * 0.1, 0.36, 0, false));
+      break;
+    }
+    case 'egg': { const e = mesh(sph(0.2, 12, 10), 0xfff8f0, 0, 0.25, 0); e.scale.y = 1.3; g.add(e); break; }
+    case 'milk':
+      g.add(mesh(cyl(0.2, 0.22, 0.5, 12), 0xffffff, 0, 0.25, 0), mesh(cyl(0.12, 0.2, 0.2, 12), 0xffffff, 0, 0.6, 0), mesh(cyl(0.1, 0.1, 0.08, 10), 0x4cc9f0, 0, 0.73, 0), mesh(box(0.32, 0.18, 0.02), 0x4cc9f0, 0, 0.3, 0.21, false));
+      break;
     case 'goldcup':
       g.add(mesh(cyl(0.25, 0.12, 0.35, 12), COLORS.gold, 0, 0.45, 0), mesh(cyl(0.05, 0.05, 0.2, 6), COLORS.gold, 0, 0.18, 0), mesh(cyl(0.18, 0.2, 0.06, 12), COLORS.gold, 0, 0.05, 0), mesh(sph(0.06, 8, 6), 0xff5d73, 0, 0.45, 0.24, false));
       break;
@@ -292,4 +315,4 @@ export function seaModel(id) {
   if (RECIPES[id]) return makeDish(id);
   return makeSeaThing(id);
 }
-export const hasSeaModel = (id) => !!(FISH[id] || RECIPES[id] || SEA[id] || TREASURE[id]);
+export const hasSeaModel = (id) => !!(FISH[id] || RECIPES[id] || SEA[id] || TREASURE[id] || id === 'egg' || id === 'milk');

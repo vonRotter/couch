@@ -148,7 +148,8 @@ export class Cafe {
       return `<div class="isl-row ${start + k === C.i ? 'on' : ''}" style="grid-template-columns: clamp(34px,3.2vw,46px) 1fr auto auto">${icon(id)}<div>${esc(t(`isl.i.${id}`))}<div>${ings}</div></div>
         <small>${esc(t('isl.shop.owned', { n: count(this.save, id) }))}</small><div class="p">${icon('coin')}${r.price}</div></div>`;
     }).join('');
-    host.hud.setPanel(`<h2>${esc(t('isl.cook.title'))}</h2><div class="isl-rows">${rows}</div>
+    const regs = this.regulars().map((id) => `${t(`isl.npc.${id}`)}: ${t(`isl.i.${FAVORITE[id]}`)}`).join(', ');
+    host.hud.setPanel(`<h2>${esc(t('isl.cook.title'))}</h2>${regs ? `<div class="isl-foot" style="opacity:1;margin:0 0 6px">${esc(t('isl.cafe.regulars', { list: regs }))}</div>` : ''}<div class="isl-rows">${rows}</div>
       <div class="isl-foot">${esc(tFor(host.player?.p, C.bookOnly ? 'isl.cook.bookHint' : 'isl.cook.hint'))}</div>`);
   }
 
@@ -176,6 +177,11 @@ export class Cafe {
     host.markDirty();
     if (host.mode === 'cook') this.renderCook();
     return true;
+  }
+
+  /** Friends with 3+ hearts are regulars with a standing order (their favorite dish). */
+  regulars() {
+    return FRIENDS.filter((id) => (npcState(this.save, id).pts || 0) >= 30);
   }
 
   // ---------- service ----------
@@ -214,9 +220,12 @@ export class Cafe {
     // a friend (awake, not already here) or a visitor
     const here = new Set(sv.seats.filter(Boolean).map((g) => g.who));
     const friends = FRIENDS.filter((id) => !here.has(id) && !host.npc(id).sleep && !host.npc(id).talking);
+    // regulars (3+ hearts) come first, once each per night, for their usual dish
+    const regular = this.regulars().find((id) => friends.includes(id) && !sv.came?.has(id) && avail.includes(FAVORITE[id]));
     let who = null, model;
-    if (friends.length && Math.random() < 0.65) {
-      who = friends[Math.floor(Math.random() * friends.length)];
+    if (regular || (friends.length && Math.random() < 0.65)) {
+      who = regular || friends[Math.floor(Math.random() * friends.length)];
+      (sv.came ||= new Set()).add(who);
       model = makeNpcModel(who);
       const real = host.npc(who);
       real.model.group.visible = false;
@@ -230,7 +239,7 @@ export class Cafe {
     model.group.position.set(ENTER.x, heightAt(ENTER.x, ENTER.z), ENTER.z);
     host.scene.add(model.group);
     const tag = host.game.ui.label('label isl-order');
-    sv.seats[free] = { seat: free, who, model, order, x: ENTER.x, z: ENTER.z, state: 'in', pat: PATIENCE, say: '', sayT: 0, tag, hop: 0 };
+    sv.seats[free] = { seat: free, who, regular: who && who === regular, model, order, x: ENTER.x, z: ENTER.z, state: 'in', pat: PATIENCE, say: '', sayT: 0, tag, hop: 0 };
     sv.guests++;
     return true;
   }
@@ -251,7 +260,7 @@ export class Cafe {
     }
     take(S, dish, 1);
     const price = RECIPES[dish].price;
-    const tip = Math.round(price * 0.5 * (g.pat / PATIENCE));
+    const tip = Math.round(price * 0.5 * (g.pat / PATIENCE) * (S.unlocks.rosaHelps ? 1.25 : 1) * (g.regular ? 2 : 1));
     S.coins += price + tip;
     S.cafe.earned += price + tip;
     S.cafe.served++;
@@ -262,13 +271,13 @@ export class Cafe {
     g.eatT = 1.4;
     g.served = true;
     g.hop = 1;
-    g.say = t('isl.serve.tip', { n: price + tip, t: tip });
+    g.say = g.regular ? `${t('isl.serve.regular')} +${price + tip}` : t('isl.serve.tip', { n: price + tip, t: tip });
     g.sayT = 1.6;
     const dishModel = host.dishModel(dish);
     dishModel.position.set(SEATS[g.seat].x, 0.72, CAFE.z + 3.3);
     host.scene.add(dishModel);
     g.plate = dishModel;
-    if (g.who) host.addPts(g.who, 4);
+    if (g.who) host.addPts(g.who, g.regular ? 6 : 4);
     host.confetti.burst(new THREE.Vector3(g.x, 2.2, g.z), 0, { count: 22, speed: 4, up: 4, life: 1, gravity: -8, colors: [0xffd23f, 0xffe47a, 0x3ddc97] });
     host.game.audio.play('coin');
     sv.dish = Math.min(sv.dish, Math.max(0, this.dishesInStock().length - 1));

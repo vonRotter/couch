@@ -572,7 +572,6 @@ export class IslandMap {
     for (const [a, b] of [[p0, { x: p1.x, z: p0.z }], [{ x: p1.x, z: p0.z }, p1], [p1, { x: p0.x, z: p1.z }], [{ x: p0.x, z: p1.z }, { x: p0.x, z: p0.z + 2.5 }]]) { this.put(makeFence(a, b, heightAt), 0, 0, 0, 0); this.segObs(a, b); }
     this.put(makeBarn(M), -14, 12.6, Math.PI);
     this.boxObs(-14, 12.6, 2.3, 1.9);
-    this.put(mesh(box(1.4, 0.5, 0.6), WOOD, 0, 0.25, 0), -11, 4);
     this.circObs(-11, 4, 0.7);
     this.sign(-7.6, 4.2, 0xd94a4a);
     // home yard: flower beds and a bench

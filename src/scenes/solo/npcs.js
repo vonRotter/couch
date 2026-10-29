@@ -12,7 +12,7 @@ import { hourOf, since, HOUR } from './save.js';
 // quests. Dialog keys live in strings.js under isl.<id>.*.
 
 export const PTS_PER_HEART = 10;
-export const MAX_HEARTS = 5;
+export const MAX_HEARTS = 10;
 export const TALK_PTS = 3;
 export const GIFT_PTS = { love: 10, like: 6, neutral: 3, dislike: 0 };
 
@@ -30,8 +30,10 @@ export const NPCS = {
     quests: [
       { need: [['radish', 1]], reward: { items: [['strawberrySeed', 2], ['tomatoSeed', 2]], coins: 10 } },
       { need: [['carrot', 1], ['lettuce', 1]], minHearts: 1, reward: { items: [['pumpkinSeed', 1]], coins: 50, deco: 'gnome' } },
+      { need: [['wood', 15], ['stone', 10]], minHearts: 2, reward: { unlock: 'barn', items: [['hay', 6]] } },
     ],
-    events: [{ at: 2, lines: 4, reward: { items: [['bouquet', 2], ['lettuceSeed', 3]] } }, { at: 4, lines: 4, reward: { unlock: 'bigCan' } }],
+    events: [{ at: 2, lines: 4, reward: { items: [['bouquet', 2], ['lettuceSeed', 3]] } }, { at: 4, lines: 4, reward: { unlock: 'bigCan' } },
+      { at: 6, lines: 4, reward: { deco: 'quilt' } }, { at: 8, lines: 4, reward: { deco: 'gardenArch' } }],
     game: (p) => (p.island?.stats?.harvested >= 10 ? 'game2' : p.island?.stats?.harvested >= 1 ? 'game1' : 'game0'),
   },
   rosa: {
@@ -42,7 +44,8 @@ export const NPCS = {
       { need: [['radish', 3]], reward: { items: [['cornSeed', 2]], coins: 40 } },
       { need: [['pumpkin', 1]], minHearts: 1, reward: { coins: 100, deco: 'pumpkinLamp' } },
     ],
-    events: [{ at: 2, lines: 4, reward: { unlock: 'discount' } }, { at: 4, lines: 4, reward: { items: [['tomatoSeed', 5], ['bouquet', 1]] } }],
+    events: [{ at: 2, lines: 4, reward: { unlock: 'discount' } }, { at: 4, lines: 4, reward: { items: [['tomatoSeed', 5], ['bouquet', 1]] } },
+      { at: 6, lines: 4, reward: { unlock: 'rosaHelps' } }, { at: 8, lines: 4, reward: { deco: 'portrait' } }],
     game: (p) => (p.island?.stats?.shipped >= 20 ? 'game2' : p.island?.stats?.shipped >= 1 ? 'game1' : 'game0'),
   },
   bram: {
@@ -53,7 +56,8 @@ export const NPCS = {
       { need: [['carrot', 1]], reward: { items: [['pickaxe', 1]] } },
       { find: 'lens', minHearts: 1, reward: { items: [['starfruitSeed', 1]], coins: 60 } },
     ],
-    events: [{ at: 2, lines: 4, reward: { items: [['pumpkinSeed', 2]] } }, { at: 4, lines: 4, reward: { deco: 'lantern' } }],
+    events: [{ at: 2, lines: 4, reward: { items: [['pumpkinSeed', 2]] } }, { at: 4, lines: 4, reward: { deco: 'lantern' } },
+      { at: 6, lines: 4, reward: { deco: 'shipWheel' } }, { at: 8, lines: 4, reward: { deco: 'scope' } }],
     game: (p) => (p.lighthouse?.flags?.finale ? 'game2' : p.lighthouse?.crystals > 0 ? 'game1' : 'game0'),
   },
   grumbleton: {
@@ -64,7 +68,8 @@ export const NPCS = {
       { find: 'feather', reward: { items: [['strawberrySeed', 3]], coins: 30 } },
       { need: [['strawberry', 3]], minHearts: 1, reward: { deco: 'bottle', coins: 40 } },
     ],
-    events: [{ at: 2, lines: 4, reward: { coins: 50 } }, { at: 4, lines: 4, reward: { deco: 'spyglass' } }],
+    events: [{ at: 2, lines: 4, reward: { coins: 50 } }, { at: 4, lines: 4, reward: { deco: 'spyglass' } },
+      { at: 6, lines: 4, reward: { unlock: 'goldRod' } }, { at: 8, lines: 4, reward: { deco: 'anchor' } }],
     game: (p) => (p.adventure?.done2 ? 'game2' : p.adventure?.done ? 'game1' : 'game0'),
   },
   pip: {
@@ -75,7 +80,8 @@ export const NPCS = {
       { find: 'starmap', reward: { items: [['starfruitSeed', 1]], unlock: 'starfruit' } },
       { need: [['corn', 2]], minHearts: 1, reward: { coins: 80, deco: 'rocket' } },
     ],
-    events: [{ at: 2, lines: 4, reward: { items: [['starfruitSeed', 1]] } }, { at: 4, lines: 4, reward: { deco: 'moonrock' } }],
+    events: [{ at: 2, lines: 4, reward: { items: [['starfruitSeed', 1]] } }, { at: 4, lines: 4, reward: { deco: 'moonrock' } },
+      { at: 6, lines: 5, fx: 'rocket', reward: { deco: 'starLamp' } }, { at: 8, lines: 4, reward: { deco: 'photo' } }],
     game: (p) => ((p.skyhop || 0) >= 5 ? 'game2' : (p.skyhop || 0) >= 1 ? 'game1' : 'game0'),
   },
   mumble: {
