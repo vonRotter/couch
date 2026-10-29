@@ -41,6 +41,7 @@ import { DogfightScene } from './scenes/dogfight.js';
 import { DuckHuntScene } from './scenes/duckhunt.js';
 import { AdventureScene } from './scenes/adventure.js';
 import { LighthouseScene } from './scenes/lighthouse.js';
+import { BreachScene } from './scenes/breach.js';
 import { StoryScene, STORY_GAMES } from './scenes/story.js';
 import { activateProfile, updateProfile, soloSaveKey } from './core/profiles.js';
 import { setVoice, voiceOn, say } from './core/voice.js';
@@ -72,6 +73,7 @@ export const GAMES = {
   duckhunt: { Scene: DuckHuntScene },
   adventure: { Scene: AdventureScene },
   lighthouse: { Scene: LighthouseScene },
+  breach: { Scene: BreachScene }, // Bean Brigade (solo island only)
   story: { Scene: StoryScene },
   ...STORY_GAMES, // the four Grumble King boss games (only reachable from the story map)
   spelling: { Scene: SpellingScene, edu: true },
