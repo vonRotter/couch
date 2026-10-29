@@ -88,7 +88,7 @@ export const SPOTS = {
   lhDoor: { x: 42.4, z: 30.8 }, beach: { x: 18, z: 40 }, pier: { x: 3, z: 47 }, pierEnd: { x: 3.4, z: 56.5 },
   cafe: { x: -8.2, z: 41.2 }, shipDeck: { x: 4.6, z: 52 },
   pad: { x: 37.4, z: -12.4 }, hallFront: { x: 30.5, z: -11.2 }, hillTop: { x: 10.4, z: -26.4 }, rocket: { x: 38.6, z: -13.2 },
-  meadow: { x: 44, z: -14 },
+  meadow: { x: 47, z: -11 },
 };
 
 // Branch spots (wood for the bridge), quest finds and dive/fish spots for later.

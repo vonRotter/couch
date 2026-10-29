@@ -81,7 +81,7 @@ export const NPCS = {
   mumble: {
     voice: { pitch: 1.75, rate: 1.0, css: '#3f9a32' },
     sched: [[0, 'meadow', true], [7, 'meadow'], [21, 'meadow', true]],
-    wander: 4,
+    wander: 3,
     loves: ['radish'], likes: ['carrot', 'strawberry'], dislikes: ['bouquet'],
     quests: [{ need: [['radish', 3]], reward: { unlock: 'burrow' } }],
     events: [],
