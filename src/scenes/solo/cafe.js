@@ -24,7 +24,9 @@ const MAX_SPECIALS = 4, SPECIAL_BONUS = 1.3;
 const ENTER = { x: CAFE.x + 4.4, z: CAFE.z + 2.55 };
 const PATIENCE = 30;
 const FRIENDS = ['rosa', 'hazel', 'bram', 'grumbleton', 'pip', 'mumble'];
-const FAVORITE = { hazel: 'carrotSoup', rosa: 'strawberryShake', bram: 'fishStew', grumbleton: 'sushi', pip: 'tempura', mumble: 'radishSalad' };
+const FAVORITE = { hazel: 'carrotSoup', rosa: 'strawberryShake', bram: 'fishStew', grumbleton: 'sushi', pip: 'tempura', mumble: 'radishSalad', shelby: 'seaweedSalad' };
+// friends from Shell Isle only sail over as regulars (3+ hearts), for their favorite dish (milestone B4)
+const ISLE_FRIENDS = ['shelby'];
 export const OPEN_HOURS = [8, 22];
 
 const CSS = `
@@ -242,7 +244,7 @@ export class Cafe {
 
   /** Friends with 3+ hearts are regulars with a standing order (their favorite dish). */
   regulars() {
-    return FRIENDS.filter((id) => (npcState(this.save, id).pts || 0) >= 30);
+    return [...FRIENDS, ...ISLE_FRIENDS].filter((id) => (npcState(this.save, id).pts || 0) >= 30);
   }
 
   // ---------- service ----------
@@ -280,9 +282,10 @@ export class Cafe {
     if (!avail.length) return false;
     // a friend (awake, not already here) or a visitor
     const here = new Set(sv.seats.filter(Boolean).map((g) => g.who));
-    const friends = FRIENDS.filter((id) => !here.has(id) && !host.npc(id).sleep && !host.npc(id).talking);
+    const regs = this.regulars();
+    const friends = [...FRIENDS, ...ISLE_FRIENDS.filter((id) => regs.includes(id))].filter((id) => !here.has(id) && !host.npc(id).sleep && !host.npc(id).talking);
     // regulars (3+ hearts) come first, once each per night, for their usual dish
-    const regular = this.regulars().find((id) => friends.includes(id) && !sv.came?.has(id) && avail.includes(FAVORITE[id]));
+    const regular = regs.find((id) => friends.includes(id) && !sv.came?.has(id) && avail.includes(FAVORITE[id]));
     let who = null, model;
     if (regular || (friends.length && Math.random() < 0.65)) {
       who = regular || friends[Math.floor(Math.random() * friends.length)];

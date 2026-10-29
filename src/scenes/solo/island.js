@@ -12,6 +12,7 @@ import './strings.js';
 import './strings2.js';
 import './strings3.js';
 import './strings4.js';
+import './strings5.js';
 import { Ranch } from './animals.js';
 import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
@@ -1326,7 +1327,7 @@ export class SoloIslandScene extends BaseScene {
     this.hud.setPanel(`<h2>${esc(t(r.id === 'postcard' ? 'isl.photo.title' : 'isl.mail.title', { name: this.playerName }))}</h2>
       ${card}<div class="isl-letter">${esc(body)}<div class="from">${esc(t('isl.mail.from', { name: t(`isl.from.${r.from}`) }))}</div></div>
       <div class="isl-gifts">${gifts}</div><div class="isl-foot">${esc(tFor(this.player?.p, r.id === 'postcard' ? 'isl.ok' : 'isl.mail.hint'))}</div>`);
-    const v = r.from === 'lh' || r.from === 'cave' ? NPCS.bram.voice : r.from === 'adv' ? NPCS.grumbleton.voice : r.from === 'hop' ? NPCS.pip.voice : { pitch: 1, rate: 0.95 };
+    const v = r.from === 'lh' || r.from === 'cave' ? NPCS.bram.voice : r.from === 'adv' ? NPCS.grumbleton.voice : r.from === 'hop' ? NPCS.pip.voice : NPCS[r.from]?.voice || { pitch: 1, rate: 0.95 };
     speak(body, v);
     this.game.audio.play('select');
     const mb = this.map.mailbox.userData;
@@ -1570,6 +1571,19 @@ export class SoloIslandScene extends BaseScene {
 
   updateCamera(dt) {
     const P = this.player;
+    // a view of its own (the boat trip, the lighthouse top, the telescope): { pos, look, fov? }
+    const v = this.camView;
+    if (v) {
+      this.camera.position.copy(v.pos);
+      this.camera.lookAt(v.look);
+      const fov = v.fov || 45;
+      if (this.camera.fov !== fov) { this.camera.fov = fov; this.camera.updateProjectionMatrix(); }
+      const sun = this.lights.sun;
+      sun.position.copy(v.look).add((this.sunDir || new THREE.Vector3(-0.5, 1, 0.6)).clone().normalize().multiplyScalar(40));
+      sun.target.position.copy(v.look);
+      return;
+    }
+    if (this.camera.fov !== 45) { this.camera.fov = 45; this.camera.updateProjectionMatrix(); }
     if (P) {
       const k = dt ? Math.min(1, dt * 4) : 1;
       const ox = this.camOffset?.x || 0, oz = this.camOffset?.z || 0; // photo mode slides the view (same distance)
@@ -1648,7 +1662,7 @@ export class SoloIslandScene extends BaseScene {
       const parts = [ia.a?.text, ia.b?.text].filter(Boolean);
       prompt = parts.join(' · ');
     }
-    if (!['fish', 'deco', 'sled'].includes(this.mode)) this.hud.setPrompt(prompt);
+    if (!['fish', 'deco', 'sled', 'sail'].includes(this.mode)) this.hud.setPrompt(prompt);
     const mb = this.map.mailbox.userData;
     mb.flag.rotation.z = S.mail.length ? 0 : -Math.PI / 2;
     mb.letter.visible = S.mail.length > 0 && this.mode !== 'letter';

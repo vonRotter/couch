@@ -6,8 +6,10 @@ import { say as speak } from '../../core/voice.js';
 import { now, count, give, take } from './save.js';
 import { dayKey, weekIndex } from './calendar.js';
 import { heightAt, SEA_Y, PIER } from './map.js';
-import { mesh, cyl, sph, cone, makePier, makeLamp, makeSign } from './models.js';
+import { mesh, cyl, sph, cone, makePier, makeLamp, makeSign, makeBuoy } from './models.js';
 import { makePalm, makeBerryBush, makePoolRim, makeDigSpot, makeShellHut, makeSailboat } from './models3.js';
+import { makeSeal } from './models4.js';
+import { makeSeagull } from '../adventure/props.js';
 import { ISLE2, ISLE2_DOCK, ISLE2_BOAT, ISLE2_ARRIVE, COVE, POOLS, PALMS, BERRIES, DIGS, HUT, isle2Height, inCove } from './isle2geo.js';
 
 // Shell Isle, the second island (milestone B3). The sea chart from the glow cave (diving) shows the way;
@@ -16,8 +18,14 @@ import { ISLE2, ISLE2_DOCK, ISLE2_BOAT, ISLE2_ARRIVE, COVE, POOLS, PALMS, BERRIE
 // to shake for coconuts and wild berry bushes (every day), a hidden cove behind the rocks where special
 // fish bite, four treasure spots to dig with the hoe (new treasure every week), and Shelby the hermit crab,
 // who visits the main island's beach on weekends once you are friends. Sail home from the dock.
+// Milestone B4: the trip is a little show. The view swings around the boat (always at the island camera's
+// usual distance) so you see the island you leave and then the one you sail to, the fog is lighter on the
+// open sea, and things pass by: buoys, gulls that follow the boat, a seal waving from its rock, the dolphin.
 
 const SAIL_TIME = 6;
+const CAM_UP = 12.5, CAM_BACK = 13; // the island camera's distance (island.js)
+const SEA_BUOYS = [[-4.5, 82], [9, 99], [-6.5, 136], [8.5, 150]];
+const SEAL_ROCK = { x: -7.2, z: 117 };
 const MAIN_BOAT = { x: PIER.x, z: PIER.z0 + PIER.len + 2.3 }; // the sailboat waits at the end of the pier
 const MAIN_BOARD = { x: PIER.x, z: PIER.z0 + PIER.len - 0.7 };
 const POOL_FINDS = ['starfish', 'seaGlass', 'seaShell'];
@@ -82,6 +90,16 @@ export class Isle2 {
     this.dolphin.add(db, mesh(cone(0.25, 0.6, 4), 0x8fa8c8, 0, 0.6, 0, false), mesh(cone(0.3, 0.5, 4), 0x8fa8c8, -1.1, 0, 0, false).rotateZ(Math.PI / 2), mesh(sph(0.06, 6, 4), 0x2b2340, 0.75, 0.15, 0.3, false));
     this.dolphin.visible = false;
     scene.add(this.dolphin);
+    // things on the way: buoys, a seal on its rock, and two gulls that follow the boat
+    this.seaBuoys = SEA_BUOYS.map(([x, z], i) => { const b = makeBuoy(); b.position.set(x, SEA_Y, z); b.userData.ph = i * 1.7; scene.add(b); return b; });
+    const rock = makeRock(rand, 1.5);
+    rock.position.set(SEAL_ROCK.x, SEA_Y + 0.15, SEAL_ROCK.z);
+    scene.add(rock);
+    this.seal = makeSeal();
+    this.seal.position.set(SEAL_ROCK.x + 0.1, SEA_Y + 1.05, SEAL_ROCK.z);
+    this.seal.rotation.y = 0.6;
+    scene.add(this.seal);
+    this.sailGulls = [0, 1].map((i) => { const g = makeSeagull(); g.scale.setScalar(0.9); g.visible = false; scene.add(g); return { g, a: i * Math.PI, r: 3.2 + i * 1.3, y: 4 + i * 0.8 }; });
     put(makeSign(0xff9fc0), -2.2, 178.4);
     map.circObs(-2.2, 178.4, 0.3);
     this.signSpot = { x: -2.2, z: 178.4 };
@@ -170,6 +188,7 @@ export class Isle2 {
     this.boat.visible = true;
     this.boat.rotation.y = dir === 'isle' ? -Math.PI / 2 : Math.PI / 2;
     host.game.audio.play('whoosh');
+    for (const el of [host.hud.hotbar, host.hud.selname, host.hud.tasks]) el.style.visibility = 'hidden'; // a clear view of the sea
     const txt = t(dir === 'isle' ? 'isl.isle.sailing' : 'isl.isle.sailingHome');
     speak(txt, { pitch: 0.55, rate: 0.9 });
     host.game.ui.toast(txt, 2600);
@@ -193,16 +212,36 @@ export class Isle2 {
     g.x = x + 0.6; g.z = z - fwd * 1.3; g.yOverride = y + 0.6; g.model.face(0, fwd);
     if (Math.random() < 0.6) host.puffs.burst(new THREE.Vector3(x + (Math.random() - 0.5) * 1.6, SEA_Y + 0.1, z - fwd * 2.2), 0xffffff, { count: 1, speed: 1.2, up: 1, size: 0.4, life: 0.7 });
     host.hud.setPrompt(t(sl.dir === 'isle' ? 'isl.isle.sailing' : 'isl.isle.sailingHome'));
-    // two happy dolphin leaps on the way
-    const jt = [1.6, 3.6].map((t0) => (sl.t - t0) / 1.1).find((q) => q >= 0 && q <= 1);
+    // two happy dolphin leaps on the way, beside the boat where the view looks
+    const jt = [2.0, 3.8].map((t0) => (sl.t - t0) / 1.1).find((q) => q >= 0 && q <= 1);
     this.dolphin.visible = jt !== undefined;
     if (jt !== undefined) {
       this.dolphin.position.set(x + 3.2, SEA_Y - 0.4 + Math.sin(jt * Math.PI) * 2.2, z + fwd * (1 + jt * 4));
       this.dolphin.rotation.set(0, -fwd * Math.PI / 2, (0.5 - jt) * 1.6);
       if (jt < 0.05 || jt > 0.95) host.puffs.burst(new THREE.Vector3(this.dolphin.position.x, SEA_Y + 0.1, this.dolphin.position.z), 0xffffff, { count: 6, speed: 2, up: 2, size: 0.3, life: 0.6 });
     }
-    host.snapCamera(); // keep the boat in the middle of the screen
-    if (k >= 1) { this.dolphin.visible = false; this.arrive(); }
+    // gulls circle over the boat
+    for (const gl of this.sailGulls) {
+      gl.a += dt * 1.4;
+      gl.g.visible = true;
+      gl.g.position.set(x + Math.cos(gl.a) * gl.r, y + gl.y + Math.sin(sl.t * 2 + gl.a) * 0.3, z + Math.sin(gl.a) * gl.r);
+      gl.g.rotation.y = -gl.a - Math.PI;
+      for (const [i, w] of gl.g.userData.wings.entries()) w.rotation.x = (i ? 1 : -1) * Math.sin(sl.t * 7 + gl.a) * 0.6;
+    }
+    // the view: same distance as on the island, but it swings around the boat. To Shell Isle it first looks
+    // back at the main island, then turns to look ahead at the isle, and swings back just before the dock.
+    const ss = (a, b, v) => { const q = Math.min(1, Math.max(0, (v - a) / (b - a))); return q * q * (3 - 2 * q); };
+    const yaw = sl.dir === 'isle' ? Math.PI * (ss(0.2, 0.5, k) - ss(0.86, 1, k)) : 0.9 * Math.sin(Math.PI * ss(0.15, 0.85, k));
+    // the camera stays where the island camera would be, but tilts up to the horizon (it looks at a point
+    // further out), so the islands far away are in the picture, not just the water under the boat
+    const far = 11 * ss(0, 0.12, k) * (1 - ss(0.9, 1, k));
+    const look = new THREE.Vector3(x - Math.sin(yaw) * far, y + 0.6, z - Math.cos(yaw) * far);
+    host.camView = { look, pos: new THREE.Vector3(x + Math.sin(yaw) * CAM_BACK, y + CAM_UP, z + Math.cos(yaw) * CAM_BACK) };
+    host.camTarget.set(x, y, z);
+    // lighter fog on the open sea, so both islands can be seen
+    host.scene.fog.near = 90;
+    host.scene.fog.far = 240;
+    if (k >= 1) { this.dolphin.visible = false; for (const gl of this.sailGulls) gl.g.visible = false; this.arrive(); }
   }
 
   arrive() {
@@ -210,6 +249,10 @@ export class Isle2 {
     const g = host.npc('grumbleton');
     this.sail = null;
     host.mode = 'walk';
+    host.camView = null;
+    for (const el of [host.hud.hotbar, host.hud.selname, host.hud.tasks]) el.style.visibility = '';
+    host.scene.fog.near = 60;
+    host.scene.fog.far = 150;
     g.yOverride = null;
     host.hud.setPrompt('');
     if (sl.dir === 'isle') {
@@ -321,6 +364,11 @@ export class Isle2 {
     for (const d of this.digs) if (d.g.visible) { d.g.userData.glint.rotation.y += dt * 3; d.g.userData.glint.scale.y = 0.6 + Math.sin(time * 4 + d.i) * 0.4; }
     for (const p of this.pools) if (p.g.userData.find.visible) p.g.userData.find.children[1].scale.y = 0.6 + Math.sin(time * 5 + p.i) * 0.4;
     if (!this.sail && this.boat.visible) { this.boat.position.y = SEA_Y - 0.1 + Math.sin(time * 1.3) * 0.06; this.boat.rotation.z = Math.sin(time) * 0.03; }
+    for (const b of this.seaBuoys) { b.position.y = SEA_Y + Math.sin(time * 1.2 + b.userData.ph) * 0.08; b.rotation.z = Math.sin(time * 0.9 + b.userData.ph) * 0.08; }
+    // the seal waves a flipper and nods
+    const sd = this.seal.userData;
+    sd.flip.rotation.z = -0.4 + Math.sin(time * 5) * 0.5;
+    sd.head.rotation.z = Math.sin(time * 1.3) * 0.15;
   }
 
   /** The chart: once Grumbleton has seen it, the boat is ready at the pier. */

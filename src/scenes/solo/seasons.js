@@ -23,7 +23,7 @@ import { Sled } from './sled.js';
 const CAL_BOARD = { x: 17.8, z: -9.8 };
 const SHELLS = [[12, 41.2], [16.5, 42.4], [20.5, 38.6], [25, 41.6], [29.5, 40.2], [31.5, 37.8]];
 export const SEASON_CSS = { spring: '#ffd6e8', summer: '#fff1a8', autumn: '#ffd2a8', winter: '#d6ecff' };
-const LETTER_GIFTS = { hazel: [['carrotSeed', 3], ['lettuceSeed', 3]], rosa: [['bouquet', 1], ['tomatoSeed', 2]], bram: [['pumpkinSeed', 1], ['wood', 3]], grumbleton: [['coins', 40], ['strawberrySeed', 2]], pip: [['starfruitSeed', 1], ['cornSeed', 2]] };
+const LETTER_GIFTS = { hazel: [['carrotSeed', 3], ['lettuceSeed', 3]], rosa: [['bouquet', 1], ['tomatoSeed', 2]], bram: [['pumpkinSeed', 1], ['wood', 3]], grumbleton: [['coins', 40], ['strawberrySeed', 2]], pip: [['starfruitSeed', 1], ['cornSeed', 2]], shelby: [['coconut', 2], ['seaGlass', 1]] };
 
 export class Seasons {
   constructor(host) {
@@ -150,7 +150,7 @@ export class Seasons {
     if (S.mail.filter((m) => m.id.startsWith('f.')).length >= 3) return; // unread letters wait first
     S.fest.letterDay = today;
     let sent = 0;
-    for (const id of ['hazel', 'rosa', 'bram', 'grumbleton', 'pip']) {
+    for (const id of ['hazel', 'rosa', 'bram', 'grumbleton', 'pip', 'shelby']) {
       if (sent >= 2 || heartsOf(npcState(S, id)) < 3) continue;
       if (dayRand(`letter:${today}:${id}`) > 0.35) continue;
       const k = dayRand(`letterk:${today}:${id}`) < 0.5 ? 1 : 2;

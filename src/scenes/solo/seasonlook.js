@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 import { COLORS, toon } from '../../core/palette.js';
-import { HOME, HAZEL_HOME, STORE, CAFE, RIVER_PTS, RIVER_W, SEA_Y, heightAt } from './map.js';
-import { mesh, roofGeo } from './models.js';
+import { HOME, HAZEL_HOME, STORE, CAFE, RIVER_PTS, RIVER_W, SEA_Y, MUSEUM, GREENHOUSE, HALL, WELL, PLACES, heightAt } from './map.js';
+import { mesh, box, cone, roofGeo } from './models.js';
 
 // How the island looks in each season (milestone B3), kept cheap: the baked tree and bush meshes get a
 // seasonal material, the ground's vertex colors are tinted once per season change, winter adds snow caps
 // on the roofs and an icy rim along the river, and a single small particle system shows petals (spring),
 // falling leaves (autumn) or snow (winter; heavier on snowy days).
+// Milestone B4: in winter the dirt paths and the field's grass underlay turn snowy too, and every roof has
+// its snow (the museum, the greenhouse once it has glass, the game hall, the well, the lighthouse, the
+// keep, the castle gate, the fairground tent, the mine's beam and the cottage porch). Shell Isle stays warm.
 
 // leaf colors used by the trees and bushes (world.js and the forest in map.js) -> season colors
 const LEAVES = {
@@ -15,6 +18,8 @@ const LEAVES = {
   0x2f9e5a: { spring: 0x3fae6a, autumn: 0x8a9a3a, winter: 0x6f9f8a },
   0x3fae4a: { spring: 0x6fcf5a, autumn: 0xd9583a, winter: 0xe8f2ff },
 };
+// the baked dirt paths (top and edge) and the field's grass underlay -> their snowy winter colors
+const FLATS = { 0xe0b57a: 0xf1ece6, 0xc99a5e: 0xd3dae6, 0x86c24e: 0xe2eaf5 };
 const GROUND = {
   spring: { grass: [0xa8e878, 0.22], sand: null },
   summer: null,
@@ -50,9 +55,11 @@ export class SeasonLook {
     this.mats = new Map();
     // the baked leaf meshes
     this.leaves = [];
+    this.flats = [];
     for (const m of map.baked?.children || []) {
       const hex = m.material?.color?.getHex();
       if (hex !== undefined && LEAVES[hex]) this.leaves.push({ m, base: m.material, hex });
+      if (hex !== undefined && FLATS[hex] !== undefined) this.flats.push({ m, base: m.material, snow: new THREE.MeshToonMaterial({ color: FLATS[hex], gradientMap: toon(0xffffff).gradientMap }) });
     }
     // the ground's own colors, and which vertices are grass or sand
     const col = map.ground.geometry.attributes.color;
@@ -82,6 +89,7 @@ export class SeasonLook {
     const barn = mesh(roofGeo(5.0, 4.36, 1.86), snow, -14, heightAt(-14, 12.6) + 2.78, 12.6, false);
     barn.rotation.y = Math.PI;
     this.winter.add(barn);
+    this.moreCaps(snow, host);
     this.winter.add(this.iceRim());
     this.winter.visible = false;
     host.scene.add(this.winter);
@@ -97,6 +105,49 @@ export class SeasonLook {
     this.points.visible = false;
     host.scene.add(this.points);
     this.parts = [...Array(MAX_P)].map(() => ({ x: (Math.random() - 0.5) * 50, y: Math.random() * 16, z: (Math.random() - 0.5) * 40, ph: Math.random() * 6 }));
+  }
+
+  /** Snow on the roofs added after B2: two snowy slabs on a gable roof, and snow hats on the pointy roofs. */
+  moreCaps(snow, host) {
+    // a gable roof: ridge height h over (cx, y0, cz), half width `half`, length `len` along the ridge
+    const gable = (group, cx, y0, cz, half, h, len, ridgeAlongZ) => {
+      const th = Math.atan2(h, half), L = Math.hypot(half, h) + 0.22;
+      for (const s of [-1, 1]) {
+        const m = mesh(ridgeAlongZ ? box(L, 0.14, len) : box(len, 0.14, L), snow, 0, 0, 0, false);
+        if (ridgeAlongZ) { m.position.set(cx + s * half / 2, y0 + h / 2 + 0.09, cz); m.rotation.z = -s * th; }
+        else { m.position.set(cx, y0 + h / 2 + 0.09, cz + s * half / 2); m.rotation.x = s * th; }
+        group.add(m);
+      }
+    };
+    const hat = (pl, apexY, r, h, seg = 16) => this.winter.add(mesh(cone(r, h, seg), snow, pl.x, apexY + 0.05 - h / 2, pl.z, false).rotateY(seg === 4 ? Math.PI / 4 : 0));
+    // the museum's pediment roof (ridge front to back)
+    gable(this.winter, MUSEUM.x, heightAt(MUSEUM.x, MUSEUM.z) + 0.02 + 3.55, MUSEUM.z + 0.5, 3.7, 1.4, 6.0, true);
+    // the game hall and the well
+    gable(this.winter, HALL.x, 4.0, HALL.z, 3.1, 1.4, 12.1, false);
+    gable(this.winter, WELL.x, heightAt(WELL.x, WELL.z) + 2.0, WELL.z, 0.7, 0.6, 2.2, false);
+    // the greenhouse's glass roof (only once it is fixed, see update)
+    const G = GREENHOUSE;
+    this.ghSnow = new THREE.Group();
+    gable(this.ghSnow, G.x, heightAt(G.x, G.z) + 2.22, G.z, (G.d + 0.5) / 2, 1.4, G.w + 0.2, false);
+    this.winter.add(this.ghSnow);
+    // pointy roofs: the lighthouse, Pillow Keep, the fairground tent
+    const P = Object.fromEntries(PLACES.map((p) => [p.id, p]));
+    hat(P.lighthouse, 0.1 + 13.05, 0.85, 0.85);
+    hat(P.keep, heightAt(P.keep.x, P.keep.z) + 8.4, 1.5, 1.42);
+    hat(P.tent, 0.02 + 5.0, 1.6, 1.08);
+    // the castle gate's two blue tower roofs
+    for (const sx of [-1, 1]) hat({ x: P.castle.x + sx * 2.6, z: P.castle.z }, heightAt(P.castle.x, P.castle.z) + 7.1, 0.85, 0.97, 4);
+    // the beam over the mine's entrance
+    this.winter.add(mesh(box(4.7, 0.1, 0.7), snow, P.mine.x, 3.98, P.mine.z + 0.2, false));
+    // the cottage porch (an upgrade: the snow rides on the porch, so it shows only with it)
+    this.porchSnow = null;
+    const porch = host.builder?.porch;
+    if (porch) {
+      this.porchSnow = mesh(box(6.04, 0.08, 2.24), snow, 0, 2.36, 0.2, false);
+      this.porchSnow.rotation.x = 0.18;
+      this.porchSnow.visible = false;
+      porch.add(this.porchSnow);
+    }
   }
 
   /** A pale, slightly see-through ribbon of ice on both sides of the river. */
@@ -151,7 +202,9 @@ export class SeasonLook {
       c.toArray(arr, i * 3);
     }
     col.needsUpdate = true;
+    for (const f of this.flats) f.m.material = season === 'winter' ? f.snow : f.base;
     this.winter.visible = season === 'winter';
+    if (this.porchSnow) this.porchSnow.visible = season === 'winter';
     // particles of the season
     const P = PARTICLES[season];
     const cols = this.pGeo.attributes.color.array, cc = new THREE.Color();
@@ -163,6 +216,7 @@ export class SeasonLook {
 
   /** Particles every frame. heavy: a snowy (rainy) winter day. */
   update(dt, { indoors, heavy }) {
+    this.ghSnow.visible = !!this.host.save.unlocks.greenhouse; // snow on the glass once there is glass
     const P = this.look;
     const n = !P || indoors ? 0 : Math.min(MAX_P, heavy && this.season === 'winter' ? MAX_P : P.n);
     this.points.visible = n > 0;
