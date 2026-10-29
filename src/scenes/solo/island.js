@@ -29,6 +29,7 @@ const PR = 0.42;
 const CAM_UP = 12.5, CAM_BACK = 13; // a bit further than the shared island's closest framing (10.4 / 10.4)
 const MODES = ['island', 'story', 'solo'];
 const BRIDGE_WOOD = 10;
+const PARTY = [0xff5d73, 0xffc93c, 0x3ddc97, 0x4cc9f0, 0x9b5de5];
 const ROCK_HITS = 5;
 const BRANCH_RESPAWN = 15 * MIN;
 const NPC_SPEED = 2.6;
@@ -219,7 +220,7 @@ export class SoloIslandScene extends BaseScene {
       g.rotation.y = 0.3;
     }
     this.decoViews.set(id, g);
-    if (celebrate) this.confetti.burst(g.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 0, { count: 40, speed: 6, up: 4, life: 1.4, gravity: -6 });
+    if (celebrate) this.confetti.burst(g.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 0, { colors: PARTY, count: 40, speed: 6, up: 4, life: 1.4, gravity: -6 });
   }
 
   spawnNpcs() {
@@ -529,7 +530,7 @@ export class SoloIslandScene extends BaseScene {
   grant(r) {
     if (!r) return;
     if (r.items) this.giveItems(r.items);
-    if (r.coins) { this.save.coins += r.coins; this.game.audio.play('coin'); this.game.ui.toast(`+${r.coins} ${icon('coin') ? '' : ''}`.trim() || `+${r.coins}`); }
+    if (r.coins) { this.save.coins += r.coins; this.game.audio.play('coin'); this.game.ui.toast(t('isl.t.coins', { n: r.coins })); }
     if (r.deco) this.addDeco(r.deco);
     if (r.unlock) this.unlock(r.unlock);
     this.markDirty();
@@ -561,7 +562,7 @@ export class SoloIslandScene extends BaseScene {
     m.rockfall.visible = !U.mine;
     m.burrow.visible = !!U.burrow;
     if (!first) {
-      const burst = (x, y, z) => this.confetti.burst(new THREE.Vector3(x, y, z), 0, { count: 60, speed: 8, up: 5, life: 1.6, gravity: -7 });
+      const burst = (x, y, z) => this.confetti.burst(new THREE.Vector3(x, y, z), 0, { colors: PARTY, count: 60, speed: 8, up: 5, life: 1.6, gravity: -7 });
       if (U.bridge && !this.shownBridge) burst(BRIDGE.x, 1.5, BRIDGE.z);
       if (U.mine && !this.shownMine) { burst(ROCKFALL.x, 1.5, ROCKFALL.z); this.puffs.burst(new THREE.Vector3(ROCKFALL.x, 1, ROCKFALL.z), 0xbdb8cf, { count: 30, speed: 5, size: 0.8, life: 1.2 }); }
       if (U.burrow && !this.shownBurrow) { const b = m.places.find((p) => p.id === 'burrow'); burst(b.x, 2, b.z); }
@@ -707,7 +708,7 @@ export class SoloIslandScene extends BaseScene {
 
   celebrate(n) {
     n.hop = 1;
-    this.confetti.burst(new THREE.Vector3(n.x, 2, n.z), 0, { count: 40, speed: 6, up: 4, life: 1.4, gravity: -6 });
+    this.confetti.burst(new THREE.Vector3(n.x, 2, n.z), 0, { colors: PARTY, count: 40, speed: 6, up: 4, life: 1.4, gravity: -6 });
     this.game.audio.play('fanfare');
   }
 
@@ -772,6 +773,7 @@ export class SoloIslandScene extends BaseScene {
     for (const pl of this.map.places) {
       if (pl.id === 'burrow' && !S.unlocks.burrow) continue;
       if (Math.hypot(P.x - pl.door.x, P.z - pl.door.z) > DOOR_R) continue;
+      if (pl.lock === 'mine' && !S.unlocks.mine) continue; // the rockfall below says what to do
       if (this.placeOpen(pl)) {
         const fn = () => this.enterPlace(pl);
         out.a = { text: `${nm('isl.enter')} · ${t(`game.${pl.key}`)}`, fn };
@@ -961,7 +963,7 @@ export class SoloIslandScene extends BaseScene {
     give(this.save, id, 1);
     const f = this.finds[id];
     f.g.visible = false;
-    this.confetti.burst(new THREE.Vector3(f.x, 1, f.z), 0, { count: 30, speed: 5, up: 4, life: 1.2, gravity: -6 });
+    this.confetti.burst(new THREE.Vector3(f.x, 1, f.z), 0, { colors: PARTY, count: 30, speed: 5, up: 4, life: 1.2, gravity: -6 });
     this.game.audio.play('star');
     const txt = t('isl.t.found', { item: t(`isl.i.${id}`) });
     this.game.ui.toast(txt, 2200);
@@ -1181,9 +1183,20 @@ export class SoloIslandScene extends BaseScene {
       P.ch.face(mx, mz);
     }
     // never get stuck (e.g. after an unlock changes the map): nudge toward home
-    if (!this.map.walkable(P.x, P.z, PR * 0.5, st)) { P.x += (HOME.x - P.x) * 0.02; P.z += (HOME.z + 4 - P.z) * 0.02; }
+    if (!this.map.walkable(P.x, P.z, PR * 0.5, st)) this.unstick(P, st);
     P.y = this.map.floorAt(P.x, P.z, st.bridge);
     P.moving = Math.min(1, len);
+  }
+
+  /** Step out of anything we ended up inside (an unlock or a teleport): the nearest free spot. */
+  unstick(P, st) {
+    for (let r = 0.3; r < 6; r += 0.3) {
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
+        if (this.map.walkable(x, z, PR, st)) { P.x = x; P.z = z; return; }
+      }
+    }
   }
 
   updatePlayerLook(dt) {

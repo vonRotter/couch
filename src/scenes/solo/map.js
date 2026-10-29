@@ -49,7 +49,7 @@ export const PIER = { x: 4, z0: 40.5, len: 19 };
  * key: game key in GAMES (or guest: a guest game name).
  */
 export const PLACES = [
-  { id: 'lighthouse', key: 'lighthouse', x: 49, z: 33, door: { x: 49, z: 36.6 } },
+  { id: 'lighthouse', key: 'lighthouse', x: 44, z: 26.5, door: { x: 44, z: 30.2 } },
   { id: 'ship', key: 'adventure', x: 11.5, z: 54, door: { x: 5.2, z: 54 } },
   { id: 'tent', key: 'duckhunt', x: 34, z: 11.5, door: { x: 34, z: 15.4 } },
   { id: 'balloon', key: 'platformer', x: 8, z: -26, door: { x: 8, z: -23.8 } },
@@ -69,7 +69,7 @@ const PATHS = [
   [[24, -9.5], [33, -10.5], [40, -13]],
   [[12.5, 2.3], [10, 10], [6.5, 22], [4.5, 33], [4, 41]],
   [[10, 10], [20, 13.5], [30, 15.6], [34, 15.6]],
-  [[34, 15.6], [40, 21], [46, 29], [49, 36.6]],
+  [[34, 15.6], [40, 20], [43, 26], [44, 30.2]],
   [[7, -11], [5.5, -17], [8, -23.6]],
   [[5.5, -17], [0, -21.5], [-2, -24.6]],
   [[-6, -10.2], [-6.4, -16.5], [-10, -19.6], [-18.6, -19.2]],
@@ -85,7 +85,7 @@ export const SPOTS = {
   hazelGarden: { x: 2.5, z: -24 }, hazelPorch: { x: -2.6, z: -24.4 }, farmFence: { x: -5.2, z: -7.8 },
   plazaBench: { x: 7.6, z: -1.2 }, plazaFountain: { x: 14.6, z: -2.4 }, plazaEast: { x: 17.4, z: -5 },
   storeCounter: { x: 13.4, z: -12.2 }, storeHome: { x: 9.4, z: -12.6 },
-  lhDoor: { x: 47.6, z: 37.2 }, beach: { x: 18, z: 40 }, pier: { x: 3, z: 47 }, pierEnd: { x: 3.4, z: 56.5 },
+  lhDoor: { x: 42.4, z: 30.8 }, beach: { x: 18, z: 40 }, pier: { x: 3, z: 47 }, pierEnd: { x: 3.4, z: 56.5 },
   cafe: { x: -8.2, z: 41.2 }, shipDeck: { x: 4.6, z: 52 },
   pad: { x: 37.4, z: -12.4 }, hallFront: { x: 30.5, z: -11.2 }, hillTop: { x: 10.4, z: -26.4 }, rocket: { x: 38.6, z: -13.2 },
   meadow: { x: 44, z: -14 },
@@ -454,9 +454,9 @@ export class IslandMap {
       this.put(r, P.lighthouse.x + Math.cos(a) * 4.2, P.lighthouse.z + Math.sin(a) * 4.0);
       this.circObs(P.lighthouse.x + Math.cos(a) * 4.2, P.lighthouse.z + Math.sin(a) * 4.0, 0.9);
     }
-    this.put(makeBench(), 44, 35.5, 0.5);
-    this.circObs(44, 35.5, 0.8);
-    this.sign(51.5, 37.6, 0x1f7f8f);
+    this.put(makeBench(), 48.5, 30.5, -0.5);
+    this.circObs(48.5, 30.5, 0.8);
+    this.sign(46.6, 31.2, 0x1f7f8f);
     // fairground tent
     const tent = makeTent(M);
     this.live(tent, P.tent.x, P.tent.z, 0, 0.02);
