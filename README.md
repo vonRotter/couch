@@ -394,9 +394,25 @@ night match yours and crops grow while you are away.
   with a fish log of pictures.
 - **Diving:** from the dive boat, swim a side-view sea: pick kelp and clams, open treasure chests and
   catch sea critters with a bubble net. Air never punishes; running out just pulls you up with your
-  haul. Flippers and a big tank open the coral reef and the deep trench.
+  haul. Flippers and a big tank open the coral reef and the deep trench; a sea lamp opens a dark
+  glow cave, and a scooter swims faster.
 - **The Driftwood Café:** repair it with wood and coins, cook 12 dishes from crops and fish, and serve
   guests at the counter (8:00 to 22:00): the right dish in time gives coins, tips and friendship.
+- **Animals:** Aunt Hazel's barn quest (15 wood and 10 stone) brings two chickens; Rosa then sells
+  more chickens, a goat and a cow. Cut tall grass for hay and put it in the trough; each real day an
+  animal with hay lays an egg or can be milked (no hay just skips the day, nothing gets sick). Pet each
+  animal once a day for up to 5 animal hearts. Eggs and milk add four café dishes (16 in total).
+- **Building and decorating:** break rock piles for stone and cut tall grass for hay and fiber. The
+  workbench by the cottage crafts 12 yard pieces and furniture, upgrades the cottage (porch and a
+  second room) and has a decorate mode: the cell in front of you shows a preview, A places or picks
+  up, B turns, C ends. Game trophies are movable pieces too. The front door leads into the cottage,
+  which you decorate the same way.
+- **Island life:** friendship goes to 10 hearts with new heart events at 6 and 8 (Pip's rocket
+  launch among them). A calendar board in the square shows birthdays (gifts count double),
+  rainy days (about one in five; rain waters the crops) and festivals by the real date: a Fishing
+  Derby on the first weekend of each month, a Harvest Fair in mid-September to November, and Lantern
+  Night in December and late June. Friends send letters with small gifts and come to the café as
+  regulars with double tips.
 - **Rewards from games** arrive as letters in the mailbox: decorations, seeds, trophies and a pirate
   flag for the house.
 - Stick to walk, A uses the held tool (or goes in at doors), B talks, picks up and opens the bag,
