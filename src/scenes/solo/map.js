@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { COLORS, toon } from '../../core/palette.js';
-import { makeTree, makeFlower, makeRock, makeBush, makeMushroom, seeded } from '../../core/world.js';
+import { makeTree, makeRock, makeBush, makeMushroom, seeded } from '../../core/world.js';
 import { makeShip } from '../adventure/props.js';
 import {
-  mesh, box, cyl, ico, WOOD, WOOD_DARK, makeCottage, makeStore, makeLighthouse, makeTent, makeBalloon, makeMine, makeRockfall,
+  mesh, box, cyl, ico, cone, WOOD, WOOD_DARK, makeCottage, makeStore, makeLighthouse, makeTent, makeBalloon, makeMine, makeRockfall,
   makeKeepTower, makeBurrow, makeCastleGate, makeHall, makeLaunchPad, makeBridge, makeFence, makeLamp, makeSign, makeBench, makeBarrel,
   makeCrate, makeMailbox, makeShippingBin, makeWell, makeFountain, makeNoticeBoard, makeBunting, makeCafe, makeBarn, makePier, makeBuoy,
   makeRowboat, makeTelescope, makeWaterfall, makeCrop,
@@ -770,6 +770,18 @@ export class IslandMap {
     }
     return true;
   }
+}
+
+/** A cheap low-poly flower (the shared one is too detailed for hundreds of copies). */
+const FLOWER_COLS = [0xff7eb6, 0xffd23f, 0xffffff, 0xb08bff, 0xff8c42];
+function makeFlower(rand) {
+  const g = new THREE.Group();
+  g.add(mesh(cyl(0.03, 0.03, 0.4, 4), 0x58b947, 0, 0.2, 0, false));
+  const col = FLOWER_COLS[Math.floor(rand() * FLOWER_COLS.length)];
+  const head = mesh(ico(0.13, 0), col, 0, 0.42, 0, false);
+  head.scale.set(1, 0.45, 1);
+  g.add(head, mesh(ico(0.06, 0), col === 0xffd23f ? 0xff8c42 : 0xffd23f, 0, 0.47, 0, false));
+  return g;
 }
 
 function sharedTuft() {

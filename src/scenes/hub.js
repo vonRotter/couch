@@ -653,7 +653,6 @@ export class HubScene extends BaseScene {
     if (this.game.input.escPressed) this.toggleHelp();
     if (!this.modeAsked && this.players.length) {
       this.modeAsked = true;
-      // Coming back from a guest game (#solo link): straight to the profiles.
       // Coming back from a guest game (#solo link): straight back to that profile's island.
       if (this.game.bootSolo) {
         this.game.bootSolo = false;

@@ -156,8 +156,9 @@ export function makeNpcModel(id) {
     case 'hazel': return bean(0x8ac926, 0, (p) => {
       // straw sun hat, round glasses and a flowery apron
       const hat = new THREE.Group();
-      hat.add(mesh(cyl(0.62, 0.62, 0.05, 18), 0xf3d9a4, 0, 0, 0), mesh(cyl(0.3, 0.34, 0.25, 14), 0xf3d9a4, 0, 0.13, 0), mesh(cyl(0.345, 0.345, 0.07, 14), 0xff7eb6, 0, 0.06, 0, false));
-      hat.position.y = 1.18;
+      hat.add(mesh(cyl(0.48, 0.48, 0.05, 18), 0xf3d9a4, 0, 0, 0), mesh(cyl(0.26, 0.3, 0.22, 14), 0xf3d9a4, 0, 0.12, 0), mesh(cyl(0.305, 0.305, 0.07, 14), 0xff7eb6, 0, 0.06, 0, false));
+      hat.position.set(0, 1.2, -0.08);
+      hat.rotation.x = -0.35;
       p.add(hat);
       for (const s of [-1, 1]) p.add(mesh(sharedRing(), COLORS.ink, s * 0.15, 0.83, 0.39, false));
       p.add(mesh(box(0.5, 0.42, 0.06), 0xfff3dc, 0, 0.42, 0.39, false));
