@@ -210,7 +210,7 @@ export class DiveScene extends BaseScene {
     }
     sc.add(roof);
     // the dark doorway (until you have the sea lamp)
-    this.caveDark = mesh(box(1.2, 10, 8), new THREE.MeshBasicMaterial({ color: 0x050a18, transparent: true, opacity: 0.85, depthWrite: false }), CAVE_X - 0.2, -6, -1, false);
+    this.caveDark = mesh(box(20, 12, 9), new THREE.MeshBasicMaterial({ color: 0x050a18, transparent: true, opacity: 0.9, depthWrite: false }), CAVE_X + 9.6, -6.5, -1.5, false);
     this.caveDark.visible = !this.save.sea.seaLamp;
     sc.add(this.caveDark);
     if (this.save.sea.seaLamp) {
