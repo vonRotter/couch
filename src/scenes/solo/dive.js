@@ -14,6 +14,7 @@ import { FISH, seaModel, makeFish, makeSeaThing } from './sea.js';
 import { thumb } from './thumbs.js';
 import { injectHudStyle } from './hud.js';
 import { mesh, box, cyl, sph, cone, ico } from './models.js';
+import { ToastQueue } from './toasts.js';
 
 // Diving (a Dave the Diver style loop) from the dive boat. A 2.5D side view: swim with the stick, catch
 // gentle sea critters in a bubble net ([A]), pick up seaweed, clams and treasure ([B]). The air meter never
@@ -54,6 +55,7 @@ const CSS = `
 export class DiveScene extends BaseScene {
   constructor(game) {
     super(game);
+    this.toasts = new ToastQueue(game.ui);
     this.key = 'dive';
     this.ownMenu = true;
     this.save = loadIsland(game.roster);
@@ -373,6 +375,7 @@ export class DiveScene extends BaseScene {
   update(dt) {
     const P = this.players[0];
     const inp = P ? this.input(P) : null;
+    this.toasts.update(dt, this.ending === 'summary');
     if (this.ending === 'summary') {
       this.updateSummary(inp);
       this.animate(dt);
@@ -663,6 +666,7 @@ export class DiveScene extends BaseScene {
   idle(dt) { this.animate(dt); }
 
   dispose() {
+    this.toasts.dispose();
     setPictures(null);
     super.dispose();
   }

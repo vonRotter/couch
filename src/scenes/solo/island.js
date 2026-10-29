@@ -11,6 +11,7 @@ import { SKYHOP_LEVELS } from '../skyhop-levels.js';
 import './strings.js';
 import './strings2.js';
 import './strings3.js';
+import './strings4.js';
 import { Ranch } from './animals.js';
 import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
@@ -26,6 +27,7 @@ import { Farm, tileAt, tileCenter, stageOf, minutesLeft } from './farm.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
 import { IslandHud, heartsHtml } from './hud.js';
 import { Life } from './life.js';
+import { ToastQueue } from './toasts.js';
 import { mesh, box, sph, makeTool, makeDeco, makeBranch, makeSign } from './models.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
@@ -108,6 +110,7 @@ const itemName = (id) => t(ITEMS[id] ? `isl.i.${id}` : `isl.d.${id}`);
 export class SoloIslandScene extends BaseScene {
   constructor(game, { fromGame = null } = {}) {
     super(game);
+    this.toasts = new ToastQueue(game.ui); // one or two pop-ups at a time, paused under panels
     this.key = null;
     this.ownMenu = true; // main.js: Esc is our help, not the game pause menu
     this.camera.fov = 45;
@@ -181,7 +184,7 @@ export class SoloIslandScene extends BaseScene {
       S.sea.haul = null;
     }
     if (!S.intro) this.later(0.9, () => this.startIntro());
-    else if (S.mail.length) this.later(1.2, () => this.game.ui.toast(t('isl.t.mail'), 2600));
+    else if (S.mail.length) this.later(1.2, () => this.mailToast());
     game.audio.playMusic('hub');
   }
 
@@ -569,7 +572,7 @@ export class SoloIslandScene extends BaseScene {
   giveItems(list, quiet = false) {
     for (const [id, n] of list) {
       give(this.save, id, n);
-      if (!quiet) this.game.ui.toast(t('isl.t.got', { item: n > 1 ? `${n} ${itemName(id)}` : itemName(id) }));
+      if (!quiet) this.gotToast(n > 1 ? `${n} ${itemName(id)}` : itemName(id));
     }
     this.game.audio.play('star');
     this.markDirty();
@@ -579,10 +582,39 @@ export class SoloIslandScene extends BaseScene {
   grant(r) {
     if (!r) return;
     if (r.items) this.giveItems(r.items);
-    if (r.coins) { this.save.coins += r.coins; this.game.audio.play('coin'); this.game.ui.toast(t('isl.t.coins', { n: r.coins })); }
+    if (r.coins) { this.save.coins += r.coins; this.game.audio.play('coin'); this.coinToast(r.coins); }
     if (r.deco) this.addDeco(r.deco);
     if (r.unlock) this.unlock(r.unlock);
     this.markDirty();
+  }
+
+  // ---------- toasts that merge (see toasts.js) ----------
+
+  /** "You got: a, b, c" (several gifts at once become one toast). */
+  gotToast(item, ms = 1800) {
+    this.game.ui.toast('', ms, { group: 'got', add: item, fmt: (v) => t('isl.t.got', { item: v.join(', ') }) });
+  }
+
+  /** "+n coins" (coins that arrive together are added up). */
+  coinToast(n) {
+    this.game.ui.toast('', 1600, { group: 'coins', add: n, fmt: (v) => t('isl.t.coins', { n: v.reduce((a, b) => a + b, 0) }) });
+  }
+
+  /** "A letter in the mailbox" / "3 letters in the mailbox". */
+  mailToast() {
+    const n = this.save.mail.length;
+    if (!n) return;
+    this.game.ui.toast('', 2600, { group: 'mail', add: n, fmt: (v) => (v[v.length - 1] > 1 ? t('isl.t.mailN', { n: v[v.length - 1] }) : t('isl.t.mail')) });
+  }
+
+  /** News of the day (festival, rain, birthday) in one toast. */
+  dayToast(text) {
+    this.game.ui.toast('', 2800, { group: 'day', add: text, fmt: (v) => v.join(' · ') });
+  }
+
+  /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
+  get panelOpen() {
+    return this.hud.panel.style.display !== 'none' || ['bag', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board'].includes(this.mode) || !!this.helpEl;
   }
 
   /** The usual spot of a decoration (the trophy garden), or null. */
@@ -1510,6 +1542,7 @@ export class SoloIslandScene extends BaseScene {
   update(dt) {
     this.handleJoins();
     if (this.game.input.escPressed && !this.profilePicker) this.toggleHelp();
+    this.toasts.update(dt, this.panelOpen);
     this.secT -= dt;
     if (this.secT <= 0) { this.secT = 1; this.secondTick(); }
     this.saveT -= dt;
@@ -1558,12 +1591,14 @@ export class SoloIslandScene extends BaseScene {
   }
 
   idle(dt) {
+    this.toasts.update(dt, this.panelOpen);
     this.updateNpcs(dt);
     this.updatePlayerLook(dt);
     this.life.update(dt, this.night || 0, this.player || { x: 0, z: 0 });
   }
 
   dispose() {
+    this.toasts.dispose();
     this.cafe?.dispose();
     this.fishing?.dispose();
     setPictures(null);

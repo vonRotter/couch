@@ -6,7 +6,7 @@ import { say as speak } from '../../core/voice.js';
 import { ITEMS, icon } from './items.js';
 import { count, give, take, now, since, MIN } from './save.js';
 import { heightAt, HOME, FIELD } from './map.js';
-import { mesh, box, makeDeco, makeSign } from './models.js';
+import { mesh, box, cone, makeDeco, makeSign } from './models.js';
 import { makeCraft, makeDeco2, makeRoom, makePorch, makeStoneNode, makeTallGrass } from './models2.js';
 
 // Building and decorating (milestone B2).
@@ -390,10 +390,15 @@ export class Builder {
   }
 
   startDecorate() {
+    const P = this.host.player;
     this.host.mode = 'deco';
     this.sel = 0;
     this.rot = 0;
     this.decoT = 0;
+    this.bHold = -1;
+    // a free grid cursor that starts on the cell in front of you; the bean follows it loosely
+    const x = Math.floor(P.x + P.fx * 1.3) + 0.5, z = Math.floor(P.z + P.fz * 1.3) + 0.5;
+    this.cur = { x, z, fx: x, fz: z, holdT: 0 };
     this.host.game.audio.play('select');
     this.host.game.ui.toast(t('isl.deco.on'), 1800);
   }
@@ -402,13 +407,13 @@ export class Builder {
     this.host.mode = 'walk';
     if (this.ghost) { this.ghost.removeFromParent(); this.ghost = null; }
     this.hl.visible = false;
+    if (this.arrow) this.arrow.visible = false;
     this.host.markDirty();
   }
 
-  /** The grid cell in front of the player, and whether something can go there. */
+  /** The cell under the decorate cursor, and whether something can go there. */
   target() {
-    const P = this.host.player;
-    const x = Math.floor(P.x + P.fx * 1.3) + 0.5, z = Math.floor(P.z + P.fz * 1.3) + 0.5;
+    const { x, z } = this.cur;
     const piece = this.S.yard.find((p) => Math.hypot(p.x - x, p.z - z) < 0.7) || null;
     return { x, z, piece, ok: this.cellOk(x, z) };
   }
@@ -429,11 +434,49 @@ export class Builder {
     return ok;
   }
 
+  /** Move the cursor: a tap steps one cell, holding the stick glides; it stays in the yard (or the room). */
+  moveCursor(inp, dt) {
+    const c = this.cur, P = this.host.player;
+    // the bean was moved (in or out of the door): start again in front of it
+    if (c.px !== undefined && Math.hypot(P.x - c.px, P.z - c.pz) > 0.45) {
+      c.x = c.fx = Math.floor(P.x + P.fx * 1.3) + 0.5;
+      c.z = c.fz = Math.floor(P.z + P.fz * 1.3) + 0.5;
+    }
+    const sx = inp.x, sz = -inp.y, len = Math.hypot(sx, sz);
+    if (inp.stepX || inp.stepY) {
+      c.fx = c.x + inp.stepX;
+      c.fz = c.z - inp.stepY;
+      c.holdT = 0;
+    } else if (len > 0.3) {
+      c.holdT += dt;
+      if (c.holdT > 0.28) { c.fx += (sx / Math.max(1, len)) * 5.5 * dt; c.fz += (sz / Math.max(1, len)) * 5.5 * dt; }
+    } else c.holdT = 0;
+    const b = this.inside(P) ? (() => { const r = this.roomBounds(); return { x0: r.x0 + 0.5, x1: r.x1 - 0.5, z0: r.z0 + 0.5, z1: r.z1 - 0.5 }; })() : { x0: YARD.x0, x1: YARD.x1, z0: YARD.z0, z1: YARD.z1 };
+    c.fx = THREE.MathUtils.clamp(c.fx, b.x0, b.x1);
+    c.fz = THREE.MathUtils.clamp(c.fz, b.z0, b.z1);
+    // never too far from the bean, so it stays on screen
+    const dx = c.fx - P.x, dz = c.fz - P.z, d = Math.hypot(dx, dz);
+    if (d > 7) { c.fx = P.x + (dx / d) * 7; c.fz = P.z + (dz / d) * 7; }
+    c.x = Math.floor(c.fx) + 0.5;
+    c.z = Math.floor(c.fz) + 0.5;
+  }
+
+  /** The bean strolls after the cursor when it gets far, and looks at it. */
+  followCursor(dt) {
+    const host = this.host, P = host.player, c = this.cur;
+    const dx = c.x - P.x, dz = c.z - P.z, d = Math.hypot(dx, dz);
+    if (d > 3.4) host.movePlayer({ x: (dx / d) * 0.8, y: (-dz / d) * 0.8 }, dt);
+    else host.movePlayer({ x: 0, y: 0 }, dt);
+    if (this.inside(P)) this.clampInside(P);
+    if (d > 0.2) { P.fx = dx / d; P.fz = dz / d; P.ch.face(dx, dz); }
+    c.px = P.x; c.pz = P.z;
+  }
+
   updateDecorate(inp, dt) {
     const host = this.host;
     this.decoT += dt;
-    host.movePlayer(inp, dt);
-    if (this.inside(host.player)) this.clampInside(host.player);
+    this.moveCursor(inp, dt);
+    this.followCursor(dt);
     const list = this.storeList();
     this.sel = Math.min(this.sel, Math.max(0, list.length - 1));
     for (let k = 1; k <= 9; k++) if (host.game.input.pressed.has(`Digit${k}`) && list[k - 1]) this.sel = k - 1;
@@ -452,26 +495,50 @@ export class Builder {
       this.ghost.position.set(tg.x, this.groundAt(tg.x, tg.z) + 0.15 + Math.sin(host.time * 5) * 0.06, tg.z);
       this.ghost.rotation.y = this.rot * (Math.PI / 2);
     }
+    const col = tg.piece ? 0xffd84a : tg.ok && held ? 0x9ff07a : 0xff8fa8;
     this.hl.visible = true;
     this.hl.position.set(tg.x, this.groundAt(tg.x, tg.z) + 0.06, tg.z);
-    this.hl.material = toon(tg.piece ? 0xffd84a : tg.ok && held ? 0x9ff07a : 0xff8fa8, { transparent: true, opacity: 0.5 });
+    this.hl.material = toon(col, { transparent: true, opacity: 0.6 });
+    // a bobbing arrow over the cursor cell, easy to spot from the camera
+    if (!this.arrow) {
+      this.arrow = new THREE.Group();
+      const a = mesh(cone(0.32, 0.55, 4), 0xffffff, 0, 0, 0, false);
+      a.rotation.x = Math.PI;
+      this.arrow.add(a);
+      host.scene.add(this.arrow);
+    }
+    this.arrow.visible = true;
+    this.arrow.children[0].material = toon(col);
+    this.arrow.position.set(tg.x, this.groundAt(tg.x, tg.z) + 2.1 + Math.sin(host.time * 5) * 0.15, tg.z);
+    this.arrow.rotation.y += dt * 2;
     // prompt
     const nm = (k, v) => tFor(host.player.p, k, v);
     const parts = tg.piece ? [nm('isl.deco.pick', { item: this.name(tg.piece.id) }), nm('isl.deco.rotate')] : held ? [tg.ok ? nm('isl.deco.place', { item: this.name(held) }) : t('isl.deco.blocked'), nm('isl.deco.rotate')] : [t('isl.deco.empty')];
+    if (list.length > 1) parts.push(nm('isl.deco.next'));
     parts.push(nm('isl.deco.done'));
     host.hud.setPrompt(parts.join(' · '));
-    host.hud.setHotbar(list, this.sel, true);
+    host.hud.setHotbar(list, this.sel, true, tFor(host.player.p, 'isl.deco.bag'));
     if (this.decoT < 0.25) return;
-    if (inp.stepX && !inp.x) this.sel = (this.sel + inp.stepX + Math.max(1, list.length)) % Math.max(1, list.length);
     if (inp.cPressed || host.game.input.escPressed) { this.stopDecorate(); return; }
     if (inp.aPressed) {
       if (tg.piece) this.pickUp(tg.piece);
       else if (held && tg.ok) this.place(held, tg.x, tg.z);
       else host.game.audio.play('bump');
     }
-    if (inp.bPressed) {
-      if (tg.piece) { tg.piece.r = ((tg.piece.r || 0) + 1) % 4; this.renderYard(); host.game.audio.play('select'); host.markDirty(); }
-      else { this.rot = (this.rot + 1) % 4; host.game.audio.play('select'); }
+    // [B]: a tap turns, holding it picks the next thing to place
+    if (inp.bPressed) this.bHold = 0;
+    if (this.bHold >= 0) {
+      if (inp.b) {
+        this.bHold += dt;
+        if (this.bHold > 0.45) {
+          this.bHold = -1;
+          if (list.length) { this.sel = (this.sel + 1) % list.length; host.game.audio.play('select'); }
+        }
+      } else {
+        this.bHold = -1;
+        if (tg.piece) { tg.piece.r = ((tg.piece.r || 0) + 1) % 4; this.renderYard(); host.game.audio.play('select'); host.markDirty(); }
+        else { this.rot = (this.rot + 1) % 4; host.game.audio.play('select'); }
+      }
     }
   }
 

@@ -158,7 +158,7 @@ export class IslandHud {
     if (text) this.set('prompt', this.prompt, esc(text));
   }
 
-  setHotbar(all, sel, open) {
+  setHotbar(all, sel, open, note = null) {
     // long bags scroll: show a window of slots around the selection
     const W = 11;
     const start = all.length > W ? THREE_clamp(sel - Math.floor(W / 2), 0, all.length - W) : 0;
@@ -169,7 +169,7 @@ export class IslandHud {
     const html = more + items.map((it, j) => { const i = j + start; return `<div class="isl-slot ${j === sel ? 'on' : ''}">${i < 9 ? `<span class="k">${i + 1}</span>` : ''}${icon(it.id)}${it.n > 1 || (it.kind !== 'tool' && it.kind !== 'book') ? `<span class="n">${it.n}</span>` : ''}</div>`; }).join('') + more2;
     this.set('hotbar', this.hotbar, html);
     const cur = items[sel];
-    this.set('selname', this.selname, cur ? esc(open ? `${cur.name} · ${t('isl.bag')}` : cur.name) : '');
+    this.set('selname', this.selname, cur ? esc(open ? `${cur.name} · ${note ?? t('isl.bag')}` : cur.name) : '');
     this.hotbar.style.boxShadow = open ? '0 0 0 4px #ffd84a' : '';
   }
 

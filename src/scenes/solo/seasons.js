@@ -80,10 +80,13 @@ export class Seasons {
       this.today = today;
       this.refresh();
       this.sendLetters(today);
-      if (this.festival) this.host.later(first ? 2.2 : 0.2, () => this.host.game.ui.toast(t('isl.fest.today', { name: t(`isl.fest.${this.festival}`) }), 2600));
-      else if (this.rainy) this.host.later(first ? 2.2 : 0.2, () => this.host.game.ui.toast(t('isl.t.rain'), 2400));
+      // the day's news merge into one toast (see toasts.js)
+      const news = [];
+      if (this.festival) news.push(t('isl.fest.today', { name: t(`isl.fest.${this.festival}`) }));
+      else if (this.rainy) news.push(t(this.season === 'winter' ? 'isl.t.snow' : 'isl.t.rain'));
       const bday = Object.keys(NPCS).find((id) => birthdayOf(id, at));
-      if (bday) this.host.later(first ? 3.4 : 0.4, () => this.host.game.ui.toast(t('isl.t.bday', { name: t(`isl.npc.${bday}`) }), 2400));
+      if (bday) news.push(t('isl.t.bday', { name: t(`isl.npc.${bday}`) }));
+      if (news.length) this.host.later(first ? 2.2 : 0.2, () => { for (const s of news) this.host.dayToast(s); });
     }
     if (this.rainy) {
       // rain keeps every planted tile wet until the end of the day
@@ -116,7 +119,7 @@ export class Seasons {
       S.mail.push({ id: `f.${id}.${k}`, from: id, items: gid === 'coins' ? [] : [[gid, n]], coins: gid === 'coins' ? n : 0 });
       sent++;
     }
-    if (sent) { this.host.later(1.5, () => this.host.game.ui.toast(t('isl.t.mail'), 2400)); this.host.markDirty(); }
+    if (sent) { this.host.later(1.5, () => this.host.mailToast()); this.host.markDirty(); }
   }
 
   /** Sky tweaks for rain (grayer, darker). */
