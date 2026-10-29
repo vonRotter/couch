@@ -6,7 +6,7 @@ import { makeShip } from '../adventure/props.js';
 import {
   mesh, box, cyl, ico, cone, WOOD, WOOD_DARK, makeCottage, makeStore, makeLighthouse, makeTent, makeBalloon, makeMine, makeRockfall,
   makeKeepTower, makeBurrow, makeCastleGate, makeHall, makeLaunchPad, makeBridge, makeFence, makeLamp, makeSign, makeBench, makeBarrel,
-  makeCrate, makeMailbox, makeShippingBin, makeWell, makeFountain, makeNoticeBoard, makeBunting, makeCafe, makeBarn, makePier, makeBuoy,
+  makeCrate, makeMailbox, makeShippingBin, makeWell, makeFountain, makeNoticeBoard, makeBunting, makeCafe, makeBarn, makePier, makeBuoy, makeDiveBoat,
   makeRowboat, makeTelescope, makeWaterfall, makeCrop,
 } from './models.js';
 
@@ -95,6 +95,8 @@ export const SPOTS = {
 export const BRANCHES = [[-2, -32], [16, -30], [34, -28], [-14, -26], [44, -10], [52, 14], [24, 26], [-16, 22], [-6, 18], [16, 30], [30, -2], [-18, 30]];
 export const FINDS = { feather: { x: 37, z: -27 }, starmap: { x: 3.5, z: -29 }, lens: { x: -18, z: 41.5 } };
 export const DIVE_SPOT = { x: -4, z: 55 };
+export const DIVE_BOAT = { x: 0, z: 56.2 };
+export const CAFE = { x: -10, z: 37.4 };
 
 // ---------- terrain ----------
 
@@ -591,12 +593,14 @@ export class IslandMap {
     this.put(makeCrate(), 5.0, 45.6, 0.4, 0.12);
     this.circObs(5.0, 45.6, 0.5);
     this.boat = this.live(makeRowboat(), 0.6, 50, 0.2, SEA_Y + 0.05);
-    for (const [x, z] of [[-4, 52], [-7.5, 56], [-1, 58]]) this.live(makeBuoy(), x, z, 0, SEA_Y);
+    for (const [x, z] of [[-6, 52], [-8.5, 56.5], [-6.5, 60]]) this.live(makeBuoy(), x, z, 0, SEA_Y);
+    // the dive boat moored at the pier end (fish from it, or dive from its ladder)
+    this.diveBoat = this.live(makeDiveBoat(), DIVE_BOAT.x, DIVE_BOAT.z, 0, SEA_Y - 0.05);
+    this.decks.push({ x0: DIVE_BOAT.x - 2.5, x1: DIVE_BOAT.x + 2.6, z0: DIVE_BOAT.z - 1.7, z1: DIVE_BOAT.z + 1.7, y: SEA_Y + 0.5, boat: true });
     this.buoys = this.scene.children.slice(-3);
     // the Driftwood Café (closed, a restaurant for later) and the dive spot sign
     this.put(makeCafe(M), -10, 37.4);
     this.boxObs(-10, 37.4, 2.5, 1.9);
-    for (const x of [-11.6, -8.4]) this.circObs(x, 40.4, 0.6);
     this.sign(-5.2, 40.6, 0x3ddc97);
     this.sign(-2, 42.6, 0xff5d73, 0.3);
     // a beach towel, parasol and sand castle
@@ -777,6 +781,7 @@ export class IslandMap {
     for (const o of this.obstacles) {
       if (o.rockfall && state.mine) continue;
       if (o.burrow && !state.burrow) continue;
+      if (o.cafe && !state.cafe) continue;
       if (o.hw !== undefined) {
         if (Math.abs(x - o.x) < o.hw + r && Math.abs(z - o.z) < o.hd + r) return false;
       } else if (o.ax !== undefined) {

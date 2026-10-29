@@ -592,20 +592,77 @@ export function makeBunting(a, b, sag = 0.6) {
 
 /** The Driftwood Café, boarded up for now (a restaurant for later). */
 export function makeCafe(M) {
-  const g = makeCottage(M, { wall: 0xe8d5b0, roof: 0x3ddc97, w: 4.6, d: 3.4, h: 2.2, chimney: false, door: 0x7a5a3a });
+  return makeCottage(M, { wall: 0xe8d5b0, roof: 0x3ddc97, w: 4.6, d: 3.4, h: 2.2, chimney: false, door: 0x7a5a3a });
+}
+
+/** Boards nailed over the café's windows and door (until it is fixed). Local to the café. */
+export function makeCafeBoards() {
+  const g = new THREE.Group();
   for (const sx of [-1.38, 1.38]) for (const r of [-0.4, 0.4]) {
     const b = mesh(box(0.95, 0.14, 0.06), WOOD, sx, 1.55, 1.82, false);
     b.rotation.z = r;
     g.add(b);
   }
   g.add(mesh(box(1.2, 0.14, 0.06), WOOD, 0, 1.3, 1.9, false).rotateZ(0.3));
-  // tables outside with stacked chairs
-  for (const x of [-1.6, 1.6]) {
-    g.add(mesh(cyl(0.5, 0.5, 0.06, 12), 0xffffff, x, 0.75, 3.0));
-    g.add(mesh(cyl(0.06, 0.06, 0.75, 6), 0x2b2340, x, 0.37, 3.0));
-    g.add(mesh(cyl(0.03, 0.03, 2.0, 4), WOOD_DARK, x, 1.6, 3.0, false));
-    g.add(mesh(cone(0.9, 0.5, 8), x < 0 ? 0xff5d73 : 0xffc93c, x, 2.5, 3.0));
+  return g;
+}
+
+/** A round café table with a parasol. */
+export function makeCafeTable(color) {
+  const g = new THREE.Group();
+  g.add(mesh(cyl(0.5, 0.5, 0.06, 12), 0xffffff, 0, 0.75, 0));
+  g.add(mesh(cyl(0.06, 0.06, 0.75, 6), 0x2b2340, 0, 0.37, 0));
+  g.add(mesh(cyl(0.03, 0.03, 2.0, 4), WOOD_DARK, 0, 1.6, 0, false));
+  g.add(mesh(cone(0.9, 0.5, 8), color, 0, 2.5, 0));
+  return g;
+}
+
+/** The open café: serving counter, menu board, string lights and an outdoor stove. Local to the café. */
+export function makeCafeOpen(M) {
+  const g = new THREE.Group();
+  // counter in front of the café (guests stand behind it, you serve from the beach side)
+  g.add(mesh(box(4.2, 1.0, 0.6), 0xfff3dc, 0, 0.5, 3.4));
+  g.add(mesh(box(4.4, 0.1, 0.8), WOOD, 0, 1.05, 3.4));
+  for (let i = 0; i < 6; i++) g.add(mesh(box(0.66, 0.9, 0.04), i % 2 ? 0x3ddc97 : 0xffffff, -1.75 + i * 0.7, 0.5, 3.71, false));
+  // awning
+  for (let i = 0; i < 6; i++) {
+    const a = mesh(box(0.8, 0.06, 1.3), i % 2 ? 0xffffff : 0x3ddc97, -2.0 + i * 0.8, 2.35, 2.3);
+    a.rotation.x = 0.35;
+    g.add(a);
   }
+  // menu board and lights
+  g.add(mesh(box(1.0, 0.7, 0.06), 0x2b2340, 0, 1.75, 1.75, false));
+  for (let i = 0; i < 3; i++) g.add(mesh(box(0.6, 0.05, 0.02), 0xffffff, 0, 1.95 - i * 0.18, 1.79, false));
+  for (let i = 0; i < 9; i++) g.add(mesh(sph(0.08, 8, 6), M.lamp, -2.2 + i * 0.55, 2.62 - Math.sin((i / 8) * Math.PI) * 0.2, 2.9, false));
+  // the stove (west side)
+  const st = new THREE.Group();
+  st.add(mesh(box(1.1, 0.9, 0.8), 0x9a94b2, 0, 0.45, 0), mesh(box(1.15, 0.08, 0.85), 0x2b2340, 0, 0.92, 0));
+  st.add(mesh(cyl(0.25, 0.25, 0.08, 12), 0x2b2340, -0.25, 1.0, 0, false), mesh(cyl(0.2, 0.18, 0.2, 12), 0xbdb8cf, 0.25, 1.06, 0));
+  st.add(mesh(box(0.5, 0.3, 0.05), toon(0xff8c42, { emissive: 0x662200 }), 0, 0.45, 0.41, false));
+  st.add(mesh(cyl(0.08, 0.08, 1.4, 6), 0x5a4d7a, 0.4, 1.6, -0.3));
+  st.position.set(-3.3, 0, 2.9);
+  g.add(st);
+  g.userData.stove = st;
+  return g;
+}
+
+/** The dive boat: a flat wooden boat with a ladder, air tanks and a diver-down flag. Deck at y ≈ 0.6. */
+export function makeDiveBoat() {
+  const g = new THREE.Group();
+  const hull = mesh(box(5.2, 0.9, 3.6), 0xff7a59, 0, 0, 0);
+  g.add(hull, mesh(box(5.4, 0.12, 3.8), 0xffffff, 0, 0.42, 0));
+  g.add(mesh(box(5.0, 0.08, 3.4), WOOD, 0, 0.5, 0));
+  // ladder on the west side
+  for (const z of [-0.35, 0.35]) g.add(mesh(box(0.08, 1.6, 0.08), 0xbdb8cf, -2.7, 0.1, z));
+  for (let i = 0; i < 4; i++) g.add(mesh(box(0.08, 0.06, 0.7), 0xbdb8cf, -2.7, -0.5 + i * 0.35, 0, false));
+  // tanks and a crate
+  for (let i = 0; i < 2; i++) g.add(mesh(cyl(0.18, 0.18, 0.8, 10), 0xffc93c, 1.6 + i * 0.45, 0.95, -1.3));
+  g.add(mesh(box(0.7, 0.5, 0.6), WOOD_DARK, -1.4, 0.8, -1.2));
+  // flag: red with a white stripe
+  g.add(mesh(cyl(0.04, 0.04, 2.6, 6), 0xffffff, 2.2, 1.8, 1.3));
+  const flag = mesh(box(0.9, 0.6, 0.03), 0xff3b3b, 2.67, 2.75, 1.3);
+  g.add(flag, mesh(box(0.95, 0.1, 0.035), 0xffffff, 2.67, 2.75, 1.3, false).rotateZ(-0.55));
+  g.userData.flag = flag;
   return g;
 }
 
