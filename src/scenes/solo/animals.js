@@ -100,7 +100,16 @@ export class Ranch {
     if (!this.barn) return;
     const near = (p, r) => Math.hypot(P.x - p.x, P.z - p.z) < r;
     const today = dayKey();
-    // the trough and the nest win when they are closer than any animal
+    // filling the trough (with hay in the bag) and taking eggs win over petting: the animals crowd round them
+    if (near(TROUGH, 1.9) && count(this.S, 'hay') && this.R.trough < TROUGH_MAX) {
+      out.b = { text: nm('isl.h.hay', { n: this.R.trough }), fn: () => this.fill() };
+      return;
+    }
+    if (near(NEST, 1.6) && this.R.nest) {
+      out.b = { text: nm('isl.h.eggs', { n: this.R.nest }), fn: () => this.collectEggs() };
+      return;
+    }
+    // otherwise the trough and the nest win when they are closer than any animal
     let best = null, bd = Math.min(1.7, Math.hypot(P.x - TROUGH.x, P.z - TROUGH.z) - 0.2, Math.hypot(P.x - NEST.x, P.z - NEST.z) - 0.2);
     for (const a of this.R.animals) {
       const v = this.views.get(a.u);
