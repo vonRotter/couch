@@ -73,6 +73,24 @@ sword (hold for a spin), B talk/lift/throw/open, C use the item (hold C for the 
 with "restart room"). Beacon stones save; fainting sends you back to the last one with your items.
 Progress is saved per profile (part-1 saves carry over).
 
+**Bean Brigade** (solo island; an Into the Breach-style tactics game, the mech garage on the east hill).
+Three toy bean mechs keep island villages safe from big goofy bug-grumbles on an 8x8 board. The bugs
+move first and show exactly what they will hit next turn (red marks and arrows); your turn comes
+before their attacks, so push them off their mark, into water (they sink), into each other (bonk!),
+block a spitter's goo, smoke them, or stand on a dirt mound to stop a new bug from coming up. Every
+weapon shows a full preview first: damage, push arrows, what pops and where the bugs will attack
+afterwards. Houses that get hit cost grid power, shared over the whole campaign. Pick Easy (every
+bug plan shown, unlimited move undo, one rewind per battle, a lost battle is just tried again) or
+Hard (one undo per turn, no rewind, an empty grid restarts the campaign), then one of three squads:
+the Bonk Squad (punch, cannon, mortar), the Twisty Squad (hook, swap, laser) or the Bubble Squad
+(bubble shields, smoke dash, boulders). Clover Isle, Sandy Isle and Frosty Isle have 3 or 4 battles
+each (sand makes smoke, ice cracks into water, forests burn), then the Grumble Queen waits at the
+Grumble Hive. Six bug types: beetles, goo spitters, diggers, fire flies, boom bugs and the queen.
+Stars from battles and bonus objectives buy upgrades between islands (+hearts, +steps, better
+weapons). Stick moves the cursor, A picks, walks, aims and confirms, B goes back or undoes a move,
+tap C for the battle menu (rewind, a helper-bean hint, tips), hold C to end the turn. The first
+battle has a short read-aloud tutorial. Progress is saved per profile.
+
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
@@ -378,7 +396,8 @@ menu to the solo games: every game is a place you walk into. Time follows the re
 night match yours and crops grow while you are away.
 
 - **Places:** Lighthouse Caves (the lighthouse), The Secret of Pudding Island (the pirate ship at
-  the dock), Laser Ducks (the fairground tent), Sky Hop (the hot-air balloon on kite hill) and the
+  the dock), Laser Ducks (the fairground tent), Bean Brigade (the mech garage on the east hill),
+  Sky Hop (the hot-air balloon on kite hill) and the
   Game Hall with cabinets for the guest games (Tachyon, Starlite, Foothold, Starhop). Repair the
   bridge with 10 wood to reach Knights & Builders: The Golden Bean and Pillow Keep; trade Keeper Bram
   a carrot for his pickaxe and clear the rockfall to open Crystal Caves; give Mumble the grumble three
@@ -412,7 +431,8 @@ night match yours and crops grow while you are away.
   rainy days (about one in five; rain waters the crops) and the festivals (see Seasons below).
   Friends send letters with small gifts and come to the café as regulars with double tips.
 - **Rewards from games** arrive as letters in the mailbox: decorations, seeds, trophies and a pirate
-  flag for the house.
+  flag for the house (Bean Brigade sends a bug plushie for Clover Isle and a mech statue for the
+  whole campaign).
 - **Seasons (one per real week):** spring, summer, autumn and winter take turns week by week (weeks
   start on Monday). Each season has its own look (blossoms, bright summer, orange leaves, snow on the
   ground, roofs and trees and an icy river rim), its own crops (14 crops; radishes and carrots grow all
@@ -503,6 +523,7 @@ src/
     guides.js  splash.js  cave.js  dogfight.js  duckhunt.js
     lighthouse.js  lighthouse/  top-down adventure: rooms per area, dungeons, softlock checker
     adventure.js  adventure/   point-and-click engine (rooms, dialog, Tickle Fencing) and Pudding Island
+    breach.js  breach/   Bean Brigade: pure rules + bug AI (rules.js), levels, board view, models, HUD, helper bean
     castle-campaign.js  castle/   The Golden Bean campaign (levels, troopers, grumbles, siege props)
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)

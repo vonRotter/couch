@@ -403,7 +403,13 @@ export class BoardView {
       if (u.fire) this.pvLabel(t('breach.p.fire'), { x: u.to?.[0] ?? u.x, y: u.to?.[1] ?? u.y }, 'pv-bad', 0.35);
       void end;
     }
-    for (const e of ev) if (e.k === 'bump') this.pvLabel(t('breach.p.bonk'), { x: e.x, y: e.y }, 'pv-bonk', 0.3);
+    for (const e of ev) {
+      if (e.k !== 'bump') continue;
+      this.pvLabel(t('breach.p.bonk'), { x: e.x, y: e.y }, 'pv-bonk', 0.3);
+      // a stubby arrow: it gets pushed, but bonks into whatever is in the way
+      const u = diff.units.find((d) => d.id === e.id) || after.units.find((d) => d.id === e.id);
+      if (u) { const a = tileWorld(u.to?.[0] ?? u.x, u.to?.[1] ?? u.y), b = tileWorld(e.x, e.y); this.flatArrow(this.previewGroup, a, a.clone().lerp(b, 0.62), 0xffd84a, 0.1, 0, 0.95); }
+    }
     for (const b of diff.born) if (b.side === 'rock') this.pvLabel(t('breach.p.rock'), b, 'pv-good');
     for (const tl of diff.tiles) {
       if (tl.power > 0) this.pvLabel(t('breach.p.power', { n: tl.power }), tl, 'pv-power', 0.9);

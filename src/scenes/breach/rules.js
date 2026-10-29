@@ -827,7 +827,7 @@ export function endTurn(s) {
 /**
  * Bonus objective status: { done, failed, n?, of? }. done = earned if the battle ended now.
  * Kinds: protect (the star building takes no damage), kills n, drown n, noKO, crate, power n (lose at most n),
- * boss (pop the big bug), battery (keep the battery safe: +1 grid power).
+ * boss (pop the big bug), battery (keep the battery safe: +1 grid power), mechHp n (every mech ends with n+ hearts).
  */
 export function objectiveStatus(s, o) {
   switch (o.kind) {
@@ -838,6 +838,7 @@ export function objectiveStatus(s, o) {
     case 'crate': return { done: s.crateGot, failed: s.crateLost && !s.crateGot };
     case 'power': { const lost = s.powerStart - s.power; return { done: lost <= o.n, failed: lost > o.n }; }
     case 'boss': return { done: s.bossDead };
+    case 'mechHp': return { done: mechs(s).every((m) => !m.ko && m.hp >= o.n) };
     default: return { done: false };
   }
 }

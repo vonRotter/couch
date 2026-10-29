@@ -456,7 +456,8 @@ export class BreachScene extends MiniGame {
     this.game.audio.playMusic('breach');
     const name = t(`breach.bt.${o.def.id}`);
     this.hud.banner(name, t(`breach.isl.${this.isl.id}`), 1800);
-    this.speak(`${name}. ${t(`breach.bi.${o.def.id}`)}`);
+    const goals = [t('breach.obj.survive', { n: o.def.turns }), ...o.def.objectives.map((ob) => this.objText(ob))].join('. ');
+    this.speak(`${name}. ${t(`breach.bi.${o.def.id}`)} ${goals}.`);
     if (this.tut) this.later(0.6, () => this.showTip());
     this.refresh();
   }

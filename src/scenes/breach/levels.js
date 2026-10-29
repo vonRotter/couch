@@ -159,7 +159,7 @@ export const ISLANDS = [
         start: [[2, 4], [5, 4], [3, 5]],
         bugs: [{ type: 'beetle', x: 2, y: 2 }, { type: 'beetle', x: 5, y: 1 }, { type: 'spitter', x: 6, y: 0 }],
         waves: [2, 2, 1], pool: ['beetle', 'spitter', 'firefly'],
-        objectives: [{ kind: 'drown', n: 2 }, { kind: 'power', n: 1 }],
+        objectives: [{ kind: 'drown', n: 2 }, { kind: 'mechHp', n: 2 }],
       },
       {
         id: 'f2', turns: 5,

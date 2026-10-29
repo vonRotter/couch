@@ -70,7 +70,7 @@ addStrings({
     'breach.obj.protect.windmill': 'Keep the windmill safe', 'breach.obj.protect.cocoa': 'Keep the cocoa house safe', 'breach.obj.protect.tower': 'Keep the grid tower safe',
     'breach.obj.battery': 'Keep the battery safe (+1 power)',
     'breach.obj.kills': 'Pop {n} bugs', 'breach.obj.drown': 'Sink {n} bugs in water', 'breach.obj.noKO': 'No mech gets dizzy',
-    'breach.obj.crate': 'Pick up the supply crate', 'breach.obj.power': 'Lose at most {n} grid power', 'breach.obj.boss': 'Pop the big bug',
+    'breach.obj.crate': 'Pick up the supply crate', 'breach.obj.mechHp': 'Every mech keeps {n} or more hearts', 'breach.obj.power': 'Lose at most {n} grid power', 'breach.obj.boss': 'Pop the big bug',
     'breach.obj.queen': 'Pop the Grumble Queen (that wins at once)', 'breach.obj.survive': 'Survive {n} turns',
 
     'breach.h.select': '[A] pick a mech', 'breach.h.move': '[A] walk here', 'breach.h.stay': '[A] stay here and aim',
@@ -204,7 +204,7 @@ addStrings({
     'breach.obj.protect.windmill': 'Pass på vindmølla', 'breach.obj.protect.cocoa': 'Pass på kakaohuset', 'breach.obj.protect.tower': 'Pass på strømtårnet',
     'breach.obj.battery': 'Pass på batteriet (+1 strøm)',
     'breach.obj.kills': 'Sprekk {n} biller', 'breach.obj.drown': 'Senk {n} biller i vann', 'breach.obj.noKO': 'Ingen mek blir svimmel',
-    'breach.obj.crate': 'Plukk opp forsyningskassa', 'breach.obj.power': 'Mist høyst {n} strøm', 'breach.obj.boss': 'Sprekk den store billen',
+    'breach.obj.crate': 'Plukk opp forsyningskassa', 'breach.obj.mechHp': 'Hver mek har {n} hjerter eller mer', 'breach.obj.power': 'Mist høyst {n} strøm', 'breach.obj.boss': 'Sprekk den store billen',
     'breach.obj.queen': 'Sprekk Grumledronninga (da vinner du med en gang)', 'breach.obj.survive': 'Hold ut i {n} turer',
 
     'breach.h.select': '[A] velg en mek', 'breach.h.move': '[A] gå hit', 'breach.h.stay': '[A] bli her og sikt',
