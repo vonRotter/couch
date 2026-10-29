@@ -494,6 +494,7 @@ export class IslandMap {
     this.put(makeBench(), 4.8, -27.4, 0.4);
     this.circObs(4.8, -27.4, 0.8);
     this.sign(10.4, -22.6, 0x4cc9f0);
+    this.lamp(5.4, -22.4);
     // the mine in the cliff and its rockfall
     const mine = makeMine();
     this.put(mine, P.mine.x, P.mine.z, 0, 0);

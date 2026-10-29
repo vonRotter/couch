@@ -212,7 +212,7 @@ export class SoloIslandScene extends BaseScene {
     let g;
     if (id === 'flag') {
       g = makeDeco('flag', this.M);
-      this.put(g, HOME.x - 1.6, HOME.z - 0.2, 4.4);
+      this.put(g, HOME.x - 2.35, HOME.z + 2.15, 2.6); // on the front corner of the house
     } else {
       const spot = DECO_SPOTS.find((s) => s.id === id) || DECO_SPOTS.find((s) => s.id === 'castleTrophy');
       if (id === 'duckGold' && this.decoViews.has('duckTrophy')) { this.decoViews.get('duckTrophy').removeFromParent(); }
@@ -377,7 +377,7 @@ export class SoloIslandScene extends BaseScene {
       }
       n.moving = moving;
       n.hop = Math.max(0, n.hop - dt * 2.5);
-      n.y = heightAt(n.x, n.z) + Math.sin(n.hop * Math.PI) * 0.8;
+      n.y = this.map.floorAt(n.x, n.z, this.save.unlocks.bridge) + Math.sin(n.hop * Math.PI) * 0.8;
       n.model.group.position.set(n.x, n.y, n.z);
       n.model.update(dt, { moving: moving ? 0.5 : 0, grounded: true, vy: 0 });
       if (n.sleep && !moving) {
@@ -1241,7 +1241,7 @@ export class SoloIslandScene extends BaseScene {
   }
 
   updateLabels() {
-    const P = this.player;
+    const P = this.mode === 'walk' || this.mode === 'bag' ? this.player : null; // no tags over panels
     const S = this.save;
     const cam = this.camera;
     // arcade cabinets: only the nearest one gets a label, else the hall's own name
