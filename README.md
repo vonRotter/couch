@@ -385,7 +385,7 @@ night match yours and crops grow while you are away.
   radishes to find the burrow to Grumble Guides.
 - **Farming:** Aunt Hazel gives you a hoe, a watering can and a scythe. Till, plant, water (one
   watering lasts six hours; dry crops wait and never die), harvest and sell in the shipping bin or at
-  Rosa's store. Eight crops, from radishes (4 minutes) to star fruit (8 hours).
+  Rosa's store. Fourteen crops, from radishes (4 minutes) to star fruit (8 hours), by season.
 - **Villagers:** Aunt Hazel, Rosa, Keeper Bram, Grumbleton, Pip the astronaut and Mumble walk their
   own daily routines, talk (read aloud), react to your progress in their games, like some gifts more
   than others, and have friendship hearts, heart events and small quests.
@@ -404,17 +404,37 @@ night match yours and crops grow while you are away.
   animal once a day for up to 5 animal hearts. Eggs and milk add four café dishes (16 in total).
 - **Building and decorating:** break rock piles for stone and cut tall grass for hay and fiber. The
   workbench by the cottage crafts 12 yard pieces and furniture, upgrades the cottage (porch and a
-  second room) and has a decorate mode: the cell in front of you shows a preview, A places or picks
-  up, B turns, C ends. Game trophies are movable pieces too. The front door leads into the cottage,
+  second room) and has a decorate mode: the stick moves a cursor over the grid, A places or picks
+  up, B turns (hold B for the next thing), C ends. Game trophies are movable pieces too. The front door leads into the cottage,
   which you decorate the same way.
 - **Island life:** friendship goes to 10 hearts with new heart events at 6 and 8 (Pip's rocket
   launch among them). A calendar board in the square shows birthdays (gifts count double),
-  rainy days (about one in five; rain waters the crops) and festivals by the real date: a Fishing
-  Derby on the first weekend of each month, a Harvest Fair in mid-September to November, and Lantern
-  Night in December and late June. Friends send letters with small gifts and come to the café as
-  regulars with double tips.
+  rainy days (about one in five; rain waters the crops) and the festivals (see Seasons below).
+  Friends send letters with small gifts and come to the café as regulars with double tips.
 - **Rewards from games** arrive as letters in the mailbox: decorations, seeds, trophies and a pirate
   flag for the house.
+- **Seasons (one per real week):** spring, summer, autumn and winter take turns week by week (weeks
+  start on Monday). Each season has its own look (blossoms, bright summer, orange leaves, snow on the
+  ground, roofs and trees and an icy river rim), its own crops (14 crops; radishes and carrots grow all
+  year, the rest only in their season outdoors; planted crops never wither) and some seasonal fish and
+  dive critters (the fish log shows when). Every season has a festival from Friday to Sunday of its
+  week: the Spring Planting Fair (plant 5 seeds for Rosa), the Summer Beach Day (find 4 shells for
+  Pip), the Harvest Fair and Lantern Night; the Fishing Derby keeps the first weekend of each month.
+  In winter you can ride a sled down kite hill (hot cocoa for the first ride each winter week), and
+  snowy days water the crops like rain. The calendar board colors the weeks by season.
+- **The island grows:** the museum east of the square (donate fish, sea finds and crystals to Curator
+  Hoot; prizes at 5, 10, 20, 30 and all 42 pieces; crystals come from Lighthouse Caves and Crystal
+  Caves letters, the glow cave and Shell Isle), the greenhouse (Aunt Hazel's fourth quest; anything
+  grows inside in any season), sprinklers (water their 8 neighbours) and scarecrows (sometimes an
+  extra crop) from the workbench, and Shell Isle: a sea chart in the glow cave lets Grumbleton sail
+  you there from the end of the pier. It has tide pools, palms, wild berries, treasure to dig, a
+  hidden cove with its own fish, and Shelby the hermit crab, who visits the beach on weekends.
+- **Polish:** Pip's camera (photos become postcards in the mailbox and an album of the newest 12),
+  a three-minute fishing tournament against Grumbleton (Wednesdays, or any day at 5 hearts), a
+  specials board in the café (up to 4 dishes that sell for more and are ordered more often), and baby
+  animals (happy hens hatch chicks, happy cows and goats have a baby; babies grow up in 3 days).
+  Pop-up messages wait in a queue (at most two at a time, paused under panels), and decorate mode has
+  a free cursor that the stick moves.
 - Stick to walk, A uses the held tool (or goes in at doors), B talks, picks up and opens the bag,
   1–9 pick a bag slot, C opens the start menu. A new controller pressing jump takes over.
 
