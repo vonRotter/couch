@@ -192,7 +192,7 @@ export const ISLANDS = [
         ],
         start: [[2, 4], [5, 4], [3, 6]],
         bugs: [{ type: 'spitter', x: 4, y: 1, alpha: true }, { type: 'beetle', x: 1, y: 1 }, { type: 'burrower', x: 6, y: 2 }],
-        waves: [2, 2, 2, 1], pool: ['beetle', 'spitter', 'firefly', 'burrower'], alphaChance: 0.2,
+        waves: [2, 2, 1, 1], pool: ['beetle', 'spitter', 'firefly', 'burrower'], alphaChance: 0.1,
         objectives: [{ kind: 'boss' }, { kind: 'noKO' }],
       },
     ],

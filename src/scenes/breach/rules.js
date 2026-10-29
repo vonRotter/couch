@@ -440,9 +440,9 @@ export const WEAPONS = {
       }
     },
   },
-  // Swap Beam: trade places with whatever stands up to 2 tiles away in a line (or just teleport). +1: 3 tiles. +2: the swapped bug takes 1.
+  // Swap Beam: trade places with whatever stands up to 2 tiles away in a line (or just teleport); a swapped bug takes 1. +1: 3 tiles. +2: 4 tiles.
   swap: {
-    range: (lv) => (lv >= 1 ? 3 : 2),
+    range: (lv) => 2 + lv,
     targets(s, u) {
       return [0, 1, 2, 3].flatMap((d) => lineTiles(u, d, 1, this.range(u.pow))).filter((tl) => {
         const t = tileAt(s, tl.x, tl.y);
@@ -459,7 +459,7 @@ export const WEAPONS = {
       enterTile(s, u, ev);
       if (o) {
         enterTile(s, o, ev);
-        if (u.pow >= 2 && !o.dead && o.side === 'bug') hitTile(s, o.x, o.y, 1, ev);
+        if (!o.dead && o.side === 'bug') hitTile(s, o.x, o.y, 1, ev);
       }
     },
   },

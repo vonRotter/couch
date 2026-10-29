@@ -70,11 +70,18 @@ export class BreachScene extends MiniGame {
   frameCamera() {
     const w = window.innerWidth, h = window.innerHeight;
     this.camera.aspect = w / h;
-    const dist = this.fitDistance(12.8, 9.6) * 0.98;
+    // the board plus room for the side panels (on wide screens the height decides anyway)
+    let needW = 14.6, shift = 0;
+    if (this.side) {
+      const pf = Math.min(480, 0.38 * w) / w + 0.04; // the map card on the left
+      needW = 9.2 / (1 - pf);
+      shift = pf / 2;
+    }
+    const dist = this.fitDistance(needW, 9.6) * 0.98;
     const dir = new THREE.Vector3(0, 1.2, 1).normalize();
     this.camera.position.copy(BOARD_LOOK).addScaledVector(dir, dist);
     this.camera.lookAt(BOARD_LOOK);
-    if (this.side) this.camera.setViewOffset(w, h, -w * 0.19, 0, w, h);
+    if (this.side) this.camera.setViewOffset(w, h, -w * shift, 0, w, h);
     else this.camera.clearViewOffset();
     this.camera.updateProjectionMatrix();
   }
@@ -431,7 +438,7 @@ export class BreachScene extends MiniGame {
     const o = ORDER[run.step];
     this.def = o.def;
     this.isl = ISLANDS[o.island];
-    this.bs = R.makeBattle(o.def, { mechs: run.mechs, power: run.power, diff: run.diff, seed: run.seed + run.step * 7919 });
+    this.bs = R.makeBattle(o.def, { mechs: run.mechs, power: run.power, diff: run.diff, seed: run.seed + run.step * 7919 + run.tries * 131 }); // a retry brings other bugs
     this.backdrop = null;
     this.mode = 'battle';
     this.setSide(false);
@@ -938,6 +945,7 @@ export class BreachScene extends MiniGame {
     run.stars += stars;
     run.starsTotal += stars;
     run.won++;
+    run.tries = 0;
     this.save.bestBattles = Math.max(this.save.bestBattles, run.won);
     if (def.tutorial) this.save.tutorial = true;
     this.tut = null;
@@ -996,6 +1004,7 @@ export class BreachScene extends MiniGame {
     if (this.mode === 'lost') {
       if (this.save.run) {
         this.save.run.power = Math.max(this.save.run.power, 3); // Easy: a fresh try with some power
+        this.save.run.tries++;
         this.persist();
         this.startBattle();
       } else { this.backdrop = null; this.showDiff(); }

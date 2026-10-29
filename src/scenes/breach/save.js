@@ -5,7 +5,7 @@ import { SQUADS, SQUAD_IDS } from './rules.js';
 //   tutorial: the first-battle tips were finished       medals: { bonk: n, ... } campaigns won per squad
 //   bestBattles: most battles won in one run             done: won the whole campaign at least once
 //   run: the campaign in progress or null:
-//     { diff, squad, step (index in ORDER), power, stars (to spend), starsTotal, won, seed,
+//     { diff, squad, step (index in ORDER), power, stars (to spend), starsTotal, won, seed, tries (Easy retries of this battle),
 //       mechs: [{ type, hp, move, pow, ups: ['hp1', ...] }], shop (upgrade screen due) }
 
 export function loadBreach(roster) {
@@ -33,6 +33,7 @@ function fixRun(r) {
     starsTotal: Math.max(0, r.starsTotal | 0),
     won: Math.max(0, r.won | 0),
     seed: r.seed | 0 || 1,
+    tries: Math.max(0, r.tries | 0),
     shop: !!r.shop,
     mechs: SQUADS[r.squad].map((type, i) => {
       const m = r.mechs?.[i] || {};
