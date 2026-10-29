@@ -82,13 +82,28 @@ const SVG = {
   heart: `<path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.5 5c2.1 0 3.5 1.2 5.5 3.2C14 6.2 15.4 5 17.5 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" fill="#ff5d73" stroke="${INK}" stroke-width="1.4"/>`,
   heartEmpty: `<path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.5 5c2.1 0 3.5 1.2 5.5 3.2C14 6.2 15.4 5 17.5 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" fill="rgba(255,255,255,.55)" stroke="${INK}" stroke-width="1.4"/>`,
   letter: `<rect x="3" y="6" width="18" height="13" rx="2" fill="#fff8e8" stroke="${INK}" stroke-width="1.3"/><path d="M3 7 L12 14 L21 7" fill="none" stroke="${INK}" stroke-width="1.3"/><circle cx="12" cy="14" r="2" fill="#ff5d73"/>`,
+  rod: `<path d="M4 21 L19 4" stroke="#a0704a" stroke-width="2.4" stroke-linecap="round"/><path d="M19 4 Q22 12 18 16" fill="none" stroke="${INK}" stroke-width="1"/><circle cx="18" cy="17" r="1.8" fill="#ff5d73" stroke="${INK}" stroke-width=".8"/><circle cx="7" cy="18" r="2.2" fill="#9a94b2" stroke="${INK}" stroke-width="1"/>`,
+  fishlog: `<rect x="4" y="3" width="16" height="18" rx="2" fill="#4cc9f0" stroke="${INK}" stroke-width="1.3"/><rect x="6" y="3" width="2" height="18" fill="#2f8fc0"/><ellipse cx="14" cy="12" rx="4" ry="2.4" fill="#ffd23f" stroke="${INK}" stroke-width="1"/><path d="M10 12 L8 10 L8 14Z" fill="#ffd23f" stroke="${INK}" stroke-width=".8"/>`,
+  recipes: `<rect x="4" y="3" width="16" height="18" rx="2" fill="#ff7a59" stroke="${INK}" stroke-width="1.3"/><rect x="6" y="3" width="2" height="18" fill="#d9583a"/><ellipse cx="14" cy="14" rx="4.5" ry="2" fill="#fff" stroke="${INK}" stroke-width="1"/><path d="M11 12 Q14 7 17 12" fill="#fff3dc" stroke="${INK}" stroke-width="1"/>`,
+  flippers: `<path d="M6 4 L10 4 L12 20 Q8 22 4 20Z" fill="#3ddc97" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><path d="M14 4 L18 4 L20 20 Q16 22 12.5 20Z" fill="#3ddc97" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
+  tank: `<rect x="7" y="5" width="10" height="16" rx="5" fill="#ffc93c" stroke="${INK}" stroke-width="1.3"/><rect x="10" y="2" width="4" height="4" fill="#9a94b2" stroke="${INK}" stroke-width="1"/><path d="M7 11 H17" stroke="${INK}" stroke-width="1"/>`,
+  suit: `<path d="M8 3 H16 L18 8 L16 21 H8 L6 8Z" fill="#2f4f8f" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5" fill="#bff6ff" stroke="${INK}" stroke-width="1"/>`,
   deco: `<path d="M12 3 L14.6 9.2 L21 9.6 L16 13.8 L17.6 20.4 L12 16.8 L6.4 20.4 L8 13.8 L3 9.6 L9.4 9.2 Z" fill="#c9a8ff" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
 };
+
+// Pictures of 3D models for sea things and dishes (set by the island scene: see thumbs.js).
+let pictureFn = null;
+export function setPictures(fn) { pictureFn = fn; }
+const PICTURED = new Set(['fish', 'sea', 'treasure', 'dish']);
 
 /** Inline SVG icon for an item id (seed packets get a little crop picture on a paper bag). */
 export function icon(id) {
   let body;
   const it = ITEMS[id];
+  if (pictureFn && PICTURED.has(it?.kind)) {
+    const url = pictureFn(id);
+    if (url) return `<img class="isl-ico" src="${url}" alt="">`;
+  }
   if (SVG[id]) body = SVG[id];
   else if (it?.kind === 'crop') body = cropSvg(id);
   else if (it?.kind === 'seed') {

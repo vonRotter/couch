@@ -45,6 +45,9 @@ export function freshIsland() {
     deco: {}, // decorations shown around the house
     stats: { harvested: 0, shipped: 0, earned: 0 },
     last: { place: null },
+    // milestone B1: the sea and the café
+    sea: { rod: false, suit: false, quest: 0, log: {}, caught: 0, dives: 0, haul: null },
+    cafe: { repaired: false, wood: 0, served: 0, earned: 0, nights: 0, cooked: 0 },
   };
 }
 
@@ -57,6 +60,10 @@ export function loadIsland(roster) {
   for (const k of Object.keys(f)) if (s[k] === undefined) s[k] = f[k];
   for (const k of Object.keys(f.unlocks)) if (s.unlocks[k] === undefined) s.unlocks[k] = f.unlocks[k];
   for (const k of Object.keys(f.stats)) if (s.stats[k] === undefined) s.stats[k] = f.stats[k];
+  for (const part of ['sea', 'cafe']) {
+    if (!s[part] || typeof s[part] !== 'object') s[part] = f[part];
+    for (const k of Object.keys(f[part])) if (s[part][k] === undefined) s[part][k] = f[part][k];
+  }
   return s;
 }
 
