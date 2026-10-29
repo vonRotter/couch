@@ -105,6 +105,7 @@ export class Seasons {
   sendLetters(today) {
     const S = this.S;
     if (S.fest.letterDay === today || !S.intro) return;
+    if (S.mail.filter((m) => m.id.startsWith('f.')).length >= 3) return; // unread letters wait first
     S.fest.letterDay = today;
     let sent = 0;
     for (const id of ['hazel', 'rosa', 'bram', 'grumbleton', 'pip']) {

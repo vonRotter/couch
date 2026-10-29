@@ -114,7 +114,7 @@ const PICTURED = new Set(['fish', 'sea', 'treasure', 'dish', 'produce']);
 export function icon(id) {
   let body;
   const it = ITEMS[id];
-  if (pictureFn && PICTURED.has(it?.kind)) {
+  if (pictureFn && (PICTURED.has(it?.kind) || it?.kind === 'craft' || (!it && !SVG[id]))) {
     const url = pictureFn(id);
     if (url) return `<img class="isl-ico" src="${url}" alt="">`;
   }

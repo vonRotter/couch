@@ -219,7 +219,8 @@ export class Builder {
 
   /** A new decoration (from a game, a friend or a festival): on its usual spot if free, else in storage. */
   addDecoration(id, celebrate) {
-    const spot = this.host.decoSpot(id);
+    let spot = this.host.decoSpot(id);
+    if (!spot || this.occupied(spot.x, spot.z)) spot = this.freeCellNear(HOME.x + 3.5, HOME.z + 6.5);
     if (spot && !this.occupied(spot.x, spot.z)) {
       this.addPiece(id, spot.x, spot.z, 0);
       this.renderYard();
@@ -232,6 +233,18 @@ export class Builder {
   }
 
   name(id) { return t(ITEMS[id] ? `isl.i.${id}` : `isl.d.${id}`); }
+
+  /** The nearest free yard cell to (x, z), searching outward a little. */
+  freeCellNear(x, z) {
+    for (let r = 0; r <= 7; r++) {
+      for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+        const cx = Math.floor(x) + dx + 0.5, cz = Math.floor(z) + dz + 0.5;
+        if (this.cellOk(cx, cz)) return { x: cx, z: cz };
+      }
+    }
+    return null;
+  }
 
   // ---------- gathering ----------
 

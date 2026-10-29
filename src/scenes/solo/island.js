@@ -16,7 +16,7 @@ import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
 import { now, hourOf, since, loadIsland, count, give, take, MIN, HOUR } from './save.js';
 import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures } from './items.js';
-import { FISH, FISH_IDS, RECIPES, seaModel, makeDish } from './sea.js';
+import { FISH, FISH_IDS, RECIPES, seaModel, makeDish, hasSeaModel } from './sea.js';
 import { thumb } from './thumbs.js';
 import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
@@ -227,6 +227,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** Picture of a sea thing or dish (rendered once). */
   picture(id) {
+    if (!hasSeaModel(id)) return this.builder ? thumb(this.game.renderer, `craft:${id}`, () => this.builder.model(id), { rx: 0.35, ry: -0.6 }) : '';
     return thumb(this.game.renderer, id, () => seaModel(id), FISH[id] ? { ry: -0.35 } : RECIPES[id] ? { rx: 0.85 } : { rx: 0.45 });
   }
 
