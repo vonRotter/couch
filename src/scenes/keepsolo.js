@@ -8,17 +8,17 @@ import { t, tFor } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { say } from '../core/voice.js';
 import { KeepScene } from './keep.js';
-import { PR, SPEED, clamp, mesh, cyl, fadeMat } from './keep/common.js';
+import { PR, SPEED, clamp, mesh } from './keep/common.js';
 import { FoeMixin } from './keep/foes.js';
 import './keepsolo/strings.js';
 import { loadKeepSolo, saveKeepSolo } from './keepsolo/save.js';
 import { CLASSES, SKILLS, MAX_LEVEL, xpNeed, heroStats, armorCut, compareItem } from './keepsolo/classes.js';
-import { foeHitAt, isDeep, deepDepth, ACT_FLOORS, ACTS, DEEP_START, actOf } from './keepsolo/acts.js';
+import { foeHitAt, isDeep, deepDepth, ACT_FLOORS, ACTS, actOf } from './keepsolo/acts.js';
 import { WorldMixin } from './keepsolo/world.js';
 import { TownMixin, TOWN_START, ShopPanel, QuestPanel, GatePanel } from './keepsolo/town.js';
 import { SkillMixin } from './keepsolo/skills.js';
 import { GridPanel } from './keepsolo/inventory.js';
-import { Hud, ClassPicker, SkillMenu, whereText } from './keepsolo/ui.js';
+import { Hud, ClassPicker, SkillMenu } from './keepsolo/ui.js';
 import { dressHero } from './keepsolo/models.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
@@ -171,6 +171,14 @@ export class KeepSoloScene extends MiniGame {
     const e = this.hero;
     e.x = x; e.z = z; e.vx = e.vz = 0; e.fx = fx; e.fz = fz;
     e.ch.face(fx, fz);
+  }
+
+  /** While choosing: the bean in town shows that hero's gear. */
+  previewClass(cls) {
+    this.cls = cls;
+    this.hs = this.data.classes[cls];
+    this.makeHero();
+    this.placeHero(TOWN_START.x, TOWN_START.z, 0, 1);
   }
 
   pickClass(cls) {
@@ -756,5 +764,3 @@ export class KeepSoloScene extends MiniGame {
 
 Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin);
 for (const k of BORROW) Object.defineProperty(KeepSoloScene.prototype, k, Object.getOwnPropertyDescriptor(KeepScene.prototype, k));
-
-export { whereText, fadeMat, cyl, DEEP_START };

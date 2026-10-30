@@ -2,7 +2,7 @@ import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say } from '../../core/voice.js';
 import { RARITY_TEXT, RARITY_CSS, itemName, statLines, baseName, STATS, statsOf } from './items.js';
-import { CLASS_IDS, GLYPH, CLASS_COLOR, SKILLS, skillsFor, compareItem, isBetter, heroStats, armorCut, xpNeed } from './classes.js';
+import { CLASS_IDS, GLYPH, CLASS_COLOR, SKILLS, compareItem, isBetter, heroStats, armorCut, xpNeed } from './classes.js';
 import { ACT_FLOORS, isDeep, deepDepth } from './acts.js';
 
 // Pillow Keep Solo HTML overlay: the HUD (health, potions, level, skills, coins), the item cards
@@ -352,6 +352,7 @@ export class ClassPicker {
       this.s.game.audio.play('select');
       this.render();
       const cls = CLASS_IDS[this.i];
+      this.s.previewClass(cls);
       say(`${t(`ks.cls.${cls}`)}. ${t(`ks.descSay.${cls}`)}`);
     }
     if (d?.aPressed) {
@@ -425,5 +426,3 @@ export class SkillMenu {
 
   close() { this.el.remove(); }
 }
-
-export { skillsFor };

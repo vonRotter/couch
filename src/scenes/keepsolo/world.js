@@ -355,6 +355,7 @@ export const WorldMixin = {
     const delta = compareItem(this.cls, this.hs.level, this.hs.gear, it.item, this.D);
     this.floater(t(isBetter(delta) ? 'ks.pickedBetter' : 'ks.picked', { name: itemName(it.item) }), new THREE.Vector3(this.hero.x, 2.6, this.hero.z), RARITY_CSS[it.item.rarity], 1.6, true);
     this.game.audio.play(it.item.rarity >= 3 ? 'fanfare' : it.item.rarity === 2 ? 'star' : 'select');
+    this.say(`${itemName(it.item)}${isBetter(delta) ? `. ${t('ks.better')}` : ''}`);
     this.dirty = true;
     return true;
   },

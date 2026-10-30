@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeStar } from '../../core/world.js';
 import { darken } from '../../core/character.js';
-import { mesh, sph, rbox, bx, cyl, cone } from '../keep/common.js';
+import { mesh, sph, cyl, cone } from '../keep/common.js';
 import { buildWeapon, buildHat, buildCape } from '../keep/loot.js';
 import { RARITY_HEX } from './items.js';
 
@@ -173,5 +173,3 @@ export function dressHero(e, gear, baseHat) {
 export function featherRing() {
   return sharedGeo('ksFeatherRing', () => new THREE.RingGeometry(0.85, 1, 40));
 }
-
-export { rbox, bx };

@@ -100,6 +100,35 @@ battle has a short read-aloud tutorial, and the first deploy step is explained a
 is saved per profile between battles: leaving in the middle of a battle (pause menu, End game)
 starts that same battle again next time, with the grid power you had before it.
 
+**Pillow Keep Solo** (solo island; a single-player Diablo-like, the keep tower on the west bank). Pick
+a hero, each with its own save: the **Pillow Knight** (A pillow swing, hold B to block most of a hit),
+the **Feather Archer** (A feather arrows, B dodge roll) or the **Bubble Wizard** (A bubble that traps
+a grumble, hit it again for a big pop; B bubble hop). Each learns four C skills at levels 1, 3, 6 and
+10 (Knight: Pillow Spin, Pillow Rush, Feather Quake, Brave Cheer; Archer: Feather Fan, Big Arrow,
+Feather Rain, Owl Friend; Wizard: Bubble Ring, Bubble Bomb, Snooze Cloud, Bubble Storm). Tap C uses
+the chosen skill (or picks up the item you stand on); hold C for a menu with the skills, a potion,
+the town portal and the bag. The town of Pillowby has Bolster's forge (upgrade gear up to +5 with
+coins and fluff, salvage what you do not need into fluff), Auntie Fizz's potion shop (potions, a
+bigger potion belt, mystery boxes), a stash chest shared by the profile's three heroes, a quest
+board with three quests (poof grumbles, named grumbles or nests, reach a floor, find rare items; C
+swaps one for a new quest) and four townsfolk with jokes (Sir Fluffington, Old Snorewell, Tilly Tuft,
+Gran Gumdrop); everything they say is read aloud. The gate leads to any floor you have reached: four
+acts of three random floors (Pillow Fort Cellars, Feather Forest, Bubble Bath Grotto, the Dream Keep;
+the co-op Pillow Keep's floor generator and grumbles) ending in Big Teddy, Honk the Goose (honk waves
+with safe gaps, feather fans, a dive), Captain Quack (three belly slides then dizzy, sponge rings,
+spinning water jets) and the Sleepy Sheep; every boss attack is painted on the floor first. After the
+Sheep the endless Deep Keep opens: tougher grumbles and better loot every floor, a boss every fifth
+depth, checkpoints at depths 1, 6, 11 and so on. Loot comes in four rarities (common white, magic
+blue, rare yellow with a two-word name, legendary orange with its own name and a special power) with
+random stats; seven worn slots (weapon, off-hand, helmet, armor, gloves, boots, charm) and a 32-cell
+bag where every item shows a green arrow when it would make you stronger, and the item card compares
+it stat by stat with what you wear. Coins and potions are picked up on their own, gear with C. A
+health bar replaces the co-op yawn meter: at zero you faint and wake up in town, and your bag (not
+what you wear, never the stash) stays where you fainted, with a golden beam, a gold arrow on the floor
+and a note on the screen; walk over it to get everything back. Faint again before that and the older
+bag is gone: only the newest one waits (it is saved, so it waits after quitting too). The town portal
+(hold C) takes you home and back to the same spot on the same floor. Progress is saved per profile.
+
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
@@ -284,7 +313,8 @@ Towers, Busy Builders, The Grand Siege and Castle Grumblegrump, where the prince
 stars per level (goal, every trooper home, within par time); progress is saved. Bonked grumbles
 float home and, after a few times, turn friendly; in the end everyone goes to the princess's party.
 
-**Pillow Keep** (co-op dungeon crawl, Gauntlet and Diablo style, five random floors). Everyone picks
+**Pillow Keep** (co-op dungeon crawl on the shared island, Gauntlet and Diablo style, five random
+floors; the solo island's keep tower starts Pillow Keep Solo instead). Everyone picks
 a class: Knight, Archer, Wizard or Bard. Every run builds new floors with rooms, keys and doors,
 pillow nests, chests and elite grumbles: Cushion Hall, Blanket Vaults, Toy Attic (Big Teddy guards
 the stairs), Moonlit Library and the Sheep's Bedroom (Sleepy Sheep). Loot (weapon, hat, slippers,
@@ -408,7 +438,8 @@ night match yours and crops grow while you are away.
   the dock), Laser Ducks (the fairground tent), Bean Brigade (the mech garage on the east hill),
   Sky Hop (the hot-air balloon on kite hill) and the
   Game Hall with cabinets for the guest games (Tachyon, Starlite, Foothold, Starhop). Repair the
-  bridge with 10 wood to reach Knights & Builders: The Golden Bean and Pillow Keep; trade Keeper Bram
+  bridge with 10 wood to reach Knights & Builders: The Golden Bean and Pillow Keep Solo (the keep
+  tower; its sign shows the best hero or the deepest Deep Keep floor); trade Keeper Bram
   a carrot for his pickaxe and clear the rockfall to open Crystal Caves; give Mumble the grumble three
   radishes to find the burrow to Grumble Guides.
 - **Farming:** Aunt Hazel gives you a hoe, a watering can and a scythe. Till, plant, water (one
@@ -441,7 +472,8 @@ night match yours and crops grow while you are away.
   Friends send letters with small gifts and come to the café as regulars with double tips.
 - **Rewards from games** arrive as letters in the mailbox: decorations, seeds, trophies and a pirate
   flag for the house (Bean Brigade sends a bug plushie for Clover Isle and a mech statue for the
-  whole campaign).
+  whole campaign; Pillow Keep Solo sends a pillow fort for Big Teddy and a golden feather for the
+  Sleepy Sheep).
 - **Seasons (one per real week):** spring, summer, autumn and winter take turns week by week (weeks
   start on Monday). Each season has its own look (blossoms, bright summer, orange leaves, snow on the
   ground, roofs and trees and an icy river rim), its own crops (14 crops; radishes and carrots grow all
@@ -528,11 +560,15 @@ src/
   scenes/
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     spacefall.js  spacefall/  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
-    space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js  keep.js
+    space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js
     guides.js  splash.js  cave.js  dogfight.js  duckhunt.js
     lighthouse.js  lighthouse/  top-down adventure: rooms per area, dungeons, softlock checker
     adventure.js  adventure/   point-and-click engine (rooms, dialog, Tickle Fencing) and Pudding Island
     breach.js  breach/   Bean Brigade: pure rules + bug AI (rules.js), levels, board view, models, HUD, helper bean
+    keep.js  keep/   co-op Pillow Keep: floor generator, grumbles, boss telegraphs, Big Teddy and the Sleepy Sheep
+    keepsolo.js  keepsolo/   Pillow Keep Solo: acts and quests (acts.js), heroes and skills (classes.js,
+                     skills.js), gear (items.js, models.js), floors and loot (world.js), Pillowby (town.js),
+                     bag/smith/stash (inventory.js), Goose and Duck bosses, HUD and menus (ui.js), save.js
     castle-campaign.js  castle/   The Golden Bean campaign (levels, troopers, grumbles, siege props)
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)

@@ -11,6 +11,11 @@ import { CLASSES, SKILLS } from './classes.js';
 const SHOT = { arrow: 19, big: 22, bubble: 11, storm: 9, feather: 13 };
 
 export const SkillMixin = {
+  /** keep/foes.js asks about co-op skills (Pop Splash); the solo heroes have their own skills. */
+  hasSkill() {
+    return false;
+  },
+
   /** Damage of one hit (lucky hits count double). */
   rollDmg(e, k = 1) {
     let d = e.st.dmg * k * (e.cheerT > 0 ? 1.5 : 1);

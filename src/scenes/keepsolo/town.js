@@ -8,9 +8,9 @@ import { say } from '../../core/voice.js';
 import { CELL, mesh, sph, rbox, bx, cyl, cone } from '../keep/common.js';
 import { Hazards } from '../keep/hazards.js';
 import { Nav, skillIcon, slotIcon, whereText } from './ui.js';
-import { ACTS, ACT_FLOORS, ACT_COUNT, DEEP_START, DEEP_BOSS_EVERY, isDeep, deepDepth, questProgress, questDone, makeQuest } from './acts.js';
+import { ACTS, ACT_FLOORS, ACT_COUNT, DEEP_START, DEEP_BOSS_EVERY, isDeep, questProgress, questDone, makeQuest } from './acts.js';
 import { BELT_MAX } from './save.js';
-import { rollItem, rollRarity, SLOTS, itemName, RARITY_TEXT } from './items.js';
+import { rollItem, rollRarity, SLOTS, itemName } from './items.js';
 
 // Pillowby, the little town of Pillow Keep Solo (mixed into the scene as a "world" like a floor):
 // Bolster's forge (upgrade and salvage), Auntie Fizz's potion shop (potions, a bigger belt and a
@@ -522,7 +522,14 @@ export class ShopPanel {
   update(dt, d) {
     if (!d) return false;
     const st = this.nav.step(d, dt);
-    if (st.y) { this.i = (this.i + st.y + 3) % 3; this.msg = ''; this.s.game.audio.play('select'); this.render(); }
+    if (st.y) {
+      this.i = (this.i + st.y + 3) % 3;
+      this.msg = '';
+      this.s.game.audio.play('select');
+      this.render();
+      const r = this.rows()[this.i];
+      say(`${t(`ks.shop.${r.id}`, { n: this.s.hs.potions, m: this.s.hs.belt })}. ${t(`ks.shop.${r.id}Desc`)}. ${r.price}`);
+    }
     if (d.aPressed) this.buy();
     if (d.bPressed) { this.close(); return true; }
     return false;
@@ -702,5 +709,3 @@ function seededRand(seed) {
     return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
   };
 }
-
-export { RARITY_TEXT, deepDepth };

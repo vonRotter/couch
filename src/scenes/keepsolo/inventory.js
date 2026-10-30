@@ -68,6 +68,12 @@ export class GridPanel {
     this.msg = '';
     this.s.game.audio.play('select');
     this.render();
+    // read the item aloud, with "better" when it is
+    const it = this.at().item;
+    if (it) {
+      const d = this.s.compareItemFor(it);
+      say(`${itemName(it)}. ${it.cls && it.cls !== this.s.cls ? t('ks.forClass', { cls: t(`ks.cls.${it.cls}`) }) : d !== null && d > 0.005 && this.s.hs.gear[it.slot] !== it ? t('ks.better') : ''}`);
+    }
   }
 
   gridHtml(a) {
