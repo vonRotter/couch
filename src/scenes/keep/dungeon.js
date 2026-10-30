@@ -30,17 +30,19 @@ export const FLOOR_PLAN = [
 const SX = 13, SY = 11; // macro cell size in tiles
 const AH = 15; // rows taken by the boss arena on arena floors
 
-/** Builds floor `depth` (0-based) from a seed. Retries with the next seed until the check passes. */
-export function generateFloor(depth, seed) {
+/**
+ * Builds floor `depth` (0-based) from a seed. Retries with the next seed until the check passes.
+ * `plan` defaults to the co-op FLOOR_PLAN entry; Pillow Keep Solo passes its own plans.
+ */
+export function generateFloor(depth, seed, plan = FLOOR_PLAN[depth]) {
   for (let k = 0; k < 40; k++) {
-    const f = tryGenerate(depth, (seed + k * 7919) >>> 0);
+    const f = tryGenerate(plan, (seed + k * 7919) >>> 0);
     if (f && verifyFloor(f.map).ok) return f;
   }
   throw new Error('keep: no solvable floor');
 }
 
-function tryGenerate(depth, seed) {
-  const plan = FLOOR_PLAN[depth];
+function tryGenerate(plan, seed) {
   const R = rng(seed);
   const ri = (a, b) => a + Math.floor(R() * (b - a + 1)); // inclusive
   const pick = (arr) => arr[Math.floor(R() * arr.length)];

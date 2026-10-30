@@ -12,7 +12,8 @@ import { PR, clamp, mesh, sph, cyl, cone, bx } from './common.js';
 
 const HURT_FLASH = 0.15;
 
-class Boss {
+/** Shared boss logic (also extended by Pillow Keep Solo's own bosses). */
+export class Boss {
   constructor(s, x, z, { hp, r, phases }) {
     this.s = s;
     this.x = x; this.z = z; this.y = 0;
