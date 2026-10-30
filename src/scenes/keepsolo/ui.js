@@ -173,6 +173,8 @@ const CSS = `
 .ks-card .st.unid { color: #8a45e0; font-size: .85em; }
 .ks-card .sell { margin-top: 3px; }
 .tier1 { color: #8a45e0; } .tier2 { color: #e8243f; }
+.label.ks-flabel { left: 0; top: 0; font-size: clamp(11px, 1vw, 16px); -webkit-text-stroke: 0; background: rgba(28,20,52,.82); border-radius: 7px; padding: 2px 8px;
+  line-height: 1.2; box-shadow: 0 2px 0 rgba(0,0,0,.25); }
 .ks-target { left: 50%; top: calc(14px + clamp(34px, 3.6vw, 52px)); transform: translateX(-50%); text-align: center; display: flex; flex-direction: column;
   align-items: center; gap: 2px; padding: 4px 18px 6px; min-width: 12em; }
 .ks-target small { font-size: .7em; opacity: .75; }

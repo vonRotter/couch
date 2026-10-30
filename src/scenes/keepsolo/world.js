@@ -13,6 +13,7 @@ import { floorPlan, themeOf, mixOf, bossHpAt, foeHpAt, xpAt, isDeep, ACT_FLOORS 
 import { rollRarity, rollItem, SLOTS, CLASS_SLOTS, itemName, RARITY_CSS, RARITY_HEX, useItem } from './items.js';
 import { CLASS_IDS, isBetter } from './classes.js';
 import { itemModel } from './models.js';
+import { toScreen } from './mouse.js';
 
 // The dungeon side of Pillow Keep Solo (mixed into the scene): building a floor from the shared
 // co-op generator (keep/dungeon.js) with the act's plan and look, the things lying on the floor
@@ -205,7 +206,11 @@ export const WorldMixin = {
     const a = Math.random() * Math.PI * 2, sp = pop ? 2 + Math.random() * 3 : 0;
     const it = { kind, x, z, y: pop ? 0.8 : 0.5, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, vy: pop ? 5 + Math.random() * 3 : 0, t: 0, mesh: m, phase: Math.random() * 6, value: 1 };
     if (kind === 'coin') it.value = 1 + Math.floor(this.D / 3);
-    if (use) it.use = use;
+    if (use) {
+      it.use = use;
+      it.label = this.game.ui.label('label ks-flabel');
+      it.labelHtml = '';
+    }
     this.items.push(it);
     return it;
   },
@@ -219,9 +224,7 @@ export const WorldMixin = {
     const disc = mesh(sharedGeo('ksLootDisc', () => new THREE.CircleGeometry(0.6, 20)), basic(RARITY_HEX[item.rarity], { transparent: true, opacity: 0.35, depthWrite: false }), 0, -0.42, 0, false);
     disc.rotation.x = -Math.PI / 2;
     m.add(beam, disc);
-    const label = this.game.ui.label('label');
-    label.style.fontSize = 'clamp(10px, 0.95vw, 15px)';
-    label.style.webkitTextStroke = '0.22em #2b2340';
+    const label = this.game.ui.label('label ks-flabel');
     const it = this.spawnItem('gear', x, z, true, m);
     Object.assign(it, { item, label, labelHtml: '' });
     return it;
@@ -299,19 +302,52 @@ export const WorldMixin = {
       if (it.kind !== 'bag') it.mesh.rotation.y += dt * (it.kind === 'key' ? 2 : it.kind === 'gear' ? 1.5 : 4);
     }
     this.items = this.items.filter((it) => !it.taken);
+    this.layoutLabels();
   },
 
+  /**
+   * Floor item names, Diablo style: shown while Alt is held (rare and better gear and your dropped
+   * bag always show). Labels that would overlap are stacked upward. Clicking a label walks there and
+   * picks the item up (control.js).
+   */
   itemLabel(it, d) {
-    if (d > 16) { it.label.style.display = 'none'; return; }
+    const alt = this.altHeld();
+    const always = it.kind === 'bag' || (it.kind === 'gear' && it.item.rarity >= 2);
+    if (d > 18 || (!alt && !always)) { it.label.style.display = 'none'; it.lp = null; return; }
     let html;
     if (it.kind === 'bag') html = esc(t('ks.bagHere'));
+    else if (it.kind !== 'gear') html = `<span style="color:${it.use === 'hp' ? '#ff8fa8' : it.use === 'mp' ? '#8fb8ff' : '#fff3dc'}">${esc(t(`ks.use.${it.use}`))}</span>`;
     else {
       const delta = this.compareItemFor(it.item);
-      const tag = delta === undefined ? ' <span style="color:#c9a8ff">?</span>' : delta === null ? `<small style="color:#d6cfe6">${esc(t('ks.forClass', { cls: t(`ks.cls.${it.item.cls}`) }))}</small>` : isBetter(delta) ? ' <span style="color:#3ddc97">▲</span>' : '';
+      const tag = delta === undefined ? ' <span style="color:#c9a8ff">?</span>' : delta === null ? ` <small style="color:#d6cfe6;display:inline">${esc(t('ks.forClass', { cls: t(`ks.cls.${it.item.cls}`) }))}</small>` : isBetter(delta) ? ' <span style="color:#3ddc97">▲</span>' : '';
       html = `<span style="color:${RARITY_CSS[it.item.rarity]}">${esc(itemName(it.item))}</span>${tag}`;
     }
-    if (html !== it.labelHtml) { it.label.innerHTML = html; it.labelHtml = html; }
-    this.game.ui.place(it.label, new THREE.Vector3(it.x, it.y + (it.kind === 'bag' ? 1.9 : 1.0), it.z), this.camera);
+    if (html !== it.labelHtml) { it.label.innerHTML = html; it.labelHtml = html; it.lw = 0; }
+    it.label.style.display = '';
+    if (!it.lw) { it.lw = it.label.offsetWidth || 80; it.lh = it.label.offsetHeight || 18; }
+    const p = toScreen(this.camera, it.x, it.y + (it.kind === 'bag' ? 1.9 : 1.0), it.z);
+    it.lp = p.behind ? null : { x: p.x, y: p.y };
+  },
+
+  /** Stack the floor labels so they never cover each other. */
+  layoutLabels() {
+    const placed = [];
+    const list = this.items.filter((it) => !it.taken && it.lp).sort((a, b) => b.lp.y - a.lp.y);
+    for (const it of list) {
+      let x = it.lp.x - it.lw / 2, y = it.lp.y - it.lh;
+      for (let k = 0; k < 12; k++) {
+        const hit = placed.find((r) => x < r.x + r.w + 2 && x + it.lw + 2 > r.x && y < r.y + r.h + 1 && y + it.lh + 1 > r.y);
+        if (!hit) break;
+        y = hit.y - it.lh - 2;
+      }
+      placed.push({ x, y, w: it.lw, h: it.lh });
+      it.label.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    }
+  },
+
+  altHeld() {
+    const d = this.game.input.down;
+    return !!this.mouse?.alt || d.has('AltLeft') || d.has('AltRight');
   },
 
   removeItem(it) {
