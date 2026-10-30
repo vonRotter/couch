@@ -7,11 +7,11 @@ import { SONGS } from '../core/audio.js';
 import { PLAYER_COLORS } from '../core/palette.js';
 import './breach/strings.js';
 import * as R from './breach/rules.js';
-import { ISLANDS, ORDER, BATTLE_COUNT, UPGRADES, POWER_MAX, ISLAND_POWER } from './breach/levels.js';
+import { ISLANDS, ORDER, BATTLE_COUNT, UPGRADES, POWER_MAX, ISLAND_POWER, battlePower } from './breach/levels.js';
 import { BoardView } from './breach/view.js';
 import { BreachHud, esc } from './breach/ui.js';
 import { loadBreach, saveBreach, newRun } from './breach/save.js';
-import { bestFor } from './breach/auto.js';
+import { bestFor, deploySpot } from './breach/auto.js';
 import { THEMES } from './breach/models.js';
 
 // Bean Brigade: an Into the Breach-style tactics game on the solo island. Three toy bean mechs
@@ -23,10 +23,16 @@ import { THEMES } from './breach/models.js';
 //   stick: cursor · [A]: pick a mech, walk, aim and confirm · [B]: back / undo a move
 //   tap [C]: battle menu (rewind, hint, tips) · hold [C]: end the turn
 //
+// Deploy (every battle but the tutorial): before turn 1 the player lands each mech on a glowing tile
+// of the map's landing zone ([A] lands the current mech or picks a landed one up again, [B] takes the
+// last one back, then [A] on Start! or hold [C]). The first bug plans and spawn mounds already show.
+//
 // Campaign: pick Easy or Hard and one of three squads, then Clover Isle, Sandy Isle and Frosty Isle
 // (3-4 battles each) and the finale at the Grumble Hive. Stars from battles and bonus objectives buy
 // upgrades between islands. Easy: all intents shown, unlimited move undo, one rewind per battle,
-// a lost battle is retried. Hard: one undo per turn, no rewind, an empty grid restarts the campaign.
+// +2 grid power per battle won, a lost battle is retried. Hard: one undo per turn, no rewind, no power
+// per battle won (only per island cleared and from batteries), an empty grid restarts the campaign.
+// Leaving in the middle of a battle (pause menu) starts that battle again next time.
 //
 // Code: breach/rules.js (the pure rules and bug AI), levels.js (islands, maps, upgrades),
 // view.js (board, models and animations), models.js, ui.js (HTML overlay), auto.js (helper hints),
@@ -144,6 +150,7 @@ export class BreachScene extends MiniGame {
       case 'egg': a.tone(NOTE(79), 0.1, { type: 'sine', vol: 0.08 }); break;
       case 'error': a.tone(150, 0.12, { type: 'square', vol: 0.06 }); break;
       case 'select': a.play('select'); break;
+      case 'land': a.noise(0.14, { vol: 0.12, freq: 420, q: 0.7, type: 'lowpass' }); a.tone(NOTE(67), 0.1, { type: 'triangle', vol: 0.07, delay: 0.05 }); break;
       case 'endTurn': [0, -3, -7].forEach((n, i) => a.tone(NOTE(76 + n), 0.12, { type: 'triangle', vol: 0.09, delay: i * 0.08 })); break;
       case 'yourTurn': [0, 4, 7].forEach((n, i) => a.tone(NOTE(72 + n), 0.12, { type: 'triangle', vol: 0.1, delay: i * 0.07 })); break;
       default: a.play(name);
@@ -438,15 +445,16 @@ export class BreachScene extends MiniGame {
 
   // ---------- battles ----------
 
-  /** Start the battle the run is at. */
+  /** Start the battle the run is at (with the deploy step first, except in the tutorial battle). */
   startBattle() {
     const run = this.save.run;
     const o = ORDER[run.step];
     this.def = o.def;
     this.isl = ISLANDS[o.island];
-    this.bs = R.makeBattle(o.def, { mechs: run.mechs, power: run.power, diff: run.diff, seed: run.seed + run.step * 7919 + run.tries * 131 }); // a retry brings other bugs
+    const deploy = !o.def.tutorial;
+    this.bs = R.makeBattle(o.def, { mechs: run.mechs, power: run.power, diff: run.diff, seed: run.seed + run.step * 7919 + run.tries * 131, deploy }); // a retry brings other bugs
     this.backdrop = null;
-    this.mode = 'battle';
+    this.mode = this.bs.phase === 'deploy' ? 'deploy' : 'battle';
     this.setSide(false);
     this.hud.setCard(null);
     this.buildBoard(this.bs, o);
@@ -457,22 +465,204 @@ export class BreachScene extends MiniGame {
     this.undo = [];
     this.undoLeft = this.easy ? Infinity : 1;
     this.rewindLeft = this.easy ? 1 : 0;
-    this.turnSnap = structuredClone(this.bs);
     this.menu = null;
     this.hint = null;
     this.holdC = 0;
     this.cHeldFromBefore = true;
     this.view.intentsAll = this.easy;
-    const first = R.mechs(this.bs)[0];
-    this.cursor = [first.x, first.y];
-    this.tut = o.def.tutorial && !this.save.tutorial ? { step: 0 } : null;
+    this.tut = null;
     this.game.audio.playMusic('breach');
     const name = t(`breach.bt.${o.def.id}`);
-    this.hud.banner(name, t(`breach.isl.${this.isl.id}`), 1800);
+    this.hud.banner(name, this.mode === 'deploy' ? t('breach.dep.short') : t(`breach.isl.${this.isl.id}`), 1600);
     const goals = [t('breach.obj.survive', { n: o.def.turns }), ...o.def.objectives.map((ob) => this.objText(ob))].join('. ');
+    if (this.mode === 'deploy') { this.startDeploy(`${name}. ${t(`breach.bi.${o.def.id}`)} ${goals}.`); return; }
     this.speak(`${name}. ${t(`breach.bi.${o.def.id}`)} ${goals}.`);
+    this.tut = o.def.tutorial && !this.save.tutorial ? { step: 0 } : null;
+    this.firstTurn();
     if (this.tut) this.later(0.6, () => this.showTip());
+  }
+
+  /** Turn 1 begins (right away, or after the deploy step). */
+  firstTurn() {
+    this.mode = 'battle';
+    this.turnSnap = structuredClone(this.bs);
+    this.undo = [];
+    this.holdC = 0;
+    this.cHeldFromBefore = true;
+    const first = R.mechs(this.bs)[0];
+    this.cursor = [first.x, first.y];
     this.refresh();
+  }
+
+  // ---------- deploy: land the mechs before turn 1 ----------
+
+  startDeploy(intro) {
+    const run = this.save.run;
+    this.dep = { placed: [], focus: 'board' };
+    // a retry of the same battle suggests the tiles used last time
+    if (this.lastDeploy?.step !== run.step) this.lastDeploy = { step: run.step, spots: {} };
+    this.holdC = 0;
+    this.cHeldFromBefore = true;
+    this.cursor = this.suggestSpot();
+    const first = !this.save.deployTip;
+    if (first) this.hud.setTip(tFor(this.player, 'breach.dep.tip'));
+    this.speak(`${intro} ${first ? t('breach.dep.tip') : t('breach.dep.short')}`);
+    this.refreshDeploy();
+  }
+
+  /** The mech that lands next: the first one still waiting, in squad order. */
+  get depMech() {
+    return R.waiting(this.bs)[0] || null;
+  }
+
+  /** Where the cursor goes for the next mech: last time's tile, else the level's start tile, else the nearest free one. */
+  suggestSpot() {
+    const m = this.depMech;
+    const s = this.bs;
+    if (!m) return this.cursor;
+    const want = this.lastDeploy?.spots[m.slot] || this.def.start[m.slot];
+    if (R.canDeploy(s, want[0], want[1])) return [...want];
+    const free = s.deploy.filter(([x, y]) => R.canDeploy(s, x, y));
+    if (!free.length) return [...want];
+    const d = ([x, y]) => Math.abs(x - want[0]) + Math.abs(y - want[1]);
+    return [...free.reduce((a, b) => (d(b) < d(a) ? b : a))];
+  }
+
+  updateDeploy(inp, dt) {
+    const D = this.dep;
+    const ready = !this.depMech;
+    // hold [C] to start once every mech is down
+    if (inp.cHeld && !this.cHeldFromBefore) {
+      this.holdC += dt;
+      if (ready && this.holdC >= HOLD_END) { this.holdC = 0; this.cHeldFromBefore = true; this.beginDeployed(); return; }
+      this.renderDeployHints();
+    } else if (!inp.cHeld) { this.holdC = 0; this.cHeldFromBefore = false; }
+    if (inp.dx || inp.dy) {
+      if (D.focus === 'start') { D.focus = 'board'; this.sfx('tick'); this.refreshDeploy(); }
+      else {
+        const nx = Math.max(0, Math.min(R.W - 1, this.cursor[0] + inp.dx));
+        const ny = Math.max(0, Math.min(R.H - 1, this.cursor[1] + inp.dy));
+        if (nx !== this.cursor[0] || ny !== this.cursor[1]) { this.cursor = [nx, ny]; this.sfx('tick'); this.dwell = 0; this.refreshDeploy(); }
+      }
+    }
+    if (inp.a) this.deployA();
+    else if (inp.b) this.deployB();
+    this.dwell = (this.dwell || 0) + dt;
+    if (D.focus === 'board' && this.dwell > 1.1 && this.spokenAt !== this.cursor.join()) {
+      this.spokenAt = this.cursor.join();
+      const el = this.hud.info;
+      if (el.style.display !== 'none') this.speak(el.textContent);
+    }
+  }
+
+  deployA() {
+    const D = this.dep;
+    const s = this.bs;
+    if (D.focus === 'start') { this.beginDeployed(); return; }
+    const [x, y] = this.cursor;
+    const u = R.unitAt(s, x, y);
+    if (u && u.side === 'mech') { // pick a landed mech up again
+      R.liftMech(s, u.id);
+      D.placed = D.placed.filter((id) => id !== u.id);
+      this.view.sync(s);
+      this.sfx('whoosh');
+      this.refreshDeploy();
+      return;
+    }
+    const m = this.depMech;
+    if (!m) { D.focus = 'start'; this.sfx('select'); this.refreshDeploy(); this.speak(t('breach.dep.ready')); return; }
+    if (!R.deployMech(s, m.id, x, y)) { this.sfx('error'); this.hud.banner(t('breach.dep.notHere'), '', 1000); this.speak(t('breach.dep.notHere')); return; }
+    D.placed.push(m.id);
+    this.lastDeploy.spots[m.slot] = [x, y];
+    this.view.sync(s);
+    this.sfx('land');
+    if (this.depMech) {
+      this.cursor = this.suggestSpot();
+      this.speak(t('breach.dep.landed', { mech: t(`breach.m.${m.type}`) }));
+    } else {
+      D.focus = 'start';
+      this.hud.setTip(null);
+      this.speak(t('breach.dep.ready'));
+    }
+    this.refreshDeploy();
+  }
+
+  deployB() {
+    const D = this.dep;
+    const id = D.placed.pop();
+    if (!id) { this.sfx('error'); return; }
+    const u = R.unitById(this.bs, id);
+    this.cursor = [u.x, u.y];
+    R.liftMech(this.bs, id);
+    D.focus = 'board';
+    this.view.sync(this.bs);
+    this.sfx('whoosh');
+    this.refreshDeploy();
+  }
+
+  /** Every mech is down: turn 1 starts. */
+  beginDeployed() {
+    if (this.mode !== 'deploy' || this.depMech) return;
+    R.beginBattle(this.bs);
+    this.view.setHover(null);
+    this.view.sync(this.bs);
+    this.hud.setTip(null);
+    this.hud.setGo(null);
+    this.dep = null;
+    if (!this.save.deployTip) { this.save.deployTip = true; this.persist(); }
+    this.sfx('yourTurn');
+    this.hud.banner(t('breach.yourTurn'), t('breach.turn', { n: 1, m: this.bs.maxTurns }), 1100);
+    this.speak(t('breach.yourTurn'));
+    this.firstTurn();
+  }
+
+  refreshDeploy() {
+    if (this.mode !== 'deploy') return;
+    const s = this.bs;
+    const D = this.dep;
+    const v = this.view;
+    const [cx, cy] = this.cursor;
+    const onBoard = D.focus === 'board';
+    const m = this.depMech;
+    v.setCursor(cx, cy, onBoard);
+    v.setSelected(null);
+    v.setHover(onBoard && m ? m.id : null, cx, cy);
+    const hl = [];
+    for (const [x, y] of s.deploy) {
+      if (R.canDeploy(s, x, y)) hl.push([x, y, x === cx && y === cy && onBoard && m ? 'moveHi' : 'zone']);
+      else if (R.unitAt(s, x, y)?.side === 'mech') hl.push([x, y, 'area']);
+    }
+    v.setHighlights(hl);
+    v.setPath(null);
+    v.setPreview(null);
+    this.pv = null;
+    const hov = R.unitAt(s, cx, cy);
+    v.setIntents(s, { all: this.easy, focus: hov?.side === 'bug' ? hov.id : `t${cx},${cy}` });
+    this.renderTop();
+    this.renderRoster();
+    if (onBoard) this.renderInfo(); else this.hud.set('info', null);
+    this.hud.setGo(m ? null : t('breach.dep.start'), !onBoard);
+    this.renderDeployHints();
+  }
+
+  renderDeployHints() {
+    if (this.mode !== 'deploy') return;
+    const nm = (k, vars) => tFor(this.player, k, vars);
+    const s = this.bs;
+    const m = this.depMech;
+    const [x, y] = this.cursor;
+    const list = [];
+    if (this.dep.focus === 'start') { list.push(nm('breach.h.start'), nm('breach.h.toBoard')); }
+    else {
+      const u = R.unitAt(s, x, y);
+      if (u?.side === 'mech') list.push(nm('breach.h.lift'));
+      else if (m && R.canDeploy(s, x, y)) list.push(nm('breach.h.place', { mech: t(`breach.m.${m.type}`) }));
+      else if (!m) list.push(nm('breach.h.start'));
+      else list.push(nm('breach.dep.notHere'));
+    }
+    if (this.dep.placed.length) list.push(nm('breach.h.depUndo'));
+    if (!m) list.push({ text: nm('breach.h.startHold'), hold: this.holdC / HOLD_END, cls: 'hold warn' });
+    this.hud.setHints(list);
   }
 
   get busy() {
@@ -828,11 +1018,12 @@ export class BreachScene extends MiniGame {
       return `<div class="${st.failed ? 'fail' : st.done ? 'done' : ''} ${o.kind === 'battery' ? 'power' : ''}">${esc(this.objText(o))}${prog}</div>`;
     })].join('');
     this.hud.set('top', `<div class="br-pill br-power"><span class="bolt">⚡</span><span><small>${esc(t('breach.power'))}</small><span class="bar">${bar}</span></span></div>
-      <div class="br-pill br-turn ${last ? 'last' : ''}">${esc(last ? t('breach.lastTurnPill') : t('breach.turn', { n: s.turn, m: s.maxTurns }))}<small>${esc(t(`breach.bt.${this.def.id}`))} · ${esc(t(`breach.isl.${this.isl.id}`))}</small></div>
+      <div class="br-pill br-turn ${last ? 'last' : ''}">${esc(s.phase === 'deploy' ? t('breach.dep.pill') : last ? t('breach.lastTurnPill') : t('breach.turn', { n: s.turn, m: s.maxTurns }))}<small>${esc(t(`breach.bt.${this.def.id}`))} · ${esc(t(`breach.isl.${this.isl.id}`))}</small></div>
       <div class="br-pill br-objs">${objs}</div>`);
   }
 
   mechStatus(u) {
+    if (this.bs.phase === 'deploy') return t(u.x < 0 ? 'breach.st.waiting' : 'breach.st.landed');
     if (u.ko) return t('breach.st.ko');
     if (u.acted) return t('breach.st.done');
     const bits = [];
@@ -849,7 +1040,8 @@ export class BreachScene extends MiniGame {
     const html = R.mechs(s).map((u) => {
       const pips = Array.from({ length: u.maxHp }, (_, i) => `<i class="${i < u.hp ? 'on' : ''}"></i>`).join('');
       const col = `#${R.MECHS[u.type].color.toString(16).padStart(6, '0')}`;
-      return `<div class="br-mech ${u.id === this.sel ? 'on' : ''} ${u.acted || u.ko ? 'done' : ''}" style="--c:${col}"><div class="nm"><i></i>${esc(t(`breach.m.${u.type}`))}<span class="br-pips">${pips}</span></div><small>${esc(this.mechStatus(u))}</small></div>`;
+      const on = this.mode === 'deploy' ? u.id === this.depMech?.id : u.id === this.sel;
+      return `<div class="br-mech ${on ? 'on' : ''} ${u.acted || u.ko ? 'done' : ''}" style="--c:${col}"><div class="nm"><i></i>${esc(t(`breach.m.${u.type}`))}<span class="br-pips">${pips}</span></div><small>${esc(this.mechStatus(u))}</small></div>`;
     }).join('');
     this.hud.set('roster', html);
   }
@@ -887,6 +1079,7 @@ export class BreachScene extends MiniGame {
     if (tl.shield) tileBits.push(t('breach.t.shield'));
     if (tl.crate) tileBits.push(t('breach.t.crate'));
     if (sp) tileBits.push(t(sp.egg ? 'breach.t.egg' : 'breach.t.spawn'));
+    if (s.phase === 'deploy' && R.inZone(s, x, y)) tileBits.push(t('breach.t.zone'));
     if (tileBits.length) parts.push(`<p>${tileBits.map(esc).join(' ')}</p>`);
     else if (!u) parts.push(`<p>${esc(t('breach.t.ground'))}</p>`);
     // the preview, in words
@@ -937,8 +1130,9 @@ export class BreachScene extends MiniGame {
     this.view.setCursor(0, 0, false);
     this.view.setSelected(null);
     let stars = 1;
-    let power = this.easy ? 2 : 1;
-    const rows = [`<div class="br-row"><span>${esc(t('breach.res.win'))}</span><b>${esc(t('breach.res.star'))} · ${esc(t('breach.res.power', { n: power }))}</b></div>`];
+    let power = battlePower(run.diff); // Easy: +2 for every battle won; Hard: none (islands and batteries still give power)
+    const winReward = [t('breach.res.star'), power > 0 ? t('breach.res.power', { n: power }) : null].filter(Boolean).join(' · ');
+    const rows = [`<div class="br-row"><span>${esc(t('breach.res.win'))}</span><b>${esc(winReward)}</b></div>`];
     for (const o of def.objectives) {
       const st = R.objectiveStatus(s, o);
       const reward = o.kind === 'battery' ? t('breach.res.power', { n: 1 }) : t('breach.res.star');
@@ -1054,6 +1248,7 @@ export class BreachScene extends MiniGame {
       case 'squad': this.updateSquads(inp); break;
       case 'map': this.updateMap(inp); break;
       case 'shop': this.updateShop(inp); break;
+      case 'deploy': this.updateDeploy(inp, dt); break;
       case 'battle': this.updateBattle(inp, dt); if (!this.busy && this.wasBusy) this.renderHints(); break;
       case 'result': case 'lost': this.updateResult(inp, dt); break;
       default:
@@ -1069,6 +1264,7 @@ export class BreachScene extends MiniGame {
       case 'squad': this.renderSquads(false); break;
       case 'map': this.renderMap(); break;
       case 'shop': this.renderShop(); break;
+      case 'deploy': if (!this.save.deployTip && this.depMech) this.hud.setTip(tFor(this.player, 'breach.dep.tip')); this.refreshDeploy(); break;
       case 'battle': if (this.menu) this.renderMenu(); if (this.tut) this.showTip(); this.refresh(); break;
       default:
     }

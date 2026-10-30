@@ -2,7 +2,8 @@ import { POWER_START, ORDER } from './levels.js';
 import { SQUADS, SQUAD_IDS } from './rules.js';
 
 // Bean Brigade progress, per solo profile in roster.progress.breach:
-//   tutorial: the first-battle tips were finished       medals: { bonk: n, ... } campaigns won per squad
+//   tutorial: the first-battle tips were finished       deployTip: the deploy step was explained once
+//   medals: { bonk: n, ... } campaigns won per squad
 //   bestBattles: most battles won in one run             done: won the whole campaign at least once
 //   run: the campaign in progress or null:
 //     { diff, squad, step (index in ORDER), power, stars (to spend), starsTotal, won, seed, tries (Easy retries of this battle),
@@ -15,6 +16,7 @@ export function loadBreach(roster) {
   return {
     v: 1,
     tutorial: !!p.tutorial,
+    deployTip: !!p.deployTip,
     medals,
     bestBattles: Math.min(ORDER.length, p.bestBattles | 0),
     done: !!p.done,

@@ -73,10 +73,15 @@ const CSS = `
 .br-tip { left: 50%; bottom: 2vh; transform: translateX(-50%); width: min(640px, 40vw); background: #fffbe6; border: 4px solid #ffd84a; border-radius: 22px;
   padding: 10px 18px; font-weight: 600; font-size: clamp(14px, 1.55vw, 24px); line-height: 1.3; box-shadow: 0 6px 0 rgba(43,35,64,.2); text-align: center; }
 .br-tip .ok { display: block; margin-top: 6px; font-size: .75em; opacity: .75; animation: br-blink 1.2s infinite; }
-.br-banner { left: 50%; top: 40%; transform: translate(-50%, -50%); text-align: center; font-weight: 700; font-size: clamp(34px, 5.4vw, 88px); color: #ffd84a;
-  paint-order: stroke fill; -webkit-text-stroke: 0.14em #2b2340; opacity: 0; transition: opacity .3s; white-space: nowrap; }
+.br-banner { left: 50%; top: 15vh; transform: translate(-50%, 0); text-align: center; font-weight: 700; font-size: clamp(28px, 4.2vw, 68px); color: #ffd84a;
+  paint-order: stroke fill; -webkit-text-stroke: 0.14em #2b2340; opacity: 0; transition: opacity .18s; white-space: nowrap; line-height: 1.05; }
 .br-banner small { display: block; font-size: .38em; color: #fff; -webkit-text-stroke: 0.2em #2b2340; }
 .br-banner.on { opacity: 1; }
+.br-go { left: 50%; bottom: 3vh; transform: translateX(-50%); background: #fffbe6; border: 4px solid #ffd84a; border-radius: 999px; padding: 6px 34px;
+  font-weight: 700; font-size: clamp(20px, 2.6vw, 40px); color: #2b2340; box-shadow: 0 6px 0 rgba(43,35,64,.2); opacity: .8; }
+.br-go small { font-size: .5em; font-weight: 600; margin-left: 10px; opacity: .75; }
+.br-go.on { background: #ffd84a; opacity: 1; animation: br-pulse .9s infinite; }
+@keyframes br-pulse { 50% { transform: translateX(-50%) scale(1.06); } }
 .br-card { left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(255,250,240,.97); border-radius: 30px; text-align: center;
   padding: clamp(14px, 2.4vw, 34px) clamp(20px, 3.4vw, 56px); box-shadow: 0 10px 0 rgba(43,35,64,.25); width: min(860px, 92vw); max-height: 92vh; overflow: hidden; }
 .br-card.side { left: 2vw; transform: translate(0, -50%); width: min(480px, 38vw); text-align: left; }
@@ -137,12 +142,12 @@ export class BreachHud {
     this.ui = ui;
     this.layer = ui.label('br-layer');
     this.layer.innerHTML = `<div class="br-top"></div><div class="br-roster"></div><div class="br-info"></div><div class="br-hints"></div>
-      <div class="br-tip"></div><div class="br-banner"></div><div class="br-card"></div>`;
+      <div class="br-tip"></div><div class="br-go"></div><div class="br-banner"></div><div class="br-card"></div>`;
     const q = (c) => this.layer.querySelector(c);
     this.top = q('.br-top'); this.roster = q('.br-roster'); this.info = q('.br-info'); this.hints = q('.br-hints');
-    this.tip = q('.br-tip'); this.bannerEl = q('.br-banner'); this.card = q('.br-card');
+    this.tip = q('.br-tip'); this.go = q('.br-go'); this.bannerEl = q('.br-banner'); this.card = q('.br-card');
     this.cache = {};
-    for (const k of ['top', 'roster', 'info', 'hints', 'tip', 'card']) this.set(k, null);
+    for (const k of ['top', 'roster', 'info', 'hints', 'tip', 'go', 'card']) this.set(k, null);
   }
 
   /** Set an element's html (null hides it); only touches the DOM when it changed. */
@@ -165,15 +170,21 @@ export class BreachHud {
     this.set('tip', text ? `${esc(text)}${ok ? `<span class="ok">${esc(ok)}</span>` : ''}` : null);
   }
 
+  /** The deploy step's big Start! button (null hides it); on = it has the focus. */
+  setGo(text, on = false) {
+    this.set('go', text ? esc(text) : null, on ? 'br-go on' : 'br-go');
+  }
+
   setHints(list) {
     this.set('hints', list?.length ? list.map((h) => (typeof h === 'string' ? `<span>${esc(h)}</span>`
       : `<span class="${h.cls || ''}">${h.hold !== undefined ? `<i style="width:${Math.round(h.hold * 100)}%"></i>` : ''}${esc(h.text)}</span>`)).join('') : null);
   }
 
+  /** A big message near the top of the screen (above the board's middle, where preview labels are). */
   banner(title, sub = '', ms = 1300) {
     this.bannerEl.innerHTML = `${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ''}`;
     this.bannerEl.classList.add('on');
-    this.bannerT = ms / 1000;
+    this.bannerT = Math.min(ms, 1400) * 0.75 / 1000; // short: it fades quickly
   }
 
   update(dt) {
@@ -189,7 +200,7 @@ export class BreachHud {
   }
 
   hideBattle() {
-    for (const k of ['top', 'roster', 'info', 'hints', 'tip']) this.set(k, null);
+    for (const k of ['top', 'roster', 'info', 'hints', 'tip', 'go']) this.set(k, null);
   }
 
   dispose() {

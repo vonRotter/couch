@@ -36,7 +36,7 @@ export class BoardView {
     this.mats = {
       move: overlayMat(0x3a9cff, 0.55), moveHi: overlayMat(0xbff6ff, 0.85), target: overlayMat(0xff8c1a, 0.55), targetHi: overlayMat(0xffe14a, 0.8),
       area: overlayMat(0xffe14a, 0.55), danger: overlayMat(RED, 0.5), dangerTop: overlayMat(RED, 0.3), line: overlayMat(0xffa630, 0.22),
-      path: overlayMat(0x2b8fd8, 0.85), sel: overlayMat(0xffffff, 0.9),
+      path: overlayMat(0x2b8fd8, 0.85), sel: overlayMat(0xffffff, 0.9), zone: overlayMat(0xffffff, 0.5),
       beam: new THREE.MeshBasicMaterial({ color: RED }), beamEdge: new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide }),
     };
     for (const m of Object.values(this.mats)) m.userData.overlay = true; // reused: never freed with a mesh
@@ -264,7 +264,7 @@ export class BoardView {
     this.selRing.visible = !!v;
   }
 
-  /** tiles: [[x, y, kind]] with kind move | moveHi | target | targetHi | area | line. */
+  /** tiles: [[x, y, kind]] with kind move | moveHi | target | targetHi | area | line | zone (landing). */
   setHighlights(tiles) {
     for (const m of this.hl) m.visible = false;
     for (const [x, y, kind] of tiles) {
@@ -801,10 +801,10 @@ export class BoardView {
       if (v.off) { // waiting to land: hangs over the cursor like a claw-machine toy, else hidden
         const hv = this.hover?.id === v.id ? this.hover : null;
         v.g.visible = !!hv;
-        if (hv) { tileWorld(hv.x, hv.y, v.g.position); v.g.position.y = 0.85 + Math.sin(T * 3) * 0.08; }
+        if (hv) { tileWorld(hv.x, hv.y, v.g.position); v.g.position.y = 0.32 + Math.sin(T * 3) * 0.06; }
       } else if (v.drop > 0) {
         v.drop -= dt;
-        v.g.position.y = Math.max(0, v.drop) / 0.28 * 0.85;
+        v.g.position.y = Math.max(0, v.drop) / 0.28 * 0.32;
         if (v.drop <= 0) { v.g.position.y = 0; this.host.puffs?.burst(v.g.position.clone().setY(0.15), 0xffffff, { count: 10, size: 0.35, life: 0.45, speed: 2.4 }); }
       }
       if (v.flash > 0) { v.flash -= dt; v.g.scale.setScalar(1 + Math.sin(v.flash * 40) * 0.06); if (v.flash <= 0) v.g.scale.setScalar(1); }
@@ -822,6 +822,7 @@ export class BoardView {
     }
     for (const m of this.moundGroup?.children || []) m.scale.set(1 + Math.sin(T * 6 + m.position.x) * 0.06, 1 + Math.sin(T * 6 + m.position.x + 1) * 0.1, 1);
     this.mats.danger.opacity = 0.42 + Math.sin(T * 5) * 0.14;
+    this.mats.zone.opacity = 0.42 + Math.sin(T * 2.5) * 0.12;
     this.mats.dangerTop.opacity = 0.26 + Math.sin(T * 5) * 0.1;
     if (this.cursor) {
       this.cursor.userData.arrow.position.y = 1.45 + Math.sin(T * 5) * 0.1;
