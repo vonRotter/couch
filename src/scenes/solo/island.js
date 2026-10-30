@@ -125,6 +125,14 @@ function gameRewards(p) {
 
 const itemName = (id) => t(ITEMS[id] ? `isl.i.${id}` : `isl.d.${id}`);
 
+
+const _sv = new THREE.Vector3();
+/** Screen pixels of a world point (the same math as UI.place). */
+function screenAt(pos, cam) {
+  _sv.copy(pos).project(cam);
+  return { x: ((_sv.x + 1) / 2) * window.innerWidth, y: ((1 - _sv.y) / 2) * window.innerHeight };
+}
+
 export class SoloIslandScene extends BaseScene {
   constructor(game, { fromGame = null } = {}) {
     super(game);
@@ -1636,14 +1644,19 @@ export class SoloIslandScene extends BaseScene {
       if (this.hallTag.innerHTML !== html) this.hallTag.innerHTML = html;
       this.game.ui.place(this.hallTag, this.hallPos, cam);
     } else this.hallTag.style.display = 'none';
+    const signRects = []; // place signs on screen, so the "!" marker can keep off them
     for (const tg of this.placeTags) {
       const pl = tg.pl;
       const vis = P && (pl.id !== 'burrow' || S.unlocks.burrow) && Math.hypot(P.x - pl.door.x, P.z - pl.door.z) < 11 && (pl.cabinet === undefined || tg === cab);
       if (!vis) { tg.el.style.display = 'none'; continue; }
       const sub = this.placeOpen(pl) ? this.placeInfo(pl) : t(`isl.locked.${pl.lock}`);
       const html = `${esc(t(`game.${pl.key}`))}${sub ? `<small>${esc(sub)}</small>` : ''}`;
-      if (tg.el.innerHTML !== html) tg.el.innerHTML = html;
+      if (tg.el.innerHTML !== html) { tg.el.innerHTML = html; tg.size = null; }
       this.game.ui.place(tg.el, tg.pos, cam);
+      if (tg.el.style.display === 'none') continue;
+      if (!tg.size) tg.size = [tg.el.offsetWidth, tg.el.offsetHeight]; // measured once per text change
+      const at = screenAt(tg.pos, cam);
+      signRects.push({ l: at.x - tg.size[0] / 2, r: at.x + tg.size[0] / 2, t: at.y - tg.size[1], b: at.y });
     }
     let markShown = false;
     for (const n of this.npcs) {
@@ -1661,11 +1674,33 @@ export class SoloIslandScene extends BaseScene {
       if (!markShown && !n.sleep && d < 16 && this.hasNews(n.id) && !n.talking) {
         markShown = true;
         this.markEl.textContent = '!';
-        this.game.ui.place(this.markEl, n.tagPos.clone().add(new THREE.Vector3(0, 0.9, 0)), cam);
+        const mpos = n.tagPos.clone().add(new THREE.Vector3(0, 0.9, 0));
+        this.game.ui.place(this.markEl, mpos, cam);
+        if (this.markEl.style.display !== 'none') this.keepMarkOffSigns(screenAt(mpos, cam), signRects);
       }
     }
     if (!markShown) this.markEl.style.display = 'none';
     this.museum.updateLabel(P);
+  }
+
+  /**
+   * The "!" over a neighbor must not cover a place sign (e.g. Keeper Bram by the Lighthouse Caves
+   * sign): if it would, nudge it just beside or above that sign, whichever is the shortest move.
+   */
+  keepMarkOffSigns(at, rects) {
+    const el = this.markEl;
+    if (!this.markSize) this.markSize = [el.offsetWidth || 20, el.offsetHeight || 36];
+    const [w, h] = this.markSize;
+    const gap = 6;
+    let x = at.x, y = at.y;
+    for (let pass = 0; pass < 2; pass++) {
+      const hit = rects.find((r) => x + w / 2 > r.l - gap && x - w / 2 < r.r + gap && y > r.t - gap && y - h < r.b + gap);
+      if (!hit) break;
+      const opts = [[hit.l - gap - w / 2, y], [hit.r + gap + w / 2, y], [x, hit.t - gap]];
+      [x, y] = opts.reduce((a, b) => (Math.hypot(b[0] - at.x, b[1] - at.y) < Math.hypot(a[0] - at.x, a[1] - at.y) ? b : a));
+    }
+    if (x !== at.x || y !== at.y) el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+    this.markAt = { x, y, moved: x !== at.x || y !== at.y };
   }
 
   updateHud(ia) {
