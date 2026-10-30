@@ -2,7 +2,7 @@ import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say } from '../../core/voice.js';
 import { RARITY_TEXT, RARITY_CSS, itemName, statLines, baseName, STATS, statsOf } from './items.js';
-import { CLASS_IDS, GLYPH, CLASS_COLOR, SKILLS, compareItem, isBetter, heroStats, armorCut, xpNeed } from './classes.js';
+import { CLASS_IDS, CLASSES, B_MOVE, GLYPH, CLASS_COLOR, SKILLS, compareItem, isBetter, heroStats, armorCut, xpNeed } from './classes.js';
 import { ACT_FLOORS, isDeep, deepDepth } from './acts.js';
 
 // Pillow Keep Solo HTML overlay: the HUD (health, potions, level, skills, coins), the item cards
@@ -280,14 +280,14 @@ export class Hud {
     const town = s.kind === 'town';
     const sk = town ? null : s.selectedAction();
     const cdK = (left, full) => (left > 0 && full > 0 ? `<i class="cd" style="height:${Math.min(100, left / full * 100).toFixed(0)}%"></i>` : '');
-    const bId = { knight: 'block', archer: 'roll', wizard: 'hop' }[s.cls];
+    const bId = B_MOVE[s.cls];
     const cDef = sk && sk !== 'potion' ? SKILLS[s.cls].find((x) => x.id === sk) : null;
     const cLeft = cDef ? s.skillCd(e, sk) : sk === 'potion' ? Math.max(0, e.potCd) : 0;
     const cFull = cDef ? cDef.cd * (1 - e.st.cdr) : 1;
     const box = (key, icon, name, cd = '', cls = '') => `<div class="ks-act ${cls}">${icon}${esc(name)}<span class="key">${esc(tFor(p, key))}</span>${cd}</div>`;
     const aName = town ? t('ks.a.talk') : t(`ks.a.${s.cls}`);
     const html = box('ks.key.a', skillIcon(town ? 'talk' : `attack.${s.cls}`), aName)
-      + box('ks.key.b', skillIcon(bId), t(`ks.b.${s.cls}`), s.cls === 'knight' ? '' : cdK(e.cdB, { archer: 1.1, wizard: 2.2 }[s.cls]))
+      + box('ks.key.b', skillIcon(bId), t(`ks.b.${s.cls}`), s.cls === 'knight' ? '' : cdK(e.cdB, CLASSES[s.cls].cdB))
       + box('ks.key.c', skillIcon(sk || 'bag'), sk === 'potion' ? t('ks.m.potion') : sk ? t(`ks.skill.${sk}`) : t('ks.m.bag'), cdK(cLeft, cFull), sk === 'potion' && !hs.potions ? 'off' : '');
     this.set(this.acts, 'acts', html);
     this.set(this.hint, 'hint', esc(tFor(p, town ? 'ks.hintTown' : 'ks.hintDungeon')));
