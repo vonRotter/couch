@@ -24,6 +24,7 @@ import { dressHero } from './keepsolo/models.js';
 import { ControlMixin } from './keepsolo/control.js';
 import { HeroMixin } from './keepsolo/hero.js';
 import { LightMixin } from './keepsolo/light.js';
+import { MonsterMixin } from './keepsolo/monsters.js';
 import { CharPanel, TreePanel } from './keepsolo/tree.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
@@ -615,6 +616,7 @@ export class KeepSoloScene extends MiniGame {
     if (active && this.flowT <= 0) { this.flowT = 0.25; this.updateFlow(); }
     this.updateNests(dt, active);
     this.updateGrumbles(dt, active);
+    this.updateMods(dt, active);
     this.updateShots(dt);
     this.updateZones(dt);
     this.updateItems(dt, active);
@@ -810,5 +812,5 @@ export class KeepSoloScene extends MiniGame {
   }
 }
 
-Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin, ControlMixin, HeroMixin, LightMixin);
+Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin, ControlMixin, HeroMixin, LightMixin, MonsterMixin);
 for (const k of BORROW) Object.defineProperty(KeepSoloScene.prototype, k, Object.getOwnPropertyDescriptor(KeepScene.prototype, k));

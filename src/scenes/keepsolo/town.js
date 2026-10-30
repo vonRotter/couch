@@ -52,7 +52,7 @@ export const TownMixin = {
     this.level = new THREE.Group();
     this.scene.add(this.level);
     this.hazards = new Hazards(this, this.level);
-    Object.assign(this, { grumbles: [], items: [], shots: [], fx: [], nests: [], chests: [], doors: [], torches: [], zones: [], stations: [], npcs: [], signs: [] });
+    Object.assign(this, { grumbles: [], items: [], shots: [], fx: [], nests: [], chests: [], doors: [], torches: [], zones: [], stations: [], npcs: [], signs: [], puddles: [] });
     this.boss = null; this.fog = null; this.arena = null; this.portal = null; this.stairs = null; this.stairsArrow = null; this.wallTiles = [];
     this.floorDef = { map: [] };
     this.cells = new Uint8Array(W * H).fill(2);

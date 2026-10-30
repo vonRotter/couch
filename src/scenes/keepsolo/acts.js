@@ -70,9 +70,9 @@ export function mixOf(g) {
 // ---------------------------------------------------------------- difficulty numbers
 
 /** Health of a plain grumble at difficulty D. */
-export const foeHpAt = (D) => 14 * 1.2 ** D;
+export const foeHpAt = (D) => 15 * 1.2 ** D;
 /** Damage for one "unit" of a grumble or boss hit (keep/foes.js and the bosses give 0.2-0.45 units). */
-export const foeHitAt = (D) => 30 * 1.16 ** D;
+export const foeHitAt = (D) => 34 * 1.16 ** D;
 /** XP for one unit of grumble XP. */
 export const xpAt = (D) => 1.6 * 1.17 ** D;
 /** Boss health (a boss is worth this many plain grumbles). */

@@ -24,7 +24,7 @@ import { toScreen } from './mouse.js';
 
 export const WORLD_KEYS = ['level', 'floorDef', 'theme', 'cells', 'W', 'H', 'doorAt', 'flow', 'hazards', 'grumbles', 'items', 'shots', 'fx',
   'nests', 'chests', 'doors', 'torches', 'boss', 'fog', 'arena', 'stairs', 'stairsArrow', 'wallTiles', 'g', 'floorSeed', 'start', 'portal',
-  'zones', 'kind', 'stations', 'npcs', 'floorIndex', 'bg', 'signs', 'townPortal', 'gateSpiral', 'featherTop', 'chimney'];
+  'zones', 'kind', 'stations', 'npcs', 'floorIndex', 'bg', 'signs', 'townPortal', 'gateSpiral', 'featherTop', 'chimney', 'puddles'];
 
 const BOSSES = { teddy: TeddyBoss, goose: GooseBoss, duck: DuckBoss, sheep: SheepBoss };
 
@@ -32,7 +32,7 @@ const BOSSES = { teddy: TeddyBoss, goose: GooseBoss, duck: DuckBoss, sheep: Shee
 // exciting. grumble/nest/elite go to keep/foes.js through scene.lootRates (champion packs and named
 // uniques drop their own loot, see monsters.js); chest = chance a chest holds one item; scroll =
 // chance a plain grumble drops a scroll.
-export const LOOT = { grumble: 0.025, nest: 0.18, elite: 1, chest: 0.38, scroll: 0.02 };
+export const LOOT = { grumble: 0.025, nest: 0.18, elite: 0, chest: 0.38, scroll: 0.02 };
 const COIN_GEO = () => sharedGeo('ksCoin', () => new THREE.CylinderGeometry(0.24, 0.24, 0.07, 16));
 
 export const WorldMixin = {
@@ -88,7 +88,7 @@ export const WorldMixin = {
     this.level = new THREE.Group();
     this.scene.add(this.level);
     this.hazards = new Hazards(this, this.level);
-    Object.assign(this, { grumbles: [], items: [], shots: [], fx: [], nests: [], chests: [], doors: [], torches: [], zones: [], stations: [], npcs: [], signs: [] });
+    Object.assign(this, { grumbles: [], items: [], shots: [], fx: [], nests: [], chests: [], doors: [], torches: [], zones: [], stations: [], npcs: [], signs: [], puddles: [] });
     this.boss = null; this.fog = null; this.arena = null; this.portal = null;
     this.townPortal = null; this.gateSpiral = null; this.featherTop = null; this.chimney = null;
     const map = this.floorDef.map;
@@ -134,6 +134,7 @@ export const WorldMixin = {
     const sx = starts.reduce((a, [c]) => a + this.cx(c), 0) / starts.length;
     const sz = starts.reduce((a, [, r]) => a + this.cz(r), 0) / starts.length;
     this.start = { x: sx, z: sz };
+    this.spawnNamed(marks); // a hand-made unique (monsters.js)
     // The hero's bag waits where it fell, if it fell on this floor.
     const drop = this.hs.drop;
     if (drop && drop.g === g && drop.seed === this.floorSeed) this.spawnBag(drop);
@@ -445,11 +446,12 @@ export const WorldMixin = {
   // ---------------------------------------------------------------- loot
 
   /** Drop `count` items at (x, z): mostly for the hero's class, sometimes for another one (for the stash). */
-  dropLoot(x, z, kind, count = 1) {
-    const src = { grumble: 'foe', nest: 'nest', chest: 'chest', elite: 'elite', boss: 'boss' }[kind] || kind;
+  dropLoot(x, z, kind, count = 1, minFirst = 0) {
+    const src = { grumble: 'foe', nest: 'nest', chest: 'chest', elite: 'elite', boss: 'boss', champ: 'champ', unique: 'unique' }[kind] || kind;
     for (let i = 0; i < count; i++) {
       let rarity = rollRarity(src, this.D);
       if (src === 'boss' && i === 0) rarity = Math.max(2, rarity);
+      if (i === 0) rarity = Math.max(minFirst, rarity);
       const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
       const cls = CLASS_SLOTS.has(slot) && Math.random() < 0.2 ? CLASS_IDS[Math.floor(Math.random() * 3)] : this.cls;
       const ilvl = Math.max(0, this.D + (Math.random() < 0.3 ? 1 : 0) + (src === 'boss' ? 1 : 0));
@@ -502,7 +504,8 @@ export const WorldMixin = {
     FoeMixin.fluffGrumble.call(this, g, by); // gear: LOOT rates via this.lootRates (keep/foes.js)
     if (by === undefined) return;
     this.hs.stats.fluffed++;
-    if (g.elite) this.hs.stats.elites++;
+    if (g.elite && !g.unique) this.hs.stats.elites++;
+    this.specialPoofed(g); // champions and uniques: their loot (monsters.js)
     if (!g.elite && Math.random() < LOOT.scroll) this.spawnItem('scroll', g.x, g.z, true);
     const e = this.hero;
     if (e.st.powers.has('heal') && e.state === 'walk') e.hp = Math.min(e.st.maxHp, e.hp + e.st.maxHp * 0.03);
@@ -510,6 +513,14 @@ export const WorldMixin = {
 
   /** Snooze Arrows put what they hit to sleep (the arrow's owner carries the time, see skills.js). */
   hitGrumble(g, dmg, by, kx = 0, kz = 0, from = null) {
+    if (g.bshield > 0 && !g.dead) {
+      // a bubble shield modifier blocks the hit (and loses a layer)
+      g.bshield--;
+      this.puffs.burst(new THREE.Vector3(g.x, 0.9, g.z), 0xbfe9ff, { count: 4, size: 0.3, life: 0.4, speed: 2 });
+      this.game.audio.play(g.bshield ? 'boing' : 'pop');
+      if (g.state === 'idle') this.wakePack(g);
+      return false;
+    }
     const hit = FoeMixin.hitGrumble.call(this, g, dmg, by, kx, kz, from);
     if (hit && by?.snooze && !g.dead && (g.state === 'walk' || g.state === 'aim' || g.state === 'dash')) { g.state = 'sleep'; g.t = by.snooze; g.vx = g.vz = 0; }
     return hit;
