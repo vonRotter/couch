@@ -452,7 +452,7 @@ export const WorldMixin = {
       let rarity = rollRarity(src, this.D);
       if (src === 'boss' && i === 0) rarity = Math.max(2, rarity);
       if (i === 0) rarity = Math.max(minFirst, rarity);
-      const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
+      const slot = Math.random() < 0.15 ? 'weapon' : SLOTS[Math.floor(Math.random() * SLOTS.length)]; // weapons a bit more often
       const cls = CLASS_SLOTS.has(slot) && Math.random() < 0.2 ? CLASS_IDS[Math.floor(Math.random() * 3)] : this.cls;
       const ilvl = Math.max(0, this.D + (Math.random() < 0.3 ? 1 : 0) + (src === 'boss' ? 1 : 0));
       this.spawnGear(rollItem({ ilvl, rarity, slot, cls, diff: this.hs.diff }), x + (Math.random() - 0.5) * 0.6, z + (Math.random() - 0.5) * 0.6);
