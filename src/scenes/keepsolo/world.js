@@ -10,8 +10,8 @@ import { FoeMixin } from '../keep/foes.js';
 import { TeddyBoss, SheepBoss } from '../keep/bosses.js';
 import { GooseBoss, DuckBoss } from './bosses.js';
 import { floorPlan, themeOf, mixOf, bossHpAt, foeHpAt, xpAt, isDeep, ACT_FLOORS } from './acts.js';
-import { rollRarity, rollItem, SLOTS, CLASS_SLOTS, itemName, RARITY_CSS, RARITY_HEX } from './items.js';
-import { CLASS_IDS, compareItem, isBetter } from './classes.js';
+import { rollRarity, rollItem, SLOTS, CLASS_SLOTS, itemName, RARITY_CSS, RARITY_HEX, useItem } from './items.js';
+import { CLASS_IDS, isBetter } from './classes.js';
 import { itemModel } from './models.js';
 
 // The dungeon side of Pillow Keep Solo (mixed into the scene): building a floor from the shared
@@ -26,6 +26,12 @@ export const WORLD_KEYS = ['level', 'floorDef', 'theme', 'cells', 'W', 'H', 'doo
   'zones', 'kind', 'stations', 'npcs', 'floorIndex', 'bg', 'signs', 'townPortal', 'gateSpiral', 'featherTop', 'chimney'];
 
 const BOSSES = { teddy: TeddyBoss, goose: GooseBoss, duck: DuckBoss, sheep: SheepBoss };
+
+// Gear drop chances, Diablo-like: most drops are coins, potions and scrolls; gear is rarer and more
+// exciting. grumble/nest/elite go to keep/foes.js through scene.lootRates (champion packs and named
+// uniques drop their own loot, see monsters.js); chest = chance a chest holds one item; scroll =
+// chance a plain grumble drops a scroll.
+export const LOOT = { grumble: 0.025, nest: 0.18, elite: 1, chest: 0.38, scroll: 0.02 };
 const COIN_GEO = () => sharedGeo('ksCoin', () => new THREE.CylinderGeometry(0.24, 0.24, 0.07, 16));
 
 export const WorldMixin = {
@@ -178,14 +184,20 @@ export const WorldMixin = {
 
   spawnItem(kind, x, z, pop = false, custom = null) {
     let m = custom;
-    if (kind === 'snack') kind = 'potion'; // keep/foes.js drops "snacks": here they are potions
+    let use = null;
+    if (kind === 'snack') kind = 'potion'; // keep/foes.js drops "snacks": here they are potions (mostly red, some blue)
+    if (kind === 'potion') use = custom?.use || (Math.random() < 0.3 ? 'mp' : 'hp');
+    if (kind === 'scroll') use = custom?.use || (Math.random() < 0.5 ? 'tp' : 'id');
+    if (custom?.use) m = null;
     if (kind === 'coin') {
       m = new THREE.Group();
       const disc = mesh(COIN_GEO(), toon(COLORS.gold, { emissive: 0x4a3000 }), 0, 0, 0, true);
       disc.rotation.x = Math.PI / 2;
       m.add(disc, mesh(bx('coinMark', 0.06, 0.22, 0.08), toon(0xe0a100), 0, 0, 0, false));
     } else if (kind === 'potion') {
-      m = potionModel();
+      m = potionModel(use);
+    } else if (kind === 'scroll') {
+      m = scrollModel(use);
     } else if (kind === 'key') {
       m = keyModel();
     }
@@ -193,6 +205,7 @@ export const WorldMixin = {
     const a = Math.random() * Math.PI * 2, sp = pop ? 2 + Math.random() * 3 : 0;
     const it = { kind, x, z, y: pop ? 0.8 : 0.5, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, vy: pop ? 5 + Math.random() * 3 : 0, t: 0, mesh: m, phase: Math.random() * 6, value: 1 };
     if (kind === 'coin') it.value = 1 + Math.floor(this.D / 3);
+    if (use) it.use = use;
     this.items.push(it);
     return it;
   },
@@ -270,8 +283,9 @@ export const WorldMixin = {
           if (d < 2.4) {
             if (d > 0.55) { const k = Math.min(1, dt * 9 / d); it.x += (e.x - it.x) * k; it.z += (e.z - it.z) * k; } else this.pickItem(it);
           }
-        } else if (it.kind === 'potion') {
-          if (d < 0.95 && this.hs.potions < this.hs.belt) this.pickItem(it);
+        } else if (it.kind === 'potion' || it.kind === 'scroll') {
+          // potions and scrolls hop onto the belt (or into the bag) when you walk over them
+          if (d < 0.95 && it.t > 0.8) this.tryPickup(it);
         } else if (it.kind === 'key') {
           if (d < 0.95 && !e.hasKey) this.pickItem(it);
         } else if (it.kind === 'bag') {
@@ -292,8 +306,8 @@ export const WorldMixin = {
     let html;
     if (it.kind === 'bag') html = esc(t('ks.bagHere'));
     else {
-      const delta = compareItem(this.cls, this.hs.level, this.hs.gear, it.item, this.D);
-      const tag = delta === null ? `<small style="color:#d6cfe6">${esc(t('ks.forClass', { cls: t(`ks.cls.${it.item.cls}`) }))}</small>` : isBetter(delta) ? ' <span style="color:#3ddc97">▲</span>' : '';
+      const delta = this.compareItemFor(it.item);
+      const tag = delta === undefined ? ' <span style="color:#c9a8ff">?</span>' : delta === null ? `<small style="color:#d6cfe6">${esc(t('ks.forClass', { cls: t(`ks.cls.${it.item.cls}`) }))}</small>` : isBetter(delta) ? ' <span style="color:#3ddc97">▲</span>' : '';
       html = `<span style="color:${RARITY_CSS[it.item.rarity]}">${esc(itemName(it.item))}</span>${tag}`;
     }
     if (html !== it.labelHtml) { it.label.innerHTML = html; it.labelHtml = html; }
@@ -315,10 +329,9 @@ export const WorldMixin = {
       this.hs.coins += v;
       this.game.audio.play('coin');
       this.confetti.burst(at, COLORS.gold, { count: 4, speed: 2, life: 0.4, size: 0.1 });
-    } else if (it.kind === 'potion') {
-      this.hs.potions++;
+    } else if (it.kind === 'potion' || it.kind === 'scroll') {
       this.game.audio.play('star');
-      this.floater(t('ks.gotPotion'), at.setY(2.2), '#ff5d73', 1);
+      this.floater(t(`ks.got.${it.use}`), at.setY(2.2), it.use === 'hp' ? '#ff5d73' : it.use === 'mp' ? '#2f6fe0' : '#8a45e0', 1);
     } else if (it.kind === 'key') {
       e.hasKey = true;
       this.game.audio.play('rescue');
@@ -326,6 +339,21 @@ export const WorldMixin = {
       this.confetti.burst(at, COLORS.gold, { count: 20, speed: 5, life: 0.8, size: 0.14 });
     }
     this.dirty = true;
+  },
+
+  /** A potion or scroll on the floor: onto the belt, else into the bag (else it stays). */
+  tryPickup(it) {
+    if (it.taken) return false;
+    if (it.kind === 'key') { if (!this.hero.hasKey) this.pickItem(it); return true; }
+    if (it.kind !== 'potion' && it.kind !== 'scroll') return false;
+    const item = it.item || useItem(it.use);
+    if (!this.beltAdd(item) && !this.bagGrid().add(item)) {
+      if (this.toastCd <= 0) { this.toastCd = 2; this.game.ui.toast(t('ks.beltFull'), 1400); }
+      it.t = -1;
+      return false;
+    }
+    this.pickItem(it);
+    return true;
   },
 
   /** Gear on the floor within reach of the hero (for [C]: pick up). */
@@ -342,18 +370,16 @@ export const WorldMixin = {
 
   /** [C] on gear: into the bag (the bag must have room). */
   pickGear(it) {
-    const i = this.hs.bag.findIndex((x) => !x);
-    if (i < 0) {
+    if (!this.bagGrid().add(it.item)) {
       this.game.ui.toast(t('ks.bagFull'), 1800);
       this.game.audio.play('bump');
       return false;
     }
-    this.hs.bag[i] = it.item;
     this.removeItem(it);
     this.hs.stats.found++;
     if (it.item.rarity >= 2) this.hs.stats.rares++;
-    const delta = compareItem(this.cls, this.hs.level, this.hs.gear, it.item, this.D);
-    this.floater(t(isBetter(delta) ? 'ks.pickedBetter' : 'ks.picked', { name: itemName(it.item) }), new THREE.Vector3(this.hero.x, 2.6, this.hero.z), RARITY_CSS[it.item.rarity], 1.6, true);
+    const delta = this.compareItemFor(it.item);
+    this.pickFloater(it.item, isBetter(delta));
     this.game.audio.play(it.item.rarity >= 3 ? 'fanfare' : it.item.rarity === 2 ? 'star' : 'select');
     this.say(`${itemName(it.item)}${isBetter(delta) ? `. ${t('ks.better')}` : ''}`);
     this.dirty = true;
@@ -362,12 +388,9 @@ export const WorldMixin = {
 
   /** Walking onto your dropped bag puts everything back in (what does not fit stays in it). */
   pickBag(it) {
-    const drop = it.drop, bag = this.hs.bag;
+    const drop = it.drop, bag = this.bagGrid();
     const left = [];
-    for (const item of drop.items) {
-      const i = bag.findIndex((x) => !x);
-      if (i >= 0) bag[i] = item; else left.push(item);
-    }
+    for (const item of drop.items) if (!bag.add(item)) left.push(item);
     drop.items = left;
     this.game.audio.play('fanfare');
     this.confetti.burst(new THREE.Vector3(it.x, 1, it.z), 0, { count: 40, speed: 6, up: 5, colors: [COLORS.gold, 0xffffff, 0xff5d73], life: 1, size: 0.15 });
@@ -394,7 +417,8 @@ export const WorldMixin = {
       const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
       const cls = CLASS_SLOTS.has(slot) && Math.random() < 0.2 ? CLASS_IDS[Math.floor(Math.random() * 3)] : this.cls;
       const ilvl = Math.max(0, this.D + (Math.random() < 0.3 ? 1 : 0) + (src === 'boss' ? 1 : 0));
-      this.spawnGear(rollItem({ ilvl, rarity, slot, cls }), x + (Math.random() - 0.5) * 0.6, z + (Math.random() - 0.5) * 0.6);
+      this.spawnGear(rollItem({ ilvl, rarity, slot, cls, diff: this.hs.diff }), x + (Math.random() - 0.5) * 0.6, z + (Math.random() - 0.5) * 0.6);
+      this.lootCount = (this.lootCount || 0) + 1; // for the drop-rate tests
     }
   },
 
@@ -403,16 +427,22 @@ export const WorldMixin = {
     this.game.audio.play('star');
     this.floater(t('ks.chest'), new THREE.Vector3(chest.x, 2.2, chest.z), '#ffd23f', 1.2, true);
     this.confetti.burst(new THREE.Vector3(chest.x, 1, chest.z), COLORS.gold, { count: 24, speed: 5, up: 5, life: 0.9, size: 0.14 });
+    // Diablo-like: mostly coins, potions and scrolls; gear only now and then (LOOT.chest)
     for (let i = 0; i < 6; i++) this.spawnItem('coin', chest.x, chest.z + 0.5, true);
-    if (Math.random() < 0.5) this.spawnItem('potion', chest.x, chest.z + 0.5, true);
-    this.dropLoot(chest.x, chest.z + 0.6, 'chest', 1 + (Math.random() < 0.35 ? 1 : 0));
+    if (Math.random() < LOOT.chest) this.dropLoot(chest.x, chest.z + 0.6, 'chest', 1);
+    else {
+      this.spawnItem(Math.random() < 0.65 ? 'potion' : 'scroll', chest.x, chest.z + 0.5, true);
+      for (let i = 0; i < 4; i++) this.spawnItem('coin', chest.x, chest.z + 0.5, true);
+    }
+    if (Math.random() < 0.4) this.spawnItem('potion', chest.x, chest.z + 0.5, true);
     this.gainXp(8, chest.x, chest.z);
   },
 
   onBossDefeated(boss) {
     for (let i = 0; i < 16; i++) this.spawnItem('coin', boss.x, boss.z, true);
     for (let i = 0; i < 2; i++) this.spawnItem('potion', boss.x, boss.z, true);
-    this.dropLoot(boss.x, boss.z, 'boss', 3);
+    this.spawnItem('scroll', boss.x, boss.z, true);
+    this.dropLoot(boss.x, boss.z, 'boss', 2); // the first one is rare or better
     this.gainXp(foeHpAt(0) * 6, boss.x, boss.z);
     for (const g of [...this.grumbles]) this.fluffGrumble(g, undefined);
     if (this.fog) {
@@ -433,13 +463,20 @@ export const WorldMixin = {
   /** Grumbles count for quests; plain ones drop gear a little more often than in co-op. */
   fluffGrumble(g, by) {
     if (g.dead) return;
-    FoeMixin.fluffGrumble.call(this, g, by);
+    FoeMixin.fluffGrumble.call(this, g, by); // gear: LOOT rates via this.lootRates (keep/foes.js)
     if (by === undefined) return;
     this.hs.stats.fluffed++;
     if (g.elite) this.hs.stats.elites++;
-    if (!g.elite && Math.random() < 0.05) this.dropLoot(g.x, g.z, 'grumble');
+    if (!g.elite && Math.random() < LOOT.scroll) this.spawnItem('scroll', g.x, g.z, true);
     const e = this.hero;
     if (e.st.powers.has('heal') && e.state === 'walk') e.hp = Math.min(e.st.maxHp, e.hp + e.st.maxHp * 0.03);
+  },
+
+  /** Snooze Arrows put what they hit to sleep (the arrow's owner carries the time, see skills.js). */
+  hitGrumble(g, dmg, by, kx = 0, kz = 0, from = null) {
+    const hit = FoeMixin.hitGrumble.call(this, g, dmg, by, kx, kz, from);
+    if (hit && by?.snooze && !g.dead && (g.state === 'walk' || g.state === 'aim' || g.state === 'dash')) { g.state = 'sleep'; g.t = by.snooze; g.vx = g.vz = 0; }
+    return hit;
   },
 
   damageNest(nest, dmg, by) {
@@ -472,9 +509,9 @@ function mulberry(seed) {
   };
 }
 
-export function potionModel() {
+export function potionModel(use = 'hp') {
   const m = new THREE.Group();
-  const bottle = mesh(sph(0.22, 14, 10), toon(0xff5d73, { transparent: true, opacity: 0.9 }), 0, 0, 0);
+  const bottle = mesh(sph(0.22, 14, 10), toon(use === 'mp' ? 0x4c8dff : 0xff5d73, { transparent: true, opacity: 0.9 }), 0, 0, 0);
   const neck = mesh(cyl('ksPotNeck', 0.07, 0.09, 0.16, 10), toon(0xfff3dc), 0, 0.24, 0, false);
   const cork = mesh(cyl('ksPotCork', 0.08, 0.07, 0.08, 10), toon(0xb07848), 0, 0.34, 0, false);
   const shine = mesh(sph(0.06), toon(0xffffff), -0.08, 0.08, 0.16, false);
@@ -482,6 +519,18 @@ export function potionModel() {
   heart.rotation.z = Math.PI / 4;
   m.add(bottle, neck, cork, shine, heart);
   m.scale.setScalar(1.25);
+  return m;
+}
+
+/** A rolled-up scroll: blue ribbons for Town Portal, yellow for Identify. */
+export function scrollModel(use = 'tp') {
+  const m = new THREE.Group();
+  const roll = mesh(cyl('ksScroll', 0.12, 0.12, 0.55, 12), toon(0xfff3dc), 0, 0, 0);
+  roll.rotation.z = Math.PI / 2;
+  const band = mesh(cyl('ksScrollBand', 0.13, 0.13, 0.1, 12), toon(use === 'tp' ? 0x4cc9f0 : 0xffd23f), 0, 0, 0, false);
+  band.rotation.z = Math.PI / 2;
+  m.add(roll, band);
+  m.scale.setScalar(1.3);
   return m;
 }
 

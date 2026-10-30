@@ -13,15 +13,17 @@ import { FoeMixin } from './keep/foes.js';
 import './keepsolo/strings.js';
 import './keepsolo/strings2.js';
 import { loadKeepSolo, saveKeepSolo } from './keepsolo/save.js';
-import { CLASSES, SKILLS, MAX_LEVEL, xpNeed, heroStats, armorCut, compareItem } from './keepsolo/classes.js';
+import { CLASSES, MAX_LEVEL, B_MOVE, xpNeed, heroStats, armorCut, compareItem } from './keepsolo/classes.js';
 import { foeHitAt, isDeep, deepDepth, ACT_FLOORS, ACTS, actOf } from './keepsolo/acts.js';
-import { WorldMixin } from './keepsolo/world.js';
-import { TownMixin, TOWN_START, ShopPanel, QuestPanel, GatePanel } from './keepsolo/town.js';
+import { WorldMixin, LOOT } from './keepsolo/world.js';
+import { TownMixin, TOWN_START, QuestPanel, GatePanel } from './keepsolo/town.js';
 import { SkillMixin } from './keepsolo/skills.js';
 import { GridPanel } from './keepsolo/inventory.js';
 import { Hud, ClassPicker, SkillMenu } from './keepsolo/ui.js';
 import { dressHero } from './keepsolo/models.js';
 import { ControlMixin } from './keepsolo/control.js';
+import { HeroMixin } from './keepsolo/hero.js';
+import { CharPanel, TreePanel } from './keepsolo/tree.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
 // bank). Pick a hero (Pillow Knight, Feather Archer or Bubble Wizard: one save each), get ready in
@@ -87,6 +89,7 @@ export class KeepSoloScene extends MiniGame {
     this.portalCd = 0;
     this.saveT = 0;
     this.live = null; // the floor waiting behind the town portal: { world, at }
+    this.lootRates = LOOT; // keep/foes.js reads the gear drop chances from here
     this.hud = new Hud(this);
     this.initControl();
     this.cls = this.data.last;
@@ -131,6 +134,13 @@ export class KeepSoloScene extends MiniGame {
     // block: a soft cushion dome in front of the knight
     const blockMat = new THREE.MeshToonMaterial({ color: 0xffd0e4, transparent: true, opacity: 0.45, gradientMap: toon(0xffffff).gradientMap, depthWrite: false });
     blockMat.userData = {};
+    // the wizard's bubble shield
+    const bubMat = new THREE.MeshToonMaterial({ color: 0xbfe9ff, transparent: true, opacity: 0.35, gradientMap: toon(0xffffff).gradientMap, depthWrite: false });
+    bubMat.userData = {};
+    const bubble = new THREE.Mesh(sharedGeo('ksShieldBub', () => new THREE.SphereGeometry(1.0, 20, 14)), bubMat);
+    bubble.position.y = 0.75;
+    bubble.visible = false;
+    ch.group.add(bubble);
     const block = new THREE.Mesh(sharedGeo('ksBlockDome', () => new THREE.SphereGeometry(0.85, 18, 10, -Math.PI / 2, Math.PI, 0, Math.PI / 2)), blockMat);
     block.rotation.x = -Math.PI / 2;
     block.position.set(0, 0.6, 0.15);
@@ -154,10 +164,10 @@ export class KeepSoloScene extends MiniGame {
     this.scene.add(arrow);
     const label = this.game.ui.label('label ks-prompt');
     const e = {
-      p, ch, hand, off, capeSlot, block, ring, aimPivot, arrow, label, labelHtml: '', color, css,
+      p, ch, hand, off, capeSlot, block, bubble, ring, aimPivot, arrow, label, labelHtml: '', color, css,
       x: 0, y: 0, z: 0, vx: 0, vz: 0, fx: 0, fz: -1, state: 'walk', hp: 1, inv: 0, cdA: 0, cdB: 0, swingT: 0, swingDir: 1, spinT: 0,
       rollT: 0, rollX: 0, rollZ: 0, rushT: 0, cheerT: 0, castT: 0, potCd: 0, luckyT: 0, hurtT: 0, cd: {}, attackN: 0, hasKey: false,
-      nests: 0, fluffed: 0, blocking: false, offKind: null, offMesh: null,
+      nests: 0, fluffed: 0, blocking: false, offKind: null, offMesh: null, mana: 0, gcd: 0, leap: null, leapY: 0, shieldHp: 0, shieldT: 0,
     };
     this.hero = e;
     this.ents = [e];
@@ -167,9 +177,10 @@ export class KeepSoloScene extends MiniGame {
   /** Stats and looks from the class, level and worn gear. */
   refreshHero(full = false) {
     const e = this.hero;
-    const before = e.st?.maxHp || 1;
-    e.st = heroStats(this.cls, this.hs.level, this.hs.gear);
+    const before = e.st?.maxHp || 1, beforeM = e.st?.maxMana || 1;
+    e.st = heroStats(this.cls, this.hs);
     e.hp = full ? e.st.maxHp : Math.min(e.st.maxHp, e.hp * (e.st.maxHp / before));
+    e.mana = full ? e.st.maxMana : Math.min(e.st.maxMana, e.mana * (e.st.maxMana / beforeM));
     dressHero(e, this.hs.gear, this.player?.hat ?? CLASSES[this.cls].hat);
   }
 
@@ -209,13 +220,7 @@ export class KeepSoloScene extends MiniGame {
 
   /** How much better (positive) an item would make this hero; null if it is for another class. */
   compareItemFor(item) {
-    return compareItem(this.cls, this.hs.level, this.hs.gear, item, this.D);
-  }
-
-  selectedAction() {
-    const list = SKILLS[this.cls].filter((s) => this.hs.level >= s.lv);
-    const sk = list[Math.min(this.hs.sel, list.length - 1)] || list[0];
-    return sk ? sk.id : null;
+    return compareItem(this.cls, this.hs, item, this.D);
   }
 
   addXp(x) {
@@ -231,19 +236,13 @@ export class KeepSoloScene extends MiniGame {
 
   levelUp() {
     const e = this.hero, hs = this.hs;
+    this.levelUpKit();
     this.refreshHero(true);
     this.game.audio.play('fanfare');
-    const learned = SKILLS[this.cls].find((s) => s.lv === hs.level);
     const at = new THREE.Vector3(e.x, 2.6, e.z);
     this.floater(t('ks.levelUp', { n: hs.level }), at, '#ffb400', 1.8, true);
     this.confetti.burst(new THREE.Vector3(e.x, 0.3, e.z), 0, { count: 30, speed: 3, up: 7, colors: [COLORS.gold, 0xffffff, e.color], life: 1, gravity: -4, size: 0.13 });
     this.addFx('ring', e.x, e.z, { color: COLORS.gold, from: 0.4, to: 2.6, life: 0.6 });
-    if (learned) {
-      const msg = t('ks.newSkill', { skill: t(`ks.skill.${learned.id}`) });
-      this.game.ui.banner(msg, tFor(this.player, 'ks.newSkillSub'), 2200);
-      this.say(`${msg}. ${t(`ks.skillDesc.${learned.id}`)}`);
-      hs.sel = SKILLS[this.cls].indexOf(learned);
-    } else this.game.ui.toast(t('ks.levelUp', { n: hs.level }), 1800);
     this.dirty = true;
   }
 
@@ -253,6 +252,12 @@ export class KeepSoloScene extends MiniGame {
     let dmg = amount * foeHitAt(this.D) * (1 - armorCut(e.st.armor, this.D));
     const blocked = e.blocking;
     if (blocked) dmg *= 0.3;
+    if (e.shieldHp > 0) {
+      // the bubble shield soaks it up first
+      const soak = Math.min(e.shieldHp, dmg);
+      e.shieldHp -= soak; dmg -= soak;
+      if (e.shieldHp <= 0) { e.shieldT = 0; this.puffs.burst(new THREE.Vector3(e.x, 1, e.z), 0xbfe9ff, { count: 10, size: 0.4, life: 0.5, speed: 3 }); this.game.audio.play('pop'); }
+    }
     e.hp -= dmg;
     e.inv = 0.5;
     e.hurtT = 0.25;
@@ -266,20 +271,6 @@ export class KeepSoloScene extends MiniGame {
     return !blocked;
   }
 
-  drinkPotion() {
-    const e = this.hero, hs = this.hs;
-    if (e.state !== 'walk' || e.potCd > 0) return;
-    if (!hs.potions) { this.game.ui.toast(t('ks.noPotion'), 1400); this.game.audio.play('bump'); return; }
-    if (e.hp >= e.st.maxHp - 0.5) { this.game.ui.toast(t('ks.fullHp'), 1200); return; }
-    hs.potions--;
-    e.potCd = 0.8;
-    e.hp = Math.min(e.st.maxHp, e.hp + e.st.maxHp * 0.45 * (e.st.powers.has('potion') ? 2 : 1));
-    this.game.audio.play('star');
-    this.puffs.burst(new THREE.Vector3(e.x, 1, e.z), 0xff8fa8, { count: 10, size: 0.35, life: 0.6 });
-    this.floater(t('ks.gulp'), new THREE.Vector3(e.x, 2.3, e.z), '#ff3b6b', 0.9, true);
-    this.dirty = true;
-  }
-
   /** Out of health: the hero curls up, the bag falls, and Pillowby's bed waits. */
   faint() {
     const e = this.hero;
@@ -290,7 +281,7 @@ export class KeepSoloScene extends MiniGame {
     this.hs.stats.deaths++;
     this.game.audio.play('dizzy');
     this.puffs.burst(new THREE.Vector3(e.x, 0.8, e.z), 0xc9a8ff, { count: 16, size: 0.5, life: 1, speed: 2 });
-    const hasItems = this.hs.bag.some(Boolean);
+    const hasItems = this.hs.bag.length > 0;
     this.game.ui.banner(t('ks.fainted'), t(hasItems ? 'ks.faintedBag' : 'ks.faintedNoBag'), 2600);
     this.say(`${t('ks.fainted')} ${t(hasItems ? 'ks.faintedBag' : 'ks.faintedNoBag')}`);
     this.later(2.4, () => this.afterFaint());
@@ -306,12 +297,12 @@ export class KeepSoloScene extends MiniGame {
       if (hs.drop.items.length) this.game.ui.toast(t('ks.oldBagGone'), 2600);
       hs.drop = null;
     }
-    const items = hs.bag.filter(Boolean);
+    const items = hs.bag.map((x) => x.it);
     if (items.length) {
       // the spot must be walkable floor (not a door or stairs) so the bag can be reached
-      const drop = { g: this.g, seed: this.floorSeed, x: e.x, z: e.z, items };
+      const drop = { g: this.g, diff: hs.diff, seed: this.floorSeed, x: e.x, z: e.z, items };
       hs.drop = drop;
-      hs.bag.fill(null);
+      hs.bag.length = 0;
       this.spawnBag(drop);
     }
     // the boss (if any) wakes up fresh next time
@@ -368,7 +359,11 @@ export class KeepSoloScene extends MiniGame {
     this.game.audio.playMusic(isDeep(g) ? 'keepDeep' : 'bubble');
     this.game.ui.banner(this.placeTitle(), this.placeSub(), 1900);
     this.say(`${this.placeTitle()}. ${this.placeSub()}`);
-    if (!hs.tips.dungeon) { hs.tips.dungeon = true; this.later(2.2, () => this.game.ui.toast(tFor(this.player, 'ks.tipDungeon'), 4200)); this.later(2.2, () => this.say(tFor(this.player, 'ks.tipDungeon'))); }
+    if (!hs.tips.dungeon) {
+      hs.tips.dungeon = true;
+      const tip = this.isPad() ? 'ks.tipDungeonPad' : 'ks.tipDungeon';
+      this.later(2.2, () => { this.game.ui.toast(tFor(this.player, tip), 5200); this.say(tFor(this.player, tip)); });
+    }
     this.saveNow();
   }
 
@@ -402,6 +397,7 @@ export class KeepSoloScene extends MiniGame {
       this.placeHero(TOWN_START.x, TOWN_START.z + (reason === 'portal' ? 0 : 0));
       e.state = 'walk';
       e.hp = e.st.maxHp;
+      e.mana = e.st.maxMana;
       e.hasKey = false;
       e.inv = 1;
       e.ch.pivot.rotation.x = 0;
@@ -452,13 +448,15 @@ export class KeepSoloScene extends MiniGame {
     });
   }
 
-  /** Town portal (hold-[C] menu): a short spell, then a swirl opens and takes you home. */
+  /** Town Portal scroll: a short spell, then a swirl opens and takes you home. Returns true if it started. */
   castPortal() {
     const e = this.hero;
-    if (this.kind !== 'dungeon' || e.state !== 'walk' || e.castT > 0) return;
+    if (this.kind !== 'dungeon' || e.state !== 'walk' || e.castT > 0 || this.moving) return false;
     e.castT = 1.0;
+    this.ctlCancel();
     this.game.audio.play('trap');
     this.game.ui.toast(t('ks.casting'), 1200);
+    return true;
   }
 
   openFloorPortal() {
@@ -495,7 +493,12 @@ export class KeepSoloScene extends MiniGame {
 
   openPanel(kind) {
     this.closePanel();
-    const P = { bag: () => new GridPanel(this, 'bag'), smith: () => new GridPanel(this, 'smith'), stash: () => new GridPanel(this, 'stash'), shop: () => new ShopPanel(this), quests: () => new QuestPanel(this), gate: () => new GatePanel(this) }[kind];
+    const P = {
+      bag: () => new GridPanel(this, 'bag'), smith: () => new GridPanel(this, 'smith'), stash: () => new GridPanel(this, 'stash'), shop: () => new GridPanel(this, 'shop'),
+      sage: () => new GridPanel(this, 'sage'), lost: () => new GridPanel(this, 'lost'), char: () => new CharPanel(this), tree: () => new TreePanel(this),
+      quests: () => new QuestPanel(this), gate: () => new GatePanel(this),
+    }[kind];
+    this.ctlCancel();
     this.panel = P();
     this.panelKind = kind;
     this.hero.vx = this.hero.vz = 0;
@@ -508,24 +511,24 @@ export class KeepSoloScene extends MiniGame {
     this.panelKind = null;
   }
 
-  /** What tapping [C] does: pick up gear under you, or the chosen skill (in town: the bag). */
+  /** What tapping [C] does (gamepad): pick up gear under you, or the skill on [C] (in town: the bag). */
   tapC() {
     if (this.kind === 'town') { this.openPanel('bag'); return; }
     const it = this.gearNear();
     if (it) { this.pickGear(it); return; }
-    const sk = this.selectedAction();
-    if (sk) this.useSkill(this.hero, sk);
+    const sk = this.hs.bar.rmb;
+    if (sk && sk !== 'block') this.castSkill(sk, null);
+    else this.game.ui.toast(t('ks.noSkillC'), 1600);
   }
 
   useMenuEntry(x) {
     if (!x || !x.on) { if (x) this.game.audio.play('bump'); return; }
     if (x.kind === 'skill') {
-      this.hs.sel = SKILLS[this.cls].findIndex((s) => s.id === x.id);
+      this.assignSkill('rmb', x.id);
       this.game.ui.toast(t('ks.chosen', { skill: t(`ks.skill.${x.id}`) }), 1400);
-      this.useSkill(this.hero, x.id);
-    } else if (x.kind === 'potion') this.drinkPotion();
-    else if (x.kind === 'portal') this.castPortal();
-    else this.openPanel('bag');
+      this.castSkill(x.id, null);
+    } else if (x.kind === 'use') this.useFirst(x.id);
+    else this.openPanel(x.id);
   }
 
   // ---------------------------------------------------------------- per frame
@@ -565,6 +568,9 @@ export class KeepSoloScene extends MiniGame {
       return;
     }
     if (this.panel) {
+      // the same key closes its panel again (I bag, C hero page, T skill tree)
+      const again = { bag: 'KeyI', char: 'KeyC', tree: 'KeyT' }[this.panelKind];
+      if (again && this.keyPressed(again)) { this.closePanel(); this.cHold = -1; this.updateHud(); return; }
       if (this.panel.update(dt, d)) { this.panel = null; this.panelKind = null; this.cHold = -1; }
       this.updateHud();
       return;
@@ -631,6 +637,7 @@ export class KeepSoloScene extends MiniGame {
     for (const k in e.cd) e.cd[k] -= dt;
     let moving = 0;
     e.blocking = false;
+    const holdBlock = this.updateKit(dt, inp, active);
     if (e.state === 'faint') {
       e.ch.pivot.rotation.x += (-1.35 - e.ch.pivot.rotation.x) * Math.min(1, dt * 6);
     } else if (e.castT > 0) {
@@ -638,6 +645,9 @@ export class KeepSoloScene extends MiniGame {
       e.vx = e.vz = 0;
       if (Math.random() < dt * 20) this.puffs.burst(new THREE.Vector3(e.x + (Math.random() - 0.5), 0.3, e.z + (Math.random() - 0.5)), 0x8fd8ff, { count: 1, size: 0.3, life: 0.6, speed: 0.5, up: 3 });
       if (e.castT <= 0) this.openFloorPortal();
+    } else if (e.leap) {
+      this.updateLeap(e, dt);
+      moving = 1;
     } else if (e.rushT > 0) {
       this.updateRush(e, dt);
       moving = 1;
@@ -652,14 +662,15 @@ export class KeepSoloScene extends MiniGame {
       const len = Math.hypot(mx, mz);
       if (len > 1) { mx /= len; mz /= len; }
       if (len > 0.25) { const l = Math.hypot(mx, mz); e.fx = mx / l; e.fz = mz / l; }
-      e.blocking = this.cls === 'knight' && inp.b && this.kind === 'dungeon';
+      e.blocking = this.cls === 'knight' && (inp.b || holdBlock) && this.kind === 'dungeon';
+      if (e.blocking && this.ground && (holdBlock && !inp.b)) { const dx = this.ground.x - e.x, dz = this.ground.z - e.z, d = Math.hypot(dx, dz); if (d > 0.2) { e.fx = dx / d; e.fz = dz / d; } }
       const sp = SPEED * e.st.speed * (e.blocking ? 0.45 : 1) * (this.kind === 'town' ? 1.1 : 1);
       e.vx += (mx * sp - e.vx) * Math.min(1, dt * 14);
       e.vz += (mz * sp - e.vz) * Math.min(1, dt * 14);
       this.moveCircle(e, e.vx * dt, e.vz * dt, PR);
       moving = clamp(Math.hypot(e.vx, e.vz) / SPEED, 0, 1);
       if (active) {
-        if (inp.bPressed && this.cls !== 'knight') this.bMove(e, inp);
+        if (inp.bPressed && this.cls !== 'knight' && this.kind === 'dungeon') this.bMove(e, inp);
         if (this.kind === 'town') { if (inp.aPressed) this.useTown(); }
         else if (inp.a && e.cdA <= 0 && !e.blocking) this.attack(e);
       }
@@ -677,7 +688,9 @@ export class KeepSoloScene extends MiniGame {
       y = -0.2 * (k + 1);
     }
     e.y += (y - e.y) * Math.min(1, dt * 12);
-    ch.group.position.set(e.x, e.y + (e.castT > 0 ? 0.25 + Math.sin(this.time * 10) * 0.05 : 0), e.z);
+    ch.group.position.set(e.x, e.y + (e.leapY || 0) + (e.castT > 0 ? 0.25 + Math.sin(this.time * 10) * 0.05 : 0), e.z);
+    e.bubble.visible = e.shieldHp > 0;
+    if (e.bubble.visible) e.bubble.scale.setScalar(1 + Math.sin(this.time * 5) * 0.04);
     if (e.state !== 'faint') ch.pivot.rotation.x += (0 - ch.pivot.rotation.x) * Math.min(1, dt * 8);
     ch.spin = e.spinT > 0 ? (1 - e.spinT / 0.4) * Math.PI * 2 : e.rollT > 0 ? (1 - e.rollT / 0.3) * Math.PI * 2 : 0;
     e.hand.rotation.y = e.swingT > 0 ? e.swingDir * Math.sin((e.swingT / 0.22) * Math.PI) * 1.3 : 0;
@@ -786,5 +799,5 @@ export class KeepSoloScene extends MiniGame {
   }
 }
 
-Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin, ControlMixin);
+Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin, ControlMixin, HeroMixin);
 for (const k of BORROW) Object.defineProperty(KeepSoloScene.prototype, k, Object.getOwnPropertyDescriptor(KeepScene.prototype, k));

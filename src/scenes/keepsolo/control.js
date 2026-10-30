@@ -90,7 +90,7 @@ export const ControlMixin = {
         }
       }
     } else {
-      for (const n of this.npcs) if (n.id !== 'smith' && n.id !== 'fizz') onScreen(n.x, n.z, 1.6, 0.5, 'npc', n);
+      for (const n of this.npcs) if (n.id !== 'smith' && n.id !== 'fizz' && n.id !== 'snore') onScreen(n.x, n.z, 1.6, 0.5, 'npc', n);
       if (gp) {
         for (const s of this.stations) {
           const bx = s.box;

@@ -1,14 +1,16 @@
 import * as THREE from 'three';
 import { COLORS, toon, basic, sharedGeo } from '../../core/palette.js';
+import { makeStar } from '../../core/world.js';
 import { t } from '../../core/i18n.js';
-import { GR, mesh, sph, cyl, cone, fadeMat } from '../keep/common.js';
-import { CLASSES, SKILLS } from './classes.js';
+import { GR, mesh, sph, cyl, cone, rbox, fadeMat } from '../keep/common.js';
+import { CLASSES, B_MOVE, skillDef, manaCost, rankK } from './classes.js';
+import { findPath } from './path.js';
 
 // What the hero does (mixed into the scene): the [A] attack, the [B] move and the four [C] skills
 // of each class, plus the skill effects that last a while (feather rain, owl friend, bubble bomb,
 // snooze cloud, bubble storm). Shots use the co-op Pillow Keep's shot logic (keep.js updateShots).
 
-const SHOT = { arrow: 19, big: 22, bubble: 11, storm: 9, feather: 13 };
+const SHOT = { arrow: 19, big: 22, bubble: 11, storm: 9, feather: 13, bolt: 16 };
 
 export const SkillMixin = {
   /** keep/foes.js asks about co-op skills (Pop Splash); the solo heroes have their own skills. */
@@ -93,7 +95,7 @@ export const SkillMixin = {
   },
 
   /** Make a shot (keep.js updateShots moves it and hits things). */
-  shoot(e, kind, angOff, dmg, { pierce = 0, life = 1, homing = false } = {}) {
+  shoot(e, kind, angOff, dmg, { pierce = 0, life = 1, homing = false, snooze = 0 } = {}) {
     const a = Math.atan2(e.fx, e.fz) + angOff;
     const dx = Math.sin(a), dz = Math.cos(a);
     let m, shotKind = kind, speed = SHOT[kind], range = 13;
@@ -114,11 +116,13 @@ export const SkillMixin = {
       m = mesh(sph(0.36, 16, 12), toon(0xbfe9ff, { transparent: true, opacity: 0.55 }), 0, 0, 0, false);
       m.add(mesh(sph(0.08), toon(COLORS.white), -0.14, 0.14, 0.24, false));
       range = 11;
-    } else if (kind === 'storm') {
-      // Storm bubbles bonk instead of trapping ("note" shots in keep.js deal damage).
-      m = mesh(sph(0.26, 14, 10), toon(0x9ff0ff, { transparent: true, opacity: 0.6 }), 0, 0, 0, false);
+    } else if (kind === 'storm' || kind === 'bolt') {
+      // Storm bubbles and soap bolts bonk instead of trapping ("note" shots in keep.js deal damage).
+      const bolt = kind === 'bolt';
+      m = mesh(sph(bolt ? 0.32 : 0.26, 14, 10), toon(bolt ? 0x7fd8ff : 0x9ff0ff, { transparent: true, opacity: bolt ? 0.8 : 0.6 }), 0, 0, 0, false);
+      if (bolt) m.add(mesh(sph(0.09), toon(COLORS.white), -0.1, 0.12, 0.2, false));
       shotKind = 'note';
-      range = 9;
+      range = bolt ? 12 : 9;
     } else {
       m = new THREE.Mesh(sharedGeo('kFeatherArc', () => new THREE.RingGeometry(0.6, 1.0, 16, 1, -Math.PI / 2 - 0.8, 1.6)), basic(0xffffff, { transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide }));
       m.rotation.order = 'YXZ';
@@ -127,68 +131,153 @@ export const SkillMixin = {
       range = 6;
     }
     this.level.add(m);
-    this.shots.push({ kind: shotKind, x: e.x + dx * 0.5, z: e.z + dz * 0.5, vx: dx * speed, vz: dz * speed, life: (range / speed) * life, owner: e, mesh: m, t: 0, dmg, pierce, hits: new Set(), homing });
+    // a Snooze Arrow's owner carries the snooze time (hitGrumble in world.js reads it)
+    const owner = snooze ? Object.assign(Object.create(e), { snooze }) : e;
+    this.shots.push({ kind: shotKind, x: e.x + dx * 0.5, z: e.z + dz * 0.5, vx: dx * speed, vz: dz * speed, life: (range / speed) * life, owner, mesh: m, t: 0, dmg, pierce, hits: new Set(), homing });
   },
 
-  // ---------------------------------------------------------------- [B]
+  // ---------------------------------------------------------------- casting
 
-  /** Archer roll / wizard hop on [B] press (the knight's block is held, see the hero update). */
-  bMove(e, inp) {
-    if (e.cdB > 0) return;
-    const C = CLASSES[this.cls];
-    let dx = inp.x, dz = -inp.y;
-    const len = Math.hypot(dx, dz);
-    if (len > 0.3) { dx /= len; dz /= len; e.fx = dx; e.fz = dz; } else { dx = e.fx; dz = e.fz; }
-    e.cdB = C.cdB;
-    if (this.cls === 'archer') {
-      e.rollT = 0.3;
-      e.rollX = dx; e.rollZ = dz;
-      e.inv = Math.max(e.inv, 0.36);
-      this.game.audio.play('dash');
-      this.puffs.burst(new THREE.Vector3(e.x, 0.3, e.z), 0xffffff, { count: 5, size: 0.35, life: 0.4, speed: 2 });
-    } else {
-      // Bubble hop: blink a few steps (stops at walls).
-      let d = 0;
-      while (d < 4.5 && this.walkableAt(e.x + dx * (d + 0.5), e.z + dz * (d + 0.5))) d += 0.25;
-      this.puffs.burst(new THREE.Vector3(e.x, 0.8, e.z), 0xbfe9ff, { count: 8, size: 0.4, life: 0.5, speed: 2 });
-      e.x += dx * d; e.z += dz * d;
-      this.pushOut(e, 0.42);
-      e.inv = Math.max(e.inv, 0.3);
-      e.ch.squash(1.4);
-      this.puffs.burst(new THREE.Vector3(e.x, 0.8, e.z), 0xbfe9ff, { count: 8, size: 0.4, life: 0.5, speed: 2 });
-      this.game.audio.play('pop');
-    }
+  /** Rank of a skill (0 = not learned). */
+  rank(id) {
+    return this.hs.ranks[id] || 0;
   },
-
-  // ---------------------------------------------------------------- [C]
 
   skillCd(e, id) {
     return e.cd[id] || 0;
   },
 
-  /** Use a [C] skill; returns false if it is still recharging. */
-  useSkill(e, id) {
-    if (this.skillCd(e, id) > 0) { this.game.audio.play('bump'); return false; }
-    const def = SKILLS[this.cls].find((s) => s.id === id);
+  /**
+   * Cast a skill from the hotbar, the right mouse button, the gamepad or the menu.
+   * at: the floor point under the mouse pointer (null = aim like the gamepad does: at the grumble
+   * in front, or a few steps ahead). Returns true when it was cast.
+   */
+  castSkill(id, at = null, quiet = false) {
+    const e = this.hero, def = skillDef(this.cls, id);
+    if (!def || def.kind === 'passive' || e.state !== 'walk' || this.kind !== 'dungeon') return false;
+    const r = this.rank(id);
+    if (!r) return false;
+    if (def.kind === 'hold') return false; // block is held (see the hero update)
+    if (e.gcd > 0) return false;
+    if (this.skillCd(e, id) > 0) { if (!quiet) this.game.audio.play('bump'); return false; }
+    const cost = manaCost(def, r);
+    if (e.mana < cost) {
+      if (!quiet && this.toastCd <= 0) { this.toastCd = 1.2; this.floater(t('ks.noMana'), new THREE.Vector3(e.x, 2.4, e.z), '#2f6fe0', 0.8, true); this.game.audio.play('bump'); }
+      return false;
+    }
+    // where it goes
+    let p = at;
+    if (def.target === 'ground' || def.target === 'blink') {
+      p = at ? this.clampTarget(e, at, def.range || 8) : this.aimSpot(e, (def.range || 8) * 0.6);
+      if (!p) return false;
+    }
+    if (p && (def.target === 'dir' || def.target === 'ground' || def.target === 'blink')) {
+      const dx = p.x - e.x, dz = p.z - e.z, d = Math.hypot(dx, dz);
+      if (d > 0.1) { e.fx = dx / d; e.fz = dz / d; }
+    }
+    this.aimAt = def.target === 'dir' && at ? { x: at.x, z: at.z } : null;
+    const ok = this.useSkill(e, id, p, r);
+    this.aimAt = null;
+    if (ok === false) return false;
+    e.mana -= cost;
     e.cd[id] = def.cd * (1 - e.st.cdr);
+    e.gcd = 0.3;
+    e.castFx = 0.2;
+    return true;
+  },
+
+  /** A floor point at most `range` from the hero, pulled back out of walls. */
+  clampTarget(e, at, range) {
+    let dx = at.x - e.x, dz = at.z - e.z;
+    const d = Math.hypot(dx, dz);
+    if (d > range) { dx *= range / d; dz *= range / d; }
+    for (let k = 1; k >= 0; k -= 0.05) {
+      const x = e.x + dx * k, z = e.z + dz * k;
+      if (this.walkableAt(x, z)) return { x, z };
+    }
+    return { x: e.x, z: e.z };
+  },
+
+  /** The knight's block (held) or a jump / roll toward a direction. */
+  bMove(e, inp, at = null) {
+    if (this.cls === 'knight') return;
+    const id = B_MOVE[this.cls];
+    if (at) { this.castSkill(id, at); return; }
+    let dx = inp.x, dz = -inp.y;
+    const len = Math.hypot(dx, dz);
+    if (len > 0.3) { dx /= len; dz /= len; } else { dx = e.fx; dz = e.fz; }
+    this.castSkill(id, { x: e.x + dx * 4.5, z: e.z + dz * 4.5 });
+  },
+
+  /** Do the skill (mana and recharge are handled by castSkill). p = target point. Returns false if nothing happened. */
+  useSkill(e, id, p = null, r = this.rank(id) || 1) {
+    const k = rankK(r);
+    const spell = this.cls === 'wizard' ? e.st.spell : 1;
     switch (id) {
+      case 'roll': {
+        const dx = p ? p.x - e.x : e.fx, dz = p ? p.z - e.z : e.fz, d = Math.hypot(dx, dz) || 1;
+        e.fx = dx / d; e.fz = dz / d;
+        e.rollT = 0.3;
+        e.rollX = e.fx; e.rollZ = e.fz;
+        e.inv = Math.max(e.inv, 0.36);
+        this.game.audio.play('dash');
+        this.puffs.burst(new THREE.Vector3(e.x, 0.3, e.z), 0xffffff, { count: 5, size: 0.35, life: 0.4, speed: 2 });
+        break;
+      }
+      case 'hop': {
+        // Bubble hop: blink to the pointer (only where you could walk to: no hopping past locked doors)
+        const to = p || { x: e.x + e.fx * 4.5, z: e.z + e.fz * 4.5 };
+        const path = findPath(this, e.x, e.z, to.x, to.z);
+        const len = path ? path.reduce((a, q, i) => a + Math.hypot(q.x - (i ? path[i - 1].x : e.x), q.z - (i ? path[i - 1].z : e.z)), 0) : Infinity;
+        if (!path || len > 14) { this.game.audio.play('bump'); return false; }
+        const last = path[path.length - 1];
+        this.puffs.burst(new THREE.Vector3(e.x, 0.8, e.z), 0xbfe9ff, { count: 8, size: 0.4, life: 0.5, speed: 2 });
+        e.x = last.x; e.z = last.z;
+        this.pushOut(e, 0.42);
+        e.inv = Math.max(e.inv, 0.3);
+        e.ch.squash(1.4);
+        this.puffs.burst(new THREE.Vector3(e.x, 0.8, e.z), 0xbfe9ff, { count: 8, size: 0.4, life: 0.5, speed: 2 });
+        this.game.audio.play('pop');
+        this.ctlCancel?.();
+        break;
+      }
+      case 'bash': {
+        // one big bonk on the grumble in front; it gets dizzy
+        const tg = this.faceTarget(e, 3, 0.9);
+        e.swingT = 0.22; e.swingDir = -e.swingDir;
+        const dmg = this.rollDmg(e, 2.2 * k);
+        let hit = false;
+        for (const g of [...this.grumbles]) {
+          if (g.dead || !this.inArc(e, g.x, g.z, 2.6 + GR * g.size, 0.7)) continue;
+          if (this.hitGrumble(g, dmg, e, e.fx * 9, e.fz * 9, e) && !g.dead && g.state !== 'bubble') { g.state = 'dizzy'; g.t = 1.2; }
+          hit = true;
+          break;
+        }
+        if (!hit) for (const n of this.nests) if (!n.done && this.inArc(e, n.x, n.z, 2.6 + n.r, 0.7)) { this.damageNest(n, dmg * 1.6, e); hit = true; break; }
+        const b = this.boss;
+        if (!hit && b?.awake && b.y < 2.5 && this.inArc(e, b.x, b.z, 2.6 + b.r, 0.7)) b.damage(dmg, e);
+        this.addFx('arc', e.x, e.z, { yaw: Math.atan2(e.fx, e.fz), half: 0.7, rad: 2.6, life: 0.25 });
+        this.game.audio.play('boing');
+        void tg;
+        break;
+      }
       case 'spin':
         e.spinT = 0.4;
-        this.swing(e, 3.4, Math.PI, this.rollDmg(e, 1.6), 9);
+        this.swing(e, 3.4 + 0.1 * r, Math.PI, this.rollDmg(e, 1.6 * k), 9);
         this.game.audio.play('whoosh');
         break;
       case 'rush': {
         const tg = this.faceTarget(e, 8, 0.6);
         e.rushT = 0.36;
         e.rushHits = new Set();
-        e.rushDmg = this.rollDmg(e, 1.5);
+        e.rushDmg = this.rollDmg(e, 1.5 * k);
         e.inv = Math.max(e.inv, 0.45);
         if (tg) e.rushT = Math.min(0.36, (tg.d + 1) / 18);
         this.game.audio.play('dash');
         break;
       }
       case 'quake': {
-        const R = 5, dmg = this.rollDmg(e, 2);
+        const R = 5 + 0.2 * r, dmg = this.rollDmg(e, 2 * k);
         for (const g of [...this.grumbles]) {
           if (g.dead || Math.hypot(g.x - e.x, g.z - e.z) > R + GR * g.size) continue;
           const dx = g.x - e.x, dz = g.z - e.z, d = Math.hypot(dx, dz) || 1;
@@ -204,55 +293,116 @@ export const SkillMixin = {
         break;
       }
       case 'cheer':
-        e.hp = Math.min(e.st.maxHp, e.hp + e.st.maxHp * 0.35);
-        e.cheerT = 6;
+        e.hp = Math.min(e.st.maxHp, e.hp + e.st.maxHp * (0.3 + 0.05 * r));
+        e.cheerT = 5 + r;
         this.confetti.burst(new THREE.Vector3(e.x, 1.4, e.z), 0, { count: 40, speed: 6, up: 6, colors: [COLORS.gold, 0xff5d73, 0xffffff], life: 1.1, size: 0.15 });
         this.floater(t('ks.cheer'), new THREE.Vector3(e.x, 2.6, e.z), '#ffd23f', 1.4, true);
         this.game.audio.play('fanfare');
         break;
+      case 'leap': {
+        // jump to the pointer and bonk everything where you land
+        const to = p || { x: e.x + e.fx * 5, z: e.z + e.fz * 5 };
+        e.leap = { x0: e.x, z0: e.z, x1: to.x, z1: to.z, t: 0, dur: 0.42, dmg: this.rollDmg(e, 1.7 * k) };
+        e.inv = Math.max(e.inv, 0.5);
+        this.game.audio.play('boing');
+        this.ctlCancel?.();
+        break;
+      }
+      case 'avalanche':
+        this.addZone({ kind: 'avalanche', x: p.x, z: p.z, r: 3.2, life: 1.4, tick: 0.16, dmg: this.rollDmg(e, 1.1 * k) });
+        this.game.audio.play('whoosh');
+        break;
+      case 'snooze':
+        this.faceTarget(e, 12, 0.5);
+        this.shoot(e, 'arrow', 0, this.rollDmg(e, 1.2 * k), { snooze: 1.5 + 0.3 * r });
+        this.game.audio.play('dash');
+        break;
       case 'fan':
         this.faceTarget(e, 10, 0.8);
-        for (let k = -3; k <= 3; k++) this.shoot(e, 'arrow', k * 0.14, this.rollDmg(e, 0.8));
+        for (let i = -3; i <= 3; i++) this.shoot(e, 'arrow', i * 0.14, this.rollDmg(e, 0.8 * k));
         this.game.audio.play('dash');
         break;
       case 'pierce':
         this.faceTarget(e, 16, 0.5);
-        this.shoot(e, 'big', 0, this.rollDmg(e, 3), { pierce: 99 });
+        this.shoot(e, 'big', 0, this.rollDmg(e, 3 * k), { pierce: 99 });
         this.game.audio.play('whoosh');
         break;
       case 'rain': {
-        const p = this.aimSpot(e, 6);
-        this.addZone({ kind: 'rain', x: p.x, z: p.z, r: 3.2, life: 2.1, tick: 0.33, dmg: this.rollDmg(e, 0.8) });
+        const q = p || this.aimSpot(e, 6);
+        this.addZone({ kind: 'rain', x: q.x, z: q.z, r: 3.2, life: 2.1, tick: 0.33, dmg: this.rollDmg(e, 0.8 * k) });
         this.game.audio.play('whoosh');
         break;
       }
+      case 'trap':
+        this.addZone({ kind: 'trap', x: p.x, z: p.z, r: 2.6, life: 12, tick: 0.1, dmg: this.rollDmg(e, 2.4 * k), sleep: 1.5 + 0.3 * r });
+        this.game.audio.play('select');
+        break;
       case 'owl':
-        this.addZone({ kind: 'owl', x: e.x, z: e.z, life: 8, tick: 0.45, dmg: e.st.dmg * 0.75 });
+        this.addZone({ kind: 'owl', x: e.x, z: e.z, life: 7 + r, tick: 0.45, dmg: e.st.dmg * 0.75 * k });
         this.game.audio.play('star');
         break;
+      case 'star':
+        this.addZone({ kind: 'star', x: e.x, z: e.z, x0: e.x, z0: e.z, x1: p.x, z1: p.z, r: 3, life: Math.max(0.25, Math.hypot(p.x - e.x, p.z - e.z) / 20), dmg: this.rollDmg(e, 2.6 * k) });
+        this.game.audio.play('whoosh');
+        break;
+      case 'bolt':
+        this.faceTarget(e, 12, 0.5);
+        this.shoot(e, 'bolt', 0, this.rollDmg(e, 1.15 * k * spell));
+        this.game.audio.play('pop');
+        break;
       case 'ring':
-        for (let k = 0; k < 10; k++) this.shoot(e, 'bubble', (k / 10) * Math.PI * 2, 0, { life: 0.55 });
+        for (let i = 0; i < 10; i++) this.shoot(e, 'bubble', (i / 10) * Math.PI * 2, 0, { life: 0.55 + 0.05 * r });
         this.game.audio.play('trap');
         break;
       case 'bomb': {
-        const p = this.aimSpot(e, 6);
-        this.addZone({ kind: 'bomb', x: p.x, z: p.z, r: 3, life: 0.75, dmg: this.rollDmg(e, 2.5) });
+        const q = p || this.aimSpot(e, 6);
+        this.addZone({ kind: 'bomb', x: q.x, z: q.z, r: 3, life: 0.75, dmg: this.rollDmg(e, 2.5 * k * spell) });
         this.game.audio.play('bubble');
         break;
       }
       case 'cloud': {
-        const p = this.aimSpot(e, 5);
-        this.addZone({ kind: 'cloud', x: p.x, z: p.z, r: 3.5, life: 4, tick: 0.5, dmg: this.rollDmg(e, 0.35) });
+        const q = p || this.aimSpot(e, 5);
+        this.addZone({ kind: 'cloud', x: q.x, z: q.z, r: 3.5, life: 4 + 0.3 * r, tick: 0.5, dmg: this.rollDmg(e, 0.35 * k * spell) });
         this.game.audio.play('trap');
         break;
       }
+      case 'shield':
+        e.shieldHp = e.st.maxHp * (0.25 + 0.05 * r);
+        e.shieldT = 10;
+        this.game.audio.play('bubble');
+        this.floater(t('ks.skill.shield'), new THREE.Vector3(e.x, 2.6, e.z), '#4cc9f0', 1, true);
+        break;
       case 'storm':
-        this.addZone({ kind: 'storm', x: e.x, z: e.z, life: 4, tick: 0.25, dmg: e.st.dmg });
+        this.addZone({ kind: 'storm', x: e.x, z: e.z, life: 4, tick: 0.25, dmg: e.st.dmg * k * spell });
         this.game.audio.play('trap');
         break;
-      default: break;
+      case 'splash':
+        this.addZone({ kind: 'bomb', x: p.x, z: p.z, r: 4.6, life: 0.9, dmg: this.rollDmg(e, 4 * k * spell), big: true });
+        this.game.audio.play('bubble');
+        break;
+      default: return false;
     }
     return true;
+  },
+
+  /** Knight leap: fly in an arc to the spot, then bonk around the landing. */
+  updateLeap(e, dt) {
+    const L = e.leap;
+    L.t += dt;
+    const k = Math.min(1, L.t / L.dur);
+    const nx = L.x0 + (L.x1 - L.x0) * k, nz = L.z0 + (L.z1 - L.z0) * k;
+    e.x = nx; e.z = nz;
+    e.leapY = Math.sin(k * Math.PI) * 2.2;
+    if (k >= 1) {
+      e.leap = null;
+      e.leapY = 0;
+      this.pushOut(e, 0.42);
+      this.hitArea(e.x, e.z, 2.8, L.dmg, e, (g) => { if (g.state !== 'bubble') { g.state = 'dizzy'; g.t = 1.4; } });
+      this.addFx('ring', e.x, e.z, { color: 0xffe9a8, from: 0.4, to: 2.8, life: 0.4 });
+      this.puffs.burst(new THREE.Vector3(e.x, 0.3, e.z), 0xffffff, { count: 14, size: 0.55, life: 0.6, speed: 5 });
+      e.ch.squash(0.6);
+      this.game.audio.play('splat');
+    }
   },
 
   /** Knight rush: dash forward and bonk everything on the way (once each). */
@@ -291,6 +441,29 @@ export const SkillMixin = {
     } else if (z.kind === 'bomb') {
       z.ball = mesh(sph(0.5, 18, 12), toon(0x8fd8ff, { transparent: true, opacity: 0.6 }), 0, 0.6, 0, false);
       g.add(z.ball);
+    } else if (z.kind === 'trap') {
+      // a little bundle of feathers on the floor
+      for (let i = 0; i < 5; i++) {
+        const f = mesh(cone('ksFeather', 0.12, 0.8, 6), toon(i % 2 ? 0xffffff : 0x3ddc97), 0, 0.15, 0, false);
+        f.rotation.set(Math.PI / 2, 0, (i / 5) * Math.PI * 2);
+        f.scale.z = 0.35;
+        g.add(f);
+      }
+      z.mat = fadeMat(0x3ddc97, 0.18);
+      const disc = new THREE.Mesh(sharedGeo('ksZoneDisc', () => new THREE.CircleGeometry(1, 32)), z.mat);
+      disc.rotation.x = -Math.PI / 2; disc.position.y = 0.05; disc.scale.setScalar(z.r);
+      g.add(disc);
+    } else if (z.kind === 'star') {
+      z.ball = makeStar(COLORS.gold);
+      z.ball.scale.setScalar(0.45);
+      z.ball.position.y = 1;
+      g.add(z.ball);
+    } else if (z.kind === 'avalanche') {
+      z.mat = fadeMat(0xffd0e4, 0.3);
+      const disc = new THREE.Mesh(sharedGeo('ksZoneDisc', () => new THREE.CircleGeometry(1, 32)), z.mat);
+      disc.rotation.x = -Math.PI / 2; disc.position.y = 0.06; disc.scale.setScalar(z.r);
+      g.add(disc);
+      z.drops = [];
     } else if (z.kind === 'owl') {
       const owl = new THREE.Group();
       owl.add(mesh(sph(0.32, 12, 10), toon(0xb07848), 0, 0, 0));
@@ -347,7 +520,7 @@ export const SkillMixin = {
         z.g.rotation.y += dt * 0.3;
         z.mat.opacity = 0.35 * (1 - Math.max(0, k - 0.8) * 5);
       } else if (z.kind === 'bomb') {
-        z.ball.scale.setScalar(1 + k * 2.2);
+        z.ball.scale.setScalar((1 + k * 2.2) * (z.big ? 1.5 : 1));
         z.ball.position.y = 0.6 + Math.sin(k * Math.PI) * 1.5;
         if (z.t >= z.life && !z.boom) {
           z.boom = true;
@@ -373,6 +546,54 @@ export const SkillMixin = {
             this.shots[this.shots.length - 1].owner = e;
           }
         }
+      } else if (z.kind === 'trap') {
+        // waits for a grumble to step close, then pops: everything near falls asleep
+        if (!z.boom && this.grumbles.some((g) => !g.dead && g.state !== 'idle' && Math.hypot(g.x - z.x, g.z - z.z) < 1.4)) {
+          z.boom = true;
+          this.hitArea(z.x, z.z, z.r, z.dmg, e, (g) => { if (g.state !== 'bubble') { g.state = 'sleep'; g.t = z.sleep; g.vx = g.vz = 0; } });
+          this.addFx('ring', z.x, z.z, { color: 0x3ddc97, from: 0.4, to: z.r, life: 0.4 });
+          this.puffs.burst(new THREE.Vector3(z.x, 0.6, z.z), 0xffffff, { count: 16, size: 0.4, life: 0.7, speed: 5 });
+          this.game.audio.play('pop');
+          z.life = z.t;
+        }
+        z.g.rotation.y += dt;
+      } else if (z.kind === 'star') {
+        // a big star flies to the spot and bursts
+        const k2 = Math.min(1, z.t / z.life);
+        z.x = z.x0 + (z.x1 - z.x0) * k2; z.z = z.z0 + (z.z1 - z.z0) * k2;
+        z.g.position.set(z.x, 0, z.z);
+        z.ball.rotation.y += dt * 12;
+        if (k2 >= 1 && !z.boom) {
+          z.boom = true;
+          this.hitArea(z.x, z.z, z.r, z.dmg, e);
+          this.addFx('ring', z.x, z.z, { color: COLORS.gold, from: 0.4, to: z.r, life: 0.45 });
+          for (let i = 0; i < 4; i++) this.spawnStarFx(z.x, 1, z.z);
+          this.game.audio.play('star');
+        }
+      } else if (z.kind === 'avalanche') {
+        // pillows fall on random spots inside the circle
+        if (z.next <= 0 && z.t < z.life - 0.4) {
+          z.next = z.tick;
+          const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random()) * z.r * 0.8;
+          const pm = mesh(rbox('ksAvaPillow', 1.1, 0.45, 0.8, 0.18), toon([0xffd0e4, 0xbfe0ff, 0xfff3a0][Math.floor(Math.random() * 3)]), Math.cos(a) * d, 6, Math.sin(a) * d);
+          pm.rotation.y = Math.random() * 3;
+          z.g.add(pm);
+          z.drops.push({ m: pm, vy: 0 });
+        }
+        for (const dp of z.drops) {
+          if (dp.done) continue;
+          dp.vy -= 40 * dt;
+          dp.m.position.y += dp.vy * dt;
+          if (dp.m.position.y <= 0.25) {
+            dp.done = true;
+            dp.m.position.y = 0.25;
+            const wx = z.x + dp.m.position.x, wz = z.z + dp.m.position.z;
+            this.hitArea(wx, wz, 1.7, z.dmg, e, (g) => { if (g.state !== 'bubble') { g.state = 'dizzy'; g.t = 0.8; } });
+            this.puffs.burst(new THREE.Vector3(wx, 0.4, wz), 0xffffff, { count: 6, size: 0.45, life: 0.5, speed: 4 });
+            this.game.audio.play('bump');
+          }
+        }
+        z.mat.opacity = 0.3 * (1 - k * 0.6);
       } else if (z.kind === 'storm') {
         z.x = e.x; z.z = e.z;
         if (z.next <= 0) {

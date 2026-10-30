@@ -9,8 +9,8 @@ import { CELL, mesh, sph, rbox, bx, cyl, cone } from '../keep/common.js';
 import { Hazards } from '../keep/hazards.js';
 import { Nav, skillIcon, slotIcon, whereText } from './ui.js';
 import { ACTS, ACT_FLOORS, ACT_COUNT, DEEP_START, DEEP_BOSS_EVERY, isDeep, questProgress, questDone, makeQuest } from './acts.js';
-import { BELT_MAX } from './save.js';
 import { rollItem, rollRarity, SLOTS, itemName } from './items.js';
+import { setDifficulty, beatTier } from './save.js';
 
 // Pillowby, the little town of Pillow Keep Solo (mixed into the scene as a "world" like a floor):
 // Bolster's forge (upgrade and salvage), Auntie Fizz's potion shop (potions, a bigger belt and a
@@ -71,6 +71,15 @@ export const TownMixin = {
     st('gate', gt.x, gt.z + gt.d / 2 + 1.0, 2.8, { ...gt, z: gt.z + 0.6, d: gt.d + 1.2 });
     st('stash', ch.x, ch.z + 1.4, 2.0, ch);
     st('board', bd.x, bd.z + 1.4, 2.0, bd);
+    // Old Snorewell is the sage (identify, reset points); his bench is his shop
+    const sn = NPCS.find((n) => n.id === 'snore').home;
+    st('sage', sn[0], sn[1] + 1.2, 2.2, { x: sn[0], z: sn[1], w: 2.2, d: 1.6 });
+    // the lost-and-found chest (only after the big bag change left things over)
+    if (this.data.lost.length) {
+      const [lx, lz] = P(4.3, 5.5);
+      this.buildLostChest(lx, lz);
+      st('lost', lx, lz + 1.3, 1.8, { x: lx, z: lz, w: 1.4, d: 1.2 });
+    }
     for (const def of NPCS) this.makeNpc(def);
   },
 
@@ -285,6 +294,17 @@ export const TownMixin = {
     this.level.add(g);
   },
 
+  buildLostChest(x, z) {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    g.add(mesh(rbox('ksLost', 1.2, 0.7, 0.9, 0.08), toon(0x4cc9f0), 0, 0.35, 0));
+    g.add(mesh(rbox('ksLostLid', 1.25, 0.3, 0.95, 0.12), toon(0x8fd8ff), 0, 0.8, 0));
+    g.add(mesh(bx('ksLostBand', 1.3, 0.1, 1.0), toon(COLORS.gold), 0, 0.5, 0, false));
+    this.level.add(g);
+    const sg = { position: new THREE.Vector3(x, 0, z) };
+    this.signBoard(sg, 0, 1.7, 0, 'lost', 0.7);
+  },
+
   buildBoard(b) {
     const g = new THREE.Group();
     g.position.set(b.x, 0, b.z);
@@ -413,7 +433,7 @@ export const TownMixin = {
     }
     for (const n of this.npcs) {
       const d = Math.hypot(e.x - n.x, e.z - n.z);
-      if (n.id === 'smith' || n.id === 'fizz') continue; // their stations cover them
+      if (n.id === 'smith' || n.id === 'fizz' || n.id === 'snore') continue; // their stations cover them
       if (d < 2.0 && d < bd) { bd = d; best = { kind: 'npc', n }; }
     }
     return best;
@@ -442,6 +462,8 @@ export const TownMixin = {
       case 'stash': this.openPanel('stash'); break;
       case 'board': this.openPanel('quests'); break;
       case 'gate': this.openPanel('gate'); break;
+      case 'sage': this.openPanel('sage'); this.npcSay('snore', t('ks.npc.snore.hi')); break;
+      case 'lost': this.openPanel('lost'); break;
       default: break;
     }
   },
@@ -468,81 +490,6 @@ export const TownMixin = {
 };
 
 // ---------------------------------------------------------------- town panels
-
-/** Auntie Fizz's shop: potions, a bigger potion belt, a mystery box with a random item. */
-export class ShopPanel {
-  constructor(scene) {
-    this.s = scene;
-    this.nav = new Nav();
-    this.i = 0;
-    this.msg = '';
-    this.el = document.createElement('div');
-    this.el.className = 'ks-panel';
-    scene.hud.layer.appendChild(this.el);
-    this.render();
-  }
-
-  rows() {
-    const hs = this.s.hs;
-    return [
-      { id: 'potion', price: 20, on: hs.potions < hs.belt },
-      { id: 'belt', price: 120 * (hs.belt - 2), on: hs.belt < BELT_MAX },
-      { id: 'box', price: 60 + 15 * Math.max(0, this.s.D), on: hs.bag.some((x) => !x) },
-    ];
-  }
-
-  render() {
-    const hs = this.s.hs;
-    const rows = this.rows().map((r, i) => `<div class="ks-item ${i === this.i ? 'cur' : ''} ${r.on && hs.coins >= r.price ? '' : 'off'}">${r.id === 'box' ? slotIcon('charm', null, '#ffd23f') : slotIcon('potion')}
-      <div class="grow">${esc(t(`ks.shop.${r.id}`, { n: hs.potions, m: hs.belt }))}<small>${esc(t(`ks.shop.${r.id}Desc`))}</small></div><b><span class="ks-coin"></span> ${r.price}</b></div>`).join('');
-    this.el.innerHTML = `<h2>${esc(t('ks.shopTitle'))}<small><span class="ks-coin"></span> ${hs.coins}</small></h2><div class="ks-list">${rows}</div>
-      ${this.msg ? `<div class="ks-verdict good">${esc(this.msg)}</div>` : ''}<div class="foot">${esc(tFor(this.s.player, 'ks.hint.shop'))}</div>`;
-  }
-
-  buy() {
-    const s = this.s, hs = s.hs, r = this.rows()[this.i];
-    if (!r.on) { this.msg = t(`ks.shop.${r.id}No`); s.game.audio.play('bump'); this.render(); return; }
-    if (hs.coins < r.price) { this.msg = t('ks.poor'); s.game.audio.play('bump'); s.npcSay('fizz', t('ks.npc.fizz.poor')); this.render(); return; }
-    hs.coins -= r.price;
-    if (r.id === 'potion') hs.potions++;
-    else if (r.id === 'belt') { hs.belt++; hs.potions++; }
-    else {
-      const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
-      const it = rollItem({ ilvl: s.D, rarity: rollRarity('box', s.D), slot, cls: s.cls });
-      hs.bag[hs.bag.findIndex((x) => !x)] = it;
-      hs.stats.found++;
-      if (it.rarity >= 2) hs.stats.rares++;
-      this.msg = t('ks.boxGot', { name: itemName(it) });
-      s.npcSay('fizz', t('ks.npc.fizz.box'));
-      s.game.audio.play(it.rarity >= 2 ? 'fanfare' : 'star');
-      s.saveNow();
-      this.render();
-      return;
-    }
-    this.msg = t('ks.bought');
-    s.game.audio.play('coin');
-    s.saveNow();
-    this.render();
-  }
-
-  update(dt, d) {
-    if (!d) return false;
-    const st = this.nav.step(d, dt);
-    if (st.y) {
-      this.i = (this.i + st.y + 3) % 3;
-      this.msg = '';
-      this.s.game.audio.play('select');
-      this.render();
-      const r = this.rows()[this.i];
-      say(`${t(`ks.shop.${r.id}`, { n: this.s.hs.potions, m: this.s.hs.belt })}. ${t(`ks.shop.${r.id}Desc`)}. ${r.price}`);
-    }
-    if (d.aPressed) this.buy();
-    if (d.bPressed) { this.close(); return true; }
-    return false;
-  }
-
-  close() { this.el.remove(); }
-}
 
 /** The quest board: three quests; [A] claims a finished one, [C] swaps one for a new quest. */
 export class QuestPanel {
@@ -580,9 +527,8 @@ export class QuestPanel {
     s.addXp(q.reward.xp);
     let extra = '';
     if (q.reward.item) {
-      const i = hs.bag.findIndex((x) => !x);
-      const it = rollItem({ ilvl: s.D, rarity: rollRarity('quest', s.D), slot: SLOTS[Math.floor(Math.random() * SLOTS.length)], cls: s.cls });
-      if (i >= 0) { hs.bag[i] = it; extra = ` + ${itemName(it)}`; } else { hs.coins += 40; extra = ' + 40'; }
+      const it = rollItem({ ilvl: s.D, rarity: rollRarity('quest', s.D), slot: SLOTS[Math.floor(Math.random() * SLOTS.length)], cls: s.cls, diff: hs.diff });
+      if (s.bagGrid().add(it)) extra = ` + ${itemName(it)}`; else { hs.coins += 40; extra = ' + 40'; }
     }
     hs.quests.splice(this.i, 1, makeQuest(hs, hs.quests.map((x) => x.kind)));
     this.msg = t('ks.q.claimed', { coins: q.reward.coins }) + extra;
