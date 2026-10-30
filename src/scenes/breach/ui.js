@@ -73,7 +73,7 @@ const CSS = `
 .br-tip { left: 50%; bottom: 2vh; transform: translateX(-50%); width: min(640px, 40vw); background: #fffbe6; border: 4px solid #ffd84a; border-radius: 22px;
   padding: 10px 18px; font-weight: 600; font-size: clamp(14px, 1.55vw, 24px); line-height: 1.3; box-shadow: 0 6px 0 rgba(43,35,64,.2); text-align: center; }
 .br-tip .ok { display: block; margin-top: 6px; font-size: .75em; opacity: .75; animation: br-blink 1.2s infinite; }
-.br-banner { left: 50%; top: 15vh; transform: translate(-50%, 0); text-align: center; font-weight: 700; font-size: clamp(28px, 4.2vw, 68px); color: #ffd84a;
+.br-banner { left: 50%; top: 8vh; transform: translate(-50%, 0); text-align: center; font-weight: 700; font-size: clamp(26px, 3.8vw, 60px); color: #ffd84a;
   paint-order: stroke fill; -webkit-text-stroke: 0.14em #2b2340; opacity: 0; transition: opacity .18s; white-space: nowrap; line-height: 1.05; }
 .br-banner small { display: block; font-size: .38em; color: #fff; -webkit-text-stroke: 0.2em #2b2340; }
 .br-banner.on { opacity: 1; }
