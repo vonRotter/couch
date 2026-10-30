@@ -13,7 +13,7 @@ export const POWER_START = 7;
 export const POWER_MAX = 8;
 export const ISLAND_POWER = 2; // grid power back after clearing an island (Easy and Hard)
 /** Grid power back for every battle won: Easy only (Hard still gets ISLAND_POWER and batteries). */
-export const BATTLE_POWER = { easy: 2, hard: 0 };
+export const BATTLE_POWER = { easy: 2, hard: 1 };
 export const battlePower = (diff) => BATTLE_POWER[diff] ?? BATTLE_POWER.easy;
 
 export const ISLANDS = [

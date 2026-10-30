@@ -1130,7 +1130,7 @@ export class BreachScene extends MiniGame {
     this.view.setCursor(0, 0, false);
     this.view.setSelected(null);
     let stars = 1;
-    let power = battlePower(run.diff); // Easy: +2 for every battle won; Hard: none (islands and batteries still give power)
+    let power = battlePower(run.diff); // Easy: +2 for every battle won, Hard: +1 (islands and batteries give more)
     const winReward = [t('breach.res.star'), power > 0 ? t('breach.res.power', { n: power }) : null].filter(Boolean).join(' · ');
     const rows = [`<div class="br-row"><span>${esc(t('breach.res.win'))}</span><b>${esc(winReward)}</b></div>`];
     for (const o of def.objectives) {

@@ -81,7 +81,7 @@ block a spitter's goo, smoke them, or stand on a dirt mound to stop a new bug fr
 weapon shows a full preview first: damage, push arrows, what pops and where the bugs will attack
 afterwards. Houses that get hit cost grid power, shared over the whole campaign. Pick Easy (every
 bug plan shown, unlimited move undo, one rewind per battle, +2 grid power for every battle won, a lost
-battle is just tried again) or Hard (one undo per turn, no rewind, no grid power for a won battle,
+battle is just tried again) or Hard (one undo per turn, no rewind, +1 grid power for every battle won,
 an empty grid restarts the campaign); on both, clearing an island gives +2 grid power and a battery
 kept safe gives +1. Then pick one of three squads: the Bonk Squad (punch, cannon, mortar), the Twisty
 Squad (hook, swap, laser; the Grabby Mech has 4 hearts and the Switcheroo Mech's first upgrade swaps
