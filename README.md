@@ -80,16 +80,25 @@ before their attacks, so push them off their mark, into water (they sink), into 
 block a spitter's goo, smoke them, or stand on a dirt mound to stop a new bug from coming up. Every
 weapon shows a full preview first: damage, push arrows, what pops and where the bugs will attack
 afterwards. Houses that get hit cost grid power, shared over the whole campaign. Pick Easy (every
-bug plan shown, unlimited move undo, one rewind per battle, a lost battle is just tried again) or
-Hard (one undo per turn, no rewind, an empty grid restarts the campaign), then one of three squads:
-the Bonk Squad (punch, cannon, mortar), the Twisty Squad (hook, swap, laser) or the Bubble Squad
-(bubble shields, smoke dash, boulders). Clover Isle, Sandy Isle and Frosty Isle have 3 or 4 battles
+bug plan shown, unlimited move undo, one rewind per battle, +2 grid power for every battle won, a lost
+battle is just tried again) or Hard (one undo per turn, no rewind, no grid power for a won battle,
+an empty grid restarts the campaign); on both, clearing an island gives +2 grid power and a battery
+kept safe gives +1. Then pick one of three squads: the Bonk Squad (punch, cannon, mortar), the Twisty
+Squad (hook, swap, laser; the Grabby Mech has 4 hearts and the Switcheroo Mech's first upgrade swaps
+3 tiles away) or the Bubble Squad (bubble shields, smoke dash, boulders). Clover Isle, Sandy Isle and Frosty Isle have 3 or 4 battles
 each (sand makes smoke, ice cracks into water, forests burn), then the Grumble Queen waits at the
 Grumble Hive. Six bug types: beetles, goo spitters, diggers, fire flies, boom bugs and the queen.
 Stars from battles and bonus objectives buy upgrades between islands (+hearts, +steps, better
-weapons). Stick moves the cursor, A picks, walks, aims and confirms, B goes back or undoes a move,
+weapons). Before every battle except the first (First Day keeps fixed tiles) comes a deploy step:
+the bugs already show their first attacks and the spawn mounds are out, and you land each mech on a
+glowing tile of the map's landing zone (6-8 tiles; stick moves the cursor, A lands the next mech or
+picks a landed one up again, B takes the last one back, then A on Start! or hold C). The suggested
+tiles are the old fixed ones (a retry suggests last time's), so A three times and Start! always
+works. Stick moves the cursor, A picks, walks, aims and confirms, B goes back or undoes a move,
 tap C for the battle menu (rewind, a helper-bean hint, tips), hold C to end the turn. The first
-battle has a short read-aloud tutorial. Progress is saved per profile.
+battle has a short read-aloud tutorial, and the first deploy step is explained aloud once. Progress
+is saved per profile between battles: leaving in the middle of a battle (pause menu, End game)
+starts that same battle again next time, with the grid power you had before it.
 
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
