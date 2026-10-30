@@ -215,7 +215,7 @@ export class KeepSoloScene extends MiniGame {
     this.hs.started = true;
     this.game.ui.banner(t('ks.townName'), t(first ? 'ks.welcomeNew' : 'ks.welcomeBack', { cls: t(`ks.cls.${cls}`) }), 2400);
     this.say(t(first ? 'ks.welcomeSay' : 'ks.welcomeBack', { cls: t(`ks.cls.${cls}`) }));
-    if (first) this.later(2.6, () => this.npcSay('fluff', tFor(this.player, 'ks.npc.fluff.first')));
+    if (first) this.later(2.6, () => this.npcSay('fluff', tFor(this.player, this.isPad() ? 'ks.npc.fluff.firstPad' : 'ks.npc.fluff.first')));
     this.saveNow();
   }
 
@@ -549,7 +549,9 @@ export class KeepSoloScene extends MiniGame {
   update(dt) {
     this.frame(dt);
     this.updateLight(dt);
-    this.mouse.endFrame();
+    const m = this.mouse;
+    this.hud.hand(m.virtual && (this.panel || this.menu || this.picker) ? m : null);
+    m.endFrame();
   }
 
   frame(dt) {

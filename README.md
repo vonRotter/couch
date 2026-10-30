@@ -101,33 +101,69 @@ is saved per profile between battles: leaving in the middle of a battle (pause m
 starts that same battle again next time, with the grid power you had before it.
 
 **Pillow Keep Solo** (solo island; a single-player Diablo-like, the keep tower on the west bank). Pick
-a hero, each with its own save: the **Pillow Knight** (A pillow swing, hold B to block most of a hit),
-the **Feather Archer** (A feather arrows, B dodge roll) or the **Bubble Wizard** (A bubble that traps
-a grumble, hit it again for a big pop; B bubble hop). Each learns four C skills at levels 1, 3, 6 and
-10 (Knight: Pillow Spin, Pillow Rush, Feather Quake, Brave Cheer; Archer: Feather Fan, Big Arrow,
-Feather Rain, Owl Friend; Wizard: Bubble Ring, Bubble Bomb, Snooze Cloud, Bubble Storm). Tap C uses
-the chosen skill (or picks up the item you stand on); hold C for a menu with the skills, a potion,
-the town portal and the bag. The town of Pillowby has Bolster's forge (upgrade gear up to +5 with
-coins and fluff, salvage what you do not need into fluff), Auntie Fizz's potion shop (potions, a
-bigger potion belt, mystery boxes), a stash chest shared by the profile's three heroes, a quest
-board with three quests (poof grumbles, named grumbles or nests, reach a floor, find rare items; C
-swaps one for a new quest) and four townsfolk with jokes (Sir Fluffington, Old Snorewell, Tilly Tuft,
-Gran Gumdrop); everything they say is read aloud. The gate leads to any floor you have reached: four
-acts of three random floors (Pillow Fort Cellars, Feather Forest, Bubble Bath Grotto, the Dream Keep;
-the co-op Pillow Keep's floor generator and grumbles) ending in Big Teddy, Honk the Goose (honk waves
-with safe gaps, feather fans, a dive), Captain Quack (three belly slides then dizzy, sponge rings,
-spinning water jets) and the Sleepy Sheep; every boss attack is painted on the floor first. After the
-Sheep the endless Deep Keep opens: tougher grumbles and better loot every floor, a boss every fifth
-depth, checkpoints at depths 1, 6, 11 and so on. Loot comes in four rarities (common white, magic
-blue, rare yellow with a two-word name, legendary orange with its own name and a special power) with
-random stats; seven worn slots (weapon, off-hand, helmet, armor, gloves, boots, charm) and a 32-cell
-bag where every item shows a green arrow when it would make you stronger, and the item card compares
-it stat by stat with what you wear. Coins and potions are picked up on their own, gear with C. A
-health bar replaces the co-op yawn meter: at zero you faint and wake up in town, and your bag (not
-what you wear, never the stash) stays where you fainted, with a golden beam, a gold arrow on the floor
-and a note on the screen; walk over it to get everything back. Faint again before that and the older
-bag is gone: only the newest one waits (it is saved, so it waits after quitting too). The town portal
-(hold C) takes you home and back to the same spot on the same floor. Progress is saved per profile.
+a hero, each with its own save: the **Pillow Knight** (melee, lots of health; main stat Strength), the
+**Feather Archer** (arrows from afar; Dexterity) or the **Bubble Wizard** (bubbles that trap, spells,
+lots of mana; Magic). It plays with mouse and keyboard like Diablo (the gamepad still works):
+
+| Mouse and keyboard | |
+|---|---|
+| Left click the floor (hold to keep walking) | walk there, on a path around walls |
+| Left click a grumble, nest or boss (hold to keep going) | walk up and attack it |
+| Left click an item name, chest, locked door, portal, person or shop | walk there and use it |
+| Shift + left click | attack in place toward the pointer |
+| Right click | the skill on the right button, cast at the pointer |
+| 1 2 3 4 | the four hotbar skills, cast at the pointer |
+| 5 6 7 8 | drink / read from the belt column (a belt worn gives a second row) |
+| Alt (hold) | names of everything on the floor (rare and better always show) |
+| I / C / T | bag / hero page (stat points) / skill tree; Esc closes |
+| Mouse wheel | zoom out a little (never closer than the normal view) |
+| The keyboard player's own keys (WASD, Space, E, Q) | still walk, attack, class move and skill like the gamepad |
+
+| Gamepad | |
+|---|---|
+| Stick | walk (aim help on attacks) |
+| A | attack (talk and use in town) |
+| B | the class move: block (hold), dodge roll, bubble hop |
+| tap C / hold C | the skill on C (picks up gear you stand on) / menu: skills (choosing one puts it on C and the right button), potions, Town Portal, bag, hero page, skill tree |
+| In panels | the stick moves a hand pointer, A clicks, C right-clicks, B closes |
+
+The HUD has a red health orb and a blue mana orb with the belt, the mouse buttons and keys 1-4
+between them, and badges for unspent points. Skills cost mana (it comes back slowly; blue potions
+refill it) and big ones have a short recharge. Every level gives 5 stat points (Strength, Dexterity,
+Magic, Vitality: +1% damage per point of the main stat, +2 health per Vitality, mana from Magic,
+attack speed from Dexterity, armor from Strength) and a skill point; each class has a tree of ten
+skills with ranks 1-5 (Knight: Cushion Block, Big Bonk, Pillow Spin, Pillow Rush, Thick Stuffing,
+Feather Quake, Pillow Leap, Pillow Power, Brave Cheer, Pillow Avalanche; Archer: Dodge Roll, Snooze
+Arrow, Feather Fan, Big Arrow, Sharp Eye, Feather Rain, Feather Trap, Light Feet, Owl Friend, Star
+Arrow; Wizard: Bubble Hop, Soap Bolt, Bubble Ring, Bubble Bomb, Deep Thoughts, Snooze Cloud, Bubble
+Shield, Soapy Power, Bubble Storm, Big Splash). Gear can need stats ("Needs 25 Strength", red when not
+met). The bag is a Diablo grid (10x4; charms and potions 1x1, helmets, gloves, boots and orbs 2x2,
+belts 2x1, armor, bows, quivers, big pillows, staves and big shields 2x3, pillows and wands 1x3):
+drag and drop or click to pick up and put down (swapping with the item under it), right click to
+wear or drink, Ctrl+click to the stash or to sell at a shop, and a tooltip that compares with what you
+wear (green ▲ = better). Gold is just a number (walk over coins). Magic and better items drop
+unidentified: Old Snorewell the sage identifies them for coins (and resets stat and skill points for
+coins), or read an Identify scroll and click the item. Town Portal scrolls (Auntie Fizz sells them,
+grumbles and chests drop them) open the portal home and back to the same spot.
+
+Pillowby has Bolster's forge (upgrade gear up to +5 with coins and fluff, salvage into fluff), Auntie
+Fizz's shop (red and blue potions, scrolls, a potion belt, mystery boxes; sell here), the 14x10 stash
+shared by the profile's three heroes, the quest board, the sage and four more townsfolk with jokes;
+everything they say is read aloud. The gate leads to any floor reached: four acts of three random
+floors (Pillow Fort Cellars, Feather Forest, Bubble Bath Grotto, the Dream Keep) ending in Big Teddy,
+Honk the Goose, Captain Quack and the Sleepy Sheep (every boss attack is painted on the floor first),
+then the endless Deep Keep. Dungeons are dark with a warm light circle around the hero (bigger with
+"+light radius" gear and next to torches); town stays bright. Champion packs (blue names, shared
+modifiers, a sure item from the last one), unique grumbles (gold names, followers, 1-2 better items)
+and twelve hand-made named uniques (three per act, such as Sir Snorts-a-Lot and Admiral Rubberducky)
+have modifiers: fast, extra tough, jelly trail, bubble shield, blinking, sleepy aura, splitter. Gear is
+rarer than in co-op (about 3-4 items per floor: most drops are coins, potions and scrolls). Beating the
+Sleepy Sheep opens **Nightmare**, and on Nightmare **Hell**: all four acts again (and their own Deep
+Keep) with stronger grumbles, more modifiers and higher item levels (marked ☾ and ✹). At zero health
+you faint and wake up in town; your bag (not what you wear, not the belt, never the stash) waits where
+you fainted until you walk over it, and only the newest dropped bag is kept. Old saves load into the
+new bag (what does not fit goes to the stash, then a lost-and-found chest in town) with their points
+to spend. Progress is saved per profile.
 
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
@@ -566,9 +602,13 @@ src/
     adventure.js  adventure/   point-and-click engine (rooms, dialog, Tickle Fencing) and Pudding Island
     breach.js  breach/   Bean Brigade: pure rules + bug AI (rules.js), levels, board view, models, HUD, helper bean
     keep.js  keep/   co-op Pillow Keep: floor generator, grumbles, boss telegraphs, Big Teddy and the Sleepy Sheep
-    keepsolo.js  keepsolo/   Pillow Keep Solo: acts and quests (acts.js), heroes and skills (classes.js,
-                     skills.js), gear (items.js, models.js), floors and loot (world.js), Pillowby (town.js),
-                     bag/smith/stash (inventory.js), Goose and Duck bosses, HUD and menus (ui.js), save.js
+    keepsolo.js  keepsolo/   Pillow Keep Solo: acts, difficulty and quests (acts.js), heroes, stats and skill
+                     trees (classes.js), skills (skills.js), gear (items.js, models.js), the item grid
+                     (grid.js), floors and loot (world.js), Pillowby (town.js), bag/stash/shop/forge/sage
+                     panels (inventory.js), hero page and skill tree (tree.js), mouse (mouse.js), click to
+                     move and A* paths (control.js, path.js), mana, belt and hotbar (hero.js), the dark
+                     (light.js), champions and uniques (monsters.js), Goose and Duck bosses, HUD and
+                     menus (ui.js), save and old-save migration (save.js), strings.js and strings2.js
     castle-campaign.js  castle/   The Golden Bean campaign (levels, troopers, grumbles, siege props)
     story.js  story/   Story campaign map, stage data and the four Grumble King boss games
     spelling.js  math.js  edu-words.js   (learning games; shared helpers in core/edu.js)

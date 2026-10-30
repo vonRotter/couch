@@ -17,7 +17,7 @@ import { t } from '../../core/i18n.js';
 export const SLOTS = ['weapon', 'offhand', 'helmet', 'armor', 'gloves', 'belt', 'boots', 'charm'];
 export const CLASS_SLOTS = new Set(['weapon', 'offhand']); // only for one class
 export const BAG_W = 10, BAG_H = 4; // the bag grid
-export const STASH_W = 10, STASH_H = 10; // the stash chest grid (shared by the three heroes)
+export const STASH_W = 14, STASH_H = 10; // the stash chest grid (shared by the three heroes)
 export const MAX_PLUS = 5;
 export const USES = ['hp', 'mp', 'tp', 'id']; // red potion, blue potion, Town Portal scroll, Identify scroll
 

@@ -11,6 +11,7 @@ const en = {
   'ks.h.nest': 'Grumble nest', 'ks.h.chest': 'Treasure chest', 'ks.h.door': 'Locked door (find the key)', 'ks.h.doorKey': 'Locked door: click to open',
   'ks.h.portal': 'Town portal', 'ks.h.potion': 'Potion', 'ks.h.key': 'Key', 'ks.h.bag': 'Your bag!', 'ks.h.scroll': 'Scroll', 'ks.h.coin': 'Coins',
   'ks.sign.sage': 'Old Snorewell the Sage', 'ks.sign.lost': 'Lost and found',
+  'ks.p.sage': '[A]: the sage (identify, reset points)', 'ks.p.lost': '[A]: lost and found', 'ks.p.pick': '[C]: pick up',
   // picking and heroes
   'ks.pickHint2': 'Click a hero (or stick left/right and [A]) to play',
   'ks.desc2.knight': 'Pillow swings up close, a cushion block, lots of health. Main stat: Strength.',
@@ -153,6 +154,7 @@ const en = {
   'ks.npc.fluff.1': 'Knights can block, archers roll and wizards hop. Put your favorite skill on the right mouse button!',
   'ks.npc.fluff.3': 'Every level gives you 5 stat points and a skill point. Press C for your hero page and T for the skill tree.',
   'ks.npc.fluff.first': 'Welcome to Pillowby, young hero! Click people to talk to them. The gate in the north leads into the keep.',
+  'ks.npc.fluff.firstPad': 'Welcome to Pillowby, young hero! Walk up to people and press [A] to talk. The gate in the north leads into the keep.',
 };
 
 const no = {
@@ -160,6 +162,7 @@ const no = {
   'ks.h.nest': 'Grumlereir', 'ks.h.chest': 'Skattekiste', 'ks.h.door': 'Låst dør (finn nøkkelen)', 'ks.h.doorKey': 'Låst dør: klikk for å åpne',
   'ks.h.portal': 'Byportal', 'ks.h.potion': 'Drikk', 'ks.h.key': 'Nøkkel', 'ks.h.bag': 'Sekken din!', 'ks.h.scroll': 'Rull', 'ks.h.coin': 'Mynter',
   'ks.sign.sage': 'Gamle Snorkesen, den vise', 'ks.sign.lost': 'Hittegods',
+  'ks.p.sage': '[A]: den vise (identifiser, få poeng tilbake)', 'ks.p.lost': '[A]: hittegods', 'ks.p.pick': '[C]: plukk opp',
   'ks.pickHint2': 'Klikk på en helt (eller pinnen venstre/høyre og [A]) for å spille',
   'ks.desc2.knight': 'Putesving på nært hold, puteblokk, mye helse. Hovedegenskap: Styrke.',
   'ks.desc2.archer': 'Fjærpiler langt unna og en rull unna. Hovedegenskap: Smidighet.',
@@ -292,6 +295,7 @@ const no = {
   'ks.npc.fluff.1': 'Riddere kan blokkere, skyttere ruller og trollmenn hopper. Legg yndlingsferdigheten din på høyre museknapp!',
   'ks.npc.fluff.3': 'Hvert nivå gir deg 5 egenskapspoeng og ett ferdighetspoeng. Trykk C for heltesiden og T for ferdighetstreet.',
   'ks.npc.fluff.first': 'Velkommen til Putevik, unge helt! Klikk på folk for å snakke med dem. Porten i nord fører inn i borgen.',
+  'ks.npc.fluff.firstPad': 'Velkommen til Putevik, unge helt! Gå bort til folk og trykk [A] for å snakke. Porten i nord fører inn i borgen.',
 };
 
 addStrings({ en, no });

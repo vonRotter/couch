@@ -73,7 +73,7 @@ export const TownMixin = {
     st('board', bd.x, bd.z + 1.4, 2.0, bd);
     // Old Snorewell is the sage (identify, reset points); his bench is his shop
     const sn = NPCS.find((n) => n.id === 'snore').home;
-    st('sage', sn[0], sn[1] + 1.2, 2.2, { x: sn[0], z: sn[1], w: 2.2, d: 1.6 });
+    st('sage', sn[0], sn[1] + 1.2, 1.6, { x: sn[0], z: sn[1], w: 2.2, d: 1.6 });
     // the lost-and-found chest (only after the big bag change left things over)
     if (this.data.lost.length) {
       const [lx, lz] = P(4.3, 5.5);

@@ -9,7 +9,7 @@ import { BELT_SLOTS } from './save.js';
 
 // The item panels of Pillow Keep Solo, Diablo style. One panel class in several modes:
 //   bag    the paper doll (worn gear), the 10x4 bag grid and the belt
-//   stash  the 10x10 stash chest (shared by the profile's three heroes) next to the bag
+//   stash  the 14x10 stash chest (shared by the profile's three heroes) next to the bag
 //   shop   Auntie Fizz's shelf (potions, scrolls, a belt, a mystery box) next to the bag: Ctrl+click or right click sells
 //   smith  Bolster's forge: click an item, then upgrade (+1 to +5) or salvage it into fluff
 //   sage   Old Snorewell the sage: identify items, and reset stat and skill points

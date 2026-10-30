@@ -4,7 +4,7 @@ import { ACT_COUNT, makeQuest } from './acts.js';
 import { Grid, packInto } from './grid.js';
 
 // Pillow Keep Solo progress, per solo profile in roster.progress.keepSolo:
-//   { v: 2, last (class picked last time), stash: [{ it, x, y }] (10x10 grid, shared by the heroes),
+//   { v: 2, last (class picked last time), stash: [{ it, x, y }] (14x10 grid, shared by the heroes),
 //     lost: [items] (the lost-and-found chest in town: old items that did not fit anywhere), zoom,
 //     classes: { knight, archer, wizard } }
 // One save per class:
