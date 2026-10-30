@@ -343,7 +343,7 @@ export class KeepSoloScene extends MiniGame {
 
   seedFor(g) {
     const drop = this.hs.drop;
-    if (drop && drop.g === g) return drop.seed;
+    if (drop && drop.g === g && (drop.diff | 0) === this.hs.diff) return drop.seed;
     return Math.floor(Math.random() * 1e9) >>> 0;
   }
 
@@ -373,8 +373,9 @@ export class KeepSoloScene extends MiniGame {
 
   placeTitle() {
     if (this.kind === 'town') return t('ks.townName');
-    if (isDeep(this.g)) return t('ks.deepN', { n: deepDepth(this.g) });
-    return t('ks.actFloor', { act: actOf(this.g) + 1, floor: (this.g % ACT_FLOORS) + 1 });
+    const tier = this.hs.diff ? ` · ${t(`ks.diff.${this.hs.diff}`)}` : '';
+    if (isDeep(this.g)) return t('ks.deepN', { n: deepDepth(this.g) }) + tier;
+    return t('ks.actFloor', { act: actOf(this.g) + 1, floor: (this.g % ACT_FLOORS) + 1 }) + tier;
   }
 
   placeSub() {
@@ -427,6 +428,12 @@ export class KeepSoloScene extends MiniGame {
     this.game.ui.banner(t(final ? 'ks.deepOpen' : 'ks.actOpen', { n: act + 2 }), t(final ? 'ks.deepOpenSub' : 'ks.actOpenSub'), 3000);
     this.say(t(final ? 'ks.deepOpenSay' : 'ks.actOpenSay', { n: act + 2 }));
     this.later(3.2, () => this.npcSay('gumdrop', t(`ks.npc.gumdrop.act${act + 1}`)));
+    // the Sleepy Sheep on Normal opens Nightmare, on Nightmare opens Hell
+    if (final && this.hs.diff < 2 && !this.hs.tips[`tier${this.hs.diff + 1}`]) {
+      const d = this.hs.diff + 1;
+      this.hs.tips[`tier${d}`] = true;
+      this.later(6.5, () => { this.game.ui.banner(t('ks.tierOpen', { tier: t(`ks.diff.${d}`) }), t('ks.tierOpenSub'), 3200); this.say(`${t('ks.tierOpen', { tier: t(`ks.diff.${d}`) })} ${t('ks.tierOpenSub')}`); });
+    }
   }
 
   /** Step through the town portal: the floor you left is just as you left it. */

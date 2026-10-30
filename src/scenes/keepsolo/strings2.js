@@ -143,6 +143,10 @@ const en = {
   'ks.uniq.snoozula': 'Count Snoozula', 'ks.uniq.marsh': 'Marshmallow Max', 'ks.uniq.yawn': 'Baron von Yawn',
   // difficulty
   'ks.diff.0': 'Normal', 'ks.diff.1': 'Nightmare', 'ks.diff.2': 'Hell',
+  'ks.diffSub.0': 'The four acts', 'ks.diffSub.1': 'Tougher grumbles, more tricks, better loot', 'ks.diffSub.2': 'The toughest of all, the best loot',
+  'ks.diffLocked.1': 'Beat the Sleepy Sheep on Normal', 'ks.diffLocked.2': 'Beat the Sleepy Sheep on Nightmare',
+  'ks.diffNow': 'Difficulty: {tier}', 'ks.tierOpen': '{tier} is open!', 'ks.tierOpenSub': 'Pick it at the gate: all four acts again, tougher, with better loot',
+  'ks.hint.gate2': 'Stick: choose (up: difficulty) · [A]: go · [B]: close', 'ks.hint.gateMouse': 'Click a floor to go there · click a difficulty to switch · Esc: close',
   // old lines that talked about the hold-[C] menu
   'ks.npc.fizz.0': 'Hello, dear! Red potions heal, blue potions bring back mana. Put them on your belt and press 5 to 8 to drink.',
   'ks.npc.fizz.1': 'A potion belt holds twice as many potions. Very handy in the Deep Keep!',
@@ -279,6 +283,10 @@ const no = {
   'ks.uniq.admiral': 'Admiral Gummiand', 'ks.uniq.sue': 'Såpe-Sussi', 'ks.uniq.drip': 'Det Store Dryppet',
   'ks.uniq.snoozula': 'Grev Snorkula', 'ks.uniq.marsh': 'Marshmallow-Max', 'ks.uniq.yawn': 'Baron von Gjesp',
   'ks.diff.0': 'Normal', 'ks.diff.1': 'Mareritt', 'ks.diff.2': 'Helvete',
+  'ks.diffSub.0': 'De fire aktene', 'ks.diffSub.1': 'Tøffere grumlinger, flere triks, bedre skatter', 'ks.diffSub.2': 'Det aller tøffeste, de beste skattene',
+  'ks.diffLocked.1': 'Slå Søvnige Sau på Normal', 'ks.diffLocked.2': 'Slå Søvnige Sau på Mareritt',
+  'ks.diffNow': 'Vanskelighetsgrad: {tier}', 'ks.tierOpen': '{tier} er åpen!', 'ks.tierOpenSub': 'Velg den ved porten: alle fire aktene igjen, tøffere, med bedre skatter',
+  'ks.hint.gate2': 'Pinnen: velg (opp: vanskelighetsgrad) · [A]: dra · [B]: lukk', 'ks.hint.gateMouse': 'Klikk en etasje for å dra dit · klikk en vanskelighetsgrad for å bytte · Esc: lukk',
   'ks.npc.fizz.0': 'Hei, vennen! Røde drikker gir helse, blå gir mana tilbake. Legg dem på beltet og trykk 5 til 8 for å drikke.',
   'ks.npc.fizz.1': 'Et drikkebelte har plass til dobbelt så mange drikker. Veldig nyttig i Dypborgen!',
   'ks.npc.fluff.1': 'Riddere kan blokkere, skyttere ruller og trollmenn hopper. Legg yndlingsferdigheten din på høyre museknapp!',

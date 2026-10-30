@@ -137,7 +137,7 @@ export const WorldMixin = {
     this.spawnNamed(marks); // a hand-made unique (monsters.js)
     // The hero's bag waits where it fell, if it fell on this floor.
     const drop = this.hs.drop;
-    if (drop && drop.g === g && drop.seed === this.floorSeed) this.spawnBag(drop);
+    if (drop && drop.g === g && (drop.diff | 0) === this.hs.diff && drop.seed === this.floorSeed) this.spawnBag(drop);
   },
 
   makeBoss(x, z) {

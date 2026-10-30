@@ -512,7 +512,7 @@ export class QuestPanel {
       const [a, b] = questProgress(hs, q);
       const done = a >= b;
       const rw = t('ks.q.reward', { coins: q.reward.coins, xp: q.reward.xp }) + (q.reward.item ? ` + ${t('ks.q.item')}` : '');
-      return `<div class="ks-item ${i === this.i ? 'cur' : ''}">${skillIcon(done ? 'cheer' : 'talk')}<div class="grow">${esc(questText(hs, q))}<small>${esc(rw)}</small></div>
+      return `<div class="ks-item ${i === this.i ? 'cur' : ''}" data-q="${i}">${skillIcon(done ? 'cheer' : 'talk')}<div class="grow">${esc(questText(hs, q))}<small>${esc(rw)}</small></div>
         ${done ? `<b style="color:#16a46a">${esc(t('ks.q.done'))}</b>` : `<span class="ks-prog"><i style="width:${Math.round(a / b * 100)}%"></i></span> ${q.kind === 'floor' ? '' : `${a}/${b}`}`}</div>`;
     }).join('');
     this.el.innerHTML = `<h2>${esc(t('ks.questTitle'))}<small>${esc(t('ks.questSub'))}</small></h2><div class="ks-list">${rows}</div>
@@ -558,6 +558,12 @@ export class QuestPanel {
       this.render();
       say(questText(this.s.hs, this.s.hs.quests[this.i]));
     }
+    // mouse: click a quest to claim it, right click to swap it
+    const m = this.s.mouse;
+    if ((m.leftPressed || m.rightPressed) && !m.virtual) {
+      const row = m.element()?.closest?.('[data-q]');
+      if (row) { this.i = +row.dataset.q; if (m.leftPressed) this.claim(); else this.swap(); }
+    }
     if (d.aPressed) this.claim();
     if (d.cPressed) this.swap();
     if (d.bPressed) { this.close(); return true; }
@@ -572,21 +578,33 @@ export function questText(hs, q) {
   return t(`ks.q.${q.kind}`, { n: q.n });
 }
 
-/** The gate: every floor reached so far (acts in columns), and Deep Keep checkpoints. */
+/**
+ * The gate: the difficulty (Normal; Nightmare after the Sleepy Sheep on Normal; Hell after the Sheep
+ * on Nightmare), every floor reached so far on it (acts in columns), and Deep Keep checkpoints.
+ * Stick or mouse: point at a floor and click (or [A]) to go.
+ */
 export class GatePanel {
   constructor(scene) {
     this.s = scene;
     this.nav = new Nav();
-    this.cols = this.makeCols();
-    // start on the deepest floor reached
-    let best = { c: 0, r: 0 };
-    this.cols.forEach((col, c) => col.list.forEach((wp, r) => { if (wp.on) best = { c, r }; }));
-    this.c = best.c; this.r = best.r;
+    this.build();
     this.el = document.createElement('div');
     this.el.className = 'ks-panel';
     scene.hud.layer.appendChild(this.el);
     this.render();
     say(t('ks.gateSay'));
+  }
+
+  build() {
+    this.cols = this.makeCols();
+    // start on the deepest floor reached
+    let best = { c: 0, r: 0 };
+    this.cols.forEach((col, c) => col.list.forEach((wp, r) => { if (wp.on) best = { c, r }; }));
+    this.c = best.c; this.r = best.r;
+  }
+
+  tierOn(d) {
+    return d === 0 || beatTier(this.s.hs, d - 1);
   }
 
   makeCols() {
@@ -608,41 +626,80 @@ export class GatePanel {
 
   render() {
     const hs = this.s.hs;
+    const tiers = [0, 1, 2].map((d) => `<div class="ks-wp tier ${this.r === -1 && this.c === d ? 'cur' : ''} ${this.tierOn(d) ? '' : 'off'} ${hs.diff === d ? 'bag' : ''}" data-tier="${d}">
+      <span class="tier${d}">${esc(t(`ks.diff.${d}`))}</span><small>${esc(this.tierOn(d) ? t(`ks.diffSub.${d}`) : t(`ks.diffLocked.${d}`))}</small></div>`).join('');
     const maxR = Math.max(...this.cols.map((c) => c.list.length));
     let html = this.cols.map((c) => `<div class="hd">${esc(c.head)}</div>`).join('');
     for (let r = 0; r < maxR; r++) {
       html += this.cols.map((col, c) => {
         const wp = col.list[r];
         if (!wp) return '<div></div>';
-        const bag = hs.drop && hs.drop.g === wp.g;
-        return `<div class="ks-wp ${c === this.c && r === this.r ? 'cur' : ''} ${wp.on ? '' : 'off'} ${bag ? 'bag' : ''}">${esc(wp.name)}${wp.sub ? `<small>${esc(wp.sub)}</small>` : ''}${bag ? `<small style="color:#b88a00">${esc(t('ks.bagHere'))}</small>` : ''}</div>`;
+        const bag = hs.drop && hs.drop.g === wp.g && (hs.drop.diff | 0) === hs.diff;
+        return `<div class="ks-wp ${c === this.c && r === this.r ? 'cur' : ''} ${wp.on ? '' : 'off'} ${bag ? 'bag' : ''}" data-wp="${c},${r}">${esc(wp.name)}${wp.sub ? `<small>${esc(wp.sub)}</small>` : ''}${bag ? `<small style="color:#b88a00">${esc(t('ks.bagHere'))}</small>` : ''}</div>`;
       }).join('');
     }
-    const wp = this.cols[this.c].list[this.r];
-    const note = wp && !wp.on ? t(isDeep(wp.g) ? 'ks.gateDeepLocked' : 'ks.gateLocked') : '';
-    this.el.innerHTML = `<h2>${esc(t('ks.gateTitle'))}<small>${esc(t('ks.gateSub'))}</small></h2><div class="ks-gate">${html}</div>
+    const wp = this.r >= 0 ? this.cols[this.c].list[this.r] : null;
+    const note = wp && !wp.on ? t(isDeep(wp.g) ? 'ks.gateDeepLocked' : 'ks.gateLocked') : this.msg || '';
+    this.el.innerHTML = `<h2>${esc(t('ks.gateTitle'))}<small>${esc(t('ks.gateSub'))}</small></h2><div class="ks-tiers">${tiers}</div><div class="ks-gate">${html}</div>
       ${note ? `<div class="ks-verdict bad">${esc(note)}</div>` : ''}
-      ${hs.drop ? `<div class="ks-pill" style="display:inline-block;margin-top:6px;background:#fffbe6">${esc(t('ks.bagNote', { where: whereText(hs.drop.g) }))}</div>` : ''}
-      <div class="foot">${esc(tFor(this.s.player, 'ks.hint.gate'))}</div>`;
+      ${hs.drop ? `<div class="ks-pill" style="display:inline-block;margin-top:6px;background:#fffbe6">${esc(t('ks.bagNote', { where: whereText(hs.drop.g) }))}${hs.drop.diff ? ` (${esc(t(`ks.diff.${hs.drop.diff}`))})` : ''}</div>` : ''}
+      <div class="foot">${esc(tFor(this.s.player, this.s.isPad() ? 'ks.hint.gate2' : 'ks.hint.gateMouse'))}</div>`;
+  }
+
+  /** Switch to another difficulty (a floor waiting behind the town portal closes). */
+  setTier(d) {
+    const s = this.s, hs = s.hs;
+    if (!this.tierOn(d)) { s.game.audio.play('bump'); this.msg = t(`ks.diffLocked.${d}`); this.render(); return; }
+    if (d === hs.diff) return;
+    if (s.live) { s.disposeWorld(s.live.world); s.live = null; }
+    setDifficulty(hs, d);
+    s.D = s.townD();
+    this.msg = '';
+    this.build();
+    this.r = -1; this.c = d;
+    s.game.audio.play('fanfare');
+    s.game.ui.toast(t('ks.diffNow', { tier: t(`ks.diff.${d}`) }), 2000);
+    say(`${t('ks.diffNow', { tier: t(`ks.diff.${d}`) })} ${t(`ks.diffSub.${d}`)}`);
+    s.saveNow();
+    this.render();
+  }
+
+  go(wp) {
+    if (!wp.on) { this.s.game.audio.play('bump'); return false; }
+    this.close();
+    this.s.enterFloor(wp.g);
+    return true;
   }
 
   update(dt, d) {
     if (!d) return false;
     const st = this.nav.step(d, dt);
     if (st.x || st.y) {
-      this.c = Math.max(0, Math.min(this.cols.length - 1, this.c + st.x));
-      this.r = Math.max(0, Math.min(this.cols[this.c].list.length - 1, this.r + st.y));
+      if (this.r === -1) {
+        if (st.y > 0) { this.r = 0; this.c = Math.min(this.c, this.cols.length - 1); } else this.c = Math.max(0, Math.min(2, this.c + st.x));
+      } else if (st.y < 0 && this.r === 0) { this.r = -1; this.c = Math.min(2, this.c); }
+      else {
+        this.c = Math.max(0, Math.min(this.cols.length - 1, this.c + st.x));
+        this.r = Math.max(0, Math.min(this.cols[this.c].list.length - 1, this.r + st.y));
+      }
       this.s.game.audio.play('select');
+      this.msg = '';
       this.render();
-      const wp = this.cols[this.c].list[this.r];
-      say(`${this.cols[this.c].head}. ${wp.name}`);
+      if (this.r === -1) say(t(`ks.diff.${this.c}`));
+      else say(`${this.cols[this.c].head}. ${this.cols[this.c].list[this.r].name}`);
+    }
+    // mouse: point at a floor or a difficulty, click to choose
+    const m = this.s.mouse;
+    if (m.leftPressed && !m.virtual) {
+      const el = m.element();
+      const tier = el?.closest?.('[data-tier]');
+      if (tier) { this.setTier(+tier.dataset.tier); return false; }
+      const w = el?.closest?.('[data-wp]');
+      if (w) { const [c, r] = w.dataset.wp.split(',').map(Number); this.c = c; this.r = r; return this.go(this.cols[c].list[r]); }
     }
     if (d.aPressed) {
-      const wp = this.cols[this.c].list[this.r];
-      if (!wp.on) { this.s.game.audio.play('bump'); return false; }
-      this.close();
-      this.s.enterFloor(wp.g);
-      return true;
+      if (this.r === -1) { this.setTier(this.c); return false; }
+      return this.go(this.cols[this.c].list[this.r]);
     }
     if (d.bPressed) { this.close(); return true; }
     return false;

@@ -81,6 +81,9 @@ const CSS = `
 .ks-wp.cur { border-color: #2b2340; background: #fffbe6; }
 .ks-wp.off { opacity: .35; }
 .ks-wp.bag { box-shadow: 0 0 0 3px #ffd23f; }
+.ks-tiers { display: flex; gap: 8px; justify-content: center; margin: 0 0 8px; }
+.ks-wp.tier { min-width: 9em; } .ks-wp.tier span { font-size: 1.1em; } .ks-wp.tier .tier0 { color: #16a46a; }
+.ks-wp { cursor: pointer; } .ks-item[data-q] { cursor: pointer; }
 .ks-wp small { display: block; font-weight: 600; font-size: .75em; opacity: .7; }
 .ks-bubble { font-size: clamp(12px, 1.2vw, 19px); background: #fff; border-radius: 16px; padding: 6px 12px; box-shadow: 0 3px 0 rgba(43,35,64,.2); max-width: 22em;
   white-space: normal; -webkit-text-stroke: 0; font-weight: 600; line-height: 1.25; color: #2b2340; }
