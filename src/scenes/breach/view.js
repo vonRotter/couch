@@ -187,6 +187,11 @@ export class BoardView {
       v.g.scale.setScalar(1);
       v.hp = u.hp; v.maxHp = u.maxHp;
       v.u = u;
+      // deploying: a mech off the board is hidden (or hangs under the cursor); landing drops it in
+      const off = u.x < 0;
+      if (v.off && !off) v.drop = 0.28;
+      v.off = off;
+      v.g.visible = !off;
       this.setStatus(v, u);
     }
     for (const id of [...this.units.keys()]) if (!alive.has(id)) this.removeUnitView(id);
@@ -241,6 +246,11 @@ export class BoardView {
   }
 
   // ---------- overlays ----------
+
+  /** Deploying: the mech with this id hangs over tile (x, y), ready to land (null: none). */
+  setHover(id, x, y) {
+    this.hover = id ? { id, x, y } : null;
+  }
 
   setCursor(x, y, show = true) {
     this.cursor.visible = show;
@@ -788,6 +798,15 @@ export class BoardView {
         const b = this.state?.units.find((u) => u.id === v.id);
         if (b?.intent && !this.busy) v.g.rotation.y += (dirAngle(b.intent.d) - v.g.rotation.y) * Math.min(1, dt * 8);
       }
+      if (v.off) { // waiting to land: hangs over the cursor like a claw-machine toy, else hidden
+        const hv = this.hover?.id === v.id ? this.hover : null;
+        v.g.visible = !!hv;
+        if (hv) { tileWorld(hv.x, hv.y, v.g.position); v.g.position.y = 0.85 + Math.sin(T * 3) * 0.08; }
+      } else if (v.drop > 0) {
+        v.drop -= dt;
+        v.g.position.y = Math.max(0, v.drop) / 0.28 * 0.85;
+        if (v.drop <= 0) { v.g.position.y = 0; this.host.puffs?.burst(v.g.position.clone().setY(0.15), 0xffffff, { count: 10, size: 0.35, life: 0.45, speed: 2.4 }); }
+      }
       if (v.flash > 0) { v.flash -= dt; v.g.scale.setScalar(1 + Math.sin(v.flash * 40) * 0.06); if (v.flash <= 0) v.g.scale.setScalar(1); }
     }
     for (const g of this.tileGroups || []) {
@@ -822,7 +841,7 @@ export class BoardView {
     const ui = this.host.game.ui;
     const _p = new THREE.Vector3();
     for (const v of this.units.values()) {
-      if (!this.labelsOn) { v.label.style.display = 'none'; continue; }
+      if (!this.labelsOn || v.off) { v.label.style.display = 'none'; continue; }
       const info = this.intentInfo?.find((i) => i.id === v.id);
       const pv = this.pvHp?.get(v.id);
       const max = Math.max(v.maxHp, v.hp);

@@ -4,6 +4,8 @@
 // that the view animates. The weapon preview runs the very same code on a copy and compares.
 //
 // Turn order (Into the Breach style):
+//   deploy (every battle but the tutorial): the bugs already there show their first attacks and the
+//   first spawn mounds are out; the player puts each mech on a tile of the landing zone, then turn 1.
 //   player turn: every mech may move once, then act once (attack or repair). Moves can be undone.
 //   enemy phase: burning bugs take 1 → bugs attack in order (with their current position; a pushed
 //   bug's attack moves with it) → smoke clears → (last turn: win) → new bugs emerge from the spawn
@@ -21,7 +23,7 @@ export const MECHS = {
   punch: { hp: 3, move: 3, weapon: 'punch', color: 0xff5d73, trim: 0xffc93c },
   cannon: { hp: 3, move: 3, weapon: 'cannon', color: 0x4cc9f0, trim: 0xffffff },
   lob: { hp: 2, move: 3, weapon: 'lob', color: 0x3ddc97, trim: 0xffe47a },
-  hook: { hp: 3, move: 3, weapon: 'hook', color: 0xff8c42, trim: 0x2b2340 },
+  hook: { hp: 4, move: 3, weapon: 'hook', color: 0xff8c42, trim: 0x2b2340 },
   swap: { hp: 2, move: 4, weapon: 'swap', color: 0x9b5de5, trim: 0x8fd8ff },
   laser: { hp: 3, move: 3, weapon: 'laser', color: 0xffc93c, trim: 0xff5d73 },
   bubble: { hp: 3, move: 3, weapon: 'bubble', color: 0x8fd8ff, trim: 0xff9fd0 },
@@ -78,10 +80,13 @@ const LEGEND = {
 /**
  * A fresh battle from a level definition (levels.js) and the run (squad, upgrades, power).
  * mechs: [{ type, hp, move, pow }] with upgrades already added.
+ * deploy: true starts in the 'deploy' phase when the level has a landing zone: the mechs wait off the
+ * board (x = y = -1) until deployMech puts them down, and beginBattle starts turn 1.
  */
-export function makeBattle(def, { mechs: team, power, diff = 'easy', seed = 1 }) {
+export function makeBattle(def, { mechs: team, power, diff = 'easy', seed = 1, deploy = false }) {
+  const dep = deploy && def.deploy?.length ? def.deploy.map(([x, y]) => [x, y]) : null;
   const s = {
-    def: def.id, turn: 1, maxTurns: def.turns, phase: 'player', diff, seed: seed | 0,
+    def: def.id, turn: 1, maxTurns: def.turns, phase: dep ? 'deploy' : 'player', diff, seed: seed | 0, deploy: dep,
     power, powerStart: power, powerMax: 8,
     tiles: [], units: [], spawns: [], nextId: 1,
     kills: 0, drowned: 0, objHit: false, crateGot: false, crateLost: false, bossDead: false,
@@ -98,16 +103,60 @@ export function makeBattle(def, { mechs: team, power, diff = 'easy', seed = 1 })
     }
   }
   team.forEach((m, i) => {
-    const [x, y] = def.start[i];
+    const [x, y] = dep ? [-1, -1] : def.start[i];
     const d = MECHS[m.type];
     addUnit(s, { side: 'mech', type: m.type, x, y, hp: d.hp + (m.hp || 0), move: d.move + (m.move || 0), pow: m.pow || 0, flying: !!d.flying, slot: i });
   });
   for (const b of def.bugs || []) spawnBug(s, b.type, b.x, b.y, b.alpha);
   // the bugs already on the board choose their first attacks, then the first spawn markers appear
+  // (while deploying, bugs keep off the landing zone and no mound comes up there)
   const ev = [];
   planBugs(s, ev);
   placeSpawns(s);
   return s;
+}
+
+// ---------- deploying ----------
+
+/** Is (x, y) a landing zone tile? */
+export function inZone(s, x, y) {
+  return !!s.deploy && s.deploy.some(([zx, zy]) => zx === x && zy === y);
+}
+
+/** Can a mech land on (x, y) now? A free zone tile (no unit, no mound). */
+export function canDeploy(s, x, y) {
+  if (s.phase !== 'deploy' || !inZone(s, x, y)) return false;
+  const t = tileAt(s, x, y);
+  return !solid(t) && t.t !== 'water' && !unitAt(s, x, y) && !s.spawns.some((sp) => sp.x === x && sp.y === y);
+}
+
+/** Mechs still waiting off the board, in squad order. */
+export const waiting = (s) => mechs(s).filter((m) => m.x < 0);
+
+/** Put a waiting mech down on a zone tile (or move a placed one there). Returns events or null. */
+export function deployMech(s, id, x, y) {
+  const u = unitById(s, id);
+  if (!u || u.side !== 'mech' || !canDeploy(s, x, y)) return null;
+  u.x = x; u.y = y;
+  return [{ k: 'land', id, x, y }];
+}
+
+/** Pick a placed mech back up (it waits off the board again). */
+export function liftMech(s, id) {
+  const u = unitById(s, id);
+  if (!u || s.phase !== 'deploy' || u.x < 0) return false;
+  u.x = -1; u.y = -1;
+  return true;
+}
+
+/** All three are down: turn 1 starts (the tiles they stand on count, e.g. forest fire). */
+export function beginBattle(s) {
+  if (s.phase !== 'deploy' || waiting(s).length) return null;
+  s.phase = 'player';
+  const ev = [];
+  for (const m of mechs(s)) enterTile(s, m, ev);
+  ev.push({ k: 'phase', phase: 'player', turn: s.turn });
+  return ev;
 }
 
 /** A tile changed: the event carries a copy so the view can show it at the right moment. */
@@ -676,7 +725,7 @@ function attackOptions(b) {
 function goalDist(s, x, y) {
   let best = 99;
   s.tiles.forEach((t, i) => { if (t.t === 'building') best = Math.min(best, Math.abs((i % W) - x) + Math.abs(Math.floor(i / W) - y)); });
-  for (const m of mechs(s)) if (!m.ko) best = Math.min(best, Math.abs(m.x - x) + Math.abs(m.y - y) + 1);
+  for (const m of mechs(s)) if (!m.ko && m.x >= 0) best = Math.min(best, Math.abs(m.x - x) + Math.abs(m.y - y) + 1);
   return best;
 }
 
@@ -686,6 +735,7 @@ function planBug(s, b, ev) {
   const ox = b.x, oy = b.y;
   let best = null;
   for (const [x, y, path] of spots) {
+    if (s.phase === 'deploy' && path.length && inZone(s, x, y)) continue; // the landing zone stays free
     const t = tileAt(s, x, y);
     let pos = 0;
     if (t.fire && !b.flying) pos -= 4;
@@ -731,7 +781,8 @@ export function planBugs(s, ev) {
 
 function spawnOk(s, x, y) {
   const t = tileAt(s, x, y);
-  return !!t && !solid(t) && t.t !== 'water' && !t.fire && !unitAt(s, x, y) && !s.spawns.some((sp) => sp.x === x && sp.y === y);
+  return !!t && !solid(t) && t.t !== 'water' && !t.fire && !unitAt(s, x, y) && !s.spawns.some((sp) => sp.x === x && sp.y === y)
+    && !(s.phase === 'deploy' && inZone(s, x, y));
 }
 
 /** Markers for the bugs that come up after the next player turn. */

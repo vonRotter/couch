@@ -3,13 +3,18 @@
 //   .  ground      B  house (1 floor)      D  house (2 floors)     O  star building (protect it)
 //   P  battery (protect it: +1 grid power) M  mountain (2 hits)     ~  water   F  forest (burns)
 //   S  sand (a hit makes smoke)            I  ice (2 hits: water)  C  supply crate   R  rock
-// start: the three mechs' tiles. bugs: bugs already there. waves[i]: bugs that come up after turn
+// start: the three mechs' tiles (the tutorial battle keeps them; elsewhere they are the suggested
+// landing tiles). deploy: the landing zone (6-8 tiles, the start tiles first) where the player puts the
+// mechs before turn 1: no water, buildings, mountains, crates or bugs, and no spawn mounds there. bugs: bugs already there. waves[i]: bugs that come up after turn
 // i + 1 (random tiles in rows zone[0]..zone[1], types from pool); fixed[i]: exact spawns instead.
 // objectives: bonus stars (see rules.js objectiveStatus).
 
 export const POWER_START = 7;
 export const POWER_MAX = 8;
-export const ISLAND_POWER = 2; // grid power back after clearing an island
+export const ISLAND_POWER = 2; // grid power back after clearing an island (Easy and Hard)
+/** Grid power back for every battle won: Easy only (Hard still gets ISLAND_POWER and batteries). */
+export const BATTLE_POWER = { easy: 2, hard: 0 };
+export const battlePower = (diff) => BATTLE_POWER[diff] ?? BATTLE_POWER.easy;
 
 export const ISLANDS = [
   {
@@ -45,6 +50,7 @@ export const ISLANDS = [
           '.F...B.F',
         ],
         start: [[2, 4], [4, 6], [5, 5]],
+        deploy: [[2, 4], [4, 6], [5, 5], [1, 4], [5, 4], [7, 4], [3, 5], [2, 6]],
         bugs: [{ type: 'beetle', x: 3, y: 1 }, { type: 'spitter', x: 6, y: 1 }],
         waves: [2, 2, 1], pool: ['beetle', 'beetle', 'spitter'],
         objectives: [{ kind: 'protect', what: 'windmill' }, { kind: 'kills', n: 4 }],
@@ -62,6 +68,7 @@ export const ISLANDS = [
           '.B..D..B',
         ],
         start: [[2, 4], [5, 4], [4, 6]],
+        deploy: [[2, 4], [5, 4], [4, 6], [3, 4], [6, 4], [2, 5], [5, 5], [1, 6]],
         bugs: [{ type: 'beetle', x: 1, y: 0 }, { type: 'beetle', x: 6, y: 3 }, { type: 'spitter', x: 5, y: 0 }],
         waves: [2, 1, 2], pool: ['beetle', 'spitter'],
         objectives: [{ kind: 'drown', n: 2 }, { kind: 'power', n: 1 }],
@@ -79,6 +86,7 @@ export const ISLANDS = [
           'F..B.B..',
         ],
         start: [[1, 4], [4, 4], [6, 4]],
+        deploy: [[1, 4], [4, 4], [6, 4], [2, 4], [3, 4], [5, 4], [2, 5], [5, 5]],
         bugs: [{ type: 'beetle', x: 3, y: 1, alpha: true }, { type: 'spitter', x: 6, y: 2 }, { type: 'beetle', x: 1, y: 2 }],
         waves: [1, 2, 1, 1], pool: ['beetle', 'spitter'],
         objectives: [{ kind: 'boss' }, { kind: 'noKO' }],
@@ -101,6 +109,7 @@ export const ISLANDS = [
           'B...M..B',
         ],
         start: [[2, 4], [5, 4], [4, 6]],
+        deploy: [[2, 4], [5, 4], [4, 6], [1, 4], [7, 4], [3, 5], [5, 5], [1, 6]],
         bugs: [{ type: 'burrower', x: 2, y: 1 }, { type: 'beetle', x: 5, y: 1 }, { type: 'spitter', x: 7, y: 2 }],
         waves: [2, 2, 1], pool: ['beetle', 'burrower', 'spitter'],
         objectives: [{ kind: 'battery' }, { kind: 'kills', n: 4 }],
@@ -118,6 +127,7 @@ export const ISLANDS = [
           '..S...B.',
         ],
         start: [[2, 4], [4, 5], [6, 3]],
+        deploy: [[2, 4], [4, 5], [6, 3], [4, 4], [0, 4], [7, 4], [2, 5], [5, 5]],
         bugs: [{ type: 'boomer', x: 3, y: 2 }, { type: 'boomer', x: 5, y: 1 }, { type: 'beetle', x: 1, y: 2 }],
         waves: [2, 2, 2], pool: ['boomer', 'boomer', 'beetle', 'spitter'],
         objectives: [{ kind: 'kills', n: 5 }, { kind: 'power', n: 1 }],
@@ -135,6 +145,7 @@ export const ISLANDS = [
           '..B..B..',
         ],
         start: [[2, 4], [5, 4], [0, 4]],
+        deploy: [[2, 4], [5, 4], [0, 4], [3, 4], [4, 4], [7, 4], [1, 5], [6, 5]],
         bugs: [{ type: 'burrower', x: 6, y: 2 }, { type: 'boomer', x: 1, y: 1 }, { type: 'spitter', x: 5, y: 0 }],
         waves: [1, 2, 2, 1], pool: ['beetle', 'burrower', 'boomer', 'spitter'], alphaChance: 0.15,
         objectives: [{ kind: 'crate' }, { kind: 'noKO' }],
@@ -157,6 +168,7 @@ export const ISLANDS = [
           'F.B..B.F',
         ],
         start: [[2, 4], [5, 4], [3, 5]],
+        deploy: [[2, 4], [5, 4], [3, 5], [1, 4], [3, 4], [4, 4], [6, 4], [5, 5]],
         bugs: [{ type: 'beetle', x: 2, y: 2 }, { type: 'beetle', x: 5, y: 1 }, { type: 'spitter', x: 6, y: 0 }],
         waves: [2, 2, 1], pool: ['beetle', 'spitter', 'firefly'],
         objectives: [{ kind: 'drown', n: 2 }, { kind: 'mechHp', n: 2 }],
@@ -174,6 +186,7 @@ export const ISLANDS = [
           '.B..F.D.',
         ],
         start: [[3, 4], [6, 4], [4, 6]],
+        deploy: [[3, 4], [6, 4], [4, 6], [1, 4], [4, 4], [7, 4], [2, 5], [6, 5]],
         bugs: [{ type: 'firefly', x: 2, y: 1 }, { type: 'firefly', x: 6, y: 2 }, { type: 'beetle', x: 0, y: 2 }],
         waves: [2, 1, 2, 1], pool: ['firefly', 'beetle', 'firefly', 'spitter'],
         objectives: [{ kind: 'protect', what: 'cocoa' }, { kind: 'kills', n: 5 }],
@@ -191,6 +204,7 @@ export const ISLANDS = [
           '.B.DD.B.',
         ],
         start: [[2, 4], [5, 4], [3, 6]],
+        deploy: [[2, 4], [5, 4], [3, 6], [1, 4], [3, 4], [4, 4], [6, 4], [4, 6]],
         bugs: [{ type: 'spitter', x: 4, y: 1, alpha: true }, { type: 'beetle', x: 1, y: 1 }, { type: 'burrower', x: 6, y: 2 }],
         waves: [2, 2, 1, 1], pool: ['beetle', 'spitter', 'firefly', 'burrower'], alphaChance: 0.1,
         objectives: [{ kind: 'boss' }, { kind: 'noKO' }],
@@ -213,6 +227,7 @@ export const ISLANDS = [
           'M..DD..M',
         ],
         start: [[2, 4], [5, 4], [3, 6]],
+        deploy: [[2, 4], [5, 4], [3, 6], [3, 4], [4, 4], [4, 6], [1, 5], [6, 5]],
         bugs: [{ type: 'queen', x: 3, y: 1 }, { type: 'beetle', x: 0, y: 2 }, { type: 'boomer', x: 6, y: 1 }],
         waves: [1, 2, 1, 1], pool: ['beetle', 'spitter', 'boomer', 'firefly', 'burrower'],
         objectives: [{ kind: 'protect', what: 'tower' }, { kind: 'boss' }],
