@@ -1015,7 +1015,7 @@ export class KeepScene extends MiniGame {
     const n = this.ents.length;
     for (let i = 0; i < 5 + n; i++) this.spawnItem('coin', chest.x, chest.z + 0.5, true);
     if (Math.random() < 0.7) this.spawnItem('snack', chest.x, chest.z + 0.5, true);
-    this.dropLoot(chest.x, chest.z + 0.6, 'chest', 1 + Math.floor(n / 3));
+    if (Math.random() < 0.5) this.dropLoot(chest.x, chest.z + 0.6, 'chest', 1); // half the chests hold gear
     this.gainXp(5, chest.x, chest.z);
   }
 

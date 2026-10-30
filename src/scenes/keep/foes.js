@@ -6,6 +6,10 @@ import { t } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { PR, GR, angDiff, clamp, mesh, sph, rbox, cone } from './common.js';
 
+// Gear drop chances in co-op. A scene can set its own `lootRates` (Pillow Keep Solo does).
+export const COOP_LOOT_RATES = { grumble: 0.015, nest: 0.25, elite: 1 };
+
+
 // Grumbles of Pillow Keep: still harmless fuzzballs (a touch only makes you yawn), but now in
 // several kinds you learn to read:
 //   basic    walks at you
@@ -236,7 +240,7 @@ export const FoeMixin = {
     for (let i = 0; i < 3; i++) this.spawnStarFx(nest.x, 1, nest.z);
     for (let i = 0; i < 4; i++) this.spawnItem('coin', nest.x, nest.z, true);
     if (Math.random() < 0.4) this.spawnItem('snack', nest.x, nest.z, true);
-    if (Math.random() < 0.6) this.dropLoot(nest.x, nest.z, 'nest');
+    if (Math.random() < (this.lootRates || COOP_LOOT_RATES).nest) this.dropLoot(nest.x, nest.z, 'nest');
     this.gainXp(12 + 3 * this.floorIndex, nest.x, nest.z);
     this.floater(t('keep.nest'), new THREE.Vector3(nest.x, 2.2, nest.z), by ? by.p.css : '#ff4f9a', 1.2);
     this.game.audio.play('star');
@@ -327,10 +331,10 @@ export const FoeMixin = {
     for (let i = 0; i < coins; i++) this.spawnItem('coin', g.x, g.z, true);
     this.gainXp((3 + this.floorIndex) * g.type.xp * (g.elite ? 6 : 1), g.x, g.z);
     if (g.elite) {
-      this.dropLoot(g.x, g.z, 'elite', 1 + (this.ents.length >= 3 ? 1 : 0));
+      if (Math.random() < (this.lootRates || COOP_LOOT_RATES).elite) this.dropLoot(g.x, g.z, 'elite', 1);
       if (Math.random() < 0.6) this.spawnItem('snack', g.x, g.z, true);
       if (g.trait === 'splitter') for (let i = 0; i < 2; i++) this.spawnGrumble(g.x + (i ? 0.8 : -0.8), g.z, null, 'basic');
-    } else if (Math.random() < 0.035) this.dropLoot(g.x, g.z, 'grumble');
+    } else if (Math.random() < (this.lootRates || COOP_LOOT_RATES).grumble) this.dropLoot(g.x, g.z, 'grumble');
   },
 
   /** Multi-source BFS from every awake player: grumbles walk downhill on this field. */
