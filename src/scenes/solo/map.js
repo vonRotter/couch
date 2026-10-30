@@ -62,7 +62,7 @@ export const PLACES = [
   { id: 'tent', key: 'duckhunt', x: 34, z: 11.5, door: { x: 34, z: 15.4 } },
   { id: 'balloon', key: 'platformer', x: 8, z: -26, door: { x: 8, z: -23.8 } },
   { id: 'mine', key: 'cave', x: 26, z: cliffZ(26) - 0.2, door: { x: 26, z: -31.6 }, lock: 'mine' },
-  { id: 'keep', key: 'keep', x: -45, z: 7.5, door: { x: -45, z: 11.4 }, lock: 'bridge' },
+  { id: 'keep', key: 'keepsolo', x: -45, z: 7.5, door: { x: -45, z: 11.4 }, lock: 'bridge' }, // Pillow Keep Solo (the co-op Pillow Keep stays on the shared island)
   { id: 'castle', key: 'castle', opts: { mode: 'campaign' }, x: -44, z: -25, door: { x: -44, z: -22.6 }, lock: 'bridge' },
   { id: 'burrow', key: 'guides', x: 47, z: -23, door: { x: 47, z: -19.6 }, lock: 'burrow' },
   { id: 'garage', key: 'breach', x: 46, z: 3.2, door: { x: 46, z: 6.8 } }, // Bean Brigade's mech garage on the east hill

@@ -11,6 +11,7 @@ import { makeCraft, makeDeco2, makeRoom, makePorch, makeStoneNode, makeTallGrass
 import { makeDeco3, DECO3, makeSprinkler, makeScarecrow } from './models3.js';
 import { makeDeco4, DECO4 } from './models4.js';
 import { makeDeco5, DECO5 } from './models5.js';
+import { makeDeco6, DECO6 } from './models6.js';
 
 // Building and decorating (milestone B2).
 // - Gathering: break rock piles with the pickaxe (stone), cut tall grass with the scythe (hay and fiber).
@@ -168,6 +169,7 @@ export class Builder {
     if (DECO3.has(id)) return makeDeco3(id, this.host.M);
     if (DECO4.has(id)) return makeDeco4(id, this.host.M);
     if (DECO5.has(id)) return makeDeco5(id);
+    if (DECO6.has(id)) return makeDeco6(id);
     if (CRAFTS[id]) return makeCraft(id, this.host.M);
     if (DECO2.has(id)) return makeDeco2(id, this.host.M);
     return makeDeco(id, this.host.M);

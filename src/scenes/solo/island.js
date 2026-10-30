@@ -14,6 +14,7 @@ import './strings3.js';
 import './strings4.js';
 import './strings5.js';
 import './strings6.js';
+import './strings7.js';
 import { BATTLE_COUNT, ISLANDS as BREACH_ISLANDS } from '../breach/levels.js';
 import { Ranch } from './animals.js';
 import { Builder } from './build.js';
@@ -120,6 +121,9 @@ function gameRewards(p) {
   const br = p.breach || {};
   if (br.bestBattles >= BREACH_ISLAND1) out.push({ id: 'breach1', from: 'breach', deco: 'bugPlush', coins: 30 });
   if (br.done) out.push({ id: 'breach2', from: 'breach', items: [['starfruitSeed', 1]], deco: 'mechStatue', coins: 100 });
+  const ks = p.keepSolo?.summary || {};
+  if (ks.act1) out.push({ id: 'ks1', from: 'keepsolo', deco: 'pillowFort', coins: 40 }); // Pillow Keep Solo: Big Teddy (Act 1) asleep
+  if (ks.final) out.push({ id: 'ks2', from: 'keepsolo', items: [['starfruitSeed', 1]], deco: 'featherTrophy', coins: 120 }); // the Sleepy Sheep (Act 4)
   return out;
 }
 
@@ -921,6 +925,7 @@ export class SoloIslandScene extends BaseScene {
       case 'castle': { const w = (p.castleCampaign?.won || []).filter(Boolean).length; return w ? t('isl.best.castle', { n: w }) : t('isl.best.new'); }
       case 'guides': { const s = (p.guides?.stars || []).reduce((a, b) => a + (b || 0), 0); return s ? t('isl.best.guides', { n: s }) : t('isl.best.new'); }
       case 'breach': return p.breach?.done ? t('isl.best.breachDone') : p.breach?.bestBattles ? t('isl.best.breach', { n: p.breach.bestBattles, m: BATTLE_COUNT }) : t('isl.best.new');
+      case 'keepsolo': { const k = p.keepSolo?.summary; return k?.deep ? t('isl.best.ksDeep', { n: k.deep, lv: k.best }) : k && (k.best > 1 || k.acts) ? t('isl.best.ks', { lv: k.best, n: k.acts }) : t('isl.best.new'); }
       default: return S_VISITED(this.save, pl.id) ? '' : t('isl.best.new');
     }
   }
