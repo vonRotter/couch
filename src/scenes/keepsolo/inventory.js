@@ -104,7 +104,7 @@ export class GridPanel {
     }
     const money = `<span class="ks-coin"></span> ${s.hs.coins} &nbsp; <span class="ks-fluff"></span>${s.hs.fluff}`;
     const hint = tFor(s.player, `ks.hint.${this.mode}`);
-    this.el.innerHTML = `<h2>${esc(title)}<small>${esc(sub)} &nbsp;·&nbsp; ${money}</small></h2>
+    this.el.innerHTML = `<h2>${esc(title)}<small>${esc(sub)}</small><small>${money}</small></h2>
       <div class="ks-row">${this.areas.map((_, a) => this.gridHtml(a)).join('')}</div>
       <div class="ks-cards">${cards}</div>${action}
       ${this.msg ? `<div class="ks-verdict good">${esc(this.msg)}</div>` : ''}<div class="foot">${esc(hint)}</div>`;

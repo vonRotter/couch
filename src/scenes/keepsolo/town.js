@@ -18,24 +18,25 @@ import { rollItem, rollRarity, SLOTS, itemName, RARITY_TEXT } from './items.js';
 // quests), the gate to the keep (every floor you have reached, and Deep Keep checkpoints), the
 // town portal (back to the floor you left), and four townsfolk with jokes. Everything is read aloud.
 
-const W = 24, H = 17;
+const W = 22, H = 14;
 // Blocked rectangles in cells: [c0, r0, c1, r1].
 const BLOCKS = {
-  smith: [1, 1, 5, 4], shop: [18, 1, 22, 4], gate: [10, 0, 13, 2], fountain: [11, 7, 12, 8], stash: [6, 8, 6, 8], board: [17, 8, 17, 8],
-  house1: [1, 11, 3, 13], house2: [20, 11, 22, 13],
+  smith: [1, 1, 4, 3], shop: [17, 1, 20, 3], gate: [9, 0, 12, 1], fountain: [10, 5, 11, 6], stash: [5, 5, 5, 5], board: [16, 5, 16, 5],
+  house1: [1, 8, 2, 9], house2: [19, 8, 20, 9],
 };
 const wx = (c) => (c - W / 2) * CELL; // left edge of cell c in world x
 const wz = (r) => (r - H / 2) * CELL;
+const P = (c, r) => [wx(c), wz(r)]; // a point in cell units (cell edges are whole numbers)
 const mid = ([c0, r0, c1, r1]) => ({ x: (wx(c0) + wx(c1 + 1)) / 2, z: (wz(r0) + wz(r1 + 1)) / 2, w: (c1 - c0 + 1) * CELL, d: (r1 - r0 + 1) * CELL });
-export const TOWN_START = { x: 0, z: wz(14.2) };
-const PORTAL_AT = { x: 0, z: wz(12.2) };
+export const TOWN_START = { x: 0, z: wz(11.6) };
+const PORTAL_AT = { x: 0, z: wz(9.6) };
 const NPCS = [
-  { id: 'smith', color: 0xff8c42, hat: 0, lines: 4, home: [-17, wz(5.6)], route: null },
-  { id: 'fizz', color: 0x9b5de5, hat: 2, lines: 4, home: [17, wz(5.6)], route: null },
-  { id: 'fluff', color: 0x4cc9f0, hat: 5, lines: 6, home: [-6, wz(10.5)], route: [[-6, wz(10.5)], [-9, wz(6)], [-2, wz(5.5)]] },
-  { id: 'snore', color: 0xc9a8ff, hat: 0, lines: 6, home: [8, wz(13.6)], route: null, sleepy: true },
-  { id: 'tilly', color: 0xffc93c, hat: 3, lines: 6, home: [5, wz(10)], route: [[5, wz(10)], [10, wz(7)], [3, wz(6)], [-3, wz(12)]] },
-  { id: 'gumdrop', color: 0xff5d73, hat: 1, lines: 6, home: [-10, wz(13)], route: [[-10, wz(13)], [-14, wz(9)], [-6, wz(14)]] },
+  { id: 'smith', color: 0xff8c42, hat: 0, lines: 4, home: P(2.2, 4.6), route: null },
+  { id: 'fizz', color: 0x9b5de5, hat: 2, lines: 4, home: P(19.4, 4.6), route: null },
+  { id: 'fluff', color: 0x4cc9f0, hat: 5, lines: 6, home: P(7.5, 8), route: [P(7.5, 8), P(6.5, 4.5), P(8.5, 3.2)] },
+  { id: 'snore', color: 0xc9a8ff, hat: 0, lines: 6, home: P(14.6, 7.6), route: null, sleepy: true },
+  { id: 'tilly', color: 0xffc93c, hat: 3, lines: 6, home: P(13, 9), route: [P(13, 9), P(15, 4.5), P(13.5, 3.2), P(8.5, 10.5)] },
+  { id: 'gumdrop', color: 0xff5d73, hat: 1, lines: 6, home: P(4.5, 11), route: [P(4.5, 11), P(3.5, 6.5), P(7.5, 11.5)] },
 ];
 
 export const TownMixin = {
@@ -79,21 +80,29 @@ export const TownMixin = {
     grass.rotation.x = -Math.PI / 2;
     grass.receiveShadow = true;
     L.add(grass);
-    const m = new THREE.Matrix4(), col = new THREE.Color();
-    const tiles = [];
-    for (let r = 1; r < H - 1; r++) for (let c = 1; c < W - 1; c++) tiles.push([c, r]);
-    const cob = new THREE.InstancedMesh(rbox('ksCobble', CELL * 0.99, 0.12, CELL * 0.99, 0.04), toon(0xffffff), tiles.length);
-    tiles.forEach(([c, r], i) => {
-      m.makeTranslation(this.cx(c), 0.02, this.cz(r));
-      cob.setMatrixAt(i, m);
-      const path = Math.abs(c - 11.5) < 1.2 || r === 6 || r === 10;
-      cob.setColorAt(i, col.set(path ? ((c + r) % 2 ? 0xf2dcb4 : 0xeed6aa) : ((c * 7 + r * 3) % 5 ? 0xd7e8bf : 0xcde2b4)));
-    });
-    cob.receiveShadow = true;
-    L.add(cob);
+    const m = new THREE.Matrix4();
+    const plaza = mesh(rbox('ksPlaza', (W - 2) * CELL, 0.12, (H - 2) * CELL, 0.05), toon(0xdfe9c4), 0, 0.02, 0, false);
+    plaza.receiveShadow = true;
+    L.add(plaza);
+    // cobbled paths: north-south from the gate, east-west between the shops and past the houses
+    for (const [x, z, w, d] of [[0, 0, 4, (H - 2) * CELL], [0, wz(4.5), (W - 2) * CELL, 3], [0, wz(10.5), (W - 2) * CELL, 2.4]]) {
+      const pth = mesh(new THREE.BoxGeometry(w, 0.13, d), toon(0xf0dab0), x, 0.03, z, false);
+      pth.receiveShadow = true;
+      L.add(pth);
+    }
+    for (let i = 0; i < 40; i++) {
+      // a few darker stones on the paths
+      const rr = seededRand(100 + i);
+      const onNS = i % 2 === 0;
+      const x = onNS ? (rr() - 0.5) * 3.4 : (rr() - 0.5) * (W - 3) * CELL;
+      const z = onNS ? (rr() - 0.5) * (H - 3) * CELL : wz(4.5) + (rr() - 0.5) * 2.4;
+      const st = mesh(rbox('ksStone', 0.7, 0.05, 0.5, 0.02), toon(0xe3c899), x, 0.1, z, false);
+      st.rotation.y = rr() * 3;
+      L.add(st);
+    }
     // hedges with flowers all around (a gap in the south, the gate in the north)
     const hedgeTiles = [];
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if ((r === 0 || c === 0 || r === H - 1 || c === W - 1) && !(r === 0 && c >= 10 && c <= 13)) hedgeTiles.push([c, r]);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if ((r === 0 || c === 0 || r === H - 1 || c === W - 1) && !(r === 0 && c >= 9 && c <= 12)) hedgeTiles.push([c, r]);
     const hedge = new THREE.InstancedMesh(rbox('ksHedge', CELL, 1.4, CELL, 0.4), toon(0x58b947), hedgeTiles.length);
     hedgeTiles.forEach(([c, r], i) => { m.makeTranslation(this.cx(c), 0.7, this.cz(r)); hedge.setMatrixAt(i, m); });
     hedge.castShadow = true;
@@ -108,8 +117,8 @@ export const TownMixin = {
     for (let i = 0; i < 22; i++) {
       const a = (i / 22) * Math.PI * 2;
       const tr = makeTree(rand, 1.1 + rand() * 0.4);
-      tr.position.set(Math.cos(a) * (30 + rand() * 8), 0, Math.sin(a) * (22 + rand() * 6));
-      if (tr.position.z > 10 && Math.abs(tr.position.x) < 18) continue; // keep the view open toward the camera
+      tr.position.set(Math.cos(a) * (27 + rand() * 6), 0, Math.sin(a) * (19 + rand() * 5));
+      if (tr.position.z > 8) continue; // keep the view open toward the camera
       L.add(tr);
     }
     this.buildSmith(mid(BLOCKS.smith));
@@ -121,7 +130,8 @@ export const TownMixin = {
     this.buildHouse(mid(BLOCKS.house1), 0xffd0e4, 0x8fd8ff);
     this.buildHouse(mid(BLOCKS.house2), 0xfff3a0, 0xff9a2e);
     // lamp posts (their flames share the scene's warm lamps)
-    for (const [x, z] of [[-6, wz(5.2)], [6, wz(5.2)], [-6, wz(12)], [6, wz(12)]]) {
+    this.buildTownProps();
+    for (const [x, z] of [P(8.6, 4), P(13.4, 4), P(8.6, 9.6), P(13.4, 9.6)]) {
       const g = new THREE.Group();
       g.position.set(x, 0, z);
       g.add(mesh(cyl('ksPost', 0.09, 0.12, 2.6, 8), toon(0x5a4a6a), 0, 1.3, 0));
@@ -136,6 +146,47 @@ export const TownMixin = {
     p.visible = false;
     L.add(p);
     this.townPortal = p;
+  },
+
+  /** Benches, barrels, crates, flower beds and bunting: a lived-in square. */
+  buildTownProps() {
+    const L = this.level;
+    const bench = (x, z, ry) => {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      g.rotation.y = ry;
+      g.add(mesh(rbox('ksBenchSeat', 1.8, 0.14, 0.55, 0.05), toon(0xc98b5a), 0, 0.5, 0));
+      g.add(mesh(rbox('ksBenchBack', 1.8, 0.5, 0.12, 0.05), toon(0xb07848), 0, 0.85, -0.25));
+      for (const s of [-1, 1]) g.add(mesh(bx('ksBenchLeg', 0.12, 0.5, 0.45), toon(0x5a4a6a), s * 0.75, 0.25, 0));
+      L.add(g);
+    };
+    bench(...P(14.6, 7.2), Math.PI);
+    bench(...P(7, 7.2), Math.PI);
+    const barrel = (x, z) => {
+      L.add(mesh(cyl('ksBarrel', 0.38, 0.38, 0.85, 12), toon(0xb07848), x, 0.43, z));
+      for (const y of [0.18, 0.68]) L.add(mesh(cyl('ksBarrelBand', 0.4, 0.4, 0.07, 12), toon(0x6b6380), x, y, z, false));
+    };
+    barrel(...P(5.4, 1.6)); barrel(...P(5.6, 2.6));
+    for (const [c, r, k] of [[16.4, 1.6, 0], [16.5, 2.6, 1]]) L.add(mesh(rbox('ksCrate', 0.7, 0.6, 0.7, 0.06), toon(k ? 0xc98b5a : 0xb07848), ...[wx(c), 0.3, wz(r)]));
+    // flower beds by the houses and the gate
+    const rand = seededRand(31);
+    for (const [c, r] of [[3.4, 8.3], [3.4, 9.6], [18.6, 8.3], [18.6, 9.6], [8.2, 1.2], [13.8, 1.2]]) {
+      const [x, z] = P(c, r);
+      L.add(mesh(rbox('ksBed', 1.2, 0.25, 1.0, 0.08), toon(0x8a5a3a), x, 0.12, z, false));
+      for (let i = 0; i < 4; i++) { const f = makeFlower(rand); f.position.set(x + (rand() - 0.5) * 0.8, 0.25, z + (rand() - 0.5) * 0.6); L.add(f); }
+    }
+    // bunting between the lamp posts over the square
+    const flags = [0xff5d73, 0xffc93c, 0x3ddc97, 0x4cc9f0, 0x9b5de5];
+    for (const [a, b] of [[P(8.6, 4), P(13.4, 4)], [P(8.6, 9.6), P(13.4, 9.6)]]) {
+      const n = 8;
+      for (let i = 0; i < n; i++) {
+        const k = (i + 0.5) / n;
+        const x = a[0] + (b[0] - a[0]) * k, z = a[1] + (b[1] - a[1]) * k;
+        const fl = mesh(cone('ksFlag', 0.2, 0.36, 3), toon(flags[i % flags.length]), x, 2.55 - Math.sin(k * Math.PI) * 0.35, z, false);
+        fl.rotation.x = Math.PI;
+        L.add(fl);
+      }
+    }
   },
 
   buildSmith(b) {

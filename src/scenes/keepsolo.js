@@ -397,7 +397,7 @@ export class KeepSoloScene extends MiniGame {
       this.updateCamera(0, true);
       this.game.audio.playMusic('keepTown');
       if (reason === 'faint') this.later(0.6, () => this.npcSay('snore', t(this.hs.drop ? 'ks.npc.snore.faint' : 'ks.npc.snore.faint0')));
-      if (reason === 'act') this.actCleared();
+      if (reason === 'act' && this.lastG !== undefined) this.actCleared();
       this.saveNow();
       this.later(0.5, () => { this.moving = false; });
     };
@@ -688,13 +688,13 @@ export class KeepSoloScene extends MiniGame {
 
   updateCamera(dt, snap = false) {
     const e = this.hero;
-    let cx = e.x, cz = e.z, d = this.kind === 'town' ? 25 : 20;
+    let cx = e.x, cz = e.z, d = this.kind === 'town' ? 24 : 20;
     const b = this.boss;
     if (this.kind === 'dungeon' && b?.awake) {
       cx = (e.x * 2 + b.x) / 3; cz = (e.z * 2 + b.z) / 3;
       d = clamp(this.fitDistance(Math.abs(b.x - e.x) + 12, (Math.abs(b.z - e.z) + 9) * Math.sin(TILT)), 20, 30);
     }
-    if (this.kind === 'town') { cx = clamp(cx, -9, 9); cz = clamp(cz, -9, 6); }
+    if (this.kind === 'town') { cx = clamp(cx, -7, 7); cz = clamp(cz, -7, 4); }
     const k = snap ? 1 : Math.min(1, dt * 4);
     this.camCenter.x += (cx - this.camCenter.x) * k;
     this.camCenter.z += (cz - this.camCenter.z) * k;

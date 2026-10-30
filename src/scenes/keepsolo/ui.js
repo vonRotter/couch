@@ -11,7 +11,7 @@ import { ACT_FLOORS, isDeep, deepDepth } from './acts.js';
 // layer, so UI.clear() removes it when the scene changes.
 
 const CSS = `
-.ks-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; font-family: var(--font); color: var(--ink); }
+.ks-layer { position: absolute; inset: 0; z-index: 20; pointer-events: none; font-family: var(--font); color: var(--ink); }
 .ks-layer > * { position: absolute; }
 .ks-pill { background: rgba(255,255,255,.93); border-radius: 18px; padding: 5px 14px; box-shadow: 0 4px 0 rgba(43,35,64,.2); font-weight: 700;
   font-size: clamp(12px, 1.3vw, 21px); line-height: 1.15; }
@@ -45,7 +45,7 @@ const CSS = `
 .ks-bagnote { left: 1.2vw; top: 1.4vh; background: #fffbe6; border: 3px solid #ffd23f; }
 .ks-coin { display: inline-block; width: .9em; height: .9em; border-radius: 50%; background: #ffd23f; box-shadow: inset 0 0 0 .14em #e0a100; vertical-align: -.1em; }
 .ks-fluff { display: inline-block; width: 1em; height: .8em; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #c9a8ff inset, .3em -.1em 0 -.05em #fff, .3em -.1em 0 .1em #c9a8ff; vertical-align: -.05em; margin-right: .3em; }
-.ks-panel { left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(255,250,242,.97); border-radius: 30px; padding: clamp(10px, 1.6vw, 24px) clamp(14px, 2vw, 30px);
+.ks-panel { left: 50%; top: 50%; transform: translate(-50%, -50%); background: #fffaf2; border-radius: 30px; padding: clamp(10px, 1.6vw, 24px) clamp(14px, 2vw, 30px);
   box-shadow: 0 10px 0 rgba(43,35,64,.22); max-width: 96vw; max-height: 96vh; font-weight: 600; font-size: clamp(12px, 1.15vw, 18px); text-align: center; }
 .ks-panel h2 { margin: 0 0 6px; font-size: clamp(20px, 2.4vw, 38px); color: #8a45e0; line-height: 1.05; }
 .ks-panel h2 small { display: block; font-size: .5em; color: #5a5470; font-weight: 600; margin-top: 2px; }

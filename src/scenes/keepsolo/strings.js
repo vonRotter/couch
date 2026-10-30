@@ -89,7 +89,7 @@ const en = {
   'ks.stat.dmg': 'damage', 'ks.stat.might': 'damage', 'ks.stat.hp': 'health', 'ks.stat.armor': 'armor', 'ks.stat.rate': 'attack speed',
   'ks.stat.speed': 'walk speed', 'ks.stat.cdr': 'faster skills', 'ks.stat.luck': 'lucky hits',
   'ks.magicName': '{pre} {base} {suf}', 'ks.rareName': '{a} {b}',
-  'ks.pre.might': 'Bonky', 'ks.pre.hp': 'Sturdy', 'ks.pre.armor': 'Cushy', 'ks.pre.rate': 'Quick', 'ks.pre.speed': 'Zippy', 'ks.pre.cdr': 'Magic', 'ks.pre.luck': 'Lucky', 'ks.pre.dmg': 'Strong',
+  'ks.pre.might': 'Bonky', 'ks.pre.hp': 'Sturdy', 'ks.pre.armor': 'Cushy', 'ks.pre.rate': 'Quick', 'ks.pre.speed': 'Zippy', 'ks.pre.cdr': 'Clever', 'ks.pre.luck': 'Lucky', 'ks.pre.dmg': 'Strong',
   'ks.suf.might': 'of Bonking', 'ks.suf.hp': 'of Health', 'ks.suf.armor': 'of Cushions', 'ks.suf.rate': 'of Quickness', 'ks.suf.speed': 'of Zooming', 'ks.suf.cdr': 'of Wizardry', 'ks.suf.luck': 'of Luck', 'ks.suf.dmg': 'of Power',
   'ks.rareA.0': 'Snuggly', 'ks.rareA.1': 'Moonlit', 'ks.rareA.2': 'Starry', 'ks.rareA.3': 'Fuzzy', 'ks.rareA.4': 'Brave', 'ks.rareA.5': 'Sleepy', 'ks.rareA.6': 'Bouncy', 'ks.rareA.7': 'Sparkly',
   'ks.rareB.0': 'Dream', 'ks.rareB.1': 'Cloud', 'ks.rareB.2': 'Feather', 'ks.rareB.3': 'Puff', 'ks.rareB.4': 'Hug', 'ks.rareB.5': 'Nap', 'ks.rareB.6': 'Giggle', 'ks.rareB.7': 'Wish',
