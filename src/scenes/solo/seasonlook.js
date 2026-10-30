@@ -9,7 +9,8 @@ import { mesh, box, cone, roofGeo } from './models.js';
 // falling leaves (autumn) or snow (winter; heavier on snowy days).
 // Milestone B4: in winter the dirt paths and the field's grass underlay turn snowy too, and every roof has
 // its snow (the museum, the greenhouse once it has glass, the game hall, the well, the lighthouse, the
-// keep, the castle gate, the fairground tent, the mine's beam and the cottage porch). Shell Isle stays warm.
+// keep, the castle gate, the fairground tent, the mine's beam, the cottage porch and the Bean Brigade mech
+// garage). Shell Isle stays warm.
 
 // leaf colors used by the trees and bushes (world.js and the forest in map.js) -> season colors
 const LEAVES = {
@@ -139,6 +140,12 @@ export class SeasonLook {
     for (const sx of [-1, 1]) hat({ x: P.castle.x + sx * 2.6, z: P.castle.z }, heightAt(P.castle.x, P.castle.z) + 7.1, 0.85, 0.97, 4);
     // the beam over the mine's entrance
     this.winter.add(mesh(box(4.7, 0.1, 0.7), snow, P.mine.x, 3.98, P.mine.z + 0.2, false));
+    // Bean Brigade's mech garage: a snowy blanket on top of the round roof (the yellow ribs peek
+    // through) and a little snow on the lookout tower's platform (models5.js makeGarage)
+    const gy = heightAt(P.garage.x, P.garage.z);
+    const blanket = new THREE.CylinderGeometry(2.37, 2.37, 4.56, 18, 1, true, Math.PI / 2 - 0.95, 1.9).rotateZ(Math.PI / 2).rotateY(Math.PI / 2);
+    this.winter.add(mesh(blanket, snow, P.garage.x, gy + 2.4, P.garage.z, false));
+    this.winter.add(mesh(box(1.18, 0.07, 1.18), snow, P.garage.x + 3.4, gy + 3.3, P.garage.z - 0.6, false));
     // the cottage porch (an upgrade: the snow rides on the porch, so it shows only with it)
     this.porchSnow = null;
     const porch = host.builder?.porch;
