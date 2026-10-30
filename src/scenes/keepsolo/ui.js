@@ -173,6 +173,7 @@ const CSS = `
 .ks-card .st.unid { color: #8a45e0; font-size: .85em; }
 .ks-card .sell { margin-top: 3px; }
 .tier1 { color: #8a45e0; } .tier2 { color: #e8243f; }
+.ks-darkness { position: absolute; inset: 0; pointer-events: none; display: none; }
 .label.ks-flabel { left: 0; top: 0; font-size: clamp(11px, 1vw, 16px); -webkit-text-stroke: 0; background: rgba(28,20,52,.82); border-radius: 7px; padding: 2px 8px;
   line-height: 1.2; box-shadow: 0 2px 0 rgba(0,0,0,.25); }
 .ks-target { left: 50%; top: calc(14px + clamp(34px, 3.6vw, 52px)); transform: translateX(-50%); text-align: center; display: flex; flex-direction: column;
@@ -357,9 +358,8 @@ export class Hud {
       st.textContent = CSS;
       document.head.appendChild(st);
     }
-    this.layer.innerHTML = `<div class="ks-dark"></div><div class="ks-orb hp ks-ui"><i></i><span></span></div><div class="ks-orb mp ks-ui"><i></i><span></span></div>
+    this.layer.innerHTML = `<div class="ks-orb hp ks-ui"><i></i><span></span></div><div class="ks-orb mp ks-ui"><i></i><span></span></div>
       <div class="ks-who"></div><div class="ks-dock ks-ui"></div><div class="ks-hint ks-pill"></div><div class="ks-money"></div><div class="ks-bagnote ks-pill"></div><div class="ks-target ks-pill"></div>`;
-    this.dark = this.layer.querySelector('.ks-dark');
     this.hp = this.layer.querySelector('.ks-orb.hp');
     this.mp = this.layer.querySelector('.ks-orb.mp');
     this.who = this.layer.querySelector('.ks-who');

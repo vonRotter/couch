@@ -9,7 +9,7 @@ import { Hazards } from '../keep/hazards.js';
 import { FoeMixin } from '../keep/foes.js';
 import { TeddyBoss, SheepBoss } from '../keep/bosses.js';
 import { GooseBoss, DuckBoss } from './bosses.js';
-import { floorPlan, themeOf, mixOf, bossHpAt, foeHpAt, xpAt, isDeep, ACT_FLOORS } from './acts.js';
+import { floorPlan, themeOf, mixOf, bossHpAt, foeHpAt, xpAt, isDeep, ACT_FLOORS, diffOffset } from './acts.js';
 import { rollRarity, rollItem, SLOTS, CLASS_SLOTS, itemName, RARITY_CSS, RARITY_HEX, useItem } from './items.js';
 import { CLASS_IDS, isBetter } from './classes.js';
 import { itemModel } from './models.js';
@@ -77,7 +77,7 @@ export const WorldMixin = {
   /** Build dungeon floor g (see acts.js) as the current world. */
   buildFloor(g, seed) {
     this.g = g;
-    this.D = g;
+    this.D = g + diffOffset(this.hs.diff); // the difficulty number (Nightmare and Hell push it up)
     this.kind = 'dungeon';
     this.floorSeed = seed >>> 0;
     this.floorIndex = mixOf(g); // keep/foes.js uses this for which grumble kinds come
@@ -144,7 +144,7 @@ export const WorldMixin = {
     const B = BOSSES[key] || TeddyBoss;
     this.boss = new B(this, x, z);
     this.boss.key = key;
-    this.boss.max = this.boss.hp = Math.round(bossHpAt(this.D, key));
+    this.boss.max = this.boss.hp = Math.round(bossHpAt(this.D, key, isDeep(this.g)));
     const fog = new THREE.Group();
     const cloud = toon(0xf4eaff, { transparent: true, opacity: 0.92 });
     for (let i = 0; i < 9; i++) {

@@ -14,7 +14,7 @@ import './keepsolo/strings.js';
 import './keepsolo/strings2.js';
 import { loadKeepSolo, saveKeepSolo } from './keepsolo/save.js';
 import { CLASSES, MAX_LEVEL, B_MOVE, xpNeed, heroStats, armorCut, compareItem } from './keepsolo/classes.js';
-import { foeHitAt, isDeep, deepDepth, ACT_FLOORS, ACTS, actOf } from './keepsolo/acts.js';
+import { foeHitAt, isDeep, deepDepth, ACT_FLOORS, ACTS, actOf, diffOffset } from './keepsolo/acts.js';
 import { WorldMixin, LOOT } from './keepsolo/world.js';
 import { TownMixin, TOWN_START, QuestPanel, GatePanel } from './keepsolo/town.js';
 import { SkillMixin } from './keepsolo/skills.js';
@@ -23,6 +23,7 @@ import { Hud, ClassPicker, SkillMenu } from './keepsolo/ui.js';
 import { dressHero } from './keepsolo/models.js';
 import { ControlMixin } from './keepsolo/control.js';
 import { HeroMixin } from './keepsolo/hero.js';
+import { LightMixin } from './keepsolo/light.js';
 import { CharPanel, TreePanel } from './keepsolo/tree.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
@@ -95,6 +96,7 @@ export class KeepSoloScene extends MiniGame {
     this.cls = this.data.last;
     this.hs = this.data.classes[this.cls];
     this.makeHero();
+    this.initLight(L);
     this.buildTown();
     this.townWorld = this.snapshotWorld();
     this.placeHero(TOWN_START.x, TOWN_START.z);
@@ -356,6 +358,7 @@ export class KeepSoloScene extends MiniGame {
     this.mode = 'dungeon';
     this.updateFlow();
     this.updateCamera(0, true);
+    this.updateLight(0, true);
     this.game.audio.playMusic(isDeep(g) ? 'keepDeep' : 'bubble');
     this.game.ui.banner(this.placeTitle(), this.placeSub(), 1900);
     this.say(`${this.placeTitle()}. ${this.placeSub()}`);
@@ -403,8 +406,9 @@ export class KeepSoloScene extends MiniGame {
       e.ch.pivot.rotation.x = 0;
       this.portalCd = 1.5;
       this.mode = 'town';
-      this.D = Math.max(0, this.hs.reached);
+      this.D = this.townD();
       this.updateCamera(0, true);
+      this.updateLight(0, true);
       this.game.audio.playMusic('keepTown');
       if (reason === 'faint') this.later(0.6, () => this.npcSay('snore', t(this.hs.drop ? 'ks.npc.snore.faint' : 'ks.npc.snore.faint0')));
       if (reason === 'act' && this.lastG !== undefined) this.actCleared();
@@ -442,6 +446,7 @@ export class KeepSoloScene extends MiniGame {
       this.mode = 'dungeon';
       this.updateFlow();
       this.updateCamera(0, true);
+      this.updateLight(0, true);
       this.game.audio.playMusic(isDeep(this.g) ? 'keepDeep' : 'bubble');
       this.game.ui.toast(`${this.placeTitle()} · ${this.placeSub()}`, 2000);
       this.later(0.5, () => { this.moving = false; });
@@ -535,6 +540,7 @@ export class KeepSoloScene extends MiniGame {
 
   update(dt) {
     this.frame(dt);
+    this.updateLight(dt);
     this.mouse.endFrame();
   }
 
@@ -777,6 +783,11 @@ export class KeepSoloScene extends MiniGame {
     saveKeepSolo(this.game.roster, this.data);
   }
 
+  /** Difficulty number in town (shop prices, mystery boxes): the deepest floor reached on this difficulty. */
+  townD() {
+    return Math.max(0, this.hs.reached) + diffOffset(this.hs.diff);
+  }
+
   /** Test helper: put the hero next to the boss door with a key, or anywhere. */
   debugToBoss() {
     if (this.kind !== 'dungeon' || !this.boss) return false;
@@ -799,5 +810,5 @@ export class KeepSoloScene extends MiniGame {
   }
 }
 
-Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin, ControlMixin, HeroMixin);
+Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin, ControlMixin, HeroMixin, LightMixin);
 for (const k of BORROW) Object.defineProperty(KeepSoloScene.prototype, k, Object.getOwnPropertyDescriptor(KeepScene.prototype, k));

@@ -43,7 +43,7 @@ export const TownMixin = {
   buildTown() {
     this.kind = 'town';
     this.g = -1;
-    this.D = Math.max(0, this.hs.reached);
+    this.D = this.townD();
     this.floorIndex = 0;
     this.W = W; this.H = H;
     this.theme = { floorA: 0, floorB: 0 };

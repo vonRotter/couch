@@ -32,6 +32,11 @@ export const ACTS = [
 export const DEEP_THEME = { floorA: 0xcdc4e0, floorB: 0xbdb2d4, wall: 0x5a4a8a, cap: 0x8a7ab8, rug: 0xffb400, rugIn: 0xffe27a, grumble: 0xff5d9a, sky: ['#0e0a24', '#3a2a5e'], props: 'dream' };
 const DEEP_BOSSES = ['teddy', 'goose', 'duck', 'sheep'];
 
+// Difficulty tiers: Nightmare and Hell replay the acts (and their own Deep Keep) with the
+// difficulty number D pushed up by this much (D drives grumble health and hits, item levels, XP).
+export const DIFF_OFFSET = [0, 12, 24];
+export const diffOffset = (diff) => DIFF_OFFSET[diff] || 0;
+
 export const isDeep = (g) => g >= DEEP_START;
 export const deepDepth = (g) => g - DEEP_START + 1;
 export const actOf = (g) => Math.min(ACT_COUNT - 1, Math.floor(g / ACT_FLOORS));
@@ -71,7 +76,7 @@ export const foeHitAt = (D) => 30 * 1.16 ** D;
 /** XP for one unit of grumble XP. */
 export const xpAt = (D) => 1.6 * 1.17 ** D;
 /** Boss health (a boss is worth this many plain grumbles). */
-export const bossHpAt = (D, boss) => foeHpAt(D) * ({ teddy: 26, goose: 32, duck: 36, sheep: 46 }[boss] || 32) * (D >= DEEP_START ? 1.25 : 1);
+export const bossHpAt = (D, boss, deep = false) => foeHpAt(D) * ({ teddy: 26, goose: 32, duck: 36, sheep: 46 }[boss] || 32) * (deep ? 1.25 : 1);
 
 // ---------------------------------------------------------------- quests
 
