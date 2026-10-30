@@ -44,6 +44,12 @@ export const SkillMixin = {
   },
 
   faceTarget(e, range, half) {
+    if (this.aimAt) {
+      // mouse: aim exactly where the player points
+      const a = this.aimAt, dx = a.x - e.x, dz = a.z - e.z, d = Math.hypot(dx, dz) || 1;
+      e.fx = dx / d; e.fz = dz / d;
+      return { x: a.x, z: a.z, d };
+    }
     const tg = this.aimTarget(e, range, half);
     if (!tg) return null;
     const d = Math.hypot(tg.x - e.x, tg.z - e.z) || 1;

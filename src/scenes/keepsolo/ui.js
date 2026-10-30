@@ -106,6 +106,12 @@ const CSS = `
 .ks-prompt { font-size: clamp(11px, 1.05vw, 17px); -webkit-text-stroke: .22em #fff; color: #2b2340; }
 .ks-boss { display: flex; flex-direction: column; gap: 3px; padding: 6px 22px; }
 @keyframes ks-blink { 50% { opacity: .45; } }
+.ks-panel, .ks-ui { pointer-events: auto; }
+.ks-target { left: 50%; top: calc(14px + clamp(34px, 3.6vw, 52px)); transform: translateX(-50%); text-align: center; display: flex; flex-direction: column;
+  align-items: center; gap: 2px; padding: 4px 18px 6px; min-width: 12em; }
+.ks-target small { font-size: .7em; opacity: .75; }
+.ks-target .tb { display: block; width: clamp(140px, 18vw, 300px); height: .55em; border-radius: 1em; background: #e6defa; border: 2px solid #2b2340; overflow: hidden; }
+.ks-target .tb i { display: block; height: 100%; background: linear-gradient(#ff8fa8, #ff3b6b); }
 `;
 
 // ---------------------------------------------------------------- icons
@@ -243,12 +249,14 @@ export class Hud {
       st.textContent = CSS;
       document.head.appendChild(st);
     }
-    this.layer.innerHTML = '<div class="ks-hero"></div><div class="ks-acts"></div><div class="ks-hint ks-pill"></div><div class="ks-money"></div><div class="ks-bagnote ks-pill"></div>';
+    this.layer.innerHTML = '<div class="ks-hero"></div><div class="ks-acts"></div><div class="ks-hint ks-pill"></div><div class="ks-money"></div><div class="ks-bagnote ks-pill"></div><div class="ks-target ks-pill"></div>';
     this.hero = this.layer.querySelector('.ks-hero');
     this.acts = this.layer.querySelector('.ks-acts');
     this.hint = this.layer.querySelector('.ks-hint');
     this.money = this.layer.querySelector('.ks-money');
     this.bagNote = this.layer.querySelector('.ks-bagnote');
+    this.targetEl = this.layer.querySelector('.ks-target');
+    this.targetEl.style.display = 'none';
     this.cache = {};
     this.visible = true;
   }
@@ -296,6 +304,13 @@ export class Hud {
     const note = drop ? esc(t('ks.bagNote', { where: whereText(drop.g) })) : '';
     this.set(this.bagNote, 'bag', note);
     this.bagNote.style.display = note && this.visible ? '' : 'none';
+  }
+
+  /** The name (and health bar) of what is under the mouse pointer, at the top of the screen. */
+  target(html) {
+    if (!this.visible) html = '';
+    this.set(this.targetEl, 'target', html);
+    this.targetEl.style.display = html ? '' : 'none';
   }
 
   dispose() {

@@ -63,13 +63,14 @@ export const TownMixin = {
     this.start = { ...TOWN_START };
     this.buildTownLook();
     // stations: where you stand to use them
-    const st = (id, x, z, r = 2.2) => this.stations.push({ id, x, z, r });
+    // (box: the building, for clicking it with the mouse)
+    const st = (id, x, z, r, box) => this.stations.push({ id, x, z, r, box });
     const sm = mid(BLOCKS.smith), sh = mid(BLOCKS.shop), gt = mid(BLOCKS.gate), ch = mid(BLOCKS.stash), bd = mid(BLOCKS.board);
-    st('smith', sm.x, sm.z + sm.d / 2 + 1.0, 2.6);
-    st('shop', sh.x, sh.z + sh.d / 2 + 1.0, 2.6);
-    st('gate', gt.x, gt.z + gt.d / 2 + 1.0, 2.8);
-    st('stash', ch.x, ch.z + 1.4, 2.0);
-    st('board', bd.x, bd.z + 1.4, 2.0);
+    st('smith', sm.x, sm.z + sm.d / 2 + 1.0, 2.6, sm);
+    st('shop', sh.x, sh.z + sh.d / 2 + 1.0, 2.6, sh);
+    st('gate', gt.x, gt.z + gt.d / 2 + 1.0, 2.8, { ...gt, z: gt.z + 0.6, d: gt.d + 1.2 });
+    st('stash', ch.x, ch.z + 1.4, 2.0, ch);
+    st('board', bd.x, bd.z + 1.4, 2.0, bd);
     for (const def of NPCS) this.makeNpc(def);
   },
 
@@ -429,8 +430,13 @@ export const TownMixin = {
     const a = this.townAction();
     if (!a) return;
     if (a.kind === 'npc') { this.talkTo(a.n); return; }
+    this.useStation(a.id);
+  },
+
+  /** Open a town station's panel (walked up to it, or clicked it). */
+  useStation(id) {
     this.game.audio.play('select');
-    switch (a.id) {
+    switch (id) {
       case 'smith': this.openPanel('smith'); this.npcSay('smith', t('ks.npc.smith.hi')); break;
       case 'shop': this.openPanel('shop'); this.npcSay('fizz', t('ks.npc.fizz.hi')); break;
       case 'stash': this.openPanel('stash'); break;

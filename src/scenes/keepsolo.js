@@ -11,6 +11,7 @@ import { KeepScene } from './keep.js';
 import { PR, SPEED, clamp, mesh } from './keep/common.js';
 import { FoeMixin } from './keep/foes.js';
 import './keepsolo/strings.js';
+import './keepsolo/strings2.js';
 import { loadKeepSolo, saveKeepSolo } from './keepsolo/save.js';
 import { CLASSES, SKILLS, MAX_LEVEL, xpNeed, heroStats, armorCut, compareItem } from './keepsolo/classes.js';
 import { foeHitAt, isDeep, deepDepth, ACT_FLOORS, ACTS, actOf } from './keepsolo/acts.js';
@@ -20,6 +21,7 @@ import { SkillMixin } from './keepsolo/skills.js';
 import { GridPanel } from './keepsolo/inventory.js';
 import { Hud, ClassPicker, SkillMenu } from './keepsolo/ui.js';
 import { dressHero } from './keepsolo/models.js';
+import { ControlMixin } from './keepsolo/control.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
 // bank). Pick a hero (Pillow Knight, Feather Archer or Bubble Wizard: one save each), get ready in
@@ -86,6 +88,7 @@ export class KeepSoloScene extends MiniGame {
     this.saveT = 0;
     this.live = null; // the floor waiting behind the town portal: { world, at }
     this.hud = new Hud(this);
+    this.initControl();
     this.cls = this.data.last;
     this.hs = this.data.classes[this.cls];
     this.makeHero();
@@ -100,6 +103,9 @@ export class KeepSoloScene extends MiniGame {
   }
 
   get player() { return this.players[0]; }
+
+  /** While a panel or menu is open, Esc closes it (instead of the pause menu). */
+  get ownMenu() { return !!(this.panel || this.menu); }
 
   onLanguage() {
     this.picker?.render?.();
@@ -525,6 +531,11 @@ export class KeepSoloScene extends MiniGame {
   // ---------------------------------------------------------------- per frame
 
   update(dt) {
+    this.frame(dt);
+    this.mouse.endFrame();
+  }
+
+  frame(dt) {
     const d = this.player ? this.input(this.player) : null;
     this.toastCd -= dt;
     this.portalCd -= dt;
@@ -533,6 +544,12 @@ export class KeepSoloScene extends MiniGame {
       this.updateTown(dt);
       this.poseHero(dt);
       this.updateCamera(dt);
+      return;
+    }
+    if ((this.panel || this.menu) && this.game.input.escPressed) {
+      // Esc closes what is open
+      if (this.menu) { this.menu.close(); this.menu = null; this.cHold = -1; } else { this.closePanel(); this.cHold = -1; }
+      this.updateHud();
       return;
     }
     // menus and panels pause the world
@@ -562,6 +579,7 @@ export class KeepSoloScene extends MiniGame {
         if (this.cHold >= HOLD_C) { this.cHold = 0; this.menu = new SkillMenu(this); this.game.audio.play('select'); }
       } else { this.cHold = 0; this.tapC(); }
     }
+    if (active) this.updateMouse(dt); else this.ctlCancel();
     this.updateHero(dt, inp, active);
     if (this.kind === 'town') {
       this.updateTown(dt);
@@ -574,6 +592,7 @@ export class KeepSoloScene extends MiniGame {
     this.updateLamps(dt);
     this.updatePrompt();
     this.updateFloaters(dt);
+    this.updateHoverLook();
     this.updateHud();
     this.saveT -= dt;
     if (this.dirty && this.saveT <= 0) this.saveNow();
@@ -626,7 +645,10 @@ export class KeepSoloScene extends MiniGame {
       this.moveCircle(e, e.rollX * 15 * dt, e.rollZ * 15 * dt, PR);
       moving = 1;
     } else {
+      // the stick / keys walk directly; without them a mouse click goal steers (control.js)
       let mx = inp.x, mz = -inp.y;
+      if (Math.hypot(mx, mz) > 0.25) this.ctlCancel();
+      else if (active) { const v = this.steer(dt); if (v) { mx = v.x; mz = v.z; } }
       const len = Math.hypot(mx, mz);
       if (len > 1) { mx /= len; mz /= len; }
       if (len > 0.25) { const l = Math.hypot(mx, mz); e.fx = mx / l; e.fz = mz / l; }
@@ -696,13 +718,14 @@ export class KeepSoloScene extends MiniGame {
 
   updateCamera(dt, snap = false) {
     const e = this.hero;
-    let cx = e.x, cz = e.z, d = this.kind === 'town' ? 24 : 20;
+    let cx = e.x, cz = e.z, d = (this.kind === 'town' ? 24 : 20);
     const b = this.boss;
     if (this.kind === 'dungeon' && b?.awake) {
       cx = (e.x * 2 + b.x) / 3; cz = (e.z * 2 + b.z) / 3;
       d = clamp(this.fitDistance(Math.abs(b.x - e.x) + 12, (Math.abs(b.z - e.z) + 9) * Math.sin(TILT)), 20, 30);
     }
     if (this.kind === 'town') { cx = clamp(cx, -7, 7); cz = clamp(cz, -7, 4); }
+    d *= this.zoom || 1; // the mouse wheel only zooms out (never closer than the normal view)
     const k = snap ? 1 : Math.min(1, dt * 4);
     this.camCenter.x += (cx - this.camCenter.x) * k;
     this.camCenter.z += (cz - this.camCenter.z) * k;
@@ -758,9 +781,10 @@ export class KeepSoloScene extends MiniGame {
     const cur = this.level;
     for (const w of [this.townWorld, this.live?.world]) if (w && w.level !== cur) this.disposeWorld(w);
     this.hud.dispose();
+    this.disposeControl();
     super.dispose();
   }
 }
 
-Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin);
+Object.assign(KeepSoloScene.prototype, FoeMixin, WorldMixin, TownMixin, SkillMixin, ControlMixin);
 for (const k of BORROW) Object.defineProperty(KeepSoloScene.prototype, k, Object.getOwnPropertyDescriptor(KeepScene.prototype, k));
