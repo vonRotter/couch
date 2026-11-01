@@ -514,8 +514,16 @@ night match yours and crops grow while you are away.
   catch sea critters with a bubble net. Air never punishes; running out just pulls you up with your
   haul. Flippers and a big tank open the coral reef and the deep trench; a sea lamp opens a dark
   glow cave, and a scooter swims faster.
+- **Night dives:** the sea follows the island's clock. From 17:00 it gets dim, from 21:00 to 4:36 it is
+  dark, and it is light again at 7:30. In the dark you see a circle of light around you: a small free
+  headlight, or a big circle with Rosa's sea lamp (the glow cave still needs the lamp). Glowing critters
+  only come out at night (20:00 to 5:00): lanternfish in the open sea, glowing jellies, sparkling plankton,
+  and two night finds, the **moon jelly** and the **glow shrimp** (in the fish log and the museum with a 🌙
+  "only at night"; the night fish in the log have the moon too).
 - **The Driftwood Café:** repair it with wood and coins, cook 12 dishes from crops and fish, and serve
   guests at the counter (8:00 to 22:00): the right dish in time gives coins, tips and friendship.
+  **Seaweed cakes** (2 seaweed and a carrot) replace the old crab cake, and the seafood platter is clam,
+  shrimp and squid (no lobster).
 - **Animals:** Aunt Hazel's barn quest (15 wood and 10 stone) brings two chickens; Rosa then sells
   more chickens, a goat and a cow. Cut tall grass for hay and put it in the trough; each real day an
   animal with hay lays an egg or can be milked (no hay just skips the day, nothing gets sick). Pet each
@@ -543,12 +551,37 @@ night match yours and crops grow while you are away.
   In winter you can ride a sled down kite hill (hot cocoa for the first ride each winter week), and
   snowy days water the crops like rain. The calendar board colors the weeks by season.
 - **The island grows:** the museum east of the square (donate fish, sea finds and crystals to Curator
-  Hoot; prizes at 5, 10, 20, 30 and all 42 pieces; crystals come from Lighthouse Caves and Crystal
+  Hoot; 46 pieces: 22 fish, 13 sea finds and treasures, 6 crystals and a **Crab friends** wall of 5 that
+  fills itself as you help crabs; prizes at 5, 10, 20, 30 and all 46; crystals come from Lighthouse Caves and Crystal
   Caves letters, the glow cave and Shell Isle), the greenhouse (Aunt Hazel's fourth quest; anything
   grows inside in any season), sprinklers (water their 8 neighbours) and scarecrows (sometimes an
   extra crop) from the workbench, and Shell Isle: a sea chart in the glow cave lets Grumbleton sail
   you there from the end of the pier. It has tide pools, palms, wild berries, treasure to dig, a
-  hidden cove with its own fish, and Shelby the hermit crab, who visits the beach on weekends.
+  hidden cove with its own fish, and Shelby the hermit crab, who visits Crab Cove on weekends (10 to 18).
+- **Crab friends:** crabs, snow crabs and lobsters are never caught, sold or cooked: they are friends who
+  sometimes need a hand (they never pinch, never get hurt). Each real day, on the main island's beach and
+  pier, on Shell Isle and in the dive: a crab flipped on its back (B turns it over), a crab tangled in
+  seaweed or an old net (B three times; in the dive a crab or lobster in a net), a family of three lost baby
+  crabs who follow you in a little parade to the glowing ring where their family waits, and (on land) a
+  hermit crab who has outgrown its shell and a couple of shells to find. Helped crabs say thank you with a
+  shell, a piece of sea glass, a pearl or a big shell. **Hermit crabs** (Pebble, Biscuit, Noodle, Dot,
+  Bubbles, Sandy, Coco and Wiggle, one or two waiting each day) want a big shell: a spiral shell or a conch
+  (on the sand, in the dive, as thanks from crab families) or one crafted at the workbench (castle shell,
+  teapot shell, lantern shell, flower shell, each from a sea shell and a few things); they wear it and show
+  it off, and move to the cove. **Crab Cove** on the east beach grows with the crabs you help: a sign and a
+  pool (0), a sandcastle crab house and a crab family (1 crab, +30 coins), shell houses and flags where the
+  hermit crabs live (5, +50 coins and a spiral shell), a dance ring and shell lanterns (12, +80 coins and a
+  golden crab statue for the yard) and a shell palace with a crab band (25, +150 coins and a big crab
+  plushie). From level 3 the crabs dance on weekend evenings (17 to 20) and on full moon nights (19 to 23):
+  B joins the dance (25 coins and a shell once a day). **Crab friends** (Ruby the red crab, Frost the snow
+  crab, Captain the lobster, Tiny the baby crab and every hermit crab you helped) can follow you, one at a
+  time, chosen at the cove's sign: they scuttle behind you, keep clear of doors, dance when you jump, wave
+  when you stand still, dig up a little treasure on the sand (three times a day) and wait at your cottage at
+  night (21 to 6). The Friends book has a Crab friends page (how many you helped and how, the cove's level,
+  the museum wall, the hermit crabs and their shells, who comes along), and Shelby talks about your crabs.
+  Old saves: crabs in the bag go home to the sea with a thank-you letter from Shelby that brings the coins
+  they were worth and a big shell; crab cakes become seaweed cakes; crabs given to the museum stay on the
+  Crab friends wall.
 - **Polish:** Pip's camera (photos become postcards in the mailbox and an album of the newest 12),
   a three-minute fishing tournament against Grumbleton (Wednesdays, or any day at 5 hearts), a
   specials board in the café (up to 4 dishes that sell for more and are ordered more often), and baby
@@ -595,13 +628,13 @@ night match yours and crops grow while you are away.
   | Bag, letters, fish log, calendar, album, Friends book | close | close | close |
   | Shop | – | buy or sell one | leave |
   | Fishing | – | cast, hook, reel in the green | let go / close the result |
-  | Café stove, specials board, workbench, museum | – | cook / special on-off / make / donate | close |
+  | Café stove, specials board, workbench, museum, Crab Cove sign | – | cook / special on-off / make / donate / choose a crab friend | close |
   | Café service | – | serve | close the café |
   | Decorate | turn (hold: next thing) | place or pick up | done |
   | Photo mode | – | click | back |
   | Lighthouse top and telescope | – | telescope / look closer | climb down / back |
   | Sled | – (stick steers) | – | – |
-  | Diving | kick (swim faster for a moment) | pick up, open, climb out, or the bubble net | swim up to the boat |
+  | Diving | kick (swim faster for a moment) | pick up, open, help or wave to a crab, climb out, or the bubble net | swim up to the boat |
 
 **Read-aloud.** V turns read-aloud on or off (on by default for new solo profiles, off on the shared
 island; each profile remembers its choice). Intro cards, Party Mix how-to cards and the story and
