@@ -101,7 +101,7 @@ export class Gull {
     const turn = THREE.MathUtils.clamp(d, -TURN * dt, TURN * dt);
     this.yaw += turn;
     const rate = turn / Math.max(dt, 1e-3);
-    this.bank += (THREE.MathUtils.clamp(-rate * 0.55, -0.75, 0.75) - this.bank) * Math.min(1, dt * 4);
+    this.bank += (THREE.MathUtils.clamp(-rate * 0.4, -0.6, 0.6) - this.bank) * Math.min(1, dt * 4);
     this.pos.x += Math.cos(this.yaw) * speed * dt;
     this.pos.z -= Math.sin(this.yaw) * speed * dt;
     const dy = THREE.MathUtils.clamp(to.y - this.pos.y, -climb, climb);

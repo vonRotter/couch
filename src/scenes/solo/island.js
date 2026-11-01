@@ -1131,14 +1131,16 @@ export class SoloIslandScene extends BaseScene {
 
   /**
    * The one [B] "use" action out of what interactions() found: b is talking, picking up, doors and shops;
-   * a is the held tool. A villager you face wins over the field, else a real tool action wins.
+   * a is the held tool. Things and places win over the tool; a villager wins only when you face them.
    */
   useAction(ia) {
     const { a, b } = ia;
     if (b?.text && a?.text) {
+      // places and things (sail, sign, bin, mailbox, shop, knock...) win; a villager only when you face them
       const P = this.player, n = b.npc;
-      if (n) { const dx = n.x - P.x, dz = n.z - P.z, d = Math.hypot(dx, dz) || 1; if ((dx * P.fx + dz * P.fz) / d > 0.5) return b; }
-      return a.ok ? a : b;
+      if (!n || !a.ok) return b;
+      const dx = n.x - P.x, dz = n.z - P.z, d = Math.hypot(dx, dz) || 1;
+      return (dx * P.fx + dz * P.fz) / d > 0.5 ? b : a;
     }
     if (b?.text) return b;
     return a || null;
@@ -1842,7 +1844,7 @@ export class SoloIslandScene extends BaseScene {
     this.hud.setTasks(this.mode === 'walk' || this.mode === 'bag' ? this.tasks() : []);
     const items = S.inv.map((it) => ({ ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) }));
     if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
-    this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : 'isl.keys', { bag: this.bagKey() }));
+    this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : this.onPad ? 'isl.keysPad' : 'isl.keys', { bag: this.bagKey() }));
     let prompt = '';
     if (this.mode === 'walk' && ia) prompt = ia.use?.text || '';
     if (!['fish', 'deco', 'sled', 'sail'].includes(this.mode)) this.hud.setPrompt(prompt);

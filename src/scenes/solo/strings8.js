@@ -7,6 +7,7 @@ import { addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'isl.key.bagKb': 'Tab', 'isl.key.bagPad': 'hold [B]',
+    'isl.keysPad': '[A] jump · [B] use, talk, go in · hold [B]: bag · [C] menu and Friends book',
     'isl.bagHow.kb': 'Tab opens your bag', 'isl.bagHow.pad': 'Hold [B] to open your bag',
     'isl.h.growingNight': '{item}: about {m} min (sleeping until morning)', 'isl.grow.night': 'slower at night',
     // homes and knocking
@@ -58,6 +59,7 @@ addStrings({
   },
   no: {
     'isl.key.bagKb': 'Tab', 'isl.key.bagPad': 'hold [B]',
+    'isl.keysPad': '[A] hopp · [B] bruk, snakk, gå inn · hold [B]: sekk · [C] meny og Venneboka',
     'isl.bagHow.kb': 'Tab åpner sekken', 'isl.bagHow.pad': 'Hold [B] for å åpne sekken',
     'isl.h.growingNight': '{item}: omtrent {m} min (sover til i morgen)', 'isl.grow.night': 'saktere om natta',
     'isl.h.knock': '[B] bank på døra til {name}',

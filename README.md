@@ -479,13 +479,36 @@ night match yours and crops grow while you are away.
   a carrot for his pickaxe and clear the rockfall to open Crystal Caves; give Mumble the grumble three
   radishes to find the burrow to Grumble Guides.
 - **Farming:** Aunt Hazel gives you a hoe, a watering can and a scythe. Till, plant, water (one
-  watering lasts six hours; dry crops wait and never die), harvest and sell in the shipping bin or at
-  Rosa's store. Fourteen crops, from radishes (4 minutes) to star fruit (8 hours), by season.
+  watering lasts six hours of daytime; dry crops wait and never die), harvest and sell in the shipping bin
+  or at Rosa's store. Fourteen crops, from radishes (4 minutes) to star fruit (8 hours), by season.
+  **At night (21:00 to 6:00) outdoor crops grow very slowly** (a tenth of the speed; the soil does not dry
+  at night, so a crop watered in the evening is still wet in the morning). The greenhouse has grow lamps
+  that glow after dark and keeps full speed day and night. Growth is worked out over the real time that
+  passed, also while the game is closed (a star fruit watered at 20:00 has 114 of its 480 minutes at
+  6:00; in the greenhouse it is ripe). Sprinklers and rain water the same way.
 - **Villagers:** Aunt Hazel, Rosa, Keeper Bram, Grumbleton, Pip the astronaut and Mumble walk their
   own daily routines, talk (read aloud), react to your progress in their games, like some gifts more
-  than others, and have friendship hearts, heart events and small quests.
-- **Fishing:** Grumbleton gives you a rod. Cast, wait for the bite, then reel in by pressing A
-  in the green zone; 16 fish by place and real time of day (river, pier, shore and the dive boat),
+  than others, and have friendship hearts, heart events and small quests. Name tags show only the name.
+- **Homes at night:** everyone has a home: Aunt Hazel her cottage, Rosa upstairs in the store, Keeper
+  Bram a keeper's door on the lighthouse, Grumbleton a cabin hatch on his ship (top of the gangplank), Pip
+  the rocket, Mumble a little den at the meadow, Curator Hoot the museum and Shelby her shell house on
+  Shell Isle. At bedtime they walk home and go in (the door swings open and shut), and come out in the
+  morning. Windows are lit while they are up and dark, with a "zzz" over the roof, while they sleep.
+  At home but still up (about an hour before bed): Hazel 21-22, Rosa 20-21, Bram 1-2, Grumbleton
+  22:30-23, Pip 22-23, Mumble 20:30-21, Hoot 21-22, Shelby 19-20; asleep: Hazel 22-6, Rosa 21-7, Bram
+  2-6, Grumbleton 23-8, Pip 23-8, Mumble 21-7, Hoot 22-7, Shelby 20-7 (on Lantern Night Bram stays in
+  the square until midnight). A sleeping villager's door is locked: B knocks and they answer with a
+  sleepy line through the door (read aloud, two per villager, no hearts lost); knock while they are up
+  and they come to the door to chat. The store and the museum are closed with a sign while their owner
+  is home. Quests and story steps say who is asleep and until when; friends come to the café only while
+  they are up during opening hours; story scenes and the Lamp Festival bring everyone out.
+- **Friends book:** F (or the start menu) opens a page per villager: picture, hearts, birthday, the
+  gifts they love, like and dislike (filled in when you give that gift, or when a friend mentions a
+  favorite while chatting, one per heart), where they are right now and what comes next with them
+  (quest, story, heart event or request). The stick or the arrow keys turn the pages, each page is read
+  aloud, and the last page shows the farm animals' hearts.
+- **Fishing:** Grumbleton gives you a rod. Cast with B, wait for the bite (B), then reel in by
+  pressing B in the green zone (C lets go); 16 fish by place and real time of day (river, pier, shore and the dive boat),
   with a fish log of pictures.
 - **Diving:** from the dive boat, swim a side-view sea: pick kelp and clams, open treasure chests and
   catch sea critters with a bubble net. Air never punishes; running out just pulls you up with your
@@ -499,8 +522,8 @@ night match yours and crops grow while you are away.
   animal once a day for up to 5 animal hearts. Eggs and milk add four café dishes (16 in total).
 - **Building and decorating:** break rock piles for stone and cut tall grass for hay and fiber. The
   workbench by the cottage crafts 12 yard pieces and furniture, upgrades the cottage (porch and a
-  second room) and has a decorate mode: the stick moves a cursor over the grid, A places or picks
-  up, B turns (hold B for the next thing), C ends. Game trophies are movable pieces too. The front door leads into the cottage,
+  second room) and has a decorate mode: the stick moves a cursor over the grid, B places or picks
+  up, A turns (hold A for the next thing), C ends. Game trophies are movable pieces too. The front door leads into the cottage,
   which you decorate the same way.
 - **Island life:** friendship goes to 10 hearts with new heart events at 6 and 8 (Pip's rocket
   launch among them). A calendar board in the square shows birthdays (gifts count double),
@@ -554,11 +577,31 @@ night match yours and crops grow while you are away.
   in the ring, look closer and pick its name from three funny ideas. Each gives coins, all eight a star
   globe.
 - **B4 polish:** the boat trip to Shell Isle swings the view from the island you leave to the one you
-  sail to, with lighter fog, buoys, gulls, a waving seal and the dolphin; in winter the paths and the
+  sail to, with lighter fog, buoys, gulls, a waving seal and the dolphin (the gulls flap and glide with
+  spread wings, bank into turns and land on posts, barrels and the sand with folded wings; at night they
+  sleep perched); in winter the paths and the
   field turn snowy and every roof has snow (Shell Isle stays warm and sunny); Shelby comes to the café as
   a regular at 3 hearts (seaweed salad) and writes letters like the other friends.
-- Stick to walk, A uses the held tool (or goes in at doors), B talks, picks up and opens the bag,
-  1–9 pick a bag slot, C opens the start menu. A new controller pressing jump takes over.
+- **Controls (solo island only):** stick to walk, **A jumps** (a little hop), **B is the one use
+  button** (the held tool or seeds, talking, picking up, shipping, mail, doors, shops and knocking; a
+  villager you face wins over the field), **C opens the start menu** (Island, Story, Solo, Friends book).
+  The bag is **Tab** on a keyboard and a **long press of B** on a gamepad; 1–9 pick a bag slot; **F**
+  opens the Friends book. Keyboard 1: Space / E / Q. A new controller pressing jump takes over.
+
+  | Mode | A | B | C |
+  | --- | --- | --- | --- |
+  | Walking | jump | use, talk, go in, knock (gamepad: hold for the bag) | start menu |
+  | Dialog | next | next / pick the highlighted answer | answer "no" |
+  | Bag, letters, fish log, calendar, album, Friends book | close | close | close |
+  | Shop | – | buy or sell one | leave |
+  | Fishing | – | cast, hook, reel in the green | let go / close the result |
+  | Café stove, specials board, workbench, museum | – | cook / special on-off / make / donate | close |
+  | Café service | – | serve | close the café |
+  | Decorate | turn (hold: next thing) | place or pick up | done |
+  | Photo mode | – | click | back |
+  | Lighthouse top and telescope | – | telescope / look closer | climb down / back |
+  | Sled | – (stick steers) | – | – |
+  | Diving | kick (swim faster for a moment) | pick up, open, climb out, or the bubble net | swim up to the boat |
 
 **Read-aloud.** V turns read-aloud on or off (on by default for new solo profiles, off on the shared
 island; each profile remembers its choice). Intro cards, Party Mix how-to cards and the story and
