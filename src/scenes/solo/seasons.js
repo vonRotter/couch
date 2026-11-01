@@ -4,6 +4,7 @@ import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now, count, give, take } from './save.js';
 import { dayKey, dayRand, birthdayOf, festivalOn, rainyOn, monthDays, seasonOf, weekIndex, SEASONS, SEASON_ICON, SEASON_FEST } from './calendar.js';
+import { wetEnd } from './farm.js';
 import { CROP_IDS, CROPS, inSeason, isHardy } from './items.js';
 import { NPCS, npcState, heartsOf } from './npcs.js';
 import { PLACES, PIER, PLAZA, heightAt } from './map.js';
@@ -128,9 +129,9 @@ export class Seasons {
       if (news.length) this.host.later(first ? 2.2 : 0.2, () => { for (const s of news) this.host.dayToast(s); });
     }
     if (this.rainy) {
-      // rain keeps every planted tile wet until the end of the day
-      const end = new Date(at); end.setHours(23, 59, 59, 0);
-      for (const tl of Object.values(this.S.tiles)) if (tl.crop && (tl.wetUntil || 0) < end.getTime()) tl.wetUntil = end.getTime();
+      // rain waters every planted tile all day long (like a watering that never stops; it lasts into the night)
+      const end = wetEnd(at);
+      for (const tl of Object.values(this.S.tiles)) if (tl.crop && (tl.wetUntil || 0) < end) tl.wetUntil = end;
     }
     // party hats on birthdays
     for (const n of this.host.npcs) {

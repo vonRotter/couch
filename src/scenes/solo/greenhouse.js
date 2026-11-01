@@ -3,11 +3,12 @@ import { toon } from '../../core/palette.js';
 import { GREENHOUSE, GREEN, heightAt } from './map.js';
 import { tileKey } from './farm.js';
 import { now } from './save.js';
-import { mesh, box, cyl, roofGeo, makeSign } from './models.js';
+import { mesh, box, cyl, sph, cone, roofGeo, makeSign } from './models.js';
 
 // The greenhouse east of the farm (milestone B3). At first it is an empty old frame; Aunt Hazel's fourth
 // quest (wood, stone and fiber) fixes it: glass walls and roof and two rows of beds (a second small field,
 // see farm.js). Any crop can be planted in the beds in any season. You walk in through the door in front.
+// Milestone C: outdoor crops nearly sleep at night, but the greenhouse has grow lamps and keeps going.
 
 const G = GREENHOUSE;
 
@@ -48,8 +49,17 @@ export class Greenhouse {
     const bx = GREEN.x0 + (GREEN.cols * GREEN.size) / 2 - G.x, bz = GREEN.z0 + (GREEN.rows * GREEN.size) / 2 - G.z;
     this.glass.add(mesh(box(GREEN.cols * GREEN.size + 0.3, 0.16, GREEN.rows * GREEN.size + 0.3), 0x8a5a32, bx, 0.06, bz));
     for (let i = 0; i < 3; i++) this.glass.add(mesh(cyl(0.2, 0.15, 0.3, 8), 0xd9776a, x1 - G.x - 0.45, 0.15, z0 - G.z + 0.5 + i * 0.6), mesh(cyl(0.15, 0.15, 0.25, 6), 0x3fae4a, x1 - G.x - 0.45, 0.4, z0 - G.z + 0.5 + i * 0.6, false));
+    // grow lamps under the ridge: the greenhouse keeps growing at full speed at night (farm.js), and they glow
+    this.lampMat = new THREE.MeshBasicMaterial({ color: 0xd8d8cc });
+    this.haloMat = new THREE.MeshBasicMaterial({ color: 0xffc860, transparent: true, opacity: 0, depthWrite: false });
+    for (const dx of [-1.9, 0, 1.9]) {
+      this.glass.add(mesh(cyl(0.015, 0.015, 0.8, 4), 0x2b2340, dx, 3.15, 0, false), mesh(cone(0.26, 0.22, 10), 0x3fae4a, dx, 2.7, 0, false));
+      this.glass.add(mesh(sph(0.12, 10, 8), this.lampMat, dx, 2.55, 0, false), mesh(sph(0.5, 12, 8), this.haloMat, dx, 2.45, 0, false));
+    }
     this.glass.position.copy(this.frame.position);
     host.scene.add(this.glass);
+    this.lampSpot = { x: G.x, y: y + 2.4, z: G.z };
+    this.mapRef = map;
     // a sign while it is broken
     this.sign = makeSign(0x8ac926);
     this.sign.position.set(G.x + 1.6, heightAt(G.x + 1.6, z1 + 0.9), z1 + 0.9);
@@ -68,8 +78,17 @@ export class Greenhouse {
 
   get open() { return !!this.host.save.unlocks.greenhouse; }
 
+  /** The grow lamps glow after dark (island.applySky). */
+  lights(lit) {
+    this.lampMat.color.setHex(lit ? 0xfff0b0 : 0xd8d8cc);
+    this.haloMat.opacity = lit ? 0.32 : 0;
+  }
+
   refresh() {
     this.glass.visible = this.open;
+    // a real lamp light joins the island's lamps once the greenhouse works
+    const spots = this.mapRef.lampSpots, has = spots.includes(this.lampSpot);
+    if (this.open && !has) spots.push(this.lampSpot);
     this.sign.visible = !this.open;
     this.signObs.x = this.open ? 1e5 : this.signSpot.x;
   }

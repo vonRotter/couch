@@ -38,18 +38,65 @@ export function tileAt(x, z, greenhouse = true) {
   return null;
 }
 
-/** Add the wet time between tile.last and now to the crop's growth (clock-safe). */
-export function grow(tile, at, sprinkled = false) {
+// Night (milestone C): from 21:00 to 6:00 (local time) outdoor crops grow at NIGHT_SPEED (a tenth), while
+// the greenhouse beds keep full speed under their lamps. The soil does not dry at night either: a watering
+// lasts WET_MS of daytime, so a crop watered in the evening is still wet in the morning. Growth is
+// integrated over the real time that passed (also while the game was closed), split into day and night.
+export const NIGHT_FROM = 21, NIGHT_TO = 6, NIGHT_SPEED = 0.1;
+
+const isNightHour = (h) => h >= NIGHT_FROM || h < NIGHT_TO;
+/** The next day/night boundary after t (ms): 6:00 or 21:00 local time. */
+function nextEdge(t) {
+  const d = new Date(t), h = d.getHours(), e = new Date(t);
+  if (h >= NIGHT_FROM) { e.setDate(e.getDate() + 1); e.setHours(NIGHT_TO, 0, 0, 0); } else if (h < NIGHT_TO) e.setHours(NIGHT_TO, 0, 0, 0);
+  else e.setHours(NIGHT_FROM, 0, 0, 0);
+  return Math.max(e.getTime(), t + 1000); // (daylight saving can not make us stand still)
+}
+
+/** Milliseconds of day and of night between a and b. */
+export function dayNight(a, b) {
+  let day = 0, night = 0, t = a;
+  for (let i = 0; t < b && i < 20000; i++) {
+    const e = Math.min(b, nextEdge(t));
+    if (isNightHour(new Date(t).getHours())) night += e - t; else day += e - t;
+    t = e;
+  }
+  return { day, night };
+}
+
+/** When soil watered at `at` dries: after WET_MS of daytime (night hours do not count). */
+export function wetEnd(at, ms = WET_MS) {
+  let t = at, left = ms;
+  for (let i = 0; left > 0 && i < 100; i++) {
+    const e = nextEdge(t);
+    if (isNightHour(new Date(t).getHours())) { t = e; continue; }
+    if (e - t >= left) return t + left;
+    left -= e - t;
+    t = e;
+  }
+  return t;
+}
+
+/** Add the wet time between tile.last and now to the crop's growth (clock-safe); slower at night outside. */
+export function grow(tile, at, sprinkled = false, greenhouse = false) {
   if (!tile.crop) { tile.last = at; return; }
   const total = CROPS[tile.crop].grow;
-  if (tile.wetUntil > at + WET_MS) tile.wetUntil = at + WET_MS; // the clock went backwards
+  const maxWet = wetEnd(at);
+  if (tile.wetUntil > maxWet) tile.wetUntil = maxWet; // the clock went backwards
   const last = tile.last ?? at;
   if (at > last) {
-    const wetEnd = sprinkled ? at : Math.min(tile.wetUntil || 0, at); // a sprinkler never lets it dry
-    if (wetEnd > last) tile.growth = Math.min(total, (tile.growth || 0) + (wetEnd - last));
+    const wetTo = sprinkled ? at : Math.min(tile.wetUntil || 0, at); // a sprinkler never lets it dry
+    if (wetTo > last) {
+      const dn = greenhouse ? null : dayNight(last, wetTo);
+      const add = greenhouse ? wetTo - last : dn.day + dn.night * NIGHT_SPEED;
+      tile.growth = Math.min(total, (tile.growth || 0) + add);
+    }
   }
   tile.last = at;
 }
+
+/** Is it night for the crops right now (outdoor growth is slow)? */
+export const cropNight = (at = now()) => isNightHour(new Date(at).getHours());
 
 export function stageOf(tile) {
   if (!tile.crop) return -1;
@@ -165,8 +212,8 @@ export class Farm {
     const wet = this.sprinkled();
     for (const [k, t] of Object.entries(this.save.tiles)) {
       const sp = wet.has(k);
-      grow(t, at, sp);
-      if (sp) t.wetUntil = Math.max(t.wetUntil || 0, at + WET_MS);
+      grow(t, at, sp, k[0] === 'g');
+      if (sp) t.wetUntil = Math.max(t.wetUntil || 0, wetEnd(at));
       const { c, r, f } = parseKey(k);
       this.refresh(c, r, at, f);
     }
@@ -223,8 +270,8 @@ export class Farm {
   water(c, r, at, f = 0) {
     const t = this.tile(c, r, f);
     if (!t || t.grass) return null;
-    grow(t, at);
-    t.wetUntil = at + WET_MS;
+    grow(t, at, false, !!f);
+    t.wetUntil = wetEnd(at);
     this.refresh(c, r, at, f);
     return 'watered';
   }
