@@ -92,7 +92,7 @@ const PATHS = [
 
 // Where each villager lives (milestone C): the door they walk to at bedtime (`spot` is the doorstep
 // outside it). Homes are built and animated in homes.js; these numbers are shared with the schedules.
-export const DEN = { x: 50.6, z: -15.6 }; // Mumble's own little den at the meadow (the big burrow is the game)
+export const DEN = { x: 50.3, z: -17.6 }; // Mumble's own little den at the meadow (the big burrow is the game)
 export const HOME_DOORS = {
   hazel: { spot: { x: -2, z: -24.0 } }, // her cottage on the hill
   rosa: { spot: { x: 12, z: -13.0 } }, // upstairs in the store
