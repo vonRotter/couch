@@ -51,7 +51,7 @@ export class Isle2 {
     this.mainBoatObs = map.circObs(MAIN_BOAT.x, MAIN_BOAT.z, 0.1);
     // Shelby's hut, palms, berry bushes, tide pools, digging spots, rocks around the cove, lamps
     const put = (obj, x, z, ry = 0) => { obj.position.set(x, heightAt(x, z), z); obj.rotation.y = ry; this.group.add(obj); return obj; };
-    put(makeShellHut(), HUT.x, HUT.z);
+    this.hut = put(makeShellHut(), HUT.x, HUT.z); // Shelby's home (homes.js adds her door and window)
     map.circObs(HUT.x, HUT.z, 1.55);
     this.palms = PALMS.map(([x, z], i) => { const g = put(makePalm(), x, z, i * 1.1); map.circObs(x, z, 0.35); return { i, x, z, g }; });
     this.berries = BERRIES.map(([x, z], i) => { const g = put(makeBerryBush(), x, z, i); map.circObs(x, z, 0.6); return { i, x, z, g }; });
@@ -172,7 +172,7 @@ export class Isle2 {
     if (!this.I.chart || this.sail) return;
     const g = this.host.npc('grumbleton');
     const ask = (dir) => {
-      if (g.sleep && dir === 'isle') return { text: t('isl.isle.boatSleep'), fn: () => this.host.say([{ key: 'isl.isle.boatSleep' }]) };
+      if ((g.sleep || g.inside) && dir === 'isle') return { text: t('isl.isle.boatSleep'), fn: () => this.host.say([{ key: 'isl.isle.boatSleep' }]) };
       return { text: nm(dir === 'isle' ? 'isl.h.sailThere' : 'isl.h.sailHome'), fn: () => this.startSail(dir) };
     };
     if (!this.here(P) && Math.hypot(P.x - MAIN_BOARD.x, P.z - MAIN_BOARD.z) < 1.8) out.b = ask('isle');
@@ -190,6 +190,8 @@ export class Isle2 {
     g.busy = true;
     g.route = [];
     g.sleep = false;
+    g.inside = false;
+    g.doorAnim = null;
     this.boat.visible = true;
     this.boat.rotation.y = dir === 'isle' ? -Math.PI / 2 : Math.PI / 2;
     host.game.audio.play('whoosh');

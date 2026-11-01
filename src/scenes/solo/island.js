@@ -15,6 +15,7 @@ import './strings4.js';
 import './strings5.js';
 import './strings6.js';
 import './strings7.js';
+import './strings8.js';
 import { BATTLE_COUNT, ISLANDS as BREACH_ISLANDS } from '../breach/levels.js';
 import { Ranch } from './animals.js';
 import { Builder } from './build.js';
@@ -27,9 +28,11 @@ import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
 import { DiveScene } from './dive.js';
 import { IslandMap, heightAt, riverDist, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
-import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS } from './farm.js';
+import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS, cropNight } from './farm.js';
+import { Homes, makeHomeMats } from './homes.js';
+import { FriendsBook } from './friends.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
-import { IslandHud, heartsHtml } from './hud.js';
+import { IslandHud } from './hud.js';
 import { Life } from './life.js';
 import { SEASON_ICON, dayKey, dayRand } from './calendar.js';
 import { ToastQueue } from './toasts.js';
@@ -51,7 +54,7 @@ import { mesh, box, sph, makeTool, makeDeco, makeBranch, makeSign } from './mode
 const SPEED = 6.2;
 const PR = 0.42;
 const CAM_UP = 12.5, CAM_BACK = 13; // a bit further than the shared island's closest framing (10.4 / 10.4)
-const MODES = ['island', 'story', 'solo'];
+const MODES = ['island', 'story', 'solo', 'friends']; // the start menu ('friends' opens the Friends book)
 const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];
 const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
@@ -61,6 +64,10 @@ const BRANCH_RESPAWN = 15 * MIN;
 const NPC_SPEED = 2.6;
 const TALK_R = 2.0;
 const DOOR_R = 1.9;
+// The solo island's buttons: [A] jumps, [B] is the one "use" button (tools, talking, picking up, going in),
+// [C] opens the menu. The bag is Tab on a keyboard or a long press of [B] on a gamepad; F is the Friends book.
+const HOLD_BAG = 0.45; // seconds of [B] on a gamepad that open the bag instead of using
+const JUMP_V = 7.4, GRAVITY = 26; // a small bean hop (about a meter high, 0.6 s in the air)
 
 // The trophy garden between the farm and the square: 3 rows of 5 spots for decorations.
 const DECO_ORDER = ['lhLamp', 'lhTrophy', 'duckTrophy', 'kite', 'hopTrophy', 'banner', 'statue', 'gnome', 'pumpkinLamp', 'bottle', 'lantern', 'spyglass', 'rocket', 'moonrock', 'castleTrophy'];
@@ -143,6 +150,9 @@ export class SoloIslandScene extends BaseScene {
     this.toasts = new ToastQueue(game.ui); // one or two pop-ups at a time, paused under panels
     this.key = null;
     this.ownMenu = true; // main.js: Esc is our help, not the game pause menu
+    // Tab opens the bag here: keep the browser from moving the focus
+    this.onTabKey = (e) => { if (e.code === 'Tab') e.preventDefault(); };
+    window.addEventListener('keydown', this.onTabKey);
     this.camera.fov = 45;
     this.camera.far = 320;
     this.camera.updateProjectionMatrix();
@@ -156,6 +166,7 @@ export class SoloIslandScene extends BaseScene {
       lamp: new THREE.MeshBasicMaterial({ color: 0xf3ead2 }),
       beam: new THREE.MeshBasicMaterial({ color: 0xfff3b0, transparent: true, opacity: 0, depthWrite: false }),
       screen: new THREE.MeshBasicMaterial({ color: 0x5ad6ff }),
+      home: makeHomeMats(), // each villager's own windows (dark while they sleep, homes.js)
     };
     this.scene.background = new THREE.Color(0xbfeeff);
     this.scene.fog = new THREE.Fog(0xbfeeff, 60, 150);
@@ -196,6 +207,8 @@ export class SoloIslandScene extends BaseScene {
     this.isle2 = new Isle2(this);
     this.photo = new Photo(this);
     this.tour = new Tournament(this);
+    this.homes = new Homes(this); // everyone's front door (milestone C)
+    this.friends = new FriendsBook(this); // hearts, birthdays and favorite gifts (milestone C)
     this.farm.objModel = (id) => this.builder.model(id); // sprinklers and scarecrows on the field
     this.seasons = new Seasons(this);
     this.spawnNpcs();
@@ -309,7 +322,7 @@ export class SoloIslandScene extends BaseScene {
       const model = makeNpcModel(id);
       const at = now();
       const s = scheduleNow(id, at, this.save);
-      const n = { id, def: NPCS[id], model, x: s.spot.x, z: s.spot.z, y: 0, route: [], spotName: s.name, sleep: s.sleep, moving: false, wanderT: 2, hop: 0 };
+      const n = { id, def: NPCS[id], model, x: s.spot.x, z: s.spot.z, y: 0, route: [], spotName: s.name, sleep: s.sleep, wantIn: s.inside, wantSpot: s.spot, inside: s.inside, moving: false, wanderT: 2, hop: 0 };
       model.group.position.set(n.x, heightAt(n.x, n.z), n.z);
       model.face?.(0, 1);
       this.scene.add(model.group);
@@ -334,7 +347,7 @@ export class SoloIslandScene extends BaseScene {
     const hand = new THREE.Group();
     hand.position.set(0.42, 0.42, 0.12);
     ch.pivot.add(hand);
-    this.player = { p, ch, x, z, y: heightAt(x, z), fx: 0, fz: 1, hand, toolId: null, toolMesh: null };
+    this.player = { p, ch, x, z, y: heightAt(x, z), jy: 0, vy: 0, fx: 0, fz: 1, hand, toolId: null, toolMesh: null };
     ch.face(0, 1);
     this.puffs.burst(new THREE.Vector3(x, 0.6, z), 0xffffff, { count: 14, speed: 4, size: 0.4 });
   }
@@ -405,6 +418,7 @@ export class SoloIslandScene extends BaseScene {
     this.M.beam.opacity = lit ? 0.22 : 0;
     this.M.screen.color.setHex(lit ? 0x8ff0ff : 0x5ad6ff);
     for (const l of this.lamps) l.intensity = lit ? 14 * Math.min(1, (s.night - 0.3) * 2 + 0.3) : 0;
+    this.greenhouse?.lights(lit);
     this.story?.applyLamp(lit); // dark while the story is on, a long beam after the festival
     this.lightTop?.afterSky();
   }
@@ -423,17 +437,27 @@ export class SoloIslandScene extends BaseScene {
   // ---------- NPC life ----------
 
   scheduleNpc(n, at) {
-    if (n.talking || n.intro || n.busy) return;
+    if (n.talking || n.intro || n.busy || n.doorAnim) return;
     const s = scheduleNow(n.id, at, this.save);
     n.sleep = s.sleep;
+    n.wantIn = s.inside; // at home (homes.js): updateNpcs walks them in through the door
+    n.wantSpot = s.spot;
     let tx = s.spot.x, tz = s.spot.z;
     // between the islands (Shelby's weekend visits): hop over instead of walking on the sea
     if (Math.hypot(tx - n.x, tz - n.z) > 60) {
       n.x = tx; n.z = tz; n.route = []; n.wanderAt = null; n.spotName = s.name;
-      this.puffs.burst(new THREE.Vector3(n.x, 0.8, n.z), 0xffffff, { count: 10, speed: 3, size: 0.35 });
+      if (s.inside) this.homes.putInside(n);
+      else this.puffs.burst(new THREE.Vector3(n.x, 0.8, n.z), 0xffffff, { count: 10, speed: 3, size: 0.35 });
       return;
     }
-    if (n.def.wander && !n.sleep) {
+    if (n.inside) return; // they come out in updateNpcs when their day starts
+    // at bedtime: straight to the doorstep (also after a scene or a test moved them)
+    if (s.inside && (s.name !== n.spotName || (!n.route.length && Math.hypot(tx - n.x, tz - n.z) > 0.35))) {
+      n.spotName = s.name;
+      n.route = n.def.wander || n.def.isle ? [{ x: tx, z: tz }] : this.map.route(n.x, n.z, tx, tz);
+      return;
+    }
+    if (n.def.wander && !s.inside) {
       n.wanderT -= 1;
       if (n.wanderT <= 0 || !n.wanderAt) {
         n.wanderT = 3 + Math.random() * 4;
@@ -452,7 +476,17 @@ export class SoloIslandScene extends BaseScene {
   updateNpcs(dt) {
     for (const n of this.npcs) {
       let moving = false;
-      if (n.route.length && !n.talking) {
+      const free = !n.busy && !n.talking && !n.intro && !n.away;
+      // homes: walk in at bedtime, come out when the day starts (homes.js)
+      if (n.doorAnim) moving = this.homes.animate(n, dt) && n.doorAnim?.t > 0.35;
+      else if (n.inside) { if (!n.wantIn && free) this.homes.comeOut(n); }
+      else if (n.wantIn && free && !n.route.length) {
+        const sp = n.wantSpot;
+        if (sp && Math.hypot(sp.x - n.x, sp.z - n.z) < 0.4) this.homes.goIn(n);
+      }
+      if (n.doorAnim || n.inside) {
+        // (positioned by the door animation, or out of sight indoors)
+      } else if (n.route.length && !n.talking) {
         const w = n.route[0];
         const dx = w.x - n.x, dz = w.z - n.z, d = Math.hypot(dx, dz);
         if (d < 0.15) n.route.shift();
@@ -470,8 +504,9 @@ export class SoloIslandScene extends BaseScene {
       }
       n.moving = moving;
       n.hop = Math.max(0, n.hop - dt * 2.5);
-      n.y = (n.yOverride ?? this.map.floorAt(n.x, n.z, this.save.unlocks.bridge)) + Math.sin(n.hop * Math.PI) * 0.8;
+      n.y = (n.doorAnim?.y ?? n.yOverride ?? this.map.floorAt(n.x, n.z, this.save.unlocks.bridge)) + Math.sin(n.hop * Math.PI) * 0.8;
       n.model.group.position.set(n.x, n.y, n.z);
+      n.model.group.visible = !n.away && !this.homes.hidden(n);
       n.model.update(dt, { moving: moving ? 0.5 : 0, grounded: true, vy: 0 });
       if (n.sleep && !moving) {
         if (n.model.eyes) n.model.eyes.scale.y = 0.12;
@@ -524,10 +559,11 @@ export class SoloIslandScene extends BaseScene {
         this.renderLine(L, L.text ?? t(L.key, { name: this.playerName, ...L.vars }), this.lineVoice(L), L.who && NPCS[L.who] ? npcState(this.save, L.who) : null);
       }
     }
-    if (d.t < 0.25 || !(inp.aPressed || inp.bPressed)) return;
+    const back = !!L.choices && inp.cPressed; // [C] on a question picks the last answer ("no")
+    if (d.t < 0.25 || !(inp.aPressed || inp.bPressed || back)) return;
     d.i++;
     if (L.choices) {
-      const pick = inp.bPressed && !inp.aPressed ? L.choices.length - 1 : d.choice;
+      const pick = back && !inp.aPressed && !inp.bPressed ? L.choices.length - 1 : d.choice;
       this.hud.setDialog(null);
       this.mode = 'walk';
       this.dlg = null;
@@ -554,6 +590,8 @@ export class SoloIslandScene extends BaseScene {
     if (!P) { this.later(0.5, () => this.startIntro()); return; }
     hz.intro = true;
     hz.route = [];
+    hz.inside = false; // (a new friend at night: she pops out to say hello)
+    hz.doorAnim = null;
     hz.x = P.x + 1.6;
     hz.z = P.z + 1.2;
     hz.sleep = false;
@@ -561,7 +599,7 @@ export class SoloIslandScene extends BaseScene {
     hz.model.face(P.x - hz.x, P.z - hz.z);
     P.ch.face(hz.x - P.x, hz.z - P.z);
     const L = (k, fx) => ({ who: 'hazel', key: `isl.hazel.${k}`, fx });
-    this.say([L('intro1'), L('intro2', () => this.giveItems([['hoe', 1], ['can', 1], ['scythe', 1]], true)), L('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), L('intro4'), L('q1.ask')], () => {
+    this.say([L('intro1'), L('intro2', () => this.giveItems([['hoe', 1], ['can', 1], ['scythe', 1]], true)), L('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), { ...L('intro4'), vars: { bagHow: this.bagKey(true) } }, L('q1.ask')], () => {
       const S = this.save;
       S.intro = true;
       npcState(S, 'hazel').met = true;
@@ -613,7 +651,9 @@ export class SoloIslandScene extends BaseScene {
     const name = t(`isl.npc.${id}`);
     if (q.find) return `${t('isl.q.find', { item: t(`isl.i.${q.find}`), name })} ${t('isl.q.where', { where: t(`isl.where.${q.find}`) })}`;
     const list = q.need.map(([it, k]) => `${k} ${t(`isl.i.${it}`)} (${Math.min(k, count(this.save, it))}/${k})`).join(', ');
-    return t('isl.q.bring', { name, list });
+    // ready to hand in, but they are at home for the night: say when they come out
+    const away = this.questReady(id, n) ? this.homes.awayNote(id, now()) : '';
+    return t('isl.q.bring', { name, list }) + (away ? ` ${away}` : '');
   }
 
   findActive(id) {
@@ -669,7 +709,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'friends'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   /** The usual spot of a decoration (the trophy garden), or null. */
@@ -849,6 +889,8 @@ export class SoloIslandScene extends BaseScene {
       if (id === 'grumbleton' && S.sea.quest === 1) lines.push(L('fishWait', { n: S.sea.caught - (S.sea.questBase || 0) }));
       else lines.push(this.story.waitLine(n) || this.chatLine(n, st));
     }
+    // a friendly chat sometimes mentions a favorite gift (it goes into the Friends book)
+    if (!after && lines.length <= 1) { const tell = this.friends.tellLine(n); if (tell) lines.push(tell); }
     if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
     this.say(lines, () => {
       after?.();
@@ -881,6 +923,7 @@ export class SoloIslandScene extends BaseScene {
         take(S, held.id, 1);
         st.giftAt = now();
         const ts = taste(n.id, held.id);
+        if (this.friends.learn(n.id, held.id, ts)) this.later(0.6, () => this.game.ui.toast(t('isl.fb.learned', { name: t(`isl.npc.${n.id}`) }), 1800));
         const bd = this.seasons.isBirthday(n.id);
         this.addPts(n.id, GIFT_PTS[ts] * (bd ? 2 : 1) + (bd ? 4 : 0));
         if (ts === 'love' || ts === 'like') n.hop = 1;
@@ -975,16 +1018,18 @@ export class SoloIslandScene extends BaseScene {
       } else out.a = { text: t(`isl.locked.${pl.lock}`), fn: () => this.game.audio.play('bump') };
       return out;
     }
+    // knocking on the door of someone who is at home (homes.js)
+    if (this.homes.interactions(P, out, nm)) return this.fillDefaults(out, held);
     // townsfolk
     let best = null, bd = TALK_R;
     for (const n of this.npcs) {
-      if (n.away) continue;
+      if (n.away || n.inside || n.doorAnim) continue;
       const d = Math.hypot(P.x - n.x, P.z - n.z);
       if (d < bd) { bd = d; best = n; }
     }
     if (best) {
       const name = t(`isl.npc.${best.id}`);
-      out.b = { text: best.sleep ? t('isl.h.asleep', { name }) : nm('isl.h.talk', { name }), fn: () => this.talkTo(best) };
+      out.b = { text: best.sleep ? t('isl.h.asleep', { name }) : nm('isl.h.talk', { name }), fn: () => this.talkTo(best), npc: best };
     }
     const near = (x, z, r = 1.7) => Math.hypot(fx - x, fz - z) < r || Math.hypot(P.x - x, P.z - z) < r;
     if (!out.b && near(MAILBOX.x, MAILBOX.z)) out.b = S.mail.length ? { text: nm('isl.h.mail'), fn: () => this.openLetter() } : S.photos?.length ? { text: nm('isl.h.album'), fn: () => this.photo.openAlbum() } : { text: t('isl.h.mailNone'), fn: () => this.game.audio.play('bump') };
@@ -1033,7 +1078,7 @@ export class SoloIslandScene extends BaseScene {
     }
     // the rockfall
     if (!S.unlocks.mine && Math.hypot(P.x - ROCKFALL.x, P.z - ROCKFALL.z) < 3.4) {
-      out.a = held?.id === 'pickaxe' ? { text: nm('isl.h.rocks'), fn: () => this.hitRocks() } : { text: t('isl.h.rocksNeed'), fn: () => this.game.audio.play('bump') };
+      out.a = held?.id === 'pickaxe' ? { text: nm('isl.h.rocks'), fn: () => this.hitRocks(), ok: true } : { text: t('isl.h.rocksNeed'), fn: () => this.game.audio.play('bump') };
     }
     // rock piles and tall grass, the winter sled
     if (!out.a) out.a = this.builder.gatherAction(P, held?.id, nm);
@@ -1041,7 +1086,7 @@ export class SoloIslandScene extends BaseScene {
     // fishing, and the books
     if (!out.a && held?.id === 'rod') {
       const spot = this.fishSpot();
-      if (spot) out.a = { text: nm('isl.h.cast'), fn: () => { this.mode = 'fish'; this.fishing.start(spot.where, spot.x, spot.z); } };
+      if (spot) out.a = { text: nm('isl.h.cast'), fn: () => { this.mode = 'fish'; this.fishing.start(spot.where, spot.x, spot.z); }, ok: true };
     }
     if (!out.a && held?.id === 'fishlog') out.a = { text: nm('isl.h.log'), fn: () => this.openLog() };
     if (!out.a && held?.id === 'camera') out.a = { text: nm('isl.h.photo'), fn: () => this.photo.start() };
@@ -1065,17 +1110,86 @@ export class SoloIslandScene extends BaseScene {
       else if (id === 'can') out.a = tl ? { text: nm('isl.h.water'), fn: () => this.doTool('can', tile), ok: true } : { text: '', fn: () => this.doTool('can', tile) };
       else if (it?.kind === 'seed' && tl && !tl.crop && !this.canPlantHere(tile, it.crop)) out.a = { text: this.offSeasonText(it.crop), fn: () => this.offSeason(it.crop), bad: true };
       else if (it?.kind === 'seed') out.a = tl && !tl.crop ? { text: nm('isl.h.plant', { item: itemName(id) }), fn: () => this.doPlant(tile, id), ok: true } : !tl ? { text: t('isl.t.tillFirst'), fn: () => this.game.audio.play('bump'), bad: true } : null;
-      else if (!tl) out.a = { text: t('isl.h.pickTool'), fn: () => this.game.audio.play('bump') };
+      else if (!tl) out.a = { text: t('isl.h.pickTool', { bag: this.bagKey() }), fn: () => this.game.audio.play('bump') };
       if (tl?.crop && stage < 3) {
         const crop = itemName(tl.crop);
-        const info = tl.wetUntil > now() ? t('isl.h.growing', { item: crop, m: minutesLeft(tl) }) : t('isl.h.dry', { item: crop });
+        // outside, crops nearly sleep at night (farm.js); the greenhouse keeps going
+        const info = tl.wetUntil > now() ? t(!tile.f && cropNight() ? 'isl.h.growingNight' : 'isl.h.growing', { item: crop, m: minutesLeft(tl) }) : t('isl.h.dry', { item: crop });
         out.a = out.a?.ok ? { ...out.a, text: `${out.a.text} · ${info}` } : { text: info, fn: out.a?.fn || (() => this.doTool(id, tile)) };
       }
       out.hl = out.a?.ok ? 0x9ff07a : out.a?.bad ? 0xff8fa8 : 0xffffff;
     }
+    return this.fillDefaults(out, held);
+  }
+
+  /** With nothing special around: the bag (b) and a swing of the held tool (a). */
+  fillDefaults(out, held) {
     if (!out.b) out.b = { text: '', fn: () => this.openBag() };
     if (!out.a) out.a = { text: '', fn: () => this.doTool(held?.id, null) };
     return out;
+  }
+
+  /**
+   * The one [B] "use" action out of what interactions() found: b is talking, picking up, doors and shops;
+   * a is the held tool. A villager you face wins over the field, else a real tool action wins.
+   */
+  useAction(ia) {
+    const { a, b } = ia;
+    if (b?.text && a?.text) {
+      const P = this.player, n = b.npc;
+      if (n) { const dx = n.x - P.x, dz = n.z - P.z, d = Math.hypot(dx, dz) || 1; if ((dx * P.fx + dz * P.fz) / d > 0.5) return b; }
+      return a.ok ? a : b;
+    }
+    if (b?.text) return b;
+    return a || null;
+  }
+
+  /** How this player opens the bag: "Tab" on a keyboard, "hold B" on a gamepad. */
+  bagKey(long = false) {
+    const p = this.player?.p;
+    const pad = p && this.game.input.get(p.deviceId)?.type === 'gamepad';
+    return tFor(p, long ? (pad ? 'isl.bagHow.pad' : 'isl.bagHow.kb') : pad ? 'isl.key.bagPad' : 'isl.key.bagKb');
+  }
+
+  get onPad() {
+    const p = this.player?.p;
+    return !!p && this.game.input.get(p.deviceId)?.type === 'gamepad';
+  }
+
+  /** [B] in walk mode: on a keyboard it uses at once; on a gamepad a tap uses and a long press opens the bag. */
+  useButton(inp, dt, use) {
+    if (!this.onPad) { if (inp.bPressed) use?.fn(); return; }
+    if (inp.bPressed) this.bHold = 0;
+    if (this.bHold == null) return;
+    if (inp.b) {
+      this.bHold += dt;
+      if (this.bHold >= HOLD_BAG) { this.bHold = null; this.openBag(); }
+    } else { this.bHold = null; use?.fn(); }
+  }
+
+  /** [A]: a little bean hop (no falling, no damage: just for fun). */
+  jump() {
+    const P = this.player;
+    if (!P || P.jy > 0.02 || P.vy > 0) return;
+    P.vy = JUMP_V;
+    P.jy = 0.001;
+    P.ch.squash(0.72);
+    this.game.audio.play('jump');
+  }
+
+  /** Jump physics, every frame in any mode (so a hop always lands). */
+  updateJump(dt) {
+    const P = this.player;
+    if (!P || !(P.jy > 0 || P.vy > 0)) return;
+    P.vy -= GRAVITY * dt;
+    P.jy += P.vy * dt;
+    if (P.jy <= 0) {
+      P.jy = 0;
+      P.vy = 0;
+      P.ch.squash(0.7);
+      this.game.audio.play('land');
+      this.puffs.burst(new THREE.Vector3(P.x, P.y + 0.1, P.z), 0xffffff, { count: 5, speed: 1.6, up: 0.6, size: 0.22, life: 0.4 });
+    }
   }
 
   swingTool() {
@@ -1289,7 +1403,7 @@ export class SoloIslandScene extends BaseScene {
       S.sel = (S.sel + inp.stepX + S.inv.length) % S.inv.length;
       this.game.audio.play('select');
     }
-    if (this.bagT > 0.2 && (inp.aPressed || inp.bPressed)) { this.mode = 'walk'; this.markDirty(); }
+    if (this.bagT > 0.2 && (inp.aPressed || inp.bPressed || inp.cPressed || this.game.input.pressed.has('Tab'))) { this.mode = 'walk'; this.markDirty(); }
   }
 
   openShop() {
@@ -1301,7 +1415,7 @@ export class SoloIslandScene extends BaseScene {
   shopRows() {
     const S = this.save;
     if (this.shop.tab === 0) {
-      return shopStock(S).map((id) => ({ id, price: Math.max(1, Math.round(ITEMS[id].buy * (S.unlocks.discount ? 0.8 : 1))), sub: ITEMS[id].kind === 'seed' ? t(`isl.grow.${ITEMS[id].crop}`) : '' }));
+      return shopStock(S).map((id) => ({ id, price: Math.max(1, Math.round(ITEMS[id].buy * (S.unlocks.discount ? 0.8 : 1))), sub: ITEMS[id].kind === 'seed' ? `${t(`isl.grow.${ITEMS[id].crop}`)} · ${t('isl.grow.night')}` : '' }));
     }
     return S.inv.filter((it) => ITEMS[it.id]?.sell && ITEMS[it.id].kind !== 'tool').map((it) => ({ id: it.id, price: ITEMS[it.id].sell, sub: '' }));
   }
@@ -1326,8 +1440,8 @@ export class SoloIslandScene extends BaseScene {
     if (inp.stepX) { sh.tab = inp.stepX > 0 ? 1 : 0; sh.i = 0; this.game.audio.play('select'); this.renderShop(); }
     if (inp.stepY) { const rows = this.shopRows(); sh.i = THREE.MathUtils.clamp(sh.i - inp.stepY, 0, Math.max(0, rows.length - 1)); this.game.audio.play('select'); this.renderShop(); }
     if (sh.t < 0.25) return;
-    if (inp.bPressed) { this.mode = 'walk'; this.hud.setPanel(null); this.npc('rosa').talking = false; if (S.tut === 7) this.setTut(8); this.markDirty(); return; }
-    if (inp.aPressed) {
+    if (inp.cPressed) { this.mode = 'walk'; this.hud.setPanel(null); this.npc('rosa').talking = false; if (S.tut === 7) this.setTut(8); this.markDirty(); return; }
+    if (inp.bPressed) {
       const r = this.shopRows()[sh.i];
       if (!r) return;
       if (sh.tab === 0) {
@@ -1373,7 +1487,7 @@ export class SoloIslandScene extends BaseScene {
 
   updateLetter(inp, dt) {
     this.letterT += dt;
-    if (this.letterT < 0.35 || !(inp.aPressed || inp.bPressed)) return;
+    if (this.letterT < 0.35 || !(inp.aPressed || inp.bPressed || inp.cPressed)) return;
     const r = this.save.mail.shift();
     this.hud.setPanel(null);
     this.mode = 'walk';
@@ -1483,7 +1597,7 @@ export class SoloIslandScene extends BaseScene {
     this.log.t += dt;
     const step = inp.stepX + -inp.stepY * 8;
     if (step) { this.log.i = (this.log.i + step + FISH_IDS.length) % FISH_IDS.length; this.game.audio.play('select'); this.renderLog(); }
-    if (this.log.t > 0.25 && (inp.bPressed || inp.aPressed)) { this.hud.setPanel(null); this.mode = 'walk'; }
+    if (this.log.t > 0.25 && (inp.bPressed || inp.aPressed || inp.cPressed)) { this.hud.setPanel(null); this.mode = 'walk'; }
   }
 
   // ---------- start menu (Island, Story or Solo), same as the shared island's ----------
@@ -1499,7 +1613,7 @@ export class SoloIslandScene extends BaseScene {
   }
 
   renderMode() {
-    const icons = { island: '🏝️', story: '📖', solo: '🗺️' };
+    const icons = { island: '🏝️', story: '📖', solo: '🗺️', friends: '💛' };
     const opts = MODES.map((k, i) => `<div class="vote-opt mode-opt ${i === this.modeIndex ? 'on' : ''}">
       <div class="mode-icon">${icons[k]}</div><b>${t(`mode.${k}`)}</b><small>${t(`mode.${k}.sub`)}</small></div>`).join('');
     this.modeEl.innerHTML = `<div class="results-title">${t('mode.title')}</div><div class="vote-row">${opts}</div><div class="results-footer">${t('mode.hint')}</div>`;
@@ -1516,6 +1630,7 @@ export class SoloIslandScene extends BaseScene {
       this.modeEl = null;
       this.game.audio.play('join');
       const mode = MODES[this.modeIndex];
+      if (mode === 'friends') { this.mode = 'walk'; this.friends.open(); return; }
       this.flush();
       if (mode === 'solo') {
         this.profilePicker = new ProfilePicker(this, {
@@ -1536,7 +1651,7 @@ export class SoloIslandScene extends BaseScene {
     if (this.helpEl) { this.helpEl.remove(); this.helpEl = null; return; }
     const P = this.player?.p;
     this.helpEl = this.game.ui.panel(`<div class="help-panel"><h2>${esc(t('isl.help.title'))}</h2>
-      <ul>${[1, 2, 3, 4, 5, 6].map((i) => `<li>${esc(tFor(P, `isl.help.${i}`))}</li>`).join('')}</ul></div>`);
+      <ul>${[1, 2, 3, 4, 5, 6].map((i) => `<li>${esc(tFor(P, `isl.help.${i}`, { bag: this.bagKey() }))}</li>`).join('')}</ul></div>`);
   }
 
   onLanguage() {
@@ -1545,6 +1660,7 @@ export class SoloIslandScene extends BaseScene {
     if (this.mode === 'shop') this.renderShop();
     if (this.mode === 'cook') this.cafe.renderCook();
     if (this.mode === 'log') this.renderLog();
+    if (this.mode === 'friends') this.friends.render();
     if (this.mode === 'dialog' && this.dlg) this.showLine();
     this.lightTop?.onLanguage();
   }
@@ -1596,8 +1712,9 @@ export class SoloIslandScene extends BaseScene {
     }
     this.swing = Math.max(0, this.swing - dt * 3.5);
     P.hand.rotation.x = this.swing > 0 ? -Math.sin(this.swing * Math.PI) * 1.6 + 0.3 : 0.3;
-    P.ch.group.position.set(P.x, P.y, P.z);
-    P.ch.update(dt, { moving: this.mode === 'walk' ? P.moving : 0, grounded: true, vy: 0 });
+    this.updateJump(dt);
+    P.ch.group.position.set(P.x, P.y + (P.jy || 0), P.z);
+    P.ch.update(dt, { moving: this.mode === 'walk' ? P.moving : 0, grounded: !(P.jy > 0), vy: P.vy || 0 });
   }
 
   snapCamera() {
@@ -1668,15 +1785,19 @@ export class SoloIslandScene extends BaseScene {
       const d = P ? Math.hypot(P.x - n.x, P.z - n.z) : 99;
       const h = (n.model.group.scale.y || 1) * (n.id === 'grumbleton' ? 1.8 : 1.55);
       n.tagPos.set(n.x, n.y + h + 0.55, n.z);
-      if (d < 8) {
-        const st = npcState(S, n.id);
-        const html = `${esc(t(`isl.npc.${n.id}`))}${n.id !== 'mumble' ? heartsHtml(heartsOf(st)) : ''}`;
+      const seen = n.model.group.visible;
+      if (d < 8 && seen) {
+        // just the name: hearts live in the Friends book (friends.js)
+        const html = esc(t(`isl.npc.${n.id}`));
         if (n.tag.innerHTML !== html) n.tag.innerHTML = html;
         this.game.ui.place(n.tag, n.tagPos, cam);
       } else n.tag.style.display = 'none';
-      if (n.sleep && d < 14) this.game.ui.place(n.zzz, n.tagPos.clone().add(new THREE.Vector3(0.6, 0.4, 0)), cam);
+      // asleep at home: the zzz floats over the roof; asleep outside (on the way home): over the head
+      const home = n.inside && this.homes.home(n.id);
+      if (n.sleep && home && P && Math.hypot(P.x - home.zzz.x, P.z - home.zzz.z) < 18) this.game.ui.place(n.zzz, home.zzz, cam);
+      else if (n.sleep && !n.inside && seen && d < 14) this.game.ui.place(n.zzz, n.tagPos.clone().add(new THREE.Vector3(0.6, 0.4, 0)), cam);
       else n.zzz.style.display = 'none';
-      if (!markShown && !n.sleep && d < 16 && this.hasNews(n.id) && !n.talking) {
+      if (!markShown && seen && !n.sleep && !n.inside && d < 16 && this.hasNews(n.id) && !n.talking) {
         markShown = true;
         this.markEl.textContent = '!';
         const mpos = n.tagPos.clone().add(new THREE.Vector3(0, 0.9, 0));
@@ -1721,12 +1842,9 @@ export class SoloIslandScene extends BaseScene {
     this.hud.setTasks(this.mode === 'walk' || this.mode === 'bag' ? this.tasks() : []);
     const items = S.inv.map((it) => ({ ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) }));
     if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
-    this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : 'isl.keys'));
+    this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : 'isl.keys', { bag: this.bagKey() }));
     let prompt = '';
-    if (this.mode === 'walk' && ia) {
-      const parts = [ia.a?.text, ia.b?.text].filter(Boolean);
-      prompt = parts.join(' · ');
-    }
+    if (this.mode === 'walk' && ia) prompt = ia.use?.text || '';
     if (!['fish', 'deco', 'sled', 'sail'].includes(this.mode)) this.hud.setPrompt(prompt);
     const mb = this.map.mailbox.userData;
     mb.flag.rotation.z = S.mail.length ? 0 : -Math.PI / 2;
@@ -1749,40 +1867,51 @@ export class SoloIslandScene extends BaseScene {
     if (inp && !this.launching) {
       // hotbar keys work any time you walk
       for (let k = 1; k <= 9; k++) if (this.game.input.pressed.has(`Digit${k}`) && this.save.inv[k - 1] && this.mode === 'walk') { this.save.sel = k - 1; this.game.audio.play('select'); }
+      if (this.mode !== 'walk') this.bHold = null;
+      // Panels and mini-modes keep their own code: "do it" arrives as their [A] and "close/back" as
+      // their [B], so here the island's [B] (use) becomes their do-it and [C] their back (see README).
+      const panel = { ...inp, aPressed: inp.bPressed, a: inp.b, bPressed: inp.cPressed, b: inp.c };
       switch (this.mode) {
         case 'dialog': this.updateDialog(inp, dt); break;
         case 'bag': this.updateBag(inp, dt); break;
         case 'shop': this.updateShop(inp, dt); break;
         case 'letter': this.updateLetter(inp, dt); break;
         case 'menu': this.updateMode(inp, dt); break;
-        case 'fish': this.fishing.update(inp, dt); if (!this.fishing.active) this.mode = 'walk'; break;
-        case 'cook': this.cafe.updateCook(inp, dt); break;
-        case 'service': this.cafe.updateService(inp, dt); break;
+        case 'fish': this.fishing.update(panel, dt); if (!this.fishing.active) this.mode = 'walk'; break;
+        case 'cook': this.cafe.updateCook(panel, dt); break;
+        case 'service': this.cafe.updateService(panel, dt); break;
         case 'log': this.updateLog(inp, dt); break;
-        case 'bench': this.builder.updateBench(inp, dt); break;
-        case 'deco': this.builder.updateDecorate(inp, dt); break;
+        case 'bench': this.builder.updateBench(panel, dt); break;
+        case 'deco': this.builder.updateDecorate({ ...inp, aPressed: inp.bPressed, a: inp.b, bPressed: inp.aPressed, b: inp.a }, dt); break; // [B] places, [A] turns
         case 'cal': this.seasons.updateCalendar(inp, dt); break;
         case 'sled': this.seasons.sled.update(inp, dt); break;
-        case 'museum': this.museum.update(inp, dt); break;
+        case 'museum': this.museum.update(panel, dt); break;
         case 'sail': this.isle2.updateSail(inp, dt); break;
-        case 'photo': this.photo.update(inp, dt); break;
+        case 'photo': this.photo.update(panel, dt); break;
         case 'album': this.photo.updateAlbum(inp, dt); break;
         case 'tourEnd': this.tour.updateEnd(inp, dt); break;
-        case 'board': this.cafe.updateMenu(inp, dt); break;
-        case 'top': case 'scope': this.lightTop.update(inp, dt); break;
+        case 'board': this.cafe.updateMenu(panel, dt); break;
+        case 'top': case 'scope': this.lightTop.update(panel, dt); break;
         case 'festival': break; // the Lamp Festival plays by itself
+        case 'knock': break; // knock knock... (homes.js)
+        case 'friends': this.friends.update(inp, dt); break;
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();
+          ia.use = this.useAction(ia);
           this.farm.showHighlight(ia.tile, ia.hl ?? 0xffffff);
-          if (inp.cPressed) { this.openMode(0); break; }
-          if (inp.aPressed) ia.a?.fn();
-          else if (inp.bPressed) ia.b?.fn();
+          const keys = this.game.input.pressed;
+          if (inp.cPressed) { this.bHold = null; this.openMode(0); break; }
+          if (keys.has('KeyF')) { this.bHold = null; this.friends.open(); break; }
+          if (keys.has('Tab') && !this.onPad) { this.openBag(); break; }
+          if (inp.aPressed) this.jump();
+          this.useButton(inp, dt, ia.use);
         }
       }
       if (this.mode !== 'walk') this.farm.showHighlight(null);
     }
     this.updateNpcs(dt);
+    this.homes.update(dt);
     this.ranch.update(dt);
     this.seasons.update(dt);
     this.isle2.update(dt, this.time);
@@ -1805,6 +1934,7 @@ export class SoloIslandScene extends BaseScene {
   }
 
   dispose() {
+    window.removeEventListener('keydown', this.onTabKey);
     this.toasts.dispose();
     this.cafe?.dispose();
     this.fishing?.dispose();

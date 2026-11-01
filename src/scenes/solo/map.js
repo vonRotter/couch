@@ -90,8 +90,23 @@ const PATHS = [
   [[34, 15.6], [39.5, 11.8], [44, 8.4], [46, 6.8]], // to the mech garage
 ];
 
+// Where each villager lives (milestone C): the door they walk to at bedtime (`spot` is the doorstep
+// outside it). Homes are built and animated in homes.js; these numbers are shared with the schedules.
+export const DEN = { x: 50.6, z: -15.6 }; // Mumble's own little den at the meadow (the big burrow is the game)
+export const HOME_DOORS = {
+  hazel: { spot: { x: -2, z: -24.0 } }, // her cottage on the hill
+  rosa: { spot: { x: 12, z: -13.0 } }, // upstairs in the store
+  bram: { spot: { x: 41.7, z: 29.0 } }, // the keeper's door on the lighthouse
+  grumbleton: { spot: { x: 8.3, z: 54 } }, // the cabin hatch on his ship, at the top of the gangplank
+  pip: { spot: { x: 40, z: -14.3 } }, // the rocket on the launch pad
+  mumble: { spot: { x: DEN.x, z: DEN.z + 1.9 } },
+  hoot: { spot: { x: 26, z: 1.1 } }, // the museum
+  shelby: { spot: { x: 6.5, z: 189.5 } }, // her shell house on Shell Isle
+};
+
 // Named spots for NPC routines and props.
 export const SPOTS = {
+  ...Object.fromEntries(Object.entries(HOME_DOORS).map(([id, h]) => [`${id}Home`, h.spot])),
   hazelGarden: { x: 2.5, z: -24 }, hazelPorch: { x: -2.6, z: -24.4 }, farmFence: { x: -5.2, z: -7.8 },
   plazaBench: { x: 7.6, z: -1.2 }, plazaFountain: { x: 14.6, z: -2.4 }, plazaEast: { x: 17.4, z: -5 },
   storeCounter: { x: 13.4, z: -12.2 }, storeHome: { x: 9.4, z: -12.6 },
@@ -175,6 +190,12 @@ function colorAt(x, z, h, out) {
   else out.set(0x92d85c).lerp(_c.set(0x7fcb52), n);
   if (c < 0.12 && c >= 0.09 && h < 0.02) out.lerp(_c.set(0xf7e1a6), 0.5);
   return out;
+}
+
+/** A villager's house gets its own window material (M.home[id], see homes.js) before it is baked. */
+export function ownWindows(g, M, id) {
+  const mat = M.home?.[id];
+  if (mat) g.traverse((o) => { if (o.isMesh && o.material === M.win) o.material = mat; });
 }
 
 // ---------- baking static meshes ----------
@@ -398,6 +419,7 @@ export class IslandMap {
 
     // the general store
     const store = makeStore(M);
+    ownWindows(store, M, 'rosa'); // her windows go dark when she sleeps (homes.js)
     this.put(store, STORE.x, STORE.z);
     this.boxObs(STORE.x, STORE.z, 3.7, 2.5);
     this.chimneys.push(store.userData.chimney.clone().add(new THREE.Vector3(STORE.x, 0, STORE.z)));
@@ -409,6 +431,7 @@ export class IslandMap {
 
     // Aunt Hazel's cottage with her garden and chickens' coop
     const hz = makeCottage(M, { wall: 0xfff0f5, roof: 0x8ac926, w: 4.6, d: 3.6, h: 2.2, door: 0x4c8bd6 });
+    ownWindows(hz, M, 'hazel');
     this.put(hz, HAZEL_HOME.x, HAZEL_HOME.z);
     this.boxObs(HAZEL_HOME.x, HAZEL_HOME.z, 2.5, 2.0);
     this.chimneys.push(hz.userData.chimney.clone().add(new THREE.Vector3(HAZEL_HOME.x, 0, HAZEL_HOME.z)));

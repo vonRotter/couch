@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { t } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
-import { count, take, give } from './save.js';
+import { count, take, give, now } from './save.js';
 import { dayKey } from './calendar.js';
 import { NPCS, npcState, heartsOf } from './npcs.js';
 import { PLACES, heightAt } from './map.js';
@@ -382,6 +382,7 @@ export class Story {
       m.busy = true;
       m.route = [];
       m.sleep = false;
+      if (m.inside || m.doorAnim) { const h = host.homes.home(m.id); m.inside = false; m.doorAnim = null; if (h) { m.x = h.spot.x; m.z = h.spot.z; } } // out of the house for the scene
       if (m === anchor || Math.hypot(m.x - P.x, m.z - P.z) < 5) continue;
       const st = this.host.walkState;
       const s = slots.find(([dx, dz]) => host.map.walkable(P.x + dx, P.z + dz, 0.4, st) && cast.every((o) => o === m || Math.hypot(o.x - P.x - dx, o.z - P.z - dz) > 1.2));
@@ -467,10 +468,12 @@ export class Story {
     const S = this.S, c = this.chapter;
     if (!c) return [];
     const title = t(`story.c${S.ch}.title`);
-    if (S.phase === 'ready') return [`📖 ${t('story.task.ready', { name: t(`isl.npc.${c.opener}`), title })}`];
+    // someone you need is at home for the night: the line says when they come out (homes.js)
+    const away = (id) => { const a = this.host.homes?.awayNote(id, now()); return a ? ` ${a}` : ''; };
+    if (S.phase === 'ready') return [`📖 ${t('story.task.ready', { name: t(`isl.npc.${c.opener}`), title })}${away(c.opener)}`];
     if (S.phase === 'report') {
       const own = `story.c${S.ch}.task.report`; // a chapter can say it its own way
-      return [`📖 ${t(own) !== own ? t(own) : t('story.task.report', { name: t(`isl.npc.${c.closer}`) })}`];
+      return [`📖 ${t(own) !== own ? t(own) : t('story.task.report', { name: t(`isl.npc.${c.closer}`) })}${away(c.closer)}`];
     }
     if (S.phase !== 'quest') return [];
     const out = [];
@@ -482,7 +485,7 @@ export class Story {
         vars.n = Math.min(g.need[0][1], count(this.host.save, g.need[0][0]));
       }
       if (g.find) vars.n = S.crumbs.filter(Boolean).length;
-      out.push(`📖 ${t(`story.c${S.ch}.task.${g.id}`, vars)}`);
+      out.push(`📖 ${t(`story.c${S.ch}.task.${g.id}`, vars)}${g.talk || g.bring ? away(g.talk || g.bring) : ''}`);
     }
     return out.slice(0, 2);
   }
@@ -528,7 +531,7 @@ export class Story {
       this.festCast.push(m);
     });
     for (const m of this.festCast) {
-      m.busy = true; m.route = []; m.sleep = false; m.away = false; m.talking = true;
+      m.busy = true; m.route = []; m.sleep = false; m.away = false; m.talking = true; m.inside = false; m.doorAnim = null; // everyone comes out for the festival
       m.model.group.visible = true;
       m.model.face(LH.x - m.x, LH.z - m.z);
     }

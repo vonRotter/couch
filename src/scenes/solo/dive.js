@@ -18,7 +18,7 @@ import { mesh, box, cyl, sph, cone, ico } from './models.js';
 import { ToastQueue } from './toasts.js';
 
 // Diving (a Dave the Diver style loop) from the dive boat. A 2.5D side view: swim with the stick, catch
-// gentle sea critters in a bubble net ([A]), pick up seaweed, clams and treasure ([B]). The air meter never
+// gentle sea critters in a bubble net ([B] with nothing to pick up), pick up seaweed, clams and treasure ([B]). The air meter never
 // punishes: when it runs out, Grumbleton pulls you up and you keep everything. Swim up and climb into
 // the boat to end early. Deeper zones open with flippers (strong current) and the big air tank.
 
@@ -425,13 +425,17 @@ export class DiveScene extends BaseScene {
       D.vx += (mx * this.speed - D.vx) * acc;
       D.vy += (my * this.speed - D.vy) * acc + 0.25 * dt; // a little buoyancy
       if (Math.abs(mx) > 0.2) D.dir = Math.sign(mx);
-      if (inp.aPressed) this.bubbleNet();
+      // the solo island's buttons: [B] is "use" (pick up, open, climb out, or else the bubble net),
+      // [A] is a little kick that swims faster for a moment (the island's jump)
+      if (inp.aPressed && len > 0.1) { D.vx += mx * this.speed * 0.9; D.vy += my * this.speed * 0.9; this.game.audio.play('dash'); }
       const near = this.nearest();
       if (near) prompt = near.text;
-      if (inp.bPressed && near) near.fn();
-      if (D.y > -1.6 && this.time > 1.5) {
-        prompt = tFor(P, 'dive.surface');
-        if (inp.bPressed) this.endDive();
+      const surface = D.y > -1.6 && this.time > 1.5;
+      if (surface) prompt = tFor(P, 'dive.surface');
+      if (inp.bPressed) {
+        if (surface) this.endDive();
+        else if (near) near.fn();
+        else this.bubbleNet();
       }
     }
     D.x += D.vx * dt;

@@ -392,7 +392,9 @@ export function makeLaunchPad() {
   const r = new THREE.Group();
   r.add(mesh(cyl(0.7, 0.8, 2.6, 16), 0xffffff, 0, 1.7, 0));
   r.add(mesh(cone(0.7, 1.3, 16), 0xff5d73, 0, 3.65, 0));
-  r.add(mesh(cyl(0.32, 0.32, 0.1, 14), 0x8fd8ff, 0, 2.3, 0.72, false).rotateX(Math.PI / 2));
+  const port = mesh(cyl(0.32, 0.32, 0.1, 14), 0x8fd8ff, 0, 2.3, 0.72, false).rotateX(Math.PI / 2);
+  r.add(port);
+  r.userData.porthole = port; // Pip's window (it lights up and goes dark at night, homes.js)
   r.add(mesh(tor(0.33, 0.05), 0x9a94b2, 0, 2.3, 0.74, false));
   for (let i = 0; i < 3; i++) {
     const a = (i / 3) * Math.PI * 2;

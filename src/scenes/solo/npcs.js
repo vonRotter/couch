@@ -19,7 +19,9 @@ export const TALK_PTS = 3;
 export const GIFT_PTS = { love: 10, like: 6, neutral: 3, dislike: 0 };
 
 /**
- * sched: [hour, spot, sleep?] sorted by hour; the last entry before the current hour wins.
+ * sched: [hour, spot, flag] sorted by hour; the last entry before the current hour wins. flag: 'in' = at home
+ *   (inside, awake: lit windows, comes to the door when you knock), true = asleep at home (dark windows, zzz,
+ *   the door is locked and a knock gets a sleepy answer). Home spots (<id>Home) are their doorsteps (map.js).
  * quests: { need: [[item, n]] } or { find: item }, reward: { items: [[id, n]], coins, deco, unlock }.
  * events: at hearts; lines = number of dialog lines (isl.<id>.ev<k>.<i>).
  * game(progress) -> 'game0' | 'game1' | 'game2' | null: a line about the npc's own game.
@@ -27,7 +29,7 @@ export const GIFT_PTS = { love: 10, like: 6, neutral: 3, dislike: 0 };
 export const NPCS = {
   hazel: {
     voice: { pitch: 1.2, rate: 0.9, css: '#4f9a1f' },
-    sched: [[0, 'hazelPorch', true], [6, 'hazelGarden'], [11, 'plazaBench'], [14, 'farmFence'], [19, 'hazelPorch'], [22, 'hazelPorch', true]],
+    sched: [[0, 'hazelHome', true], [6, 'hazelGarden'], [11, 'plazaBench'], [14, 'farmFence'], [19, 'hazelPorch'], [21, 'hazelHome', 'in'], [22, 'hazelHome', true]],
     fest: { fair: [9, 18, 'plazaBench'] },
     loves: ['tomato', 'carrotSoup'], likes: ['pumpkin', 'bouquet', 'lettuce'], dislikes: ['wood'],
     quests: [
@@ -42,7 +44,7 @@ export const NPCS = {
   },
   rosa: {
     voice: { pitch: 1.4, rate: 1.05, css: '#e0459a' },
-    sched: [[0, 'storeHome', true], [7, 'storeCounter'], [18, 'plazaFountain'], [21, 'storeHome', true]],
+    sched: [[0, 'rosaHome', true], [7, 'storeCounter'], [18, 'plazaFountain'], [20, 'rosaHome', 'in'], [21, 'rosaHome', true]],
     fest: { plant: [9, 18, 'plazaFountain'] }, // [from hour, to hour, spot] on festival days
     loves: ['bouquet', 'strawberryShake'], likes: ['lettuce', 'strawberry', 'starfruit'], dislikes: ['corn'],
     quests: [
@@ -55,7 +57,8 @@ export const NPCS = {
   },
   bram: {
     voice: { pitch: 0.7, rate: 0.88, css: '#6b7bb0' },
-    sched: [[0, 'lhDoor'], [2, 'lhDoor', true], [6, 'beach'], [9, 'lhDoor'], [17, 'plazaEast'], [20, 'lhDoor']],
+    sched: [[0, 'lhDoor'], [1, 'bramHome', 'in'], [2, 'bramHome', true], [6, 'beach'], [9, 'lhDoor'], [17, 'plazaEast'], [20, 'lhDoor']],
+    fest: { lanterns: [17, 24, 'plazaEast'] }, // Lantern Night: he stays under the lanterns until midnight
     loves: ['pumpkin', 'fishStew'], likes: ['carrot', 'corn', 'starfruit'], dislikes: ['radish'],
     quests: [
       { need: [['carrot', 1]], reward: { items: [['pickaxe', 1]] } },
@@ -67,7 +70,7 @@ export const NPCS = {
   },
   grumbleton: {
     voice: { pitch: 0.55, rate: 0.9, css: '#5a4dc0' },
-    sched: [[0, 'shipDeck', true], [8, 'pier'], [13, 'pierEnd'], [16, 'pier'], [20, 'cafe']],
+    sched: [[0, 'grumbletonHome', true], [8, 'pier'], [13, 'pierEnd'], [16, 'pier'], [20, 'cafe'], [22.5, 'grumbletonHome', 'in'], [23, 'grumbletonHome', true]],
     loves: ['strawberry', 'sushi'], likes: ['tomato', 'pumpkin', 'corn'], dislikes: ['bouquet'],
     quests: [
       { find: 'feather', reward: { items: [['strawberrySeed', 3]], coins: 30 } },
@@ -79,7 +82,7 @@ export const NPCS = {
   },
   pip: {
     voice: { pitch: 1.6, rate: 1.1, css: '#4a3fc0' },
-    sched: [[0, 'rocket', true], [8, 'pad'], [12, 'hallFront'], [15, 'pad'], [19, 'hillTop'], [23, 'rocket', true]],
+    sched: [[0, 'pipHome', true], [8, 'pad'], [12, 'hallFront'], [15, 'pad'], [19, 'hillTop'], [22, 'pipHome', 'in'], [23, 'pipHome', true]],
     fest: { beach: [10, 18, 'beachDay'] },
     loves: ['starfruit', 'tempura'], likes: ['corn', 'strawberry', 'pumpkin'], dislikes: ['lettuce'],
     quests: [
@@ -92,7 +95,7 @@ export const NPCS = {
   },
   mumble: {
     voice: { pitch: 1.75, rate: 1.0, css: '#3f9a32' },
-    sched: [[0, 'meadow', true], [7, 'meadow'], [21, 'meadow', true]],
+    sched: [[0, 'mumbleHome', true], [7, 'meadow'], [20.5, 'mumbleHome', 'in'], [21, 'mumbleHome', true]],
     wander: 3,
     loves: ['radish', 'radishSalad'], likes: ['carrot', 'strawberry'], dislikes: ['bouquet'],
     quests: [{ need: [['radish', 3]], reward: { unlock: 'burrow' } }],
@@ -102,14 +105,14 @@ export const NPCS = {
   // milestone B3: the museum's curator, and Shelby from Shell Isle (who visits the beach on weekends)
   hoot: {
     voice: { pitch: 0.95, rate: 0.85, css: '#8a5a32' },
-    sched: [[0, 'museumDoor', true], [7, 'museumDoor'], [22, 'museumDoor', true]],
+    sched: [[0, 'hootHome', true], [7, 'museumDoor'], [21, 'hootHome', 'in'], [22, 'hootHome', true]],
     loves: ['pearl', 'moonfish'], likes: ['seaGlass', 'starfish', 'cocoa', 'pumpkinPie'], dislikes: ['hay'],
     quests: [], events: [],
     game: () => null,
   },
   shelby: {
     voice: { pitch: 1.5, rate: 1.05, css: '#e0557a' },
-    sched: [[0, 'shelbyHut', true], [7, 'shelbyHut'], [9, 'tidepools'], [13, 'shelbyHut'], [16, 'isleBeach'], [20, 'shelbyHut', true]],
+    sched: [[0, 'shelbyHome', true], [7, 'shelbyHut'], [9, 'tidepools'], [13, 'shelbyHut'], [16, 'isleBeach'], [19, 'shelbyHome', 'in'], [20, 'shelbyHome', true]],
     wander: 1.6,
     isle: true, // lives on Shell Isle
     // Saturdays and Sundays 10-17, once you have met: a day out on the main island's beach
@@ -129,16 +132,25 @@ export function npcState(save, id) {
 
 export const heartsOf = (st) => Math.min(MAX_HEARTS, Math.floor(st.pts / PTS_PER_HEART));
 
-/** Where the npc should be now: { spot, sleep }. Festival hosts stand at their festival during the day. */
+/** Where the npc should be now: { spot, sleep, inside, name }. Festival hosts stand at their festival. */
 export function scheduleNow(id, at, save = null) {
   const h = hourOf(at);
   const v = NPCS[id].visit?.(at, save);
-  if (v) return { spot: SPOTS[v], sleep: false, name: v };
+  if (v) return { spot: SPOTS[v], sleep: false, inside: false, name: v };
   const f = NPCS[id].fest?.[festivalOn(at)];
-  if (f && h >= f[0] && h < f[1]) return { spot: SPOTS[f[2]], sleep: false, name: f[2] };
+  if (f && h >= f[0] && h < f[1]) return { spot: SPOTS[f[2]], sleep: false, inside: false, name: f[2] };
   let cur = NPCS[id].sched[0];
   for (const e of NPCS[id].sched) if (h >= e[0]) cur = e;
-  return { spot: SPOTS[cur[1]], sleep: !!cur[2], name: cur[1] };
+  return { spot: SPOTS[cur[1]], sleep: cur[2] === true, inside: !!cur[2], name: cur[1] };
+}
+
+/** The hour a villager who is at home now comes out again (for "asleep until 7:00"). */
+export function wakeHour(id, at) {
+  const sc = NPCS[id].sched, h = hourOf(at);
+  let i = 0;
+  for (let k = 0; k < sc.length; k++) if (h >= sc[k][0]) i = k;
+  for (let k = 1; k <= sc.length; k++) { const e = sc[(i + k) % sc.length]; if (!e[2]) return e[0]; }
+  return 7;
 }
 
 /** How the npc feels about a gift. */

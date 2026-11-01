@@ -283,7 +283,9 @@ export class Cafe {
     // a friend (awake, not already here) or a visitor
     const here = new Set(sv.seats.filter(Boolean).map((g) => g.who));
     const regs = this.regulars();
-    const friends = [...FRIENDS, ...ISLE_FRIENDS.filter((id) => regs.includes(id))].filter((id) => !here.has(id) && !host.npc(id).sleep && !host.npc(id).talking);
+    // friends come only while they are up and out (not at home for the night) and the café is open
+    const up = (n) => !n.sleep && !n.inside && !n.doorAnim && !n.talking && !n.busy;
+    const friends = this.isOpenHour() ? [...FRIENDS, ...ISLE_FRIENDS.filter((id) => regs.includes(id))].filter((id) => !here.has(id) && up(host.npc(id))) : [];
     // regulars (3+ hearts) come first, once each per night, for their usual dish
     const regular = regs.find((id) => friends.includes(id) && !sv.came?.has(id) && avail.includes(FAVORITE[id]));
     let who = null, model;

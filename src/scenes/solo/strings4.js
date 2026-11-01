@@ -6,8 +6,8 @@ import { addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'isl.t.mailN': 'You have {n} letters in the mailbox!',
-    'isl.deco.next': 'hold [B]: next thing',
-    'isl.deco.bag': 'keys 1-9 or hold [B] to pick',
+    'isl.deco.next': 'hold [A]: next thing',
+    'isl.deco.bag': 'keys 1-9 or hold [A] to pick',
     // seasons (one per real week)
     'isl.season.spring': 'spring', 'isl.season.summer': 'summer', 'isl.season.autumn': 'autumn', 'isl.season.winter': 'winter',
     'isl.season.week': '{season} week (next week: {next})', 'isl.or': ' or ',
@@ -38,7 +38,7 @@ addStrings({
     'isl.task.beach': 'Beach Day: find 4 shells on the beach ({n}/4), then talk to Pip',
     'isl.d.tulips': 'Tub of tulips', 'isl.d.sandcastle': 'Sandcastle',
     // sledding
-    'isl.h.sled': '[A] ride the sled!',
+    'isl.h.sled': '[B] ride the sled!',
     'isl.sled.ride': 'Wheee! Steer up and down · snowflakes {n}/{m}',
     'isl.sled.done': 'What a ride! You caught {n} of {m} snowflakes.',
     'isl.sled.all': 'Wow! All {m} snowflakes! You are a sled star!',
@@ -49,7 +49,7 @@ addStrings({
     'isl.hazel.q4.wait': 'For the greenhouse we need 20 wood, 10 stone and 8 fiber, dear. No hurry.',
     'isl.hazel.q4.done': 'Wonderful! Let us put in new glass. There! Now your seeds can grow in any season, even in the snow.',
     'isl.i.sprinkler': 'Sprinkler', 'isl.i.scarecrow': 'Scarecrow',
-    'isl.h.placeObj': '[A] put the {item} here', 'isl.h.takeObj': '[A] pick up the {item}',
+    'isl.h.placeObj': '[B] put the {item} here', 'isl.h.takeObj': '[B] pick up the {item}',
     'isl.t.sprinkler': 'The sprinkler keeps the 8 tiles around it watered!',
     'isl.t.scarecrow': 'The scarecrow found one more {item}!',
     // the museum and Curator Hoot
@@ -57,8 +57,8 @@ addStrings({
     'isl.h.museum': '[B] museum ({n}/{m})',
     'isl.museum.title': 'Island Museum', 'isl.museum.fish': 'Fish', 'isl.museum.sea': 'Sea finds', 'isl.museum.crystal': 'Crystals',
     'isl.museum.count': '{n} of {m} pieces',
-    'isl.museum.hint': 'stick: look around (left/right at the ends: next room) · [A]: donate · [B]: close',
-    'isl.museum.donate': '[A] donate your {item}!', 'isl.museum.shown': 'On show: {item}. Thank you!', 'isl.museum.missing': 'Still missing. Who knows where it hides?',
+    'isl.museum.hint': 'stick: look around (left/right at the ends: next room) · [B]: donate · [C]: close',
+    'isl.museum.donate': '[B] donate your {item}!', 'isl.museum.shown': 'On show: {item}. Thank you!', 'isl.museum.missing': 'Still missing. Who knows where it hides?',
     'isl.museum.next': '{n} more for the next prize', 'isl.museum.complete': 'The collection is complete!',
     'isl.museum.youHave': 'Hoo! You have {n} things the museum does not have yet!',
     'isl.museum.thanks': 'Hoo hoo! Thank you for the {item}! That makes {n}.',
@@ -92,7 +92,7 @@ addStrings({
     'isl.isle.welcome': 'Shell Isle! The sand is warm.',
     'isl.h.palm': '[B] shake the palm', 'isl.h.palmDone': 'No coconuts left today',
     'isl.h.pool': '[B] look in the tide pool', 'isl.h.poolDone': 'You looked here today',
-    'isl.h.dig': '[A] dig for treasure', 'isl.h.digNeed': 'Something is buried here! Hold your hoe to dig',
+    'isl.h.dig': '[B] dig for treasure', 'isl.h.digNeed': 'Something is buried here! Hold your hoe to dig',
     'isl.isle.pool': 'In the tide pool you find: {item}!', 'isl.isle.dug': 'Treasure! You dug up: {item}!',
     'isl.sign.isle': 'Shell Isle. Tide pools on the east beach. Treasure in the sand. Something hides behind the rocks in the west.',
     'isl.task.isle': 'Explore Shell Isle (palms, tide pools, treasure). Sail home from the dock',
@@ -112,12 +112,12 @@ addStrings({
     'isl.shelby.q1.done': 'Sea glass! Now my window sparkles! Here, I made you a wind chime!',
     // photos and postcards
     'isl.i.camera': 'Camera', 'isl.i.album': 'Postcard album',
-    'isl.h.photo': '[A] take a photo', 'isl.h.album': '[B] look at your postcards', 'isl.h.albumBook': '[A] look at your postcards',
-    'isl.photo.hint': 'stick: look around · [A]: click! · [B]: back',
+    'isl.h.photo': '[B] take a photo', 'isl.h.album': '[B] look at your postcards', 'isl.h.albumBook': '[B] look at your postcards',
+    'isl.photo.hint': 'stick: look around · [B]: click! · [C]: back',
     'isl.photo.sent': 'Click! A postcard of your island is on its way to your mailbox.',
     'isl.photo.sentFull': 'Click! A postcard is on its way. Your album keeps the newest {n}.',
     'isl.photo.title': 'A postcard!', 'isl.photo.card': 'Taken on {date}', 'isl.photo.gone': 'This postcard has made room for newer ones.',
-    'isl.photo.album': 'Postcard album', 'isl.photo.albumHint': 'stick: choose · [A] or [B]: close', 'isl.photo.none': 'No postcards yet. Take a photo with the camera!',
+    'isl.photo.album': 'Postcard album', 'isl.photo.albumHint': 'stick: choose · [B]: close', 'isl.photo.none': 'No postcards yet. Take a photo with the camera!',
     'isl.mail.postcard': 'Greetings from the island! Wish you were here. (You are!)', 'isl.from.photo': 'You',
     'isl.mail.camera': 'Mission report: I found my old camera in the rocket. Take pictures of the island and they come back to you as postcards! Over and out, Pip.',
     // the fishing tournament
@@ -135,7 +135,7 @@ addStrings({
     'isl.h.menu': '[B] today\'s specials',
     'isl.menu.title': 'Today\'s specials', 'isl.menu.special': 'special',
     'isl.menu.today': 'Specials: {list} ({n}/{m}). They sell for more, and guests love to order them!',
-    'isl.menu.hint': 'up/down: choose · [A]: special on or off · [B]: done',
+    'isl.menu.hint': 'up/down: choose · [B]: special on or off · [C]: done',
     'isl.menu.intro': 'Pick up to {n} dishes as today\'s specials. They sell for more!',
     // baby animals
     'isl.baby.chick': 'A chick hatched! {name} is a mom. Say hello to {baby}!',
@@ -149,8 +149,8 @@ addStrings({
   },
   no: {
     'isl.t.mailN': 'Du har {n} brev i postkassa!',
-    'isl.deco.next': 'hold [B]: neste ting',
-    'isl.deco.bag': 'tastene 1-9 eller hold [B] for å velge',
+    'isl.deco.next': 'hold [A]: neste ting',
+    'isl.deco.bag': 'tastene 1-9 eller hold [A] for å velge',
     // årstider (én per ekte uke)
     'isl.season.spring': 'vår', 'isl.season.summer': 'sommer', 'isl.season.autumn': 'høst', 'isl.season.winter': 'vinter',
     'isl.season.week': '{season}uke (neste uke: {next})', 'isl.or': ' eller ',
@@ -181,7 +181,7 @@ addStrings({
     'isl.task.beach': 'Stranddag: finn 4 skjell på stranda ({n}/4), og snakk med Pip',
     'isl.d.tulips': 'Tulipankasse', 'isl.d.sandcastle': 'Sandslott',
     // aking
-    'isl.h.sled': '[A] ta en aketur!',
+    'isl.h.sled': '[B] ta en aketur!',
     'isl.sled.ride': 'Wiii! Styr opp og ned · snøfnugg {n}/{m}',
     'isl.sled.done': 'For en tur! Du fanget {n} av {m} snøfnugg.',
     'isl.sled.all': 'Wow! Alle {m} snøfnuggene! Du er en akestjerne!',
@@ -192,7 +192,7 @@ addStrings({
     'isl.hazel.q4.wait': 'Til drivhuset trenger vi 20 ved, 10 stein og 8 fiber, vennen. Det haster ikke.',
     'isl.hazel.q4.done': 'Herlig! Nå setter vi inn nytt glass. Sånn! Nå kan frøene dine vokse i alle årstider, til og med i snøen.',
     'isl.i.sprinkler': 'Vannspreder', 'isl.i.scarecrow': 'Fugleskremsel',
-    'isl.h.placeObj': '[A] sett {item} her', 'isl.h.takeObj': '[A] plukk opp {item}',
+    'isl.h.placeObj': '[B] sett {item} her', 'isl.h.takeObj': '[B] plukk opp {item}',
     'isl.t.sprinkler': 'Vannsprederen vanner de 8 rutene rundt seg!',
     'isl.t.scarecrow': 'Fugleskremselet fant én {item} til!',
     // museet og kurator Hu
@@ -200,8 +200,8 @@ addStrings({
     'isl.h.museum': '[B] museum ({n}/{m})',
     'isl.museum.title': 'Øymuseet', 'isl.museum.fish': 'Fisk', 'isl.museum.sea': 'Havfunn', 'isl.museum.crystal': 'Krystaller',
     'isl.museum.count': '{n} av {m} ting',
-    'isl.museum.hint': 'pinnen: se deg rundt (venstre/høyre i enden: neste rom) · [A]: gi bort · [B]: lukk',
-    'isl.museum.donate': '[A] gi {item} til museet!', 'isl.museum.shown': 'Utstilt: {item}. Tusen takk!', 'isl.museum.missing': 'Mangler fortsatt. Hvem vet hvor den gjemmer seg?',
+    'isl.museum.hint': 'pinnen: se deg rundt (venstre/høyre i enden: neste rom) · [B]: gi bort · [C]: lukk',
+    'isl.museum.donate': '[B] gi {item} til museet!', 'isl.museum.shown': 'Utstilt: {item}. Tusen takk!', 'isl.museum.missing': 'Mangler fortsatt. Hvem vet hvor den gjemmer seg?',
     'isl.museum.next': '{n} til før neste premie', 'isl.museum.complete': 'Samlingen er komplett!',
     'isl.museum.youHave': 'Hu! Du har {n} ting som museet ikke har ennå!',
     'isl.museum.thanks': 'Hu hu! Takk for {item}! Nå har museet {n} ting.',
@@ -235,7 +235,7 @@ addStrings({
     'isl.isle.welcome': 'Skjelløya! Sanden er varm.',
     'isl.h.palm': '[B] rist palmen', 'isl.h.palmDone': 'Ingen kokosnøtter igjen i dag',
     'isl.h.pool': '[B] kikk i fjærepytten', 'isl.h.poolDone': 'Du har kikket her i dag',
-    'isl.h.dig': '[A] grav etter skatter', 'isl.h.digNeed': 'Noe ligger begravd her! Hold hakka for å grave',
+    'isl.h.dig': '[B] grav etter skatter', 'isl.h.digNeed': 'Noe ligger begravd her! Hold hakka for å grave',
     'isl.isle.pool': 'I fjærepytten finner du: {item}!', 'isl.isle.dug': 'Skatt! Du gravde opp: {item}!',
     'isl.sign.isle': 'Skjelløya. Fjærepytter på østre strand. Skatter i sanden. Noe gjemmer seg bak steinene i vest.',
     'isl.task.isle': 'Utforsk Skjelløya (palmer, fjærepytter, skatter). Seil hjem fra brygga',
@@ -255,12 +255,12 @@ addStrings({
     'isl.shelby.q1.done': 'Havglass! Nå glitrer vinduet mitt! Her, jeg har laget et klokkespill til deg!',
     // bilder og postkort
     'isl.i.camera': 'Kamera', 'isl.i.album': 'Postkortalbum',
-    'isl.h.photo': '[A] ta et bilde', 'isl.h.album': '[B] se på postkortene dine', 'isl.h.albumBook': '[A] se på postkortene dine',
-    'isl.photo.hint': 'pinnen: se deg rundt · [A]: klikk! · [B]: tilbake',
+    'isl.h.photo': '[B] ta et bilde', 'isl.h.album': '[B] se på postkortene dine', 'isl.h.albumBook': '[B] se på postkortene dine',
+    'isl.photo.hint': 'pinnen: se deg rundt · [B]: klikk! · [C]: tilbake',
     'isl.photo.sent': 'Klikk! Et postkort av øya di er på vei til postkassa.',
     'isl.photo.sentFull': 'Klikk! Et postkort er på vei. Albumet tar vare på de {n} nyeste.',
     'isl.photo.title': 'Et postkort!', 'isl.photo.card': 'Tatt {date}', 'isl.photo.gone': 'Dette postkortet har gjort plass til nyere kort.',
-    'isl.photo.album': 'Postkortalbum', 'isl.photo.albumHint': 'pinnen: velg · [A] eller [B]: lukk', 'isl.photo.none': 'Ingen postkort ennå. Ta et bilde med kameraet!',
+    'isl.photo.album': 'Postkortalbum', 'isl.photo.albumHint': 'pinnen: velg · [B]: lukk', 'isl.photo.none': 'Ingen postkort ennå. Ta et bilde med kameraet!',
     'isl.mail.postcard': 'Hilsen fra øya! Skulle ønske du var her. (Det er du jo!)', 'isl.from.photo': 'Deg',
     'isl.mail.camera': 'Oppdragsrapport: Jeg fant det gamle kameraet mitt i raketten. Ta bilder av øya, så kommer de tilbake til deg som postkort! Over og ut, Pip.',
     // fiskekonkurransen
@@ -278,7 +278,7 @@ addStrings({
     'isl.h.menu': '[B] dagens retter',
     'isl.menu.title': 'Dagens retter', 'isl.menu.special': 'dagens',
     'isl.menu.today': 'Dagens retter: {list} ({n}/{m}). De selges dyrere, og gjestene elsker å bestille dem!',
-    'isl.menu.hint': 'opp/ned: velg · [A]: dagens rett av eller på · [B]: ferdig',
+    'isl.menu.hint': 'opp/ned: velg · [B]: dagens rett av eller på · [C]: ferdig',
     'isl.menu.intro': 'Velg opptil {n} retter som dagens retter. De selges dyrere!',
     // dyrebabyer
     'isl.baby.chick': 'En kylling har klekket! {name} er blitt mamma. Si hei til {baby}!',
