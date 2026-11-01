@@ -8,7 +8,7 @@ addStrings({
   en: {
     // Shelby writes too
     'isl.from.shelby': 'Shelby', 'isl.from.hoot': 'Curator Hoot',
-    'isl.mail.f.shelby.1': 'Dear {name}, the palms dropped too many coconuts on my roof. Bonk, bonk, bonk! Here are two. Pinch-pinch, Shelby.',
+    'isl.mail.f.shelby.1': 'Dear {name}, the palms dropped too many coconuts on my roof. Bonk, bonk, bonk! Here are two. Click-click, Shelby.',
     'isl.mail.f.shelby.2': 'I found this sea glass in a tide pool. It is the color of your smile. Probably. I have small eyes.',
 
     // ---------- the story ----------
@@ -67,7 +67,7 @@ addStrings({
     'story.c3.open.3': 'Grumbleton can sail you there from the end of the pier. Hoo-hoo, an adventure!',
     'story.c3.coconuts.ask1': 'My moon lens? It is my window! But it makes everything look huge. I looked at myself and screamed.',
     'story.c3.coconuts.ask2': 'Bring me two coconuts and it is yours. I want coconut cups. Very fancy. The palms here have them.',
-    'story.c3.coconuts.done1': 'Coconuts! Pinch-pinch, thank you! Here is the moon lens.',
+    'story.c3.coconuts.done1': 'Coconuts! Click-click, thank you! Here is the moon lens.',
     'story.c3.coconuts.done2': 'Careful, it is very moony. Say hi to Bram for me!',
     'story.c3.close.1': 'The moon lens! I can see my own nose through it. It is enormous.',
     'story.c3.close.2': 'Crystal: yes. Lens: yes. Now the lamp can shine again. Well, almost.',
@@ -174,7 +174,7 @@ addStrings({
     'story.star.whale.look': 'It looks like a whale with a big tail! What should we call it?',
     'story.star.whale.n1': 'The Sky Whale', 'story.star.whale.n2': 'Old Splash', 'story.star.whale.n3': 'The Cloud Swimmer',
     'story.star.crab.look': 'It looks like a crab waving its claws! What should we call it?',
-    'story.star.crab.n1': 'Shelby\'s Cousin', 'story.star.crab.n2': 'The Pinchy Crab', 'story.star.crab.n3': 'Sir Sideways',
+    'story.star.crab.n1': 'Shelby\'s Cousin', 'story.star.crab.n2': 'The Dancing Crab', 'story.star.crab.n3': 'Sir Sideways',
     'story.star.owl.look': 'It looks like an owl with big round eyes! What should we call it?',
     'story.star.owl.n1': 'The Wise Owl', 'story.star.owl.n2': 'Hoot\'s Grandpa', 'story.star.owl.n3': 'The Book Bird',
     'story.star.lantern.look': 'It looks like a little lighthouse with two beams! What should we call it?',
@@ -184,7 +184,7 @@ addStrings({
   },
   no: {
     'isl.from.shelby': 'Shelby', 'isl.from.hoot': 'Kurator Hu',
-    'isl.mail.f.shelby.1': 'Kjære {name}, palmene slapp altfor mange kokosnøtter på taket mitt. Dunk, dunk, dunk! Her er to. Knipe-knipe, Shelby.',
+    'isl.mail.f.shelby.1': 'Kjære {name}, palmene slapp altfor mange kokosnøtter på taket mitt. Dunk, dunk, dunk! Her er to. Klikk-klikk, Shelby.',
     'isl.mail.f.shelby.2': 'Jeg fant dette sjøglasset i en fjærepytt. Det har samme farge som smilet ditt. Tror jeg. Jeg har små øyne.',
 
     'story.chapterLine': 'Kapittel {n}: {title}',
@@ -239,7 +239,7 @@ addStrings({
     'story.c3.open.3': 'Grumbleton kan seile deg dit fra enden av brygga. Hu-hu, et eventyr!',
     'story.c3.coconuts.ask1': 'Månelinsen min? Det er vinduet mitt! Men alt ser kjempestort ut gjennom den. Jeg så på meg selv og skrek.',
     'story.c3.coconuts.ask2': 'Gi meg to kokosnøtter, så er den din. Jeg vil ha kokoskopper. Veldig fint. Palmene her har dem.',
-    'story.c3.coconuts.done1': 'Kokosnøtter! Knipe-knipe, takk! Her er månelinsen.',
+    'story.c3.coconuts.done1': 'Kokosnøtter! Klikk-klikk, takk! Her er månelinsen.',
     'story.c3.coconuts.done2': 'Forsiktig, den er veldig månete. Hils Bram fra meg!',
     'story.c3.close.1': 'Månelinsen! Jeg kan se min egen nese gjennom den. Den er enorm.',
     'story.c3.close.2': 'Krystall: ja. Linse: ja. Nå kan lampen lyse igjen. Nesten.',
@@ -341,7 +341,7 @@ addStrings({
     'story.star.whale.look': 'Det ser ut som en hval med stor hale! Hva skal vi kalle det?',
     'story.star.whale.n1': 'Himmelhvalen', 'story.star.whale.n2': 'Gamle Plask', 'story.star.whale.n3': 'Skysvømmeren',
     'story.star.crab.look': 'Det ser ut som en krabbe som vinker med klørne! Hva skal vi kalle det?',
-    'story.star.crab.n1': 'Shelbys fetter', 'story.star.crab.n2': 'Knipekrabben', 'story.star.crab.n3': 'Herr Sidelengs',
+    'story.star.crab.n1': 'Shelbys fetter', 'story.star.crab.n2': 'Dansekrabben', 'story.star.crab.n3': 'Herr Sidelengs',
     'story.star.owl.look': 'Det ser ut som en ugle med store, runde øyne! Hva skal vi kalle det?',
     'story.star.owl.n1': 'Den kloke uglen', 'story.star.owl.n2': 'Hus bestefar', 'story.star.owl.n3': 'Bokfuglen',
     'story.star.lantern.look': 'Det ser ut som et lite fyrtårn med to lysstråler! Hva skal vi kalle det?',

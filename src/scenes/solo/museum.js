@@ -3,7 +3,8 @@ import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { count, take, now } from './save.js';
-import { FISH_IDS, SEA, TREASURE, CRYSTALS } from './sea.js';
+import { FISH_IDS, SEA, TREASURE, CRYSTALS, FISH } from './sea.js';
+import { MUSEUM_CRABS } from './crabdata.js';
 import { MUSEUM, heightAt } from './map.js';
 import { NPCS } from './npcs.js';
 import { makeMuseum } from './models3.js';
@@ -12,12 +13,16 @@ import { makeMuseum } from './models3.js';
 // the collection board shows a picture for every piece, empty silhouettes for the missing ones, and a
 // "donate" badge for things you carry. Milestones bring coins and decorations. Crystals come from the games
 // (letters after Lighthouse Caves and Crystal Caves), the glow cave on the reef and Shell Isle.
+// The crab update: crabs are never donated any more. The "Crab friends" wall fills itself as you help crabs
+// (a red crab, a snow crab, a lobster, a hermit crab and a baby crab); crabs an old save had donated stay on it.
 
 export const ROOMS = [
   { id: 'fish', ids: FISH_IDS },
   { id: 'sea', ids: [...Object.keys(SEA), ...Object.keys(TREASURE)] },
   { id: 'crystal', ids: Object.keys(CRYSTALS) },
+  { id: 'crabs', ids: MUSEUM_CRABS, helped: true }, // filled by helping crabs, not by donating
 ];
+const NIGHT = (id) => SEA[id]?.night || (FISH[id] && FISH[id].hours[0] >= 18 && FISH[id].hours[1] <= 6);
 export const ALL_IDS = ROOMS.flatMap((r) => r.ids);
 const MILESTONES = [
   { n: 5, reward: { coins: 50 } },
@@ -42,6 +47,7 @@ export class Museum {
     this.tag = host.game.ui.label('label isl-tag');
     this.tagPos = new THREE.Vector3(MUSEUM.x, 5.2, MUSEUM.z + 3.0);
     this.board = null;
+    host.later(2.5, () => this.checkMilestones()); // crab friends helped in the dive count when you are back
   }
 
   get S() { return this.host.save; }
@@ -53,9 +59,14 @@ export class Museum {
     if (Math.hypot(P.x - DOOR.x, P.z - DOOR.z) < 1.7) out.b = { text: nm('isl.h.museum', { n: this.total, m: ALL_IDS.length }), fn: () => this.open() };
   }
 
-  /** Things in the bag the museum still wants. */
+  /** Things in the bag the museum still wants (crab friends are helped, never donated). */
   donatable() {
-    return ALL_IDS.filter((id) => !this.got[id] && count(this.S, id) > 0);
+    return ALL_IDS.filter((id) => !this.got[id] && count(this.S, id) > 0 && !MUSEUM_CRABS.includes(id));
+  }
+
+  /** Room counts, e.g. { fish: [n, m], ... } (tests and the Friends book). */
+  counts() {
+    return Object.fromEntries(ROOMS.map((r) => [r.id, [r.ids.filter((id) => this.got[id]).length, r.ids.length]]));
   }
 
   open() {
@@ -80,15 +91,18 @@ export class Museum {
       const have = !!this.got[id], carry = !have && count(this.S, id) > 0;
       const img = `<img src="${host.picture(id)}" alt="" style="${have ? '' : `filter:brightness(0) opacity(${carry ? 0.55 : 0.25})`}">`;
       const badge = carry ? '<i style="position:absolute;right:2px;top:2px;background:#ff5d73;color:#fff;border-radius:999px;padding:0 6px;font-style:normal;font-size:.85em">+</i>' : '';
-      return `<div class="isl-logcell ${i === B.i ? 'on' : ''}" style="position:relative">${badge}${img}<span>${esc(have || carry ? t(`isl.i.${id}`) : '?')}</span></div>`;
+      const moon = NIGHT(id) ? '<i style="position:absolute;left:4px;top:2px;font-style:normal">🌙</i>' : '';
+      return `<div class="isl-logcell ${i === B.i ? 'on' : ''}" style="position:relative">${badge}${moon}${img}<span>${esc(have || carry ? t(`isl.i.${id}`) : '?')}</span></div>`;
     }).join('');
     const id = room.ids[B.i];
     const have = !!this.got[id], carry = !have && count(this.S, id) > 0;
-    const info = have ? t('isl.museum.shown', { item: t(`isl.i.${id}`) }) : carry ? tFor(host.player?.p, 'isl.museum.donate', { item: t(`isl.i.${id}`) }) : t('isl.museum.missing');
+    let info = have ? t('isl.museum.shown', { item: t(`isl.i.${id}`) }) : carry ? tFor(host.player?.p, 'isl.museum.donate', { item: t(`isl.i.${id}`) }) : t('isl.museum.missing');
+    if (room.helped) info = have ? t('isl.museum.crabShown', { item: t(`isl.i.${id}`) }) : t(`isl.museum.crabHint.${id}`);
+    if (NIGHT(id)) info += ` 🌙 ${t('isl.museum.night')}`;
     const next = MILESTONES.find((m) => m.n > this.total);
     const goal = next ? t('isl.museum.next', { n: next.n - this.total }) : t('isl.museum.complete');
     host.hud.setPanel(`<h2>${esc(t('isl.museum.title'))} <small style="font-size:.5em;opacity:.7">${this.total}/${ALL_IDS.length}</small></h2>
-      <div class="isl-tabs">${tabs}</div>
+      <div class="isl-tabs">${tabs}</div>${room.helped ? `<div class="isl-foot" style="opacity:1;margin:0 0 4px">${esc(t('isl.museum.crabWall'))}</div>` : ''}
       <div class="isl-loggrid" style="grid-template-columns:repeat(${COLS},1fr)">${cells}</div>
       <div class="isl-foot" style="font-size:clamp(14px,1.4vw,20px);opacity:1">${esc(info)}</div>
       <div class="isl-foot">${esc(goal)} · ${esc(tFor(host.player?.p, 'isl.museum.hint'))}</div>`);
@@ -115,7 +129,7 @@ export class Museum {
     if (inp.bPressed) { this.close(); return; }
     if (inp.aPressed) {
       const id = ROOMS[B.room].ids[B.i];
-      if (!this.got[id] && count(this.S, id) > 0) this.donate(id);
+      if (!this.got[id] && count(this.S, id) > 0 && !ROOMS[B.room].helped) this.donate(id);
       else host.game.audio.play('bump');
     }
   }
@@ -137,7 +151,14 @@ export class Museum {
     const txt = t('isl.museum.thanks', { item: t(`isl.i.${id}`), n: this.total });
     speak(txt, NPCS.hoot.voice);
     host.game.ui.toast(txt, 2200);
-    // milestones
+    this.checkMilestones();
+    host.markDirty();
+    this.render();
+  }
+
+  /** Prizes at 5, 10, 20, 30 and all pieces (also when helped crabs fill the crab wall). */
+  checkMilestones() {
+    const host = this.host, S = this.S;
     for (const m of MILESTONES) {
       if (this.total >= m.n && (S.museum.steps || 0) < m.n) {
         S.museum.steps = m.n;
@@ -151,7 +172,6 @@ export class Museum {
       }
     }
     host.markDirty();
-    this.render();
   }
 
   /** The museum's name and count over the door when you are close. */

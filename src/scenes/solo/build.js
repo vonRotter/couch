@@ -12,6 +12,8 @@ import { makeDeco3, DECO3, makeSprinkler, makeScarecrow } from './models3.js';
 import { makeDeco4, DECO4 } from './models4.js';
 import { makeDeco5, DECO5 } from './models5.js';
 import { makeDeco6, DECO6 } from './models6.js';
+import { makeDeco7, DECO7, makeShell } from './models7.js';
+import { SHELLS, CRAFT_SHELLS, isShell } from './crabdata.js';
 
 // Building and decorating (milestone B2).
 // - Gathering: break rock piles with the pickaxe (stone), cut tall grass with the scythe (hay and fiber).
@@ -37,6 +39,8 @@ export const CRAFTS = {
   // milestone B3: farm helpers (they go into the bag and stand on field tiles, see farm.js)
   sprinkler: { need: [['stone', 5], ['wood', 3]], bag: true },
   scarecrow: { need: [['wood', 3], ['fiber', 3], ['hay', 2]], bag: true },
+  // the crab update: new shells for hermit crabs who have outgrown theirs (into the bag)
+  ...Object.fromEntries(CRAFT_SHELLS.map((id) => [id, { need: SHELLS[id].need, bag: true }])),
 };
 export const CRAFT_IDS = Object.keys(CRAFTS);
 const DECO2 = new Set(['quilt', 'gardenArch', 'portrait', 'photo', 'shipWheel', 'scope', 'anchor', 'starLamp', 'derbyTrophy', 'ribbon', 'paperLantern']);
@@ -164,6 +168,8 @@ export class Builder {
   // ---------- yard pieces ----------
 
   model(id) {
+    if (isShell(id)) return makeShell(id);
+    if (DECO7.has(id)) return makeDeco7(id);
     if (id === 'sprinkler') return makeSprinkler();
     if (id === 'scarecrow') return makeScarecrow();
     if (DECO3.has(id)) return makeDeco3(id, this.host.M);

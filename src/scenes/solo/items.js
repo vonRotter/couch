@@ -136,7 +136,7 @@ const SVG = {
 // Pictures of 3D models for sea things and dishes (set by the island scene: see thumbs.js).
 let pictureFn = null;
 export function setPictures(fn) { pictureFn = fn; }
-const PICTURED = new Set(['fish', 'sea', 'treasure', 'dish', 'produce', 'crystal']);
+const PICTURED = new Set(['fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'shell']);
 
 /** Inline SVG icon for an item id (seed packets get a little crop picture on a paper bag). */
 export function icon(id) {

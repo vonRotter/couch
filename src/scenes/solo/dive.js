@@ -8,10 +8,13 @@ import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import './strings.js';
 import './strings2.js';
-import { loadIsland, give, now } from './save.js';
+import './strings9.js';
+import { loadIsland, give, now, hourOf } from './save.js';
 import { seasonOf } from './calendar.js';
 import { ITEMS, setPictures, icon } from './items.js';
-import { FISH, seaModel, makeFish, makeSeaThing } from './sea.js';
+import { FISH, SEA, seaModel, makeFish, makeSeaThing } from './sea.js';
+import { DiveNight, nightJellies } from './divenight.js';
+import { DiveCrabs } from './divecrabs.js';
 import { thumb } from './thumbs.js';
 import { injectHudStyle } from './hud.js';
 import { mesh, box, cyl, sph, cone, ico } from './models.js';
@@ -21,6 +24,9 @@ import { ToastQueue } from './toasts.js';
 // gentle sea critters in a bubble net ([B] with nothing to pick up), pick up seaweed, clams and treasure ([B]). The air meter never
 // punishes: when it runs out, Grumbleton pulls you up and you keep everything. Swim up and climb into
 // the boat to end early. Deeper zones open with flippers (strong current) and the big air tank.
+// The owner's update: the dive follows the island's clock (evening dives are dim, night dives dark, with a
+// headlight or the sea lamp's big circle, and glowing critters that only come out at night: divenight.js),
+// and crabs and lobsters are friends to wave to and help, never caught (divecrabs.js).
 
 const SURFACE = 0;
 const X_MIN = -46, X_MAX = 62;
@@ -39,10 +45,11 @@ export function floorY(x) {
 }
 const zoneOf = (y) => (y > -10 ? 1 : y > -22 ? 2 : 3);
 
-// What lives where: [id, count, zone, onFloor]
-// (a fifth entry lists the seasons a critter shows up in: milestone B3)
-const CRITTERS = [['shrimp', 5, 1, false], ['crab', 3, 1, true], ['bream', 4, 2, false], ['lobster', 2, 2, true], ['squid', 2, 3, false], ['lanternfish', 2, 3, false], ['octopus', 1, 3, true],
-  ['seahorse', 3, 1, false, ['spring', 'summer']], ['snowCrab', 3, 1, true, ['winter']]];
+// What lives where: [id, count, zone, onFloor, seasons, night]
+// (seasons: the seasons a critter shows up in, milestone B3; night: only on night dives, with a glow color)
+const CRITTERS = [['shrimp', 5, 1, false], ['bream', 4, 2, false], ['squid', 2, 3, false], ['octopus', 1, 3, true],
+  ['seahorse', 3, 1, false, ['spring', 'summer']],
+  ['lanternfish', 2, 3, false, null, 0x8ff0ff], ['moonJelly', 3, 2, false, null, 0xc9a8ff], ['glowShrimp', 4, 1, false, null, 0x8ff0ff]];
 const CHESTS = [{ x: -30, zone: 1, coins: 20, item: 'oldcoin' }, { x: 9.5, zone: 2, coins: 50, item: 'pearl' }, { x: -1.5, zone: 3, coins: 120, item: 'goldcup' }, { x: 57, zone: 4, coins: 150, item: 'crystalShell' }];
 
 const CSS = `
@@ -77,6 +84,8 @@ export class DiveScene extends BaseScene {
     this.bubbles = [];
     this.warnT = 0;
     setPictures((id) => this.picture(id));
+    this.hour = hourOf(); // the island's clock: evening and night dives are dark
+    this.crabsHelped = 0;
 
     this.scene.background = new THREE.Color(0x4cb8e8);
     this.scene.fog = new THREE.Fog(0x4cb8e8, 14, 46);
@@ -85,14 +94,19 @@ export class DiveScene extends BaseScene {
     this.sun.position.set(-6, 30, 12);
     this.scene.add(this.hemi, this.sun);
 
+    this.night = new DiveNight(this, this.hour);
     this.buildSea();
     this.buildCave();
     this.spawnThings();
+    this.crabs = new DiveCrabs(this, floorY);
     this.buildDiver();
     this.buildHud();
     this.camPos = new THREE.Vector3(0, -1, 14);
     game.audio.playMusic('space');
-    this.game.ui.toast(t('dive.zone1'), 1800);
+    const n = this.night;
+    const first = n.night ? (n.lamp ? 'dive.nightLamp' : 'dive.nightHead') : n.evening ? 'dive.evening' : 'dive.zone1';
+    this.game.ui.toast(t(first), first === 'dive.zone1' ? 1800 : 3200);
+    if (first !== 'dive.zone1') speak(t(first));
   }
 
   picture(id) {
@@ -218,10 +232,7 @@ export class DiveScene extends BaseScene {
     this.caveDark = mesh(box(20, 12, 9), new THREE.MeshBasicMaterial({ color: 0x050a18, transparent: true, opacity: 0.9, depthWrite: false }), CAVE_X + 9.6, -6.5, -1.5, false);
     this.caveDark.visible = !this.save.sea.seaLamp;
     sc.add(this.caveDark);
-    if (this.save.sea.seaLamp) {
-      this.lampLight = new THREE.PointLight(0xfff1c0, 0, 12, 1.2);
-      sc.add(this.lampLight);
-    }
+    // (the sea lamp's light follows the diver: divenight.js)
   }
 
   spawnThings() {
@@ -279,8 +290,9 @@ export class DiveScene extends BaseScene {
     // critters
     this.critters = [];
     const season = seasonOf(now());
-    for (const [id, n, zone, floor, seasons] of CRITTERS) {
+    for (const [id, n, zone, floor, seasons, glow] of CRITTERS) {
       if (seasons && !seasons.includes(season)) continue;
+      if (glow && !this.night.night) continue; // glowing critters only come out at night
       for (let i = 0; i < n; i++) {
         const x = xIn(zone);
         const fy = floorY(x);
@@ -291,6 +303,7 @@ export class DiveScene extends BaseScene {
         holder.add(model);
         holder.position.set(x, y, 0);
         sc.add(holder);
+        if (glow) this.night.addHalo(holder, glow, id === 'moonJelly' ? 0.8 : 0.55);
         this.critters.push({ id, g: holder, model, x, y, hx: x, hy: y, zone, floor, tx: x, ty: y, wait: r() * 2, dir: 1, ph: r() * 6, state: 'free' });
       }
     }
@@ -301,6 +314,7 @@ export class DiveScene extends BaseScene {
       const y = floorY(x) + 2;
       holder.position.set(x, y, 0);
       sc.add(holder);
+      this.night.addHalo(holder, 0x8ff0ff, 0.55); // the glow cave is always dark
       this.critters.push({ id: 'lanternfish', g: holder, model, x, y, hx: x, hy: y, zone: 4, floor: false, tx: x, ty: y, wait: 1, dir: 1, ph: 0, state: 'free' });
     }
     // ambient life: a turtle, a school of little fish, jellyfish
@@ -319,12 +333,14 @@ export class DiveScene extends BaseScene {
     }
     this.school.position.set(20, -4, -4);
     sc.add(this.school);
+    // pink jellies by day; at night glowing jellies light up the dark (divenight.js)
     this.jellies = [];
-    for (let i = 0; i < 5; i++) {
+    if (this.night.night) this.jellies = nightJellies(this, this.night);
+    else for (let i = 0; i < 5; i++) {
       const g = new THREE.Group();
       const deep = i >= 3;
-      g.add(mesh(sph(0.45, 12, 8, 0), toon(deep ? 0x8ff0ff : 0xff9fd0, { transparent: true, opacity: 0.75, emissive: deep ? 0x226677 : 0x000000 }), 0, 0, 0, false));
-      for (let k = 0; k < 4; k++) g.add(mesh(cyl(0.02, 0.02, 0.9, 4), deep ? 0x8ff0ff : 0xff9fd0, (k - 1.5) * 0.15, -0.6, 0, false));
+      g.add(mesh(sph(0.45, 12, 8, 0), toon(0xff9fd0, { transparent: true, opacity: 0.75 }), 0, 0, 0, false));
+      for (let k = 0; k < 4; k++) g.add(mesh(cyl(0.02, 0.02, 0.9, 4), 0xff9fd0, (k - 1.5) * 0.15, -0.6, 0, false));
       const x = deep ? (r() - 0.5) * 8 : (r() < 0.5 ? -1 : 1) * (6 + r() * 10);
       g.position.set(x, deep ? -26 - r() * 3 : -13 - r() * 5, -2.5);
       sc.add(g);
@@ -384,7 +400,8 @@ export class DiveScene extends BaseScene {
     this.hud.air.classList.toggle('low', k < 0.25);
     this.set('air', `<span>${esc(t('dive.air'))}</span><div class="bar"><i style="width:${(k * 100).toFixed(1)}%"></i></div>`);
     const depth = Math.max(0, Math.round(-this.diver.y));
-    this.set('depth', `<div class="isl-pill">${esc(t('dive.depth', { n: depth }))}<small>${esc(t(this.diver.x > CAVE_X ? 'dive.zone4' : `dive.zone${zoneOf(this.diver.y)}`))}</small></div><div class="isl-pill"><span class="i">${icon('coin')}</span>${this.coins}</div>`);
+    const when = this.night.night ? `🌙 ${t('dive.night')} · ` : this.night.evening ? `🌆 ${t('dive.eveningTag')} · ` : '';
+    this.set('depth', `<div class="isl-pill">${esc(t('dive.depth', { n: depth }))}<small>${esc(when + t(this.diver.x > CAVE_X ? 'dive.zone4' : `dive.zone${zoneOf(this.diver.y)}`))}</small></div><div class="isl-pill"><span class="i">${icon('coin')}</span>${this.coins}</div>`);
     this.set('haul', [...this.haul.entries()].map(([id, n]) => `<div>${icon(id)}${n}</div>`).join(''));
     this.set('keys', esc(tFor(P, 'dive.keys')));
   }
@@ -456,14 +473,15 @@ export class DiveScene extends BaseScene {
       D.x = CAVE_X - 0.8; D.vx = Math.min(D.vx, -1);
       if (this.warnT <= 0) { this.warnT = 4; this.game.ui.toast(t('dive.dark'), 2400); speak(t('dive.dark')); this.game.audio.play('bump'); }
     }
-    if (this.lampLight) { this.lampLight.position.set(D.x + D.dir * 0.8, D.y + 0.4, 1.5); this.lampLight.intensity = D.x > CAVE_X - 4 ? 30 : 6; }
     this.warnT -= dt;
     this.netCd -= dt;
     this.updateDiverLook(dt);
     this.updateBubbles(dt);
     this.updateCritters(dt);
+    this.crabs.update(dt);
     this.animate(dt);
     this.updateCamera(dt);
+    this.night.update(dt, this.time, CAVE_X);
     this.set('prompt', esc(prompt));
     this.hud.prompt.style.display = prompt ? '' : 'none';
     this.updateHud();
@@ -491,6 +509,8 @@ export class DiveScene extends BaseScene {
   nearest() {
     const D = this.diver, P = this.players[0];
     const d = (x, y) => Math.hypot(D.x - x, D.y - y);
+    const crab = this.crabs.nearest(); // crab friends first: turn over, untangle, lead home, wave
+    if (crab) return crab;
     for (const c of this.chests) if (!c.open && d(c.x, c.y) < 1.8) return { text: tFor(P, 'dive.open'), fn: () => this.openChest(c) };
     for (const c of this.cavePicks) if (!c.picked && d(c.x, c.y) < 1.6) return { text: tFor(P, 'dive.pick', { item: t(`isl.i.${c.id}`) }), fn: () => this.pickCave(c) };
     for (const c of this.clams) if (!c.picked && d(c.x, c.y) < 1.5) return { text: tFor(P, 'dive.pick', { item: t('isl.i.clam') }), fn: () => this.pickClam(c) };
@@ -660,6 +680,7 @@ export class DiveScene extends BaseScene {
     this.scene.fog.far = 46 - k * 18;
     this.hemi.intensity = 1.6 - k * 0.9;
     this.sun.intensity = 1.4 - k * 1.1;
+    this.night.tint(this.night.darkAt(D.x, CAVE_X)); // evening and night: darker water
   }
 
   // ---------- ending ----------
@@ -680,13 +701,14 @@ export class DiveScene extends BaseScene {
     for (const [id, n] of items) {
       give(S, id, n);
       if (FISH[id]) { S.sea.log[id] = (S.sea.log[id] || 0) + n; S.sea.caught += n; }
+      else if (SEA[id]?.night) S.sea.log[id] = (S.sea.log[id] || 0) + n; // night finds go into the fish log
     }
     S.coins += this.coins;
     S.sea.dives++;
     S.sea.haul = { items, coins: this.coins, why: this.why || 'early' };
     this.game.roster.save();
     const gifts = items.map(([id, n]) => `<div>${icon(id)}${n > 1 ? `${n} ` : ''}${esc(t(`isl.i.${id}`))}</div>`).join('');
-    const coins = this.coins ? `<div>${icon('coin')}${esc(t('dive.coins', { n: this.coins }))}</div>` : '';
+    const coins = (this.coins ? `<div>${icon('coin')}${esc(t('dive.coins', { n: this.coins }))}</div>` : '') + (this.crabsHelped ? `<div>💛 ${esc(t('crab.dive.helped', { n: this.crabsHelped }))}</div>` : '');
     this.hud.panel.style.display = '';
     this.hud.panel.innerHTML = `<h2>${esc(t('dive.haul'))}</h2>${gifts || coins ? `<div class="isl-gifts">${gifts}${coins}</div>` : `<div class="isl-letter">${esc(t('dive.haulNone'))}</div>`}
       <div class="isl-foot">${esc(tFor(this.players[0], 'dive.hint'))}</div>`;

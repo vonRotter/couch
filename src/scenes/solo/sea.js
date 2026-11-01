@@ -4,6 +4,8 @@ import { ITEMS } from './items.js';
 import { now } from './save.js';
 import { seasonOf } from './calendar.js';
 import { mesh, box, cyl, sph, cone, ico } from './models.js';
+import { makeCrab, makeShell } from './models7.js';
+import { MUSEUM_CRABS, SHELL_IDS } from './crabdata.js';
 
 // The sea side of the island (milestone B1): fish for the rod, critters and finds from diving,
 // treasure, and the Driftwood Café's dishes. All with small toon models (also used for thumbnails).
@@ -41,14 +43,20 @@ export const FISH = {
 export const FISH_IDS = Object.keys(FISH);
 export const isRiverFish = (id) => FISH[id]?.where === 'river';
 
-/** Sea things from diving (ingredients) and treasure (to sell). */
+/**
+ * Sea things from diving (ingredients) and treasure (to sell). Crabs, snow crabs and lobsters are not here any
+ * more: they are friends you help (crabdata.js). night: only out on night dives (20:00 to 5:00).
+ */
 export const SEA = {
   seaweed: { sell: 8, color: 0x3fae6a }, clam: { sell: 12, color: 0xe8d8c8 }, shrimp: { sell: 20, color: 0xff9a7a },
-  crab: { sell: 35, color: 0xff6a4a }, lobster: { sell: 90, color: 0xd94a3a },
   // milestone B3: seasonal dive critters and Shell Isle's beach finds
-  seahorse: { sell: 45, color: 0xffb03a, seasons: ['spring', 'summer'] }, snowCrab: { sell: 50, color: 0xe8f4ff, seasons: ['winter'] },
+  seahorse: { sell: 45, color: 0xffb03a, seasons: ['spring', 'summer'] },
   starfish: { sell: 20, color: 0xff8c42 }, seaGlass: { sell: 25, color: 0x8fe0c0 }, seaShell: { sell: 10, color: 0xffd8c8 },
+  // night dives: glowing critters that only come out in the dark
+  moonJelly: { sell: 70, color: 0xc9a8ff, night: true }, glowShrimp: { sell: 40, color: 0x8ff0ff, night: true },
 };
+/** The night-only finds (also in the fish log, marked with a moon). */
+export const NIGHT_FINDS = Object.keys(SEA).filter((id) => SEA[id].night);
 export const TREASURE = { oldcoin: { sell: 40 }, pearl: { sell: 90 }, goldcup: { sell: 220 }, crystalShell: { sell: 400 } };
 /** Crystals for the museum (milestone B3): from Lighthouse Caves and Crystal Caves (letters), the glow cave and Shell Isle. */
 export const CRYSTALS = {
@@ -66,11 +74,11 @@ export const RECIPES = {
   sushi: { need: [['seafish', 1], ['seaweed', 1]], price: 100, colors: [0xffffff, 0x2f5f3f, 0xff8a6a], sushi: true },
   seaweedSalad: { need: [['seaweed', 1], ['lettuce', 1]], price: 65, colors: [0x3fae6a, 0x9be05a] },
   tempura: { need: [['shrimp', 1], ['corn', 1]], price: 110, colors: [0xffd27a, 0xff9a7a] },
-  crabCake: { need: [['crab', 1], ['carrot', 1]], price: 110, colors: [0xe0a060, 0xff6a4a] },
+  seaweedCake: { need: [['seaweed', 2], ['carrot', 1]], price: 110, colors: [0x58a86a, 0xe0b070, 0xff8c2a], cakes: true }, // was the crab cake
   clamChowder: { need: [['clam', 2], ['corn', 1]], price: 120, colors: [0xfff3dc, 0xffd23f], soup: true },
   strawberryShake: { need: [['strawberry', 2]], price: 70, colors: [0xff9fd0, 0xff3b5c], drink: true },
   pumpkinPie: { need: [['pumpkin', 1]], price: 200, colors: [0xff9f1c, 0xe2b06a], pie: true },
-  seafoodPlatter: { need: [['lobster', 1], ['squid', 1], ['seaweed', 1]], price: 300, colors: [0xd94a3a, 0xffb0c0, 0x3fae6a] },
+  seafoodPlatter: { need: [['clam', 1], ['shrimp', 1], ['squid', 1]], price: 300, colors: [0xe8d8c8, 0xff9a7a, 0xffb0c0] }, // no lobster: lobsters are friends
   // with eggs and milk from the barn (milestone B2)
   omelette: { need: [['egg', 2]], price: 80, colors: [0xffd23f, 0xfff3a8], pie: true },
   pancakes: { need: [['egg', 1], ['milk', 1]], price: 120, colors: [0xffd27a, 0xe2b06a, 0xff3b5c], pie: true },
@@ -257,18 +265,19 @@ export function makeSeaThing(id) {
       g.add(mesh(cyl(0.01, 0.01, 0.4, 3), 0xff7a5a, 0.2, 0.1, 0.04, false).rotateZ(-0.8), mesh(sph(0.03, 6, 4), INK, 0.08, 0.06, 0.08, false));
       break;
     }
-    case 'crab': case 'lobster': case 'snowCrab': {
-      const lob = id === 'lobster';
-      const c = lob ? 0xd94a3a : id === 'snowCrab' ? 0xe8f4ff : 0xff6a4a;
-      const b = mesh(sph(0.3, 12, 8), c, 0, 0.15, 0);
-      b.scale.set(lob ? 1.5 : 1.2, 0.6, lob ? 0.7 : 0.9);
-      g.add(b);
-      if (lob) for (let i = 1; i < 4; i++) g.add(mesh(sph(0.16 - i * 0.02, 8, 6), c, -0.3 - i * 0.16, 0.15, 0));
-      for (const s of [-1, 1]) {
-        g.add(scaled(mesh(sph(0.12, 8, 6), c, 0.42, 0.2, s * 0.28), 1.3, 0.8, 0.8));
-        for (let i = 0; i < 3; i++) { const l = mesh(cyl(0.025, 0.02, 0.28, 4), c, -0.1 + i * 0.12, 0.06, s * 0.3, false); l.rotation.x = s * 1.0; g.add(l); }
-        g.add(mesh(sph(0.045, 6, 5), 0xffffff, 0.22, 0.32, s * 0.08, false), mesh(sph(0.025, 6, 4), INK, 0.25, 0.33, s * 0.09, false));
-      }
+    case 'moonJelly': {
+      // a round violet jelly with a glowing heart and wavy ribbons
+      const bell = mesh(sph(0.36, 14, 10, 0), toon(0xc9a8ff, { transparent: true, opacity: 0.8, emissive: 0x3a2266 }), 0, 0.55, 0, false);
+      bell.scale.set(1, 0.7, 1);
+      g.add(bell, mesh(sph(0.12, 8, 6), toon(0xfff3b0, { emissive: 0x666633 }), 0, 0.55, 0, false));
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const r = mesh(box(0.04, 0.5, 0.02), toon(0xe0d0ff, { emissive: 0x2a1a55 }), Math.cos(a) * 0.15, 0.2, Math.sin(a) * 0.15, false); r.rotation.z = Math.sin(a * 2) * 0.3; g.add(r); }
+      break;
+    }
+    case 'glowShrimp': {
+      // a little shrimp that shines blue in the dark
+      for (let i = 0; i < 5; i++) g.add(mesh(sph(0.12 - i * 0.015, 8, 6), toon(0x8ff0ff, { emissive: 0x1a5566 }), -i * 0.13, Math.sin(i * 0.6) * 0.08, 0));
+      g.add(mesh(cyl(0.01, 0.01, 0.4, 3), 0xbff6ff, 0.2, 0.1, 0.04, false).rotateZ(-0.8), mesh(sph(0.03, 6, 4), INK, 0.08, 0.06, 0.08, false));
+      for (const x of [-0.1, -0.3]) g.add(mesh(sph(0.04, 6, 4), toon(0xffffff, { emissive: 0x88aaaa }), x, 0.1, 0, false));
       break;
     }
     case 'seahorse': {
@@ -350,6 +359,13 @@ export function makeDish(id) {
     for (let i = 0; i < 3; i++) g.add(mesh(sph(0.05, 6, 5), c2, -0.1 + i * 0.1, 0.38, (i - 1) * 0.06, false));
   } else if (r.pie) {
     g.add(mesh(cyl(0.38, 0.34, 0.16, 16), c2, 0, 0.17, 0), mesh(cyl(0.33, 0.33, 0.03, 16), c1, 0, 0.26, 0, false));
+  } else if (r.cakes) {
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + 0.4;
+      const cake = mesh(cyl(0.15, 0.16, 0.1, 12), c2, Math.cos(a) * 0.17, 0.15, Math.sin(a) * 0.17);
+      g.add(cake, mesh(cyl(0.11, 0.11, 0.02, 10), c1, Math.cos(a) * 0.17, 0.21, Math.sin(a) * 0.17, false));
+    }
+    g.add(mesh(sph(0.07, 6, 5), c3, 0, 0.24, 0, false));
   } else if (r.sushi) {
     for (let i = 0; i < 3; i++) {
       const x = -0.22 + i * 0.22;
@@ -367,10 +383,15 @@ export function makeDish(id) {
   return g;
 }
 
-/** Model for any sea-side item id (for thumbnails and props). */
+const CRAB_MODEL = { crab: 'red', snowCrab: 'snow', lobster: 'lobster', hermitCrab: 'hermit', babyCrab: 'baby' };
+
+/** Model for any sea-side item id (for thumbnails and props): fish, dishes, finds, crab friends and shells. */
 export function seaModel(id) {
   if (FISH[id]) return makeFish(id);
   if (RECIPES[id]) return makeDish(id);
+  if (CRAB_MODEL[id]) { const c = makeCrab(CRAB_MODEL[id], { shell: id === 'hermitCrab' ? 'conchShell' : null }); if (id === 'babyCrab') c.scale.setScalar(1); c.userData.clawR.rotation.z = -1.0; return c; }
+  if (SHELL_IDS.includes(id)) return makeShell(id);
   return makeSeaThing(id);
 }
-export const hasSeaModel = (id) => !!(FISH[id] || RECIPES[id] || SEA[id] || TREASURE[id] || CRYSTALS[id] || id === 'egg' || id === 'milk');
+export const hasSeaModel = (id) => !!(FISH[id] || RECIPES[id] || SEA[id] || TREASURE[id] || CRYSTALS[id] || CRAB_MODEL[id] || SHELL_IDS.includes(id) || id === 'egg' || id === 'milk');
+export { MUSEUM_CRABS };
