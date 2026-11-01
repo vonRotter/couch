@@ -32,7 +32,7 @@ const COVE = CRAB_COVE;
 const SIGN = { x: COVE.x - 3.6, z: COVE.z - 1.9 };
 const DANCE = { x: COVE.x + 0.4, z: COVE.z + 0.5, r: 1.6 };
 const HOME_WAIT = { x: HOME.x + 2.2, z: HOME.z + 3.5 }; // where a crab friend waits at night, by the porch
-const MAIN_SPOTS = [[12.5, 42.4], [17.5, 41.6], [20.5, 41.6], [30.5, 38.0], [-14.5, 40.2], [-19.5, 39.2], [25.5, 40.4], [-3.5, 40.8], [PIER.x + 1.0, 42.6], [PIER.x - 1.1, 51.5]]; // beach and pier (away from Grumbleton's spots and the ship's door)
+const MAIN_SPOTS = [[12.5, 42.4], [17.5, 41.6], [20.5, 41.6], [30.5, 38.0], [-14.5, 40.2], [-19.5, 39.2], [25.5, 40.4], [-3.5, 40.8], [PIER.x + 1.0, 42.6], [PIER.x - 0.5, 51.5]]; // beach and pier (away from Grumbleton's spots and the ship's door)
 const ISLE_SPOTS = [[-1.5, 201.5], [2.5, 193.0], [15.4, 189.0], [13.6, 194.2], [-8.4, 181.4], [-13.4, 190.8], [6.4, 181.4], [-5.2, 197.4]];
 const DOORS_EXTRA = [{ x: HOME.x, z: HOME.z + 2.7 }, { x: 12, z: -13.0 }, { x: 26, z: 1.1 }, { x: -7.1, z: 42.8 }, { x: -1, z: 57.3 }, { x: 4, z: 58.8 }];
 const NEAR = 1.6;
@@ -591,6 +591,7 @@ export class CrabCare {
       const u = g.userData;
       if (o.state === 'wait') {
         animateCrab(g, dt, { wiggle: o.type === 'flip' ? 1 : o.type === 'free' ? 0.6 : 0 });
+        if (o.type === 'flip') { u.body.position.y = 0.52; u.body.rotation.x = Math.sin(tm * 5) * 0.15; } // on its back, rocking
         if (o.type === 'shell') g.rotation.z = Math.sin(tm * 4) * 0.05; // squeezed and wobbly
         const d = Math.hypot(o.x - px, o.z - pz);
         if (d < 7 && !o.seen) { o.seen = true; this.sayT(o.type === 'shell' ? 'crab.t.seeHermit' : 'crab.t.seeCrab', { name: o.hermit ? t(`crab.hermit.${o.hermit}`) : '' }, 2400); }
@@ -598,6 +599,7 @@ export class CrabCare {
         // turns over with a little hop, dances, then scuttles back to the sea
         const k = Math.min(1, o.t / 0.5);
         u.body.rotation.z = Math.PI * (1 - k);
+        u.body.rotation.x = 0;
         u.body.position.y = 0.5 * (1 - k) + Math.sin(k * Math.PI) * 0.6;
         this.leave(o, dt, 0.5);
       } else if (o.state === 'free') this.leave(o, dt, 0);

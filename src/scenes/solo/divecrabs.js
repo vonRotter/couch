@@ -197,10 +197,12 @@ export class DiveCrabs {
       const g = o.g, u = g.userData;
       if (o.state === 'wait') {
         animateCrab(g, dt, { wiggle: 1 });
+        if (o.type === 'flip') { u.body.position.y = 0.52; u.body.rotation.x = Math.sin(this.host.time * 5) * 0.15; } // on its back, rocking
       } else if (o.state === 'flip') {
         // turn over, a happy dance, then scuttle off
         const k = Math.min(1, o.t / 0.5);
         u.body.rotation.z = Math.PI * (1 - k);
+        u.body.rotation.x = 0;
         u.body.position.y = 0.5 * (1 - k) + Math.sin(k * Math.PI) * 0.6;
         if (o.t > 0.5) animateCrab(g, dt, { dance: o.t < 2.4 ? 1 : 0, walk: o.t >= 2.4 ? 1 : 0 });
         if (o.t > 2.4) { o.x += dt * 1.5; g.position.set(o.x, fy(o.x) + 0.02, 0); }
