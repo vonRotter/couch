@@ -85,10 +85,17 @@ export class DiveCrabs {
     return o;
   }
 
-  /** The closest crab thing for [B]: { text, fn } or null. */
-  nearest() {
+  /**
+   * The closest crab thing for [B]: { text, fn } or null. Crabs who need a hand come first; waving to a
+   * walking crab (wave: true) comes after chests, clams and kelp (dive.js).
+   */
+  nearest(wave = false) {
     const D = this.host.diver, P = this.host.players[0];
     const d = (x, y) => Math.hypot(D.x - x, D.y - y);
+    if (wave) {
+      for (const w of this.walkers) if (d(w.x, this.floorY(w.x) + 0.4) < 1.6) return { text: tFor(P, 'crab.h.wave'), fn: () => this.wave(w) };
+      return null;
+    }
     for (const o of this.list) {
       if (o.state !== 'wait') continue;
       if (o.type === 'find' && d(o.x, o.y + 0.4) < 1.6) return { text: tFor(P, 'dive.pick', { item: t(`isl.i.${o.item}`) }), fn: () => this.pickShell(o) };
@@ -96,7 +103,6 @@ export class DiveCrabs {
       if (o.type === 'free' && d(o.x, o.y + 0.4) < 1.8) return { text: tFor(P, 'crab.h.freeNet', { n: 3 - o.tugs }), fn: () => this.tug(o) };
       if (o.type === 'home' && d(o.x, o.y + 0.4) < 2.0) return { text: tFor(P, 'crab.h.babies'), fn: () => this.lead(o) };
     }
-    for (const w of this.walkers) if (d(w.x, this.floorY(w.x) + 0.4) < 1.6) return { text: tFor(P, 'crab.h.wave'), fn: () => this.wave(w) };
     return null;
   }
 

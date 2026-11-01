@@ -509,13 +509,13 @@ export class DiveScene extends BaseScene {
   nearest() {
     const D = this.diver, P = this.players[0];
     const d = (x, y) => Math.hypot(D.x - x, D.y - y);
-    const crab = this.crabs.nearest(); // crab friends first: turn over, untangle, lead home, wave
+    const crab = this.crabs.nearest(); // crabs who need a hand first: turn over, untangle, lead home
     if (crab) return crab;
     for (const c of this.chests) if (!c.open && d(c.x, c.y) < 1.8) return { text: tFor(P, 'dive.open'), fn: () => this.openChest(c) };
     for (const c of this.cavePicks) if (!c.picked && d(c.x, c.y) < 1.6) return { text: tFor(P, 'dive.pick', { item: t(`isl.i.${c.id}`) }), fn: () => this.pickCave(c) };
     for (const c of this.clams) if (!c.picked && d(c.x, c.y) < 1.5) return { text: tFor(P, 'dive.pick', { item: t('isl.i.clam') }), fn: () => this.pickClam(c) };
     for (const k of this.kelps) if (!k.picked && Math.abs(D.x - k.x) < 1.2 && D.y < k.top + 0.5 && D.y > k.y - 0.5) return { text: tFor(P, 'dive.pick', { item: t('isl.i.seaweed') }), fn: () => this.pickKelp(k) };
-    return null;
+    return this.crabs.nearest(true); // nothing else here: wave to a crab walking by
   }
 
   pickClam(c) {
