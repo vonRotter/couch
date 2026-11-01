@@ -9,7 +9,7 @@ import { heightAt, SEA_Y, PIER } from './map.js';
 import { mesh, cyl, sph, cone, makePier, makeLamp, makeSign, makeBuoy } from './models.js';
 import { makePalm, makeBerryBush, makePoolRim, makeDigSpot, makeShellHut, makeSailboat } from './models3.js';
 import { makeSeal } from './models4.js';
-import { makeSeagull } from '../adventure/props.js';
+import { Gull } from './gulls.js';
 import { ISLE2, ISLE2_DOCK, ISLE2_BOAT, ISLE2_ARRIVE, COVE, POOLS, PALMS, BERRIES, DIGS, HUT, isle2Height, inCove } from './isle2geo.js';
 
 // Shell Isle, the second island (milestone B3). The sea chart from the glow cave (diving) shows the way;
@@ -99,7 +99,12 @@ export class Isle2 {
     this.seal.position.set(SEAL_ROCK.x + 0.1, SEA_Y + 1.05, SEAL_ROCK.z);
     this.seal.rotation.y = 0.6;
     scene.add(this.seal);
-    this.sailGulls = [0, 1].map((i) => { const g = makeSeagull(); g.scale.setScalar(0.9); g.visible = false; scene.add(g); return { g, a: i * Math.PI, r: 3.2 + i * 1.3, y: 4 + i * 0.8 }; });
+    // gulls that follow the boat on the trip, and two that live on Shell Isle (gulls.js)
+    this.sailGulls = [0, 1].map(() => { const g = new Gull(scene, { area: { x: 0, z: 0, r: 4 }, alt: [3.2, 5], follow: () => this.sail && this.boat.position }); g.visible = false; return g; });
+    const isleY = (x, z) => Math.max(isle2Height(x, z), 0.05);
+    const perches = [[1.15, 2], [-1.15, 1], [1.15, 0]].map(([x, i]) => ({ x: ISLE2_DOCK.x + x, y: 0.36, z: ISLE2_DOCK.z0 + 0.3 + i * 3 }))
+      .concat([[12.5, 183.5], [-4.5, 205], [9.5, 203.2], [-16.5, 189.5]].map(([x, z]) => ({ x, y: isleY(x, z), z })));
+    this.isleGulls = [0, 1].map((i) => new Gull(scene, { area: { x: i ? 8 : -6, z: 186 + i * 6, r: 12 }, alt: [3.4, 6.2], perches }));
     put(makeSign(0xff9fc0), -2.2, 178.4);
     map.circObs(-2.2, 178.4, 0.3);
     this.signSpot = { x: -2.2, z: 178.4 };
@@ -220,13 +225,10 @@ export class Isle2 {
       this.dolphin.rotation.set(0, -fwd * Math.PI / 2, (0.5 - jt) * 1.6);
       if (jt < 0.05 || jt > 0.95) host.puffs.burst(new THREE.Vector3(this.dolphin.position.x, SEA_Y + 0.1, this.dolphin.position.z), 0xffffff, { count: 6, speed: 2, up: 2, size: 0.3, life: 0.6 });
     }
-    // gulls circle over the boat
+    // gulls fly along over the boat (flapping and gliding, see gulls.js)
     for (const gl of this.sailGulls) {
-      gl.a += dt * 1.4;
-      gl.g.visible = true;
-      gl.g.position.set(x + Math.cos(gl.a) * gl.r, y + gl.y + Math.sin(sl.t * 2 + gl.a) * 0.3, z + Math.sin(gl.a) * gl.r);
-      gl.g.rotation.y = -gl.a - Math.PI;
-      for (const [i, w] of gl.g.userData.wings.entries()) w.rotation.x = (i ? 1 : -1) * Math.sin(sl.t * 7 + gl.a) * 0.6;
+      if (!gl.visible) { gl.visible = true; gl.pos.set((Math.random() - 0.5) * 6, 4, -fwd * 2); gl.yaw = fwd > 0 ? -Math.PI / 2 : Math.PI / 2; gl.target = gl.pickTarget(); }
+      gl.update(dt, { night: host.night });
     }
     // the view: same distance as on the island, but it swings around the boat. To Shell Isle it first looks
     // back at the main island, then turns to look ahead at the isle, and swings back just before the dock.
@@ -241,7 +243,7 @@ export class Isle2 {
     // lighter fog on the open sea, so both islands can be seen
     host.scene.fog.near = 90;
     host.scene.fog.far = 240;
-    if (k >= 1) { this.dolphin.visible = false; for (const gl of this.sailGulls) gl.g.visible = false; this.arrive(); }
+    if (k >= 1) { this.dolphin.visible = false; for (const gl of this.sailGulls) gl.visible = false; this.arrive(); }
   }
 
   arrive() {
@@ -365,6 +367,7 @@ export class Isle2 {
     for (const p of this.pools) if (p.g.userData.find.visible) p.g.userData.find.children[1].scale.y = 0.6 + Math.sin(time * 5 + p.i) * 0.4;
     if (!this.sail && this.boat.visible) { this.boat.position.y = SEA_Y - 0.1 + Math.sin(time * 1.3) * 0.06; this.boat.rotation.z = Math.sin(time) * 0.03; }
     for (const b of this.seaBuoys) { b.position.y = SEA_Y + Math.sin(time * 1.2 + b.userData.ph) * 0.08; b.rotation.z = Math.sin(time * 0.9 + b.userData.ph) * 0.08; }
+    for (const gl of this.isleGulls) gl.update(dt, { night: this.host.night, player: this.host.player });
     // the seal waves a flipper and nods
     const sd = this.seal.userData;
     sd.flip.rotation.z = -0.4 + Math.sin(time * 5) * 0.5;

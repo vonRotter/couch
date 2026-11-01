@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { toon, basic } from '../../core/palette.js';
-import { makeSeagull } from '../adventure/props.js';
+import { Gull } from './gulls.js';
 import { makeNpc as makeLhNpc } from '../lighthouse/models.js';
 import { mesh, box, sph, cone } from './models.js';
 import { heightAt, SEA_Y, RIVER, STORE, HAZEL_HOME, PIER } from './map.js';
@@ -17,14 +17,11 @@ export class Life {
     this.t = 0;
     this.smokeT = 0;
     this.fishT = 3;
-    // gulls
-    this.gulls = [];
-    for (let i = 0; i < 3; i++) {
-      const g = makeSeagull();
-      g.scale.setScalar(0.9);
-      scene.add(g);
-      this.gulls.push({ g, a: i * 2.1, r: 7 + i * 2.5, cx: PIER.x - 6 + i * 8, cz: PIER.z0 + 18 + i * 2, y: 3.5 + i * 0.6, sp: 0.35 + i * 0.07 });
-    }
+    // gulls over the dock and the beach: they flap, glide, bank, and land on posts, barrels and the sand (gulls.js)
+    const posts = [[PIER.x + 1.45, 3], [PIER.x - 1.45, 4], [PIER.x + 1.45, 6], [PIER.x - 1.45, 5]].map(([x, i]) => ({ x, y: 0.36, z: PIER.z0 + 0.3 + i * 3 }));
+    const sand = [[13.5, 40.6], [19.5, 41.2], [25.5, 41.6], [-14, 41.5]].map(([x, z]) => ({ x, y: Math.max(heightAt(x, z), SEA_Y + 0.1), z }));
+    this.perches = [...posts, { x: 2.9, y: 1.03, z: 44 }, { x: 5.1, y: 1.03, z: 50.3 }, ...sand];
+    this.gulls = [0, 1, 2, 3].map((i) => new Gull(scene, { area: { x: PIER.x + 4 + (i % 2) * 6, z: PIER.z0 + 8 + i * 2, r: 11 }, alt: [3.2, 6.5], perches: this.perches }));
     // butterflies
     this.butterflies = [];
     const cols = [0xff7eb6, 0xffd23f, 0x8fd8ff, 0xc9a8ff, 0xffffff];
@@ -103,12 +100,7 @@ export class Life {
     this.t += dt;
     const t = this.t;
     const map = this.map;
-    for (const s of this.gulls) {
-      s.a += dt * s.sp;
-      s.g.position.set(s.cx + Math.cos(s.a) * s.r, s.y + Math.sin(t * 0.7 + s.a) * 0.5, s.cz + Math.sin(s.a) * s.r);
-      s.g.rotation.y = -s.a - Math.PI;
-      for (const [i, w] of s.g.userData.wings.entries()) w.rotation.x = (i ? 1 : -1) * Math.sin(t * 6 + s.a) * 0.6;
-    }
+    for (const g of this.gulls) g.update(dt, { night, player: this.host.player });
     const day = night < 0.5;
     for (const b of this.butterflies) {
       b.b.visible = day;
