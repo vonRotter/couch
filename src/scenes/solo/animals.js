@@ -7,7 +7,6 @@ import { dayKey, dayIndex, dayRand } from './calendar.js';
 import { heightAt } from './map.js';
 import { mesh, box } from './models.js';
 import { makeChicken, makeCow, makeTrough, makeNest } from './models2.js';
-import { heartsHtml } from './hud.js';
 
 // The barn and paddock (milestone B2). Aunt Hazel's quest repairs the barn and brings two chickens; Rosa
 // sells more chickens, a goat and a cow. Animals live in real time: each day, an animal that finds hay in
@@ -228,7 +227,7 @@ export class Ranch {
       // name tag with animal hearts when you are close
       const close = P && host.mode === 'walk' && Math.hypot(P.x - v.x, P.z - v.z) < 4.5;
       if (close) {
-        const html = `${esc(a.name)}${a.baby !== undefined ? ' 🍼' : ''}${heartsHtml(a.hearts, 5)}${a.ready ? ' 🥛' : ''}`;
+        const html = `${esc(a.name)}${a.baby !== undefined ? ' 🍼' : ''}${a.ready ? ' 🥛' : ''}`;
         if (v.tag.innerHTML !== html) v.tag.innerHTML = html;
         host.game.ui.place(v.tag, new THREE.Vector3(v.x, a.kind === 'chicken' ? 1.2 : 2.3, v.z), host.camera);
       } else v.tag.style.display = 'none';

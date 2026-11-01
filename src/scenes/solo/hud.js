@@ -183,7 +183,7 @@ export class IslandHud {
     if (!d) { this.cache.dialog = null; return; }
     const choices = d.choices ? `<div class="choices">${d.choices.map((c, i) => `<span class="${i === d.index ? 'on' : ''}">${esc(c)}</span>`).join('')}</div>` : '';
     this.dialog.style.setProperty('--c', d.css || '#2b2340');
-    this.set('dialog', this.dialog, `${d.who ? `<div class="who">${esc(d.who)}${d.hearts !== undefined ? heartsHtml(d.hearts) : ''}</div>` : ''}${esc(d.text)}${choices}${d.choices ? '' : '<div class="more">▼</div>'}`);
+    this.set('dialog', this.dialog, `${d.who ? `<div class="who">${esc(d.who)}</div>` : ''}${esc(d.text)}${choices}${d.choices ? '' : '<div class="more">▼</div>'}`);
   }
 
   setPanel(html) {
