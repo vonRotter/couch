@@ -125,6 +125,8 @@ export const FINDS = { feather: { x: 37, z: -27 }, starmap: { x: 3.5, z: -29 }, 
 export const DIVE_SPOT = { x: -4, z: 55 };
 export const DIVE_BOAT = { x: 0, z: 56.2 };
 export const CAFE = { x: -10, z: 37.4 };
+// the crab update: Crab Cove on the east beach, between the sandcastle and the lighthouse point (crabs.js)
+export const CRAB_COVE = { x: 35.5, z: 36.1 };
 
 // ---------- terrain ----------
 
@@ -176,6 +178,14 @@ export function heightAt(x, z) {
   }
   return h;
 }
+
+/** Is (x, z) sandy beach (on the main island or Shell Isle)? For crabs digging up treasure. */
+export function isSand(x, z) {
+  const h = heightAt(x, z);
+  if (z > 120) return h > -0.6 && h < 0.15;
+  return h > -0.6 && h < 0.03 && colorAt(x, z, h, _sandC).r > 0.55; // the sand (or the sandy rim) of the beach
+}
+const _sandC = new THREE.Color();
 
 /** The terrain color at a point (vertex colors of the ground mesh). */
 const _c = new THREE.Color();

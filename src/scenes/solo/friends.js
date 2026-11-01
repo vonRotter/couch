@@ -50,7 +50,7 @@ function injectStyle() {
 // where a schedule spot is, in words (isl.where.*)
 const AREA = {
   hazelGarden: 'garden', hazelPorch: 'garden', farmFence: 'farm', plazaBench: 'square', plazaFountain: 'square', plazaEast: 'square',
-  storeCounter: 'store', lhDoor: 'lighthouse', beach: 'beach', beachDay: 'beach', shelbyVisit: 'beach', pier: 'pier', pierEnd: 'pier',
+  storeCounter: 'store', lhDoor: 'lighthouse', beach: 'beach', beachDay: 'beach', shelbyVisit: 'cove', pier: 'pier', pierEnd: 'pier',
   cafe: 'cafe', pad: 'pad', rocket: 'pad', hallFront: 'hall', hillTop: 'hill', meadow: 'meadow', museumDoor: 'museum',
   shelbyHut: 'isle', tidepools: 'isle', isleBeach: 'isle',
 };
@@ -68,9 +68,10 @@ export class FriendsBook {
   get S() { return this.host.save; }
   get known() { return this.S.friends.known; }
 
-  /** Villager pages first, then the animals (once the barn has some). */
+  /** Villager pages first, then the crab friends (crabs.js), then the animals (once the barn has some). */
   pages() {
     const out = NPC_IDS.slice();
+    if (this.host.crabs) out.push('crabs');
     if (this.S.ranch?.animals?.length) out.push('animals');
     return out;
   }
@@ -156,6 +157,28 @@ export class FriendsBook {
     return h >= MAX_HEARTS ? t('isl.fb.best') : t('isl.fb.nothing');
   }
 
+  /** The crab friends page: how many you helped and how, the cove, the hermit crabs and their shells, who follows you. */
+  renderCrabs(dots, foot, read) {
+    const host = this.host, b = host.crabs.bookInfo();
+    const pic = `<img src="${host.picture('crab')}" alt="">`;
+    const how = t('isl.fb.crabHow', { f: b.kinds.flip || 0, r: b.kinds.free || 0, h: b.kinds.home || 0, s: b.kinds.shell || 0 });
+    const herm = b.hermits.map((h) => `<span class="gift">${h.shell ? icon(h.shell) : ''}${esc(h.name)}${h.shell ? ` · ${esc(t(`isl.i.${h.shell}`))}` : ` <small class="unk">${esc(t('isl.fb.crabNeeds'))}</small>`}</span>`).join('');
+    const rows = [
+      [t('isl.fb.crabHelped'), `${esc(String(b.helped))} <small>(${esc(how)})</small>`],
+      [t('isl.fb.crabCove'), esc(t(b.next ? 'isl.fb.crabLevel' : 'isl.fb.crabLevelMax', { n: b.level, m: b.next }))],
+      [t('isl.fb.crabWall'), esc(t('isl.fb.crabWallN', { n: b.wall, m: b.wallMax }))],
+      [t('isl.fb.crabHermits'), `<div class="gifts">${herm}</div>`],
+      [t('isl.fb.crabFollower'), esc(b.follower || t('isl.fb.crabNobody'))],
+    ];
+    host.hud.setPanel(`<h2>${esc(t('isl.fb.title'))}</h2>
+      <div class="isl-fb"><div class="pic">${pic}</div>
+        <div class="nm">${esc(t('isl.fb.crabs'))}</div>
+        <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl></div>${dots}${foot}`);
+    if (!read) return;
+    const helpedH = b.hermits.filter((h) => h.shell).map((h) => t('isl.fb.crabSayHermit', { name: h.name, shell: t(`isl.i.${h.shell}`) }));
+    speak([t('isl.fb.crabs'), t('isl.fb.crabSay', { n: b.helped }), how, t(b.next ? 'isl.fb.crabLevel' : 'isl.fb.crabLevelMax', { n: b.level, m: b.next }), ...helpedH, b.follower ? t('isl.fb.crabSayFollower', { name: b.follower }) : t('isl.fb.crabNobody')].join('. '));
+  }
+
   picture(id) {
     return thumb(this.host.game.renderer, `npc:${id}`, () => makeNpcModel(id).group, { ry: -0.35 });
   }
@@ -173,6 +196,7 @@ export class FriendsBook {
     const host = this.host, list = this.pages(), id = list[this.page];
     const dots = `<div class="isl-fbdots">${list.map((_, i) => `<span class="${i === this.page ? 'on' : ''}"></span>`).join('')}</div>`;
     const foot = `<div class="isl-foot">${esc(tFor(host.player?.p, 'isl.fb.hint'))}</div>`;
+    if (id === 'crabs') { this.renderCrabs(dots, foot, read); return; }
     if (id === 'animals') {
       const rows = this.S.ranch.animals.map((a) => `<div><b>${esc(a.name)}</b> <small>${esc(t(`isl.fb.kind.${a.kind}`))}${a.baby !== undefined && a.baby !== null ? ' 🍼' : ''}</small>
         ${heartsHtml(a.hearts || 0, 5)}</div>`).join('');

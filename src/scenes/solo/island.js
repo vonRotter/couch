@@ -22,7 +22,7 @@ import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
 import { now, hourOf, since, loadIsland, count, give, take, MIN, HOUR } from './save.js';
 import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures, inSeason } from './items.js';
-import { FISH, FISH_IDS, RECIPES, seaModel, makeDish, hasSeaModel } from './sea.js';
+import { FISH, FISH_IDS, RECIPES, SEA, NIGHT_FINDS, seaModel, makeDish, hasSeaModel } from './sea.js';
 import { thumb } from './thumbs.js';
 import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
@@ -31,6 +31,8 @@ import { IslandMap, heightAt, riverDist, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAIL
 import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS, cropNight } from './farm.js';
 import { Homes, makeHomeMats } from './homes.js';
 import { FriendsBook } from './friends.js';
+import { CrabCare } from './crabs.js';
+import './strings9.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
 import { IslandHud } from './hud.js';
 import { Life } from './life.js';
@@ -136,6 +138,10 @@ function gameRewards(p) {
 
 const itemName = (id) => t(ITEMS[id] ? `isl.i.${id}` : `isl.d.${id}`);
 
+// The fish log: every fish, then the night-only dive finds. A moon marks what only comes out at night.
+const LOG_IDS = [...FISH_IDS, ...NIGHT_FINDS];
+const nightOnly = (id) => !!SEA[id]?.night || (!!FISH[id] && FISH[id].hours[0] >= 18 && FISH[id].hours[1] <= 6);
+
 
 const _sv = new THREE.Vector3();
 /** Screen pixels of a world point (the same math as UI.place). */
@@ -209,6 +215,7 @@ export class SoloIslandScene extends BaseScene {
     this.tour = new Tournament(this);
     this.homes = new Homes(this); // everyone's front door (milestone C)
     this.friends = new FriendsBook(this); // hearts, birthdays and favorite gifts (milestone C)
+    this.crabs = new CrabCare(this); // crab friends: help crabs, Crab Cove, a crab who follows you (crabs.js)
     this.farm.objModel = (id) => this.builder.model(id); // sprinklers and scarecrows on the field
     this.seasons = new Seasons(this);
     this.spawnNpcs();
@@ -388,6 +395,7 @@ export class SoloIslandScene extends BaseScene {
     this.builder.tickGather(at);
     this.seasons.tick(at);
     this.isle2.tick(at);
+    this.crabs.tick(at);
     this.photo.check();
     this.story.tick(at);
     this.applySky(false);
@@ -629,6 +637,7 @@ export class SoloIslandScene extends BaseScene {
     if (S.intro && S.tut >= 1 && S.tut <= 7) out.push(t(`isl.tut.${S.tut}`));
     if (S.mail.length) out.push(t('isl.task.mail'));
     for (const [id, q] of Object.entries(S.quests)) out.push(this.questText(id, q.n));
+    out.push(...this.crabs.tasks());
     if (S.intro && !S.unlocks.bridge && S.tut >= 5) out.push(t('isl.task.bridge', { n: S.unlocks.bridgeWood, m: BRIDGE_WOOD }));
     if (count(S, 'pickaxe') && !S.unlocks.mine) out.push(t('isl.task.mine'));
     if (S.sea.quest === 1) out.push(t('isl.task.fish', { n: Math.min(3, S.sea.caught - (S.sea.questBase || 0)) }));
@@ -709,7 +718,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'friends'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'friends', 'crabs'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   /** The usual spot of a decoration (the trophy garden), or null. */
@@ -906,6 +915,7 @@ export class SoloIslandScene extends BaseScene {
     const L = (k, vars) => ({ who: id, key: `isl.${id}.${k}`, vars });
     n.chatI = (n.chatI || 0) + 1;
     if (gk && n.chatI % 2 === 1) return L(gk, { n: id === 'bram' ? p.lighthouse?.crystals || 0 : p.skyhop || 0 });
+    if (id === 'shelby' && n.chatI % 2 === 1) return this.crabs.shelbyLine(); // Shelby looks after Crab Cove
     const pool = heartsOf(st) >= 2 ? [1, 2, 3, 4, 5] : [1, 2, 3];
     return L(`chat${pool[(n.chatI + st.pts) % pool.length]}`);
   }
@@ -1020,6 +1030,8 @@ export class SoloIslandScene extends BaseScene {
     }
     // knocking on the door of someone who is at home (homes.js)
     if (this.homes.interactions(P, out, nm)) return this.fillDefaults(out, held);
+    // a crab right at your feet that needs a hand wins over a villager standing by (crabs.js)
+    if (this.crabs.interactions(P, out, nm, 1.25)) return this.fillDefaults(out, held);
     // townsfolk
     let best = null, bd = TALK_R;
     for (const n of this.npcs) {
@@ -1048,6 +1060,7 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.story.interactions(P, out, nm);
     if (!out.b) this.seasons.interactions(P, out, nm);
     if (!out.b) this.seasons.shellAction(P, out, nm);
+    if (!out.b) this.crabs.interactions(P, out, nm); // crabs to help, Crab Cove's sign and dance
     // Shell Isle: the boat trip, and the palms, pools and treasure there
     if (!out.b) this.isle2.boatAction(P, out, nm);
     this.isle2.interactions(P, out, nm);
@@ -1177,6 +1190,7 @@ export class SoloIslandScene extends BaseScene {
     P.jy = 0.001;
     P.ch.squash(0.72);
     this.game.audio.play('jump');
+    this.crabs?.onJump(); // a crab friend dances when you jump
   }
 
   /** Jump physics, every frame in any mode (so a hop always lands). */
@@ -1579,18 +1593,27 @@ export class SoloIslandScene extends BaseScene {
 
   renderLog() {
     const L = this.save.sea.log;
-    const n = FISH_IDS.filter((id) => L[id]).length;
-    const cells = FISH_IDS.map((id, i) => {
+    const ids = LOG_IDS;
+    const n = ids.filter((id) => L[id]).length;
+    const cells = ids.map((id, i) => {
       const got = !!L[id];
       const img = got ? `<img src="${this.picture(id)}" alt="">` : `<img src="${this.picture(id)}" alt="" style="filter:brightness(0) opacity(.35)">`;
-      const sea = FISH[id].seasons ? `<i style="position:absolute;right:4px;top:2px;font-style:normal">${FISH[id].seasons.map((sn) => SEASON_ICON[sn]).join('')}</i>` : '';
+      const f = FISH[id];
+      const marks = `${f?.seasons ? f.seasons.map((sn) => SEASON_ICON[sn]).join('') : ''}${nightOnly(id) ? '🌙' : ''}`;
+      const sea = marks ? `<i style="position:absolute;right:4px;top:2px;font-style:normal">${marks}</i>` : '';
       return `<div class="isl-logcell ${i === this.log.i ? 'on' : ''}" style="position:relative">${sea}${img}<span>${esc(got ? t(`isl.i.${id}`) : t('isl.log.unknown'))}</span></div>`;
     }).join('');
-    const id = FISH_IDS[this.log.i], f = FISH[id], got = !!L[id];
-    const when = f.hours[0] === 0 && f.hours[1] === 24 ? t('isl.when.any') : t('isl.when.hours', { a: f.hours[0], b: f.hours[1] });
-    const seasons = f.seasons ? ` · ${f.seasons.map((sn) => SEASON_ICON[sn]).join('')} ${esc(t('isl.log.seasons', { list: f.seasons.map((sn) => t(`isl.seasonIn.${sn}`)).join(t('isl.or')) }))}` : '';
-    const info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t(`isl.where.${f.where}`))} · ${esc(when)}${seasons}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}${f.rare === 2 ? ' · ★' : ''}`;
-    this.hud.setPanel(`<h2>${esc(t('isl.log.title'))} <small style="font-size:.5em;opacity:.7">${esc(t('isl.log.count', { n, m: FISH_IDS.length }))}</small></h2>
+    const id = ids[this.log.i], f = FISH[id], got = !!L[id];
+    let info;
+    if (f) {
+      const when = f.hours[0] === 0 && f.hours[1] === 24 ? t('isl.when.any') : t('isl.when.hours', { a: f.hours[0], b: f.hours[1] });
+      const seasons = f.seasons ? ` · ${f.seasons.map((sn) => SEASON_ICON[sn]).join('')} ${esc(t('isl.log.seasons', { list: f.seasons.map((sn) => t(`isl.seasonIn.${sn}`)).join(t('isl.or')) }))}` : '';
+      info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t(`isl.where.${f.where}`))} · ${esc(when)}${nightOnly(id) ? ' 🌙' : ''}${seasons}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}${f.rare === 2 ? ' · ★' : ''}`;
+    } else {
+      // a night-only dive find (sea.js NIGHT_FINDS)
+      info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t('isl.where.reef'))} · 🌙 ${esc(t('isl.log.nightOnly'))}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}`;
+    }
+    this.hud.setPanel(`<h2>${esc(t('isl.log.title'))} <small style="font-size:.5em;opacity:.7">${esc(t('isl.log.count', { n, m: ids.length }))}</small></h2>
       <div class="isl-loggrid">${cells}</div><div class="isl-foot" style="font-size:clamp(14px,1.4vw,20px);opacity:1">${info}</div>
       <div class="isl-foot">${esc(tFor(this.player?.p, 'isl.log.hint'))}</div>`);
   }
@@ -1598,7 +1621,7 @@ export class SoloIslandScene extends BaseScene {
   updateLog(inp, dt) {
     this.log.t += dt;
     const step = inp.stepX + -inp.stepY * 8;
-    if (step) { this.log.i = (this.log.i + step + FISH_IDS.length) % FISH_IDS.length; this.game.audio.play('select'); this.renderLog(); }
+    if (step) { this.log.i = (this.log.i + step + LOG_IDS.length) % LOG_IDS.length; this.game.audio.play('select'); this.renderLog(); }
     if (this.log.t > 0.25 && (inp.bPressed || inp.aPressed || inp.cPressed)) { this.hud.setPanel(null); this.mode = 'walk'; }
   }
 
@@ -1663,6 +1686,7 @@ export class SoloIslandScene extends BaseScene {
     if (this.mode === 'cook') this.cafe.renderCook();
     if (this.mode === 'log') this.renderLog();
     if (this.mode === 'friends') this.friends.render();
+    if (this.mode === 'crabs') this.crabs.renderPicker();
     if (this.mode === 'dialog' && this.dlg) this.showLine();
     this.lightTop?.onLanguage();
   }
@@ -1897,6 +1921,7 @@ export class SoloIslandScene extends BaseScene {
         case 'festival': break; // the Lamp Festival plays by itself
         case 'knock': break; // knock knock... (homes.js)
         case 'friends': this.friends.update(inp, dt); break;
+        case 'crabs': this.crabs.updatePicker(panel, dt); break;
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();
@@ -1917,6 +1942,7 @@ export class SoloIslandScene extends BaseScene {
     this.ranch.update(dt);
     this.seasons.update(dt);
     this.isle2.update(dt, this.time);
+    this.crabs.update(dt);
     this.tour.update(dt);
     this.story.update(dt);
     this.updatePlayerLook(dt);
@@ -1942,6 +1968,7 @@ export class SoloIslandScene extends BaseScene {
     this.fishing?.dispose();
     this.story?.dispose();
     this.lightTop?.dispose();
+    this.crabs?.dispose();
     setPictures(null);
     this.flush();
     this.game.roster.save();

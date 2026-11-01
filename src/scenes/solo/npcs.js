@@ -115,8 +115,9 @@ export const NPCS = {
     sched: [[0, 'shelbyHome', true], [7, 'shelbyHut'], [9, 'tidepools'], [13, 'shelbyHut'], [16, 'isleBeach'], [19, 'shelbyHome', 'in'], [20, 'shelbyHome', true]],
     wander: 1.6,
     isle: true, // lives on Shell Isle
-    // Saturdays and Sundays 10-17, once you have met: a day out on the main island's beach
-    visit: (at, save) => { const d = new Date(at), h = hourOf(at); return save?.npcs?.shelby?.met && (d.getDay() === 6 || d.getDay() === 0) && h >= 10 && h < 17 ? 'shelbyVisit' : null; },
+    // Saturdays and Sundays 10-18, once you have met: a day out at Crab Cove on the main island's beach (she
+    // looks after it, and stays for the first hour of the weekend crab dance)
+    visit: (at, save) => { const d = new Date(at), h = hourOf(at); return save?.npcs?.shelby?.met && (d.getDay() === 6 || d.getDay() === 0) && h >= 10 && h < 18 ? 'shelbyVisit' : null; },
     loves: ['coconut', 'seaGlass'], likes: ['wildBerry', 'seaShell', 'blueberry', 'sushi'], dislikes: ['wood'],
     quests: [{ need: [['seaGlass', 2]], reward: { deco: 'shellChime', coins: 40 } }],
     events: [],

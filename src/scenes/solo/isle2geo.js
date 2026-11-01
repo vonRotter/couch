@@ -14,7 +14,7 @@ export const DIGS = [[12.5, 199.5], [-7.5, 201.5], [4.5, 202.5], [-14.5, 186.5]]
 export const HUT = { x: 6.5, z: 187 };
 export const ISLE2_SPOTS = {
   shelbyHut: { x: 5.2, z: 189.6 }, tidepools: { x: 14.4, z: 191.5 }, isleBeach: { x: -1.5, z: 201.5 },
-  shelbyVisit: { x: 21.2, z: 38.6 }, // on the main island's beach, on visiting days
+  shelbyVisit: { x: 33.4, z: 37.2 }, // at Crab Cove on the main island's beach, on visiting days (she looks after it)
 };
 
 const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
