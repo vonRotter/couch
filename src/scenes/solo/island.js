@@ -55,7 +55,7 @@ import { mesh, box, sph, makeTool, makeDeco, makeBranch, makeSign } from './mode
 
 const SPEED = 6.2;
 const PR = 0.42;
-const CAM_UP = 12.5, CAM_BACK = 13; // a bit further than the shared island's closest framing (10.4 / 10.4)
+const CAM_UP = 14.8, CAM_BACK = 13; // a little higher up (a more top-down view) and never closer than before (12.5 / 13)
 const MODES = ['island', 'story', 'solo', 'friends']; // the start menu ('friends' opens the Friends book)
 const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];

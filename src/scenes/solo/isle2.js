@@ -23,7 +23,7 @@ import { ISLE2, ISLE2_DOCK, ISLE2_BOAT, ISLE2_ARRIVE, COVE, POOLS, PALMS, BERRIE
 // open sea, and things pass by: buoys, gulls that follow the boat, a seal waving from its rock, the dolphin.
 
 const SAIL_TIME = 6;
-const CAM_UP = 12.5, CAM_BACK = 13; // the island camera's distance (island.js)
+const CAM_UP = 14.8, CAM_BACK = 13; // the island camera's distance (island.js)
 const SEA_BUOYS = [[-4.5, 82], [9, 99], [-6.5, 136], [8.5, 150]];
 const SEAL_ROCK = { x: -7.2, z: 117 };
 const MAIN_BOAT = { x: PIER.x, z: PIER.z0 + PIER.len + 2.3 }; // the sailboat waits at the end of the pier
