@@ -532,6 +532,7 @@ export class SoloIslandScene extends BaseScene {
         const P = this.player;
         if (P && Math.hypot(P.x - n.x, P.z - n.z) < 5) n.model.face(P.x - n.x, P.z - n.z);
       }
+      if (n.playMove) moving = true; // running in a game (tag: play.js)
       n.moving = moving;
       n.hop = Math.max(0, n.hop - dt * 2.5);
       n.y = (n.doorAnim?.y ?? n.yOverride ?? this.map.floorAt(n.x, n.z, this.save.unlocks.bridge)) + Math.sin(n.hop * Math.PI) * 0.8;
@@ -556,6 +557,7 @@ export class SoloIslandScene extends BaseScene {
 
   lineVoice(L) {
     if (L.who && NPCS[L.who]) return NPCS[L.who].voice;
+    if (L.css) return { css: L.css }; // a guest (the merchant, the balloon visitor: surprise.js)
     return { css: '#8a5a32' };
   }
 
@@ -569,13 +571,13 @@ export class SoloIslandScene extends BaseScene {
     const st = L.who && NPCS[L.who] ? npcState(this.save, L.who) : null;
     this.renderLine(L, text, v, st);
     // villagers in their voice type (src/core/voices.js 'isl.<id>'), half asleep at the door; other lines: the narrator
-    speak(text, L.who && NPCS[L.who] && L.key !== 'isl.sleep' ? { speaker: `isl.${L.who}`, mood: L.key?.startsWith('isl.knock.') ? 'sleepy' : undefined } : 'narrator');
+    speak(text, L.speaker || (L.who && NPCS[L.who] && L.key !== 'isl.sleep' ? { speaker: `isl.${L.who}`, mood: L.key?.startsWith('isl.knock.') ? 'sleepy' : undefined } : 'narrator'));
     this.game.audio.play('select');
     L.fx?.();
   }
 
   renderLine(L, text, v, st) {
-    this.hud.setDialog({ who: L.who ? t(`isl.npc.${L.who}`) : '', text, css: v.css, hearts: st && L.who !== 'mumble' ? heartsOf(st) : undefined, choices: L.choices?.map((k) => t(k)), index: this.dlg.choice });
+    this.hud.setDialog({ who: L.name ?? (L.who ? t(`isl.npc.${L.who}`) : ''), text, css: v.css, hearts: st && L.who !== 'mumble' ? heartsOf(st) : undefined, choices: L.choices?.map((k) => t(k)), index: this.dlg.choice });
   }
 
   updateDialog(inp, dt) {
@@ -771,7 +773,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'friends', 'crabs'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'friends', 'crabs', 'map'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   /** The usual spot of a decoration (the trophy garden), or null. */
@@ -893,6 +895,7 @@ export class SoloIslandScene extends BaseScene {
     const def = NPCS[id];
     if (!st.met && S.intro) return true;
     if (this.story?.hasNews(id)) return true;
+    if (this.play?.hasNews(id)) return true; // today's little task
     if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3) || (count(S, 'seaChart') && !S.isle2?.chart) || this.tour?.available(now()))) return true;
     const ev = def.events[st.ev];
     if (ev && heartsOf(st) >= ev.at) return true;
@@ -911,6 +914,8 @@ export class SoloIslandScene extends BaseScene {
       this.say([{ who: id, key: 'isl.sleep', vars: { name: t(`isl.npc.${id}`) } }]);
       return;
     }
+    // today's little task (asking, or the thing you bring back: play.js)
+    if (this.play.talk(n)) return;
     n.talking = true;
     // the lighthouse story first (milestone B4)
     if (this.story.talk(n, () => { n.talking = false; this.markDirty(); })) {
@@ -952,6 +957,8 @@ export class SoloIslandScene extends BaseScene {
       else lines.push(this.story.waitLine(n) || this.chatLine(n, st));
     }
     // a friendly chat sometimes mentions a favorite gift (it goes into the Friends book)
+    // an invitation to play (hide-and-seek with Mumble, tag or snowballs with Pip: play.js)
+    if (!after && lines.length <= 1) { const offer = this.play.offer(n); if (offer) lines.push(offer); }
     if (!after && lines.length <= 1) { const tell = this.friends.tellLine(n); if (tell) lines.push(tell); }
     if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
     this.say(lines, () => {
@@ -977,6 +984,7 @@ export class SoloIslandScene extends BaseScene {
   /** After talking: offer the held gift, then (Rosa) open the shop. */
   afterTalk(n) {
     const S = this.save;
+    if (this.mode !== 'walk') { n.talking = false; return; } // (a game started from the chat: games.js)
     const held = this.held;
     const st = npcState(S, n.id);
     const shop = () => { n.talking = false; if (n.id === 'rosa') this.openShop(); if (n.id === 'hoot' && !n.sleep) this.museum.open(); };
@@ -1064,10 +1072,12 @@ export class SoloIslandScene extends BaseScene {
     const fx = P.x + P.fx * 0.95, fz = P.z + P.fz * 0.95;
     const held = this.held;
     const nm = (k, v) => tFor(P.p, k, v);
+    // a game that takes over [B] (throwing snowballs, searching the bushes)
+    if (this.games.override(P, out, nm)) return this.fillDefaults(out, held);
     // up on a roof, a ledge, a rock or in the air: only what is up there (a chest, a bell), not the doors,
     // villagers or fields down below
     if (!this.indoors && (P.air || P.fy > this.map.floorAt(P.x, P.z, S.unlocks.bridge) + 1.0)) {
-      this.hops.interactions(P, out, nm, true);
+      if (!this.play.interactions(P, out, nm) && !this.hops.interactions(P, out, nm, true)) this.surprise.interactions(P, out, nm);
       return this.fillDefaults(out, held);
     }
     if (this.indoors) {
@@ -2153,6 +2163,7 @@ export class SoloIslandScene extends BaseScene {
         case 'friends': this.friends.update(inp, dt); break;
         case 'crabs': this.crabs.updatePicker(panel, dt); break;
         case 'hopgo': this.hops.updateCount(dt); break; // 3, 2, 1 before a hop trail
+        case 'map': break; // the treasure map from a bottle (surprise.js closes it)
         case 'game': this.games.updateMode(inp, dt); break; // a mini-game with its own controls (games.js)
         default: {
           this.movePlayer(inp, dt);

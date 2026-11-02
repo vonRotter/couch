@@ -54,7 +54,20 @@ export const ITEMS = {
   seaChart: { kind: 'key' }, // found in the glow cave: Grumbleton can sail to Shell Isle
   coconut: { kind: 'forage', sell: 30 }, wildBerry: { kind: 'forage', sell: 12 }, // Shell Isle
   camera: { kind: 'gadget' }, album: { kind: 'book' }, // photos and postcards
+  // the "More fun" round: star bits from the meteor shower, the traveling merchant's odd things
+  starBit: { kind: 'forage', sell: 25 },
+  oddSock: { kind: 'forage', sell: 1 },
+  goldenAcorn: { kind: 'forage', sell: 50 },
+  moonCheese: { kind: 'gift', sell: 20 },
+  mysterySeed: { kind: 'seed', buy: 30, mystery: true, get crop() { return mysteryCrop(); } },
 };
+
+/** A mystery seed grows into a random crop of the season (now and then a star fruit!). */
+function mysteryCrop(season = seasonOf(now())) {
+  if (Math.random() < 0.1) return 'starfruit';
+  const list = Object.keys(CROPS).filter((c) => CROPS[c].seasons.includes(season) && c !== 'starfruit');
+  return list[Math.floor(Math.random() * list.length)];
+}
 for (const c of CROP_IDS) {
   ITEMS[`${c}Seed`] = { kind: 'seed', crop: c, buy: CROPS[c].seed };
   ITEMS[c] = { kind: 'crop', crop: c, sell: CROPS[c].sell };
@@ -142,6 +155,11 @@ const SVG = {
   fiber: `<path d="M6 21 Q8 12 6 4 M12 21 Q12 12 12 3 M18 21 Q16 12 18 4" fill="none" stroke="#6fbf4a" stroke-width="2"/><path d="M5 15 H19" stroke="#c68a52" stroke-width="2"/>`,
   hay: `<rect x="3" y="8" width="18" height="11" rx="2" fill="#f0d060" stroke="${INK}" stroke-width="1.2"/><path d="M3 12 H21 M3 15 H21" stroke="#c8a830" stroke-width="1"/><path d="M8 8 V19 M16 8 V19" stroke="#c68a52" stroke-width="1.6"/>`,
   suit: `<path d="M8 3 H16 L18 8 L16 21 H8 L6 8Z" fill="#2f4f8f" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5" fill="#bff6ff" stroke="${INK}" stroke-width="1"/>`,
+  starBit: `<path d="M12 2 L14.4 9.6 L22 12 L14.4 14.4 L12 22 L9.6 14.4 L2 12 L9.6 9.6 Z" fill="#fff27a" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.2" fill="#fff"/>`,
+  oddSock: `<path d="M8 3 H15 V13 L19 16 Q21 18 19 20 Q17 22 14 20 L9 16 Q8 15 8 13Z" fill="#ff5d73" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 6 H15 M8 9 H15 M8 12 H15" stroke="#fff" stroke-width="1.4"/>`,
+  goldenAcorn: `<ellipse cx="12" cy="15" rx="5.5" ry="6" fill="#ffd23f" stroke="${INK}" stroke-width="1.2"/><path d="M5.5 11 Q12 4 18.5 11Z" fill="#c68a52" stroke="${INK}" stroke-width="1.2"/><path d="M12 6 V3" stroke="${INK}" stroke-width="1.6"/><ellipse cx="10" cy="15" rx="1.4" ry="2" fill="#fff" opacity=".6"/>`,
+  moonCheese: `<path d="M3 17 L20 8 L21 17Z" fill="#fff3a8" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="14" r="1.4" fill="#e8d870"/><circle cx="17" cy="13" r="1" fill="#e8d870"/><circle cx="16" cy="16" r="1.1" fill="#e8d870"/><path d="M4 6 Q7 3 9 6 Q6 6 4 6Z" fill="#e9e2ff" stroke="${INK}" stroke-width=".8"/>`,
+  mysterySeed: `<path d="M5 5 H19 L18 21 H6 Z" fill="#c9a8ff" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><path d="M5 5 L7 3 H17 L19 5" fill="#9b5de5" stroke="${INK}" stroke-width="1"/><text x="12" y="17.5" font-size="10" font-weight="700" text-anchor="middle" fill="${INK}">?</text>`,
   deco: `<path d="M12 3 L14.6 9.2 L21 9.6 L16 13.8 L17.6 20.4 L12 16.8 L6.4 20.4 L8 13.8 L3 9.6 L9.4 9.2 Z" fill="#c9a8ff" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
 };
 
