@@ -307,6 +307,11 @@ export class IslandMap {
   boxObs(x, z, hw, hd, extra = {}) { const o = { x, z, hw, hd, ...extra }; this.obstacles.push(o); return o; }
   circObs(x, z, r, extra = {}) { const o = { x, z, r, ...extra }; this.obstacles.push(o); return o; }
   segObs(a, b, r = 0.25) { this.obstacles.push({ ax: a.x, az: a.z, bx: b.x, bz: b.z, r }); }
+  /** A wooden fence: in the way on foot, but you can jump up and balance along its top (or hop over it). */
+  fenceObs(a, b) {
+    const top = Math.max(heightAt(a.x, a.z), heightAt(b.x, b.z), heightAt((a.x + b.x) / 2, (a.z + b.z) / 2)) + 0.95;
+    this.platform({ ax: a.x, az: a.z, bx: b.x, bz: b.z, r: 0.25, top, kind: 'fence' });
+  }
 
   pathDist(x, z) {
     let best = Infinity;
@@ -465,7 +470,7 @@ export class IslandMap {
     }
     this.boxObs(4.3, -26.7, 2.1, 1.5);
     this.put(makeFence({ x: 1.7, z: -24.9 }, { x: 7, z: -24.9 }, heightAt), 0, 0, 0, 0);
-    this.segObs({ x: 1.7, z: -24.9 }, { x: 7, z: -24.9 });
+    this.fenceObs({ x: 1.7, z: -24.9 }, { x: 7, z: -24.9 });
     // washing line
     for (const x of [-6.4, -3.6 - 2.4]) this.put(mesh(cyl(0.05, 0.05, 2, 5), WOOD_DARK, 0, 1, 0), x, -23.2);
     this.put(mesh(cyl(0.015, 0.015, 2.8, 4), 0xffffff, 0, 1.9, 0, false).rotateZ(Math.PI / 2), -7.6, -23.2);
@@ -621,7 +626,7 @@ export class IslandMap {
     const x0 = F.x0 - 0.7, x1 = F.x0 + w + 0.7, z0 = F.z0 - 0.7, z1 = F.z0 + d + 0.7;
     const gate = F.x0 + w / 2;
     const fences = [[{ x: x0, z: z0 }, { x: gate - 1.4, z: z0 }], [{ x: gate + 1.4, z: z0 }, { x: x1, z: z0 }], [{ x: x1, z: z0 }, { x: x1, z: z1 - 2.4 }], [{ x: x0, z: z1 }, { x: x1, z: z1 }], [{ x: x0, z: z0 }, { x: x0, z: z1 }]];
-    for (const [a, b] of fences) { this.put(makeFence(a, b, heightAt), 0, 0, 0, 0); this.segObs(a, b); }
+    for (const [a, b] of fences) { this.put(makeFence(a, b, heightAt), 0, 0, 0, 0); this.fenceObs(a, b); }
     // mailbox, shipping bin, well, scarecrow
     this.mailbox = this.live(makeMailbox(), MAILBOX.x, MAILBOX.z, 0.3);
     this.circObs(MAILBOX.x, MAILBOX.z, 0.4);
@@ -638,7 +643,7 @@ export class IslandMap {
     this.circObs(WELL.x + 1.4, WELL.z + 0.6, 0.45);
     // the old paddock and barn (animals come later)
     const p0 = { x: -19.4, z: 2.6 }, p1 = { x: -8.6, z: 9.4 };
-    for (const [a, b] of [[p0, { x: p1.x, z: p0.z }], [{ x: p1.x, z: p0.z }, p1], [p1, { x: p0.x, z: p1.z }], [{ x: p0.x, z: p1.z }, { x: p0.x, z: p0.z + 2.5 }]]) { this.put(makeFence(a, b, heightAt), 0, 0, 0, 0); this.segObs(a, b); }
+    for (const [a, b] of [[p0, { x: p1.x, z: p0.z }], [{ x: p1.x, z: p0.z }, p1], [p1, { x: p0.x, z: p1.z }], [{ x: p0.x, z: p1.z }, { x: p0.x, z: p0.z + 2.5 }]]) { this.put(makeFence(a, b, heightAt), 0, 0, 0, 0); this.fenceObs(a, b); }
     this.put(makeBarn(M), -14, 12.6, Math.PI);
     this.boxObs(-14, 12.6, 2.3, 1.9);
     this.circObs(-11, 4, 0.7);

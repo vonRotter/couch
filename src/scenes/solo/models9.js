@@ -198,8 +198,9 @@ export function makeHollowTree(r, h) {
     st.rotation.y = -a + Math.PI / 2;
     g.add(st);
   }
-  g.add(mesh(cyl(r - 0.35, r - 0.35, 0.1, 16), 0x5a3a20, 0, h - 0.55, 0, false)); // the floor of the hollow
-  g.add(mesh(cyl(r - 0.38, r - 0.38, h - 0.6, 16), 0x3a2414, 0, (h - 0.6) / 2, 0, false));
+  g.add(mesh(cyl(r - 0.3, r - 0.3, 0.1, 16), 0x5a3a20, 0, h - 0.05, 0, false)); // the floor of the hollow (you stand on it)
+  g.add(mesh(cyl(r - 0.38, r - 0.38, h - 0.1, 16), 0x3a2414, 0, (h - 0.1) / 2, 0, false));
+  for (let i = 0; i < 6; i++) g.add(mesh(sph(0.12, 6, 4), 0x9a7a4a, Math.cos(i) * (r - 0.6), h + 0.02, Math.sin(i * 1.7) * (r - 0.7), false)); // acorns and moss
   // a dark doorway-shaped knot hole at the front
   g.add(mesh(box(0.55, 0.75, 0.1), 0x2b1a10, 0.2, 0.9, r - 0.02, false));
   for (let i = 0; i < 5; i++) { const a = i * 1.3 + 0.4; const root = mesh(box(0.35, 0.3, 1.2), 0x7a4a2a, Math.cos(a) * (r + 0.3), 0.12, Math.sin(a) * (r + 0.3)); root.rotation.y = -a + Math.PI / 2; g.add(root); }

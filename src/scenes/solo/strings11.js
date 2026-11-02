@@ -37,7 +37,7 @@ addStrings({
     'hop.chest.hollow': 'A chest inside the hollow tree! An owl house is in it.',
     'hop.chest.islet': 'Treasure on the tiny islet! A wind chime of shells.',
     // hints in friends' chats
-    'hop.hint.hollow': 'Have you seen the old hollow tree by the beach path? Roots, a mushroom and a branch go up like a staircase...',
+    'hop.hint.hollow': 'Have you seen the old hollow tree between the barn and the café? Roots, a mushroom and a branch go up like a staircase...',
     'hop.hint.grove': 'They say there is a path BEHIND the waterfall. Stepping stones, then up the wet rocks...',
     'hop.hint.ledge': 'Arr, Gull Rock off the beach! Small rocks in the sea, up and up. Only a good jumper gets to the top.',
     'hop.hint.roof': 'I lost my toolbox on the game hall roof! There are crates by the east wall... hop hop hop!',
@@ -191,7 +191,7 @@ addStrings({
     'hop.chest.roof': 'Pips borteblitte verktøykasse, på taket av spillhallen! Den gamle opptrekksroboten hennes ligger i den.',
     'hop.chest.hollow': 'En kiste inne i det hule treet! Det ligger en uglekasse i den.',
     'hop.chest.islet': 'Skatt på den bitte lille holmen! Et vindspill av skjell.',
-    'hop.hint.hollow': 'Har du sett det gamle hule treet ved stien til stranda? Røtter, en sopp og en grein går opp som en trapp...',
+    'hop.hint.hollow': 'Har du sett det gamle hule treet mellom låven og kafeen? Røtter, en sopp og en grein går opp som en trapp...',
     'hop.hint.grove': 'Det sies at det går en sti BAK fossen. Tråkksteiner, og så opp de våte steinene...',
     'hop.hint.ledge': 'Arr, Måkesteinen utenfor stranda! Små steiner i sjøen, opp og opp. Bare en god hopper kommer seg til toppen.',
     'hop.hint.roof': 'Jeg mistet verktøykassa mi på taket av spillhallen! Det står kasser ved østveggen... hopp hopp hopp!',

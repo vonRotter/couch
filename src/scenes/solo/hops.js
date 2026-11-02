@@ -5,7 +5,7 @@ import { say as speak } from '../../core/voice.js';
 import { now, hourOf } from './save.js';
 import { dayRand, weekIndex, seasonOf } from './calendar.js';
 import { CROP_IDS, inSeason } from './items.js';
-import { heightAt, SEA_Y, HALL, topOf } from './map.js';
+import { heightAt, SEA_Y, HALL, bake } from './map.js';
 import { npcState } from './npcs.js';
 import { RIVER_STONES, POND_STONES, SECRETS, SECRET_IDS, TRAILS, TRAIL_IDS } from './hopdata.js';
 import {
@@ -67,8 +67,9 @@ export class Hops {
     this.countEl.className = 'isl-count';
     this.countEl.style.display = 'none';
     host.hud.root.appendChild(this.countEl);
-    this.group = new THREE.Group();
+    this.group = new THREE.Group(); // things that move (chests, bells)
     host.scene.add(this.group);
+    this.statics = new THREE.Group(); // everything else is baked into a few meshes (fast to draw)
     this.run = null;
     this.t = 0;
     // stepping stones (no timer): the river shortcut and the pond
@@ -76,6 +77,10 @@ export class Hops {
     for (const p of POND_STONES) this.piece(p);
     this.buildSecrets();
     this.buildTrails();
+    const { group, keepers } = bake(this.statics);
+    host.scene.add(group);
+    for (const k of keepers) { k.removeFromParent(); host.scene.add(k); }
+    this.statics = null;
     this.refreshChests();
   }
 
@@ -108,11 +113,9 @@ export class Hops {
     if (p.kind !== 'pad') m.position.y = base;
     m.position.x = p.x;
     m.position.z = p.z;
-    this.group.add(m);
+    this.statics.add(m);
     const shape = p.hw !== undefined ? { x: p.x, z: p.z, hw: p.hw, hd: p.hd } : { x: p.x, z: p.z, r: p.r };
-    const o = map.platform({ ...shape, top, kind: p.kind, ...extra });
-    o.model = m;
-    return o;
+    return map.platform({ ...shape, top, kind: p.kind, ...extra });
   }
 
   buildSecrets() {
@@ -133,14 +136,14 @@ export class Hops {
         const T = sc.tree, top = heightAt(T.x, T.z) + T.top;
         const m = makeHollowTree(T.r, T.top);
         m.position.set(T.x, heightAt(T.x, T.z), T.z);
-        this.group.add(m);
+        this.statics.add(m);
         map.platform({ x: T.x, z: T.z, r: T.r, top, secret: id });
         y = top;
       } else if (id === 'islet') {
         const I = sc.island;
         const m = makeIslet(I.r, I.abs - SEA_Y);
         m.position.set(I.x, SEA_Y, I.z);
-        this.group.add(m);
+        this.statics.add(m);
         map.platform({ x: I.x, z: I.z, r: I.r, top: I.abs, secret: id });
         map.circObs(I.x + I.r * 0.45 * 0.8, I.z - I.r * 0.35 * 0.8, 0.22); // the palm trunk
         y = I.abs;
@@ -150,13 +153,13 @@ export class Hops {
         // a glade on the cliff top: moss, glowing mushrooms and flowers, trees around it
         const g = makeGroveBits(6, 4.6);
         g.position.set(sc.area.x, heightAt(sc.area.x, sc.area.z) + 0.01, sc.area.z);
-        this.group.add(g);
+        this.statics.add(g);
         this.groveGlow = g.userData.glowCap;
         for (const [x, z, s] of [[-16.4, -41.0, 1.0], [-12.0, -39.8, 1.15], [-11.4, -35.4, 0.9], [-17.6, -34.4, 0.85], [-13.8, -41.2, 0.9]]) {
           const tr = makeGroveTree(s);
           tr.position.set(x, heightAt(x, z), z);
           tr.rotation.y = x;
-          this.group.add(tr);
+          this.statics.add(tr);
           map.circObs(x, z, 0.4 * s);
         }
       }
@@ -175,7 +178,7 @@ export class Hops {
       const sign = makeTrailSign(SIGN_COLOR[id]);
       sign.position.set(T.sign.x, heightAt(T.sign.x, T.sign.z), T.sign.z);
       sign.rotation.y = -0.3;
-      this.group.add(sign);
+      this.statics.add(sign);
       this.host.map.circObs(T.sign.x, T.sign.z, 0.3);
       const plats = T.path.map((p, i) => this.piece(p, { trail: id, step: i }, i));
       const last = plats[plats.length - 1];

@@ -4,7 +4,7 @@ import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now, hourOf, give } from './save.js';
 import { dayKey, dayRand } from './calendar.js';
-import { heightAt, SEA_Y } from './map.js';
+import { heightAt, SEA_Y, bake } from './map.js';
 import { mesh, sph } from './models.js';
 import { makeLeafPile, makeSnowFort, makeSnowball, makeFlatStone, makeStonePile, makeKite, makeKiteStand } from './models9.js';
 import { makeBush } from '../../core/world.js';
@@ -74,8 +74,9 @@ export class IslandGames {
       return { i, x, z, b, wig: 0 };
     });
     // autumn leaf piles
+    const pile = bake(makeLeafPile()).group; // (one mesh per leaf color)
     this.piles = LEAF_PILES.map(([x, z], i) => {
-      const g = makeLeafPile();
+      const g = pile.clone();
       g.position.set(x, heightAt(x, z), z);
       g.rotation.y = i * 1.3;
       g.visible = false;

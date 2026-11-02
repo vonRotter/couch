@@ -648,7 +648,56 @@ night match yours and crops grow while you are away.
   sleep perched); in winter the paths and the
   field turn snowy and every roof has snow (Shell Isle stays warm and sunny); Shelby comes to the café as
   a regular at 3 hearts (seaweed salad) and writes letters like the other friends.
-- **Controls (solo island only):** stick to walk, **A jumps** (a little hop), **B is the one use
+- **Jumping:** [A] (Space) jumps about a meter high and three meters far, and the island has height now:
+  you stand on stumps, crates, barrels, logs, rocks, ledges, the lookout deck and the game hall roof, walk off
+  edges and fall down (never any damage; the camera follows the height smoothly at the same distance as
+  before). On foot you never walk into water or up a steep bank; jumping over water is fine, and landing in
+  it (or falling off a hop trail) is a little splash and puts you back where that hop started. Forgiving: a
+  jump still works a moment after walking off an edge, and a press just before landing jumps again. Up on a
+  roof or a ledge only what is up there answers [B] (a chest, a bell), not the doors and villagers below.
+  - **Stepping stones:** across the river south of the bridge (a shortcut to the west bank; the castle and
+    the keep still need the repaired bridge), and across the new pond south of the square (stones and lily
+    pads).
+  - **Hidden areas,** each with a treasure chest (the first find has a yard decoration, coins and seeds; the
+    chest is saved as found). **The secret grove** behind the waterfall: hop over the plunge pool, through the
+    falling water and up the wet rocks of the gorge to a glade with glowing mushrooms on the cliff top (walk off
+    its edge to get down). **Gull Rock** off the beach (east of the dock): small rocks in the sea up to a ledge,
+    the precise one. **The game hall roof:** a stair of crates by the east wall (Pip's lost toolbox, found
+    once). **The hollow tree** between the barn and the café: a root, a mushroom shelf and a branch up into the
+    hollow. **The tiny islet** west of the dock: stepping stones out into the sea, a palm and a chest. The
+    grove, Gull Rock, the hollow tree and the islet chests fill up again every Monday (coins and seeds of the
+    season); friends drop hints in their chats about spots you have not found.
+  - **Hop trails with a timer:** the **Stump Hop** (easy, the meadow east of the launch pad), the **Barrel
+    Run** (crates, barrels and a wobbly plank by the dock) and the **Cliff Climb** (tricky: rock by rock up
+    the cliff north of kite hill to the **lookout** deck). [B] at the start sign: 3, 2, 1, go; land on the
+    last top to ring the bell. Best times are saved; falling off puts you back on the top you jumped from
+    while the clock runs on. **Pip races you on the Stump Hop and Grumbleton on the Barrel Run** (when they are
+    up and about): they hop the trail beside you, and every time you beat them they get a little faster.
+    Ringing all three bells brings a golden bell for the yard.
+- **Daily surprises** (by date, the same for everyone; about two days in three have one): a **meteor
+  shower** at night (20-24, not on rainy days): star bits fall near you, catch them, two at once if you
+  jump and catch one in the air; **Marlo the traveling merchant** by the square (9-18) with three odd
+  things a day (mystery seeds, a single sock, a golden acorn, moon cheese, a rubber duck pond, a cloud in a
+  jar, a music box, a jar of star bits); a **hot-air balloon** lands east of the square (10-17) with **Skye
+  the explorer**, whose goggles blew somewhere you have to hop to (a little balloon for the yard the first
+  time); a **bottle on the beach** (6-21) with a **treasure map**: the X shows where to dig. `surpriseOn(date)`
+  in `src/scenes/solo/surprise.js` says which.
+- **Island mini-games:** **skipping stones** at the pile of flat stones on the beach (press [B] when the bar
+  is in the green: up to 7 skips, a record brings coins); **kite flying** at the kite stand on kite hill
+  (the stick keeps the kite in the sparkly wind for 30 seconds); **hide-and-seek with Mumble** (he asks when
+  you talk to him: count to five, then find the giggling bush at the meadow within a minute); a **snowball
+  fight with Pip** in winter weeks behind two snow forts south of the square ([B] throws, jump over her
+  snowballs); **leaf piles** in autumn weeks: jump into one and it bursts, some hide coins, a golden acorn,
+  seeds or a striped sock.
+- **Villagers play with you:** they **wave** when you jump near them; **Pip plays tag** (catch her, then
+  she chases you; up on a stump she cannot get you); stand still at a view spot (the lookout, the bench on
+  kite hill, the bench by the lighthouse, the end of the pier, the islet) **at sunset** (17:30-20:30) or **on a
+  clear night** and a friend comes over to watch with you (once a day each); and every day one villager asks
+  for help with **a small fun task**, always up somewhere you hop to: Aunt Hazel's hen on the Stump Hop,
+  Mitten on the Barrel Run, Pip's model rocket on the game hall roof, Grumbleton's hat on Gull Rock, Keeper
+  Bram's glass float on the cliff path, Curator Hoot's book on the hollow tree's branch. Pick it up with [B]
+  and bring it back.
+- **Controls (solo island only):** stick to walk, **A jumps** (see Jumping above), **B is the one use
   button** (the held tool or seeds, talking, picking up, shipping, mail, doors, shops and knocking; a
   villager you face wins over the field), **C opens the start menu** (Island, Story, Solo, Friends book).
   The bag is **Tab** on a keyboard and a **long press of B** on a gamepad; 1–9 pick a hotbar slot; **F**
@@ -688,6 +737,12 @@ night match yours and crops grow while you are away.
   | Lighthouse top and telescope | – | telescope / look closer | climb down / back |
   | Sled | – (stick steers) | – | – |
   | Diving | kick (swim faster for a moment) | pick up, open, help or wave to a crab, climb out, or the bubble net | swim up to the boat |
+  | Hop trail | jump | (at the sign: start, race) | start menu |
+  | Skipping stones | – | throw (when the bar is green) | stop |
+  | Kite flying | – (stick steers the kite) | – | stop |
+  | Snowball fight | jump (over snowballs) | throw | start menu |
+  | Hide-and-seek | jump | look in a bush | start menu |
+  | Treasure map | close | close | close |
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock

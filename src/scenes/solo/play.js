@@ -90,7 +90,7 @@ export class Play {
 
   // ---------- talking: tasks and invitations ----------
 
-  /** Before the usual talk (island.talkTo): bring back a fetched thing, or today's task. True: handled. */
+  /** Before the usual talk (island.talkTo): bring back a fetched thing. True: handled. */
   talk(n) {
     const host = this.host, D = this.day();
     if (n.id !== taskOn() || n.sleep) return false;
@@ -102,14 +102,14 @@ export class Play {
       host.celebrate(n);
       return true;
     }
-    if (D.task === 0) {
-      D.task = 1;
-      n.talking = true;
-      host.say([{ who: n.id, key: `play.task.${n.id}.ask` }], () => { n.talking = false; host.markDirty(); });
-      this.placeThing();
-      return true;
-    }
     return false;
+  }
+
+  /** Today's task, asked at the end of a chat (when there is no quest or story news to tell first). */
+  askLine(n) {
+    const D = this.day();
+    if (n.id !== taskOn() || n.sleep || D.task !== 0 || !this.S.intro) return null;
+    return { who: n.id, key: `play.task.${n.id}.ask`, fx: () => { if (D.task === 0) { D.task = 1; this.placeThing(); this.host.markDirty(); } } };
   }
 
   /** Something new to say (the "!" over their head): today's task, or the thing you are bringing back. */

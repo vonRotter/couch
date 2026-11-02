@@ -702,7 +702,8 @@ export class SoloIslandScene extends BaseScene {
     if (S.unlocks.barn && S.ranch.animals.length && S.ranch.trough <= 0) out.push(t('isl.task.hay'));
     if ((S.quests.hazel?.n === 2) && !count(S, 'stone')) out.push(t('isl.task.bench'));
     out.unshift(...this.seasons.tasks());
-    out.unshift(...this.surprise.tasks(), ...this.games.tasks(), ...this.play.tasks());
+    out.unshift(...this.surprise.tasks(), ...this.play.tasks()); // (today's surprise and little task)
+    out.push(...this.games.tasks()); // (leaf piles in autumn, last)
     out.unshift(...this.tour.tasks());
     out.unshift(...this.story.tasks());
     if (this.isle2.here()) out.unshift(t('isl.task.isle'));
@@ -957,8 +958,8 @@ export class SoloIslandScene extends BaseScene {
       else lines.push(this.story.waitLine(n) || this.chatLine(n, st));
     }
     // a friendly chat sometimes mentions a favorite gift (it goes into the Friends book)
-    // an invitation to play (hide-and-seek with Mumble, tag or snowballs with Pip: play.js)
-    if (!after && lines.length <= 1) { const offer = this.play.offer(n); if (offer) lines.push(offer); }
+    // today's little task, or an invitation to play (hide-and-seek with Mumble, tag or snowballs with Pip: play.js)
+    if (!after && lines.length <= 1) { const more = this.play.askLine(n) || this.play.offer(n); if (more) lines.push(more); }
     if (!after && lines.length <= 1) { const tell = this.friends.tellLine(n); if (tell) lines.push(tell); }
     if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
     this.say(lines, () => {
