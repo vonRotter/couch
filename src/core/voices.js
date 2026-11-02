@@ -202,7 +202,8 @@ export function pickVoices(all, lang = 'en', prefer = '') {
   for (const type of TYPE_ORDER) {
     const T = TYPES[type];
     let voice = null;
-    if (type === 'robot') voice = sorted.find((v) => ROBOTIC.test(v.name)) || null; // macOS has real robot voices
+    // macOS has real robot voices (Zarvox and Trinoids first, then Fred)
+    if (type === 'robot') voice = [/zarvox/i, /trinoids/i, /\bfred\b/i].map((re) => sorted.find((v) => re.test(v.name))).find(Boolean) || null;
     if (!voice && pool.length) {
       let top = -Infinity;
       for (const v of pool) {

@@ -13,7 +13,7 @@ import { babble, stopBabble, babbling } from './babble.js';
 //
 //   say(text)                         the narrator ('narrator' is the default)
 //   say(text, 'isl.hazel')            a character (ids in voices.js SPEAKERS)
-//   say(text, { speaker, mood: 'sleepy', force, pitch, rate, lang })
+//   say(text, { speaker, mood: 'sleepy', force, pitch, rate, lang, babble })   (babble: true/false overrides B)
 //   say([[line, 'narrator'], [line, 'story.king']])   several parts, one after the other
 // Old calls with only { pitch, rate } still work: a character in the friendly voice at that pitch.
 
@@ -71,7 +71,7 @@ export function currentVoices(lang = getLang()) {
 
 /**
  * Speak (replacing whatever is being said). Returns true if it spoke or babbled.
- * opts: a speaker id string, or { speaker, mood, force, pitch, rate, lang }.
+ * opts: a speaker id string, or { speaker, mood, force, pitch, rate, lang, babble }.
  */
 export function say(text, opts = {}) {
   if (typeof opts === 'string') opts = { speaker: opts };
@@ -119,7 +119,7 @@ function plan(p, opts, lang) {
   const legacy = p.speaker === 'legacy';
   const info = legacy ? { type: 'friendly', seed: 'legacy' } : speakerInfo(p.speaker);
   const entry = { text: p.text, speaker: p.speaker, type: info.type, seed: info.seed };
-  if (info.type !== 'narrator' && babbleOn && audio) {
+  if (info.type !== 'narrator' && (opts.babble ?? babbleOn) && audio) {
     log({ ...entry, mode: 'babble' });
     return { ...entry, mode: 'babble' };
   }

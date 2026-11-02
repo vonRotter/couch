@@ -4,7 +4,8 @@ import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeStar } from '../../core/world.js';
 import { makeHat } from '../../core/character.js';
 import { glyphMaterial, shuffle } from '../../core/edu.js';
-import { getLang, addStrings } from '../../core/i18n.js';
+import { addStrings } from '../../core/i18n.js';
+import { say, stopVoice } from '../../core/voice.js';
 
 // Picture puzzles for Quiz Run's kids mode: no reading needed. Every picture is a small toon model
 // (about 1 unit tall, standing on y = 0, facing +z) built from shared primitives, so building one
@@ -12,45 +13,17 @@ import { getLang, addStrings } from '../../core/i18n.js';
 
 // ---------- speech ----------
 
-let voices = [];
-function loadVoices() {
-  try { voices = window.speechSynthesis?.getVoices() || []; } catch { voices = []; }
-}
-if (typeof window !== 'undefined' && window.speechSynthesis) {
-  loadVoices();
-  try { window.speechSynthesis.addEventListener('voiceschanged', loadVoices); } catch { /* old browsers */ }
-}
-
 /**
- * Reads text aloud in the current language (English or Norwegian). Picks a matching voice when the
- * device lists one; stays quiet if it only has voices for other languages. Returns true if it spoke.
+ * Reads text aloud in the current language (English or Norwegian) in the narrator's voice (voice.js),
+ * even with read-aloud off: the kids' questions are pictures plus this. Stays quiet if the device only
+ * has voices for other languages. Returns true if it spoke.
  */
 export function sayAloud(text) {
-  const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
-  if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return false;
-  try {
-    if (!voices.length) loadVoices();
-    const no = getLang() === 'no';
-    const re = no ? /^(nb|no|nn)(-|$)/i : /^en(-|$)/i;
-    const list = voices.filter((v) => re.test(String(v.lang).replace('_', '-')));
-    const voice = list.find((v) => v.localService) || list[0] || null;
-    // Voices are known but none speaks this language: an English voice reading Norwegian is worse than silence.
-    if (voices.length && !voice) return false;
-    const u = new SpeechSynthesisUtterance(text.replace(/[«»"]/g, ''));
-    u.lang = voice ? voice.lang : no ? 'nb-NO' : 'en-US';
-    if (voice) u.voice = voice;
-    u.rate = 0.9;
-    u.pitch = 1.1;
-    synth.cancel();
-    synth.speak(u);
-    return true;
-  } catch {
-    return false;
-  }
+  return say(text, { speaker: 'narrator', force: true, rate: 0.9, pitch: 1.1 });
 }
 
 export function stopSpeaking() {
-  try { window.speechSynthesis?.cancel(); } catch { /* nothing to stop */ }
+  stopVoice();
 }
 
 // ---------- model helpers ----------

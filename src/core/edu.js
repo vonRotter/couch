@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { esc } from './ui.js';
+import { say } from './voice.js';
 
 // Shared pieces for the educational games (Norwegian bokmål).
 
@@ -62,24 +63,9 @@ export function fontsReady() {
   return document.fonts.load('700 64px Fredoka').catch(() => {});
 }
 
-let voice = null;
-let voiceChecked = false;
-/** Says a word in Norwegian if the device has a Norwegian voice; otherwise stays quiet. */
+/** Says a word in Norwegian in the narrator's voice (voice.js) if the device has a Norwegian voice; otherwise stays quiet. */
 export function speak(text) {
-  const synth = window.speechSynthesis;
-  if (!synth) return;
-  if (!voiceChecked || !voice) {
-    const voices = synth.getVoices();
-    voice = voices.find((v) => /^(nb|no|nn)(-|_|$)/i.test(v.lang)) || null;
-    voiceChecked = voices.length > 0;
-  }
-  if (!voice) return;
-  const u = new SpeechSynthesisUtterance(text.toLowerCase());
-  u.voice = voice;
-  u.lang = voice.lang;
-  u.rate = 0.9;
-  synth.cancel();
-  synth.speak(u);
+  say(String(text).toLowerCase(), { speaker: 'narrator', force: true, lang: 'no', rate: 0.9 });
 }
 
 /**
