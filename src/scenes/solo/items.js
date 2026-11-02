@@ -35,10 +35,16 @@ export const WET_MS = 6 * HOUR;
 
 // kind: tool, seed (plants `crop`), crop, wood, gift, find (quest item), key (special)
 export const ITEMS = {
+  // Pip's Zip-Zap: the one gadget for the field, rocks, grass and trees (zipzap.js)
+  zipzap: { kind: 'tool' },
+  // the old tools (only in old saves: save.js turns them into the Zip-Zap)
   hoe: { kind: 'tool' },
   can: { kind: 'tool' },
   scythe: { kind: 'tool' },
   pickaxe: { kind: 'tool' },
+  // Rosa's backpacks: one more bag row each (bought in the store, never in the bag)
+  backpack1: { kind: 'pack', buy: 250, rows: 3 },
+  backpack2: { kind: 'pack', buy: 750, rows: 4 },
   wood: { kind: 'wood', buy: 5, sell: 2 },
   bouquet: { kind: 'gift', buy: 15 },
   feather: { kind: 'find' },
@@ -54,13 +60,15 @@ for (const c of CROP_IDS) {
   ITEMS[c] = { kind: 'crop', crop: c, sell: CROPS[c].sell };
 }
 
-export const TOOLS = ['hoe', 'can', 'scythe', 'pickaxe'];
+export const TOOLS = ['zipzap'];
 export const isGift = (id) => ['crop', 'gift', 'fish', 'dish', 'produce', 'forage'].includes(ITEMS[id]?.kind) || ['seaGlass', 'starfish', 'seaShell', 'pearl'].includes(id);
 
 /** The store's shelf: seeds of the season, wood and flowers. Star fruit seeds appear once Pip has shown you the stars. */
 export function shopStock(save, season = seasonOf(now())) {
   const list = CROP_IDS.filter((c) => inSeason(c, season) && (c !== 'starfruit' || save.unlocks.starfruit)).map((c) => `${c}Seed`);
   list.push('wood', 'bouquet');
+  const rows = save.bagRows ?? 2; // the next bigger backpack
+  if (rows < 3) list.push('backpack1'); else if (rows < 4) list.push('backpack2');
   if (save.sea?.suit) for (const g of ['flippers', 'tank']) if (!save.sea[g]) list.push(g);
   if (save.sea?.flippers && save.sea?.tank) for (const g of ['seaLamp', 'scooter']) if (!save.sea[g]) list.push(g);
   if (save.unlocks?.barn) {
@@ -97,6 +105,10 @@ function cropSvg(id) {
 }
 
 const SVG = {
+  zipzap: `<path d="M5 20 L13 12" stroke="#6a4fc0" stroke-width="4.2" stroke-linecap="round"/><path d="M5.6 19.4 L12.4 12.6" stroke="#9b82ff" stroke-width="1.2" stroke-dasharray="1.2 1.4"/><path d="M11 10 L16 5 L19 8 L14 13Z" fill="#d9d4ee" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><circle cx="18.6" cy="5.4" r="3" fill="#7ff0ff" stroke="${INK}" stroke-width="1.1"/><circle cx="17.8" cy="4.6" r="1" fill="#fff"/><path d="M21 1.5 L22.5 0.5 M22.6 4 L23.8 4" stroke="#7ff0ff" stroke-width="1.1" stroke-linecap="round"/>`,
+  backpack1: `<path d="M6 8 Q6 4 12 4 Q18 4 18 8 V20 Q18 21 17 21 H7 Q6 21 6 20Z" fill="#ff9f4a" stroke="${INK}" stroke-width="1.3"/><rect x="8.5" y="12" width="7" height="5" rx="1.5" fill="#ffc98a" stroke="${INK}" stroke-width="1"/><path d="M9 4.5 Q12 1.5 15 4.5" fill="none" stroke="${INK}" stroke-width="1.3"/><path d="M19.5 3 V7 M17.5 5 H21.5" stroke="#3ddc97" stroke-width="1.8" stroke-linecap="round"/>`,
+  backpack2: `<path d="M5 8 Q5 3.5 12 3.5 Q19 3.5 19 8 V20 Q19 21.5 17.5 21.5 H6.5 Q5 21.5 5 20Z" fill="#4c8bd6" stroke="${INK}" stroke-width="1.3"/><rect x="7.5" y="11" width="9" height="6.5" rx="1.5" fill="#8fc0ff" stroke="${INK}" stroke-width="1"/><path d="M9 4 Q12 1 15 4" fill="none" stroke="${INK}" stroke-width="1.3"/><path d="M20 2.5 V6.5 M18 4.5 H22" stroke="#ffd23f" stroke-width="1.8" stroke-linecap="round"/>`,
+  chest: `<rect x="3" y="9" width="18" height="11" rx="2" fill="#c68a52" stroke="${INK}" stroke-width="1.3"/><path d="M3 11 Q3 4 12 4 Q21 4 21 11Z" fill="#d99a5e" stroke="${INK}" stroke-width="1.3"/><rect x="10.5" y="9.5" width="3" height="4" rx="1" fill="#ffd23f" stroke="${INK}" stroke-width="1"/><path d="M3 11 H21" stroke="${INK}" stroke-width="1.1"/>`,
   hoe: `<path d="M5 20 L16 6" stroke="#a0704a" stroke-width="2.6" stroke-linecap="round"/><path d="M13 4 L20 4 L20 8 L15 8 Z" fill="#bdb8cf" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
   can: `<path d="M5 9 H15 V19 Q15 21 13 21 H7 Q5 21 5 19Z" fill="#4cc9f0" stroke="${INK}" stroke-width="1.2"/><path d="M15 12 L21 7" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/><path d="M7 9 Q10 4 13 9" fill="none" stroke="${INK}" stroke-width="1.4"/><circle cx="21" cy="12" r="1" fill="#4cc9f0"/><circle cx="20" cy="15" r="1" fill="#4cc9f0"/>`,
   scythe: `<path d="M8 21 L12 5" stroke="#a0704a" stroke-width="2.6" stroke-linecap="round"/><path d="M12 5 Q20 4 21 11 Q17 7 12 8 Z" fill="#e8e8f2" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
