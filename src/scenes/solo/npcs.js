@@ -10,8 +10,9 @@ import { hourOf, since, HOUR } from './save.js';
 import { festivalOn } from './calendar.js';
 
 // The island's people. Each has a home spot, a real-time daily routine (where they are depends on the
-// hour), a voice for read-aloud, gift likes, friendship hearts with two small heart events, and two
-// quests. Dialog keys live in strings.js under isl.<id>.*.
+// hour), a name color (voice.css; their read-aloud voice type is 'isl.<id>' in src/core/voices.js),
+// gift likes, friendship hearts with two small heart events, and two quests.
+// Dialog keys live in strings.js under isl.<id>.*.
 
 export const PTS_PER_HEART = 10;
 export const MAX_HEARTS = 10;
@@ -28,7 +29,7 @@ export const GIFT_PTS = { love: 10, like: 6, neutral: 3, dislike: 0 };
  */
 export const NPCS = {
   hazel: {
-    voice: { pitch: 1.2, rate: 0.9, css: '#4f9a1f' },
+    voice: { css: '#4f9a1f' },
     sched: [[0, 'hazelHome', true], [6, 'hazelGarden'], [11, 'plazaBench'], [14, 'farmFence'], [19, 'hazelPorch'], [21, 'hazelHome', 'in'], [22, 'hazelHome', true]],
     fest: { fair: [9, 18, 'plazaBench'] },
     loves: ['tomato', 'carrotSoup'], likes: ['pumpkin', 'bouquet', 'lettuce'], dislikes: ['wood'],
@@ -43,7 +44,7 @@ export const NPCS = {
     game: (p) => (p.island?.stats?.harvested >= 10 ? 'game2' : p.island?.stats?.harvested >= 1 ? 'game1' : 'game0'),
   },
   rosa: {
-    voice: { pitch: 1.4, rate: 1.05, css: '#e0459a' },
+    voice: { css: '#e0459a' },
     sched: [[0, 'rosaHome', true], [7, 'storeCounter'], [18, 'plazaFountain'], [20, 'rosaHome', 'in'], [21, 'rosaHome', true]],
     fest: { plant: [9, 18, 'plazaFountain'] }, // [from hour, to hour, spot] on festival days
     loves: ['bouquet', 'strawberryShake'], likes: ['lettuce', 'strawberry', 'starfruit'], dislikes: ['corn'],
@@ -56,7 +57,7 @@ export const NPCS = {
     game: (p) => (p.island?.stats?.shipped >= 20 ? 'game2' : p.island?.stats?.shipped >= 1 ? 'game1' : 'game0'),
   },
   bram: {
-    voice: { pitch: 0.7, rate: 0.88, css: '#6b7bb0' },
+    voice: { css: '#6b7bb0' },
     sched: [[0, 'lhDoor'], [1, 'bramHome', 'in'], [2, 'bramHome', true], [6, 'beach'], [9, 'lhDoor'], [17, 'plazaEast'], [20, 'lhDoor']],
     fest: { lanterns: [17, 24, 'plazaEast'] }, // Lantern Night: he stays under the lanterns until midnight
     loves: ['pumpkin', 'fishStew'], likes: ['carrot', 'corn', 'starfruit'], dislikes: ['radish'],
@@ -69,7 +70,7 @@ export const NPCS = {
     game: (p) => (p.lighthouse?.flags?.finale ? 'game2' : p.lighthouse?.crystals > 0 ? 'game1' : 'game0'),
   },
   grumbleton: {
-    voice: { pitch: 0.55, rate: 0.9, css: '#5a4dc0' },
+    voice: { css: '#5a4dc0' },
     sched: [[0, 'grumbletonHome', true], [8, 'pier'], [13, 'pierEnd'], [16, 'pier'], [20, 'cafe'], [22.5, 'grumbletonHome', 'in'], [23, 'grumbletonHome', true]],
     loves: ['strawberry', 'sushi'], likes: ['tomato', 'pumpkin', 'corn'], dislikes: ['bouquet'],
     quests: [
@@ -81,7 +82,7 @@ export const NPCS = {
     game: (p) => (p.adventure?.done2 ? 'game2' : p.adventure?.done ? 'game1' : 'game0'),
   },
   pip: {
-    voice: { pitch: 1.6, rate: 1.1, css: '#4a3fc0' },
+    voice: { css: '#4a3fc0' },
     sched: [[0, 'pipHome', true], [8, 'pad'], [12, 'hallFront'], [15, 'pad'], [19, 'hillTop'], [22, 'pipHome', 'in'], [23, 'pipHome', true]],
     fest: { beach: [10, 18, 'beachDay'] },
     loves: ['starfruit', 'tempura'], likes: ['corn', 'strawberry', 'pumpkin'], dislikes: ['lettuce'],
@@ -94,7 +95,7 @@ export const NPCS = {
     game: (p) => ((p.skyhop || 0) >= 5 ? 'game2' : (p.skyhop || 0) >= 1 ? 'game1' : 'game0'),
   },
   mumble: {
-    voice: { pitch: 1.75, rate: 1.0, css: '#3f9a32' },
+    voice: { css: '#3f9a32' },
     sched: [[0, 'mumbleHome', true], [7, 'meadow'], [20.5, 'mumbleHome', 'in'], [21, 'mumbleHome', true]],
     wander: 3,
     loves: ['radish', 'radishSalad'], likes: ['carrot', 'strawberry'], dislikes: ['bouquet'],
@@ -104,14 +105,14 @@ export const NPCS = {
   },
   // milestone B3: the museum's curator, and Shelby from Shell Isle (who visits the beach on weekends)
   hoot: {
-    voice: { pitch: 0.95, rate: 0.85, css: '#8a5a32' },
+    voice: { css: '#8a5a32' },
     sched: [[0, 'hootHome', true], [7, 'museumDoor'], [21, 'hootHome', 'in'], [22, 'hootHome', true]],
     loves: ['pearl', 'moonfish'], likes: ['seaGlass', 'starfish', 'cocoa', 'pumpkinPie'], dislikes: ['hay'],
     quests: [], events: [],
     game: () => null,
   },
   shelby: {
-    voice: { pitch: 1.5, rate: 1.05, css: '#e0557a' },
+    voice: { css: '#e0557a' },
     sched: [[0, 'shelbyHome', true], [7, 'shelbyHut'], [9, 'tidepools'], [13, 'shelbyHut'], [16, 'isleBeach'], [19, 'shelbyHome', 'in'], [20, 'shelbyHome', true]],
     wander: 1.6,
     isle: true, // lives on Shell Isle

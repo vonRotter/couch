@@ -167,8 +167,8 @@ export class AdventureEngine {
     def.lights?.(this, this.host.lights);
     this.room.props = def.build(this, group) || {};
     this.actors = {
-      pip: { name: 'adv.who.pip', css: this.host.players[0]?.css || '#4cc9f0', voice: { pitch: 1.35, rate: 1.05 }, head: (v) => this.pipHead(v) },
-      narr: { narrator: true, voice: { pitch: 1, rate: 0.95 } },
+      pip: { name: 'adv.who.pip', css: this.host.players[0]?.css || '#4cc9f0', head: (v) => this.pipHead(v) },
+      narr: { narrator: true },
       ...(def.actors?.(this, this.room.props) || {}),
     };
     const at = entry ? def.entries[entry] : null;
@@ -610,7 +610,7 @@ export class AdventureEngine {
         this.hideSpeech();
         this.ui.showTbc(t('adv.tbc'), t(this.save.scene >= 2 ? 'adv.tbcSub2' : 'adv.tbcSub'));
         this.game.audio.play('fanfare');
-        speak(t('adv.tbc'));
+        speak(t('adv.tbc'), 'narrator');
         break;
       default: cmd.done = true;
     }
@@ -645,7 +645,8 @@ export class AdventureEngine {
   // ---------- speech ----------
 
   startSay(cmd) {
-    const actor = this.actors[cmd.who] || this.actors.pip;
+    const id = this.actors[cmd.who] ? cmd.who : 'pip';
+    const actor = this.actors[id];
     const text = tv(cmd.key, cmd.vars);
     cmd.text = text;
     const chars = text.length;
@@ -661,7 +662,8 @@ export class AdventureEngine {
       actor.onSay?.(this);
     }
     if (actor.sfx) this.sfx(actor.sfx);
-    speak(text, actor.voice || {});
+    // notes and the narrator in the narrator's voice; everyone else by id (voices.js: 'adv.pip', 'adv.claw', ...)
+    speak(text, actor.narrator || actor.kind === 'note' ? 'narrator' : `adv.${id}`);
   }
 
   hideSpeech(keepVoice = false) {
@@ -778,7 +780,7 @@ export class AdventureEngine {
     if (this.hasSave) opts.push({ id: 'continue', text: 'adv.continue' });
     opts.push({ id: 'new', text: 'adv.new', sub: this.hasSave ? 'adv.newSub' : '' });
     this.title = { options: opts, index: 0 };
-    speak(`${t('adv.title')}. ${this.titleSub()}`);
+    speak(`${t('adv.title')}. ${this.titleSub()}`, 'narrator');
   }
 
   renderTitle() {

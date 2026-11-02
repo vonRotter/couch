@@ -109,7 +109,7 @@ export class DiveCrabs {
   say(key, vars) {
     const txt = t(key, vars);
     this.host.game.ui.toast(txt, 2400);
-    speak(txt);
+    speak(txt, 'narrator');
   }
 
   hearts(x, y) {

@@ -274,7 +274,8 @@ export class CampaignMap {
       const s = t(k);
       return `<div class="line ${/^["«“]/.test(s) ? 'say' : ''}">${esc(s)}</div>`;
     }).join('');
-    say(page.lines.map((k) => t(k)).join(' '));
+    // quoted lines are the speaker's own words (voices.js 'kc.duke', 'kc.princess', 'kc.captain'), the rest is narration
+    say(page.lines.map((k) => { const s = t(k); return [s, page.speaker && /^["«“]/.test(s) ? `kc.${page.speaker}` : 'narrator']; }));
     const html = `${speaker}${lines}<div class="foot">${dots}<span class="blink">${esc(t(last ? 'kc.cardLast' : 'kc.cardNext'))}</span></div>`;
     if (!this.cardEl) this.cardEl = this.game.ui.label('story-card kc-card');
     this.cardEl.innerHTML = html;
@@ -338,7 +339,7 @@ export class CampaignMap {
       <div class="results-sub">${esc(t(`kc.tip.${lv.mech}`))}</div>
       ${best ? `<div class="results-sub">${esc(t('kc.best'))} ${'★'.repeat(best)}${'☆'.repeat(3 - best)}</div>` : ''}
       <div class="results-footer blink" style="margin-top:10px">${esc(t('kc.goalHint'))}</div>`;
-    say(`${t(`kc.level.${lv.id}`)}. ${t(`kc.story.${lv.id}`)} ${goals.join('. ')}.`);
+    say(`${t(`kc.level.${lv.id}`)}. ${t(`kc.story.${lv.id}`)} ${goals.join('. ')}.`, 'narrator');
     if (!this.panelEl) this.panelEl = this.game.ui.panel(html, 'panel kc-goal');
     else this.panelEl.innerHTML = html;
   }

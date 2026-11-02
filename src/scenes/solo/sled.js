@@ -163,7 +163,7 @@ export class Sled {
     const n = r.got.size;
     const txt = t(n === this.flakes.length ? 'isl.sled.all' : 'isl.sled.done', { n, m: this.flakes.length });
     host.game.ui.toast(txt, 2600);
-    speak(txt);
+    speak(txt, 'narrator');
     host.game.audio.play(n >= 4 ? 'fanfare' : 'star');
     const week = weekIndex();
     if (S.sled.week !== week) {

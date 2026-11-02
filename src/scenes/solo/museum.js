@@ -6,7 +6,6 @@ import { count, take, now } from './save.js';
 import { FISH_IDS, SEA, TREASURE, CRYSTALS, FISH } from './sea.js';
 import { MUSEUM_CRABS } from './crabdata.js';
 import { MUSEUM, heightAt } from './map.js';
-import { NPCS } from './npcs.js';
 import { makeMuseum } from './models3.js';
 
 // The island museum east of the square (milestone B3). Donate fish, sea finds and crystals to Curator Hoot:
@@ -78,7 +77,7 @@ export class Museum {
     this.render();
     host.game.audio.play('select');
     const n = this.donatable().length;
-    speak(n ? t('isl.museum.youHave', { n }) : t('isl.museum.title'));
+    speak(n ? t('isl.museum.youHave', { n }) : t('isl.museum.title'), 'narrator');
   }
 
   render() {
@@ -149,7 +148,7 @@ export class Museum {
     host.confetti.burst(new THREE.Vector3(MUSEUM.x, 4, MUSEUM.z + 3), 0, { count: 30, speed: 5, up: 4, life: 1.2, gravity: -6, colors: [0xffd23f, 0x8ff0ff, 0xff9fd0, 0xffffff] });
     host.game.audio.play('star');
     const txt = t('isl.museum.thanks', { item: t(`isl.i.${id}`), n: this.total });
-    speak(txt, NPCS.hoot.voice);
+    speak(txt, 'isl.hoot');
     host.game.ui.toast(txt, 2200);
     this.checkMilestones();
     host.markDirty();
@@ -165,7 +164,7 @@ export class Museum {
         host.later(0.6, () => {
           const msg = t('isl.museum.milestone', { n: m.n });
           host.game.ui.toast(msg, 2600);
-          speak(msg, NPCS.hoot.voice);
+          speak(msg, 'isl.hoot');
           host.grant(m.reward);
           host.game.audio.play('fanfare');
         });

@@ -124,7 +124,7 @@ export class Photo {
     this.snapT = 0;
     host.game.audio.play('pop');
     const txt = t(full ? 'isl.photo.sentFull' : 'isl.photo.sent', { n: MAX });
-    host.later(0.8, () => { host.game.ui.toast(txt, 2600); speak(txt); });
+    host.later(0.8, () => { host.game.ui.toast(txt, 2600); speak(txt, 'narrator'); });
     host.markDirty();
   }
 

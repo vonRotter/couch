@@ -197,7 +197,7 @@ export class Isle2 {
     host.game.audio.play('whoosh');
     host.hud.setCinema(true); // a clear view of the sea
     const txt = t(dir === 'isle' ? 'isl.isle.sailing' : 'isl.isle.sailingHome');
-    speak(txt, { pitch: 0.55, rate: 0.9 });
+    speak(txt, 'isl.grumbleton'); // he sails the boat
     host.game.ui.toast(txt, 2600);
   }
 
@@ -267,7 +267,7 @@ export class Isle2 {
       this.placeBoat('isle');
       const txt = t(I.visits === 1 ? 'isl.isle.welcome1' : 'isl.isle.welcome');
       host.game.ui.toast(txt, 2800);
-      speak(txt);
+      speak(txt, 'narrator');
       host.game.audio.play('fanfare');
     } else {
       I.at = 'main';
@@ -336,7 +336,7 @@ export class Isle2 {
     host.game.audio.play('star');
     const txt = t('isl.isle.pool', { item: t(`isl.i.${id}`) });
     host.game.ui.toast(txt, 2000);
-    speak(txt);
+    speak(txt, 'narrator');
     this.refresh();
     host.markDirty();
   }
@@ -356,7 +356,7 @@ export class Isle2 {
     host.game.audio.play('fanfare');
     const txt = t('isl.isle.dug', { item: t(`isl.i.${id}`) });
     host.game.ui.toast(txt, 2400);
-    speak(txt);
+    speak(txt, 'narrator');
     this.refresh();
     host.markDirty();
   }

@@ -119,7 +119,7 @@ export class Ranch {
   /** News about the babies (a toast, read aloud). */
   say(key, a, baby = null) {
     const txt = t(key, { name: a.name, baby: baby?.name || '' });
-    this.host.later(1.0, () => { this.host.game.ui.toast(txt, 2600); speak(txt); });
+    this.host.later(1.0, () => { this.host.game.ui.toast(txt, 2600); speak(txt, 'narrator'); });
   }
 
   /** [B] actions at the ranch. */
@@ -200,7 +200,7 @@ export class Ranch {
     a.hearts = Math.min(5, a.hearts + 1);
     const txt = t(`isl.pet.${a.kind}`, { name: a.name });
     this.host.game.ui.toast(txt, 1600);
-    speak(txt);
+    speak(txt, 'narrator');
     this.host.markDirty();
   }
 

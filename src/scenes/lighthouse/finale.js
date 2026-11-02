@@ -182,7 +182,7 @@ export const FinaleMixin = {
     this.mode = 'credits';
     this.credits = { t: 0, card: false };
     this.hud.setCredits({ lines: this.creditLines(), p: 0 });
-    speak(`${t('lh.cr.thanks')}`);
+    speak(`${t('lh.cr.thanks')}`, 'narrator');
   },
 
   updateCredits(inp, dt) {
@@ -202,7 +202,7 @@ export const FinaleMixin = {
           t2: t('lh.endStats', { p: this.heartPiecesFound(), pm: this.heartPiecesTotal(), g: this.gshellsFound(), gm: this.gshellsTotal(), h: s.maxHp / 2 }),
           t3: tFor(this.host.players[0], 'lh.endHint'),
         });
-        speak(`${t('lh.theEnd')} ${t('lh.endStats', { p: this.heartPiecesFound(), pm: this.heartPiecesTotal(), g: this.gshellsFound(), gm: this.gshellsTotal(), h: s.maxHp / 2 })}`);
+        speak(`${t('lh.theEnd')} ${t('lh.endStats', { p: this.heartPiecesFound(), pm: this.heartPiecesTotal(), g: this.gshellsFound(), gm: this.gshellsTotal(), h: s.maxHp / 2 })}`, 'narrator');
         this.sfx('fanfare');
       }
       return;

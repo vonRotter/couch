@@ -16,7 +16,7 @@ import { SCENE2_ROOMS, DOCK2, SELF_ITEMS, isS2 } from './scene2.js';
 //   build(s, group) -> props        make the diorama (side-on stage, x left/right, z toward camera)
 //   camera { viewW, lookY, pitch }  framing; walk: [[x0, z0, x1, z1], ...] (or (s) => rects)
 //   entries { start: { x, z, face } }
-//   actors(s, props)                speakers: { name, css, voice: { pitch, rate }, head(v), face(dir) }
+//   actors(s, props)                speakers: { name, css, head(v), face(dir) } (voice type: 'adv.<id>' in src/core/voices.js)
 //   hotspots: [{ id, name, kind: person|item|object|exit, box: [cx, cy, cz, w, h, d], anchor,
 //                walk: [x, z] | (s) => [x, z] | null, face, when(s), priority,
 //                look / talk / take / use / go: key | lines | script,  useItem: { itemId: ... } }]
@@ -501,16 +501,16 @@ const dock = {
   actors(s, P) {
     return {
       grum: {
-        name: 'adv.who.grum', css: GRUM_CSS, voice: { pitch: 0.5, rate: 0.85 },
+        name: 'adv.who.grum', css: GRUM_CSS,
         head: (v) => P.grum.localToWorld(v.set(0, s.flag('duelWon') ? 1.0 : 1.75, 0)),
         face: (dir) => { if (!s.flag('duelWon')) s.tween(P.grum, { ry: dir < 0 ? -0.55 : 0.55 }, 0.2); },
       },
       gull: {
-        name: () => (s.flag('gullOnHead') ? 'adv.who.mine' : 'adv.who.gull'), css: GULL_CSS, voice: { pitch: 2, rate: 1.3 }, sfx: 'mine',
+        name: () => (s.flag('gullOnHead') ? 'adv.who.mine' : 'adv.who.gull'), css: GULL_CSS, sfx: 'mine',
         head: (v) => P.gull.localToWorld(v.set(0.2, 0.75, 0)),
       },
       note: {
-        name: 'adv.who.note', kind: 'note', css: '#c9a25a', voice: { pitch: 1.15, rate: 0.95 },
+        name: 'adv.who.note', kind: 'note', css: '#c9a25a',
         head: (v) => v.set(P.barrel.position.x + 0.5, 1.75, P.barrel.position.z),
       },
     };

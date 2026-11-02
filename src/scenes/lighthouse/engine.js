@@ -388,7 +388,7 @@ export class LighthouseEngine {
       s.potion = 0;
       s.hp = s.maxHp;
       this.game.ui.toast(t('lh.tonicUsed'), 2000);
-      speak(t('lh.tonicUsed'));
+      speak(t('lh.tonicUsed'), 'narrator');
       this.sfx('save');
       this.hero.inv = 2;
       this.persist();
@@ -402,7 +402,7 @@ export class LighthouseEngine {
     this.game.audio.stopMusic();
     this.sfx('dizzy');
     this.hud.setBig({ t1: t('lh.fainted'), t2: t('lh.faintedSub') });
-    speak(t('lh.fainted'));
+    speak(t('lh.fainted'), 'narrator');
   }
 
   updateDead(dt) {

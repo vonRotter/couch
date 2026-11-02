@@ -159,7 +159,7 @@ export class GridPanel {
     this.msg = msg;
     this.good = good;
     this.s.game.audio.play(good ? 'star' : 'bump');
-    if (speak) say(msg);
+    if (speak) say(msg, 'narrator');
     this.render();
   }
 
@@ -265,7 +265,7 @@ export class GridPanel {
       if (this.lastSay !== it.id) {
         this.lastSay = it.id;
         const dd = s.compareItemFor(it);
-        say(`${itemName(it)}. ${it.cls && it.cls !== s.cls ? t('ks.forClass', { cls: t(`ks.cls.${it.cls}`) }) : isBetter(dd) && s.hs.gear[it.slot] !== it ? t('ks.better') : ''}`);
+        say(`${itemName(it)}. ${it.cls && it.cls !== s.cls ? t('ks.forClass', { cls: t(`ks.cls.${it.cls}`) }) : isBetter(dd) && s.hs.gear[it.slot] !== it ? t('ks.better') : ''}`, 'narrator');
       }
     } else { this.tip.style.display = 'none'; this.tip.dataset.k = ''; this.lastSay = null; }
     this.el.classList.toggle('identify', !!this.identifying);

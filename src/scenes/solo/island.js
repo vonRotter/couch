@@ -542,7 +542,7 @@ export class SoloIslandScene extends BaseScene {
 
   lineVoice(L) {
     if (L.who && NPCS[L.who]) return NPCS[L.who].voice;
-    return { pitch: 1, rate: 0.95, css: '#8a5a32' };
+    return { css: '#8a5a32' };
   }
 
   showLine() {
@@ -554,7 +554,8 @@ export class SoloIslandScene extends BaseScene {
     d.choice = 0;
     const st = L.who && NPCS[L.who] ? npcState(this.save, L.who) : null;
     this.renderLine(L, text, v, st);
-    speak(text, { pitch: v.pitch, rate: v.rate });
+    // villagers in their voice type (src/core/voices.js 'isl.<id>'), half asleep at the door; other lines: the narrator
+    speak(text, L.who && NPCS[L.who] && L.key !== 'isl.sleep' ? { speaker: `isl.${L.who}`, mood: L.key?.startsWith('isl.knock.') ? 'sleepy' : undefined } : 'narrator');
     this.game.audio.play('select');
     L.fx?.();
   }
@@ -782,7 +783,7 @@ export class SoloIslandScene extends BaseScene {
     const msg = { rockBuster: 'zz.t.rockBuster', bridge: 'isl.t.bridge', mine: 'isl.t.mine', burrow: 'isl.t.burrow', bigCan: 'isl.t.bigCan', discount: 'isl.t.discount', starfruit: 'isl.t.starfruit', barn: 'isl.t.barn', rosaHelps: 'isl.t.rosaHelps', goldRod: 'isl.t.goldRod', greenhouse: 'isl.t.greenhouse' }[key];
     if (key === 'greenhouse') this.greenhouse.fix();
     if (key === 'barn') { this.ranch.addAnimal('chicken'); this.ranch.addAnimal('chicken'); this.ranch.refresh(); }
-    if (msg) { this.game.ui.toast(t(msg), 3000); speak(t(msg)); }
+    if (msg) { this.game.ui.toast(t(msg), 3000); speak(t(msg), 'narrator'); }
     this.game.audio.play('fanfare');
     this.applyUnlocks(false);
     this.markDirty();
@@ -1366,7 +1367,7 @@ export class SoloIslandScene extends BaseScene {
   offSeason(crop) {
     const txt = this.offSeasonText(crop);
     this.game.ui.toast(txt, 2600);
-    speak(txt);
+    speak(txt, 'narrator');
     this.game.audio.play('bump');
   }
 
@@ -1450,7 +1451,7 @@ export class SoloIslandScene extends BaseScene {
     this.game.audio.play('star');
     const txt = t('isl.t.found', { item: t(`isl.i.${id}`) });
     this.game.ui.toast(txt, 2200);
-    speak(txt);
+    speak(txt, 'narrator');
     this.markDirty();
   }
 
@@ -1540,7 +1541,7 @@ export class SoloIslandScene extends BaseScene {
         else give(S, r.id, 1);
         const got = ITEMS[r.id].kind === 'pack' ? t('zb.t.pack', { n: 9 + 9 * S.bagRows }) : t('isl.t.bought', { item: itemName(r.id) });
         this.game.ui.toast(got, ITEMS[r.id].kind === 'pack' ? 2400 : 900);
-        if (ITEMS[r.id].kind === 'pack') speak(got);
+        if (ITEMS[r.id].kind === 'pack') speak(got, 'narrator');
       } else {
         take(S, r.id, 1);
         S.coins += r.price;
@@ -1568,8 +1569,9 @@ export class SoloIslandScene extends BaseScene {
     this.hud.setPanel(`<h2>${esc(t(r.id === 'postcard' ? 'isl.photo.title' : 'isl.mail.title', { name: this.playerName }))}</h2>
       ${card}<div class="isl-letter">${esc(body)}<div class="from">${esc(t('isl.mail.from', { name: t(`isl.from.${r.from}`) }))}</div></div>
       <div class="isl-gifts">${gifts}</div><div class="isl-foot">${esc(tFor(this.player?.p, r.id === 'postcard' || !gifts ? 'isl.ok' : 'isl.mail.hint'))}</div>`);
-    const v = r.from === 'lh' || r.from === 'cave' ? NPCS.bram.voice : r.from === 'adv' ? NPCS.grumbleton.voice : r.from === 'hop' ? NPCS.pip.voice : NPCS[r.from]?.voice || { pitch: 1, rate: 0.95 };
-    speak(body, v);
+    // a letter is read in its writer's voice (games' letters: the villager who runs that game)
+    const from = r.from === 'lh' || r.from === 'cave' ? 'bram' : r.from === 'adv' ? 'grumbleton' : r.from === 'hop' ? 'pip' : r.from;
+    speak(body, NPCS[from] ? `isl.${from}` : 'narrator');
     this.game.audio.play('select');
     const mb = this.map.mailbox.userData;
     mb.letter.visible = false;
@@ -1952,7 +1954,7 @@ export class SoloIslandScene extends BaseScene {
       S.toChest = 0;
       S.toChestId = null;
       this.game.ui.toast(txt, 3200);
-      speak(txt);
+      speak(txt, 'narrator');
     }
     this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : this.onPad ? 'isl.keysPad' : 'isl.keys', { bag: this.bagKey() }));
     let prompt = '';

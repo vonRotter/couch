@@ -157,8 +157,9 @@ export class BreachScene extends MiniGame {
     }
   }
 
-  speak(text) {
-    say(text);
+  /** Read aloud: the narrator, or who = 'breach.helper' for the helper bean (voice types in src/core/voices.js). */
+  speak(text, who = 'narrator') {
+    say(text, who);
   }
 
   persist() {
@@ -915,13 +916,13 @@ export class BreachScene extends MiniGame {
     const s = this.bs;
     const m = (this.sel && R.unitById(s, this.sel)) || R.mechs(s).find((u) => this.canSelect(u));
     const h = m ? bestFor(s, m.id, this.def.objectives) : null;
-    if (!h || (!h.move && !h.act)) { this.hud.banner(t('breach.noHelp'), '', 1800); this.speak(t('breach.noHelp')); return; }
+    if (!h || (!h.move && !h.act)) { this.hud.banner(t('breach.noHelp'), '', 1800); this.speak(t('breach.noHelp'), 'breach.helper'); return; }
     this.sel = m.id;
     this.selMode = h.move ? 'move' : 'aim';
     this.hint = { id: m.id, move: h.move, act: h.act };
     this.cursor = h.move ? [...h.move] : [...h.act];
     this.hud.banner(t('breach.helper'), '', 1600);
-    this.speak(t('breach.helper'));
+    this.speak(t('breach.helper'), 'breach.helper');
     this.refresh();
   }
 

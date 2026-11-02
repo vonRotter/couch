@@ -5,7 +5,7 @@ import { say as speak } from '../../core/voice.js';
 import { hourOf } from './save.js';
 import { dayKey, festivalOn } from './calendar.js';
 import { FISH, pickFish } from './sea.js';
-import { NPCS, npcState, heartsOf } from './npcs.js';
+import { npcState, heartsOf } from './npcs.js';
 import { SPOTS } from './map.js';
 
 // The fishing tournament against Grumbleton (milestone B3). On Wednesdays, or any day once he likes you
@@ -71,7 +71,7 @@ export class Tournament {
     host.game.audio.play('go');
     const txt = t('isl.tour.go');
     host.game.ui.toast(txt, 2400);
-    speak(txt, NPCS.grumbleton.voice);
+    speak(txt, 'isl.grumbleton');
     host.markDirty();
   }
 
@@ -123,7 +123,7 @@ export class Tournament {
     host.mode = 'tourEnd';
     this.endT = 0;
     host.hud.setPanel(`<h2>${esc(t('isl.tour.title'))}</h2><div class="isl-letter" style="text-align:center">${esc(t('isl.tour.final', { n: r.me, m: r.him }))}<br>${esc(line)}</div><div class="isl-foot">${esc(tFor(host.player?.p, 'isl.ok'))}</div>`);
-    speak(line, NPCS.grumbleton.voice);
+    speak(line, 'isl.grumbleton');
     host.game.audio.play(res === 'win' ? 'fanfare' : 'star');
     this.result = res;
   }

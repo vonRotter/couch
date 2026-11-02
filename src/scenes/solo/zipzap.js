@@ -6,7 +6,6 @@ import { ITEMS, icon } from './items.js';
 import { count, give, take, held, now, since, MIN } from './save.js';
 import { heightAt, ROCKFALL, PAD } from './map.js';
 import { isle2Height } from './isle2geo.js';
-import { NPCS } from './npcs.js';
 import { makeOreRock, makeBigOre, makeChopTree, makeStump, makeScanGlow, makeGadgetBench, decorateRockfall, glowMat } from './models8.js';
 import { makeTallGrass } from './models2.js';
 
@@ -222,7 +221,7 @@ export class ZipZap {
   nope(key) {
     const txt = t(key);
     this.host.game.ui.toast(txt, 2200);
-    speak(txt);
+    speak(txt, 'narrator');
     this.host.game.audio.play('bump');
   }
 
@@ -416,7 +415,7 @@ export class ZipZap {
     this.panel.i = Math.max(0, first);
     this.renderBench();
     host.game.audio.play('select');
-    speak(t('zz.bench.hello'), NPCS.pip.voice);
+    speak(t('zz.bench.hello'), 'isl.pip');
   }
 
   have(id) { return id === 'coin' ? this.S.coins : count(this.S, id); }
@@ -443,7 +442,7 @@ export class ZipZap {
     const Pn = this.panel, host = this.host;
     Pn.t += dt;
     const n = UPGRADES.length;
-    if (inp.stepY || inp.stepX) { Pn.i = THREE.MathUtils.clamp(Pn.i - inp.stepY + inp.stepX, 0, n - 1); host.game.audio.play('select'); this.renderBench(); speak(t(`zz.up.${UPGRADES[Pn.i].id}.sub`)); }
+    if (inp.stepY || inp.stepX) { Pn.i = THREE.MathUtils.clamp(Pn.i - inp.stepY + inp.stepX, 0, n - 1); host.game.audio.play('select'); this.renderBench(); speak(t(`zz.up.${UPGRADES[Pn.i].id}.sub`), 'narrator'); }
     if (Pn.t < 0.25) return;
     if (inp.bPressed) { host.hud.setPanel(null); host.mode = 'walk'; return; }
     if (inp.aPressed) this.buy(UPGRADES[Pn.i].id);
@@ -462,7 +461,7 @@ export class ZipZap {
     host.confetti.burst(new THREE.Vector3(BENCH.x, 2, BENCH.z), 0, { count: 40, speed: 6, up: 4, life: 1.3, gravity: -6, colors: [0x7ff0ff, 0xff6fd0, 0xffd23f, 0x9b82ff] });
     const txt = t(`zz.up.${r.id}.got`);
     host.game.ui.toast(txt, 2600);
-    speak(txt, NPCS.pip.voice);
+    speak(txt, 'isl.pip');
     host.markDirty();
     if (host.mode === 'zzbench') this.renderBench();
     return true;

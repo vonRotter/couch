@@ -348,7 +348,7 @@ export class Builder {
     host.game.audio.play('fanfare');
     const txt = t('isl.t.upgraded');
     host.game.ui.toast(txt, 2600);
-    speak(txt);
+    speak(txt, 'narrator');
     host.markDirty();
     this.renderBench();
   }

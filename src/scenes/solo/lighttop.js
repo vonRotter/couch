@@ -352,14 +352,14 @@ export class LightTop {
       const name = this.nameOf(id);
       const txt = t('story.star.named', { name });
       host.game.ui.toast(txt, 2600);
-      speak(txt);
+      speak(txt, 'narrator');
       host.confetti.burst(SCOPE.clone().add(dirOf(this.sky.yaw, this.sky.pitch).multiplyScalar(8)), 0, { count: 26, speed: 3, up: 1, life: 1, gravity: 0, colors: [0xffe14a, 0xffffff, 0x8ff0ff] });
       host.grant({ coins: 15 });
       if (this.found === CONSTELLATIONS.length) {
         host.later(1.2, () => {
           const msg = t('story.star.allFound');
           host.game.ui.toast(msg, 3200);
-          speak(msg);
+          speak(msg, 'narrator');
           host.grant(PRIZE);
           host.game.audio.play('fanfare');
         });

@@ -176,7 +176,7 @@ export class FriendsBook {
         <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl></div>${dots}${foot}`);
     if (!read) return;
     const helpedH = b.hermits.filter((h) => h.shell).map((h) => t('isl.fb.crabSayHermit', { name: h.name, shell: t(`isl.i.${h.shell}`) }));
-    speak([t('isl.fb.crabs'), t('isl.fb.crabSay', { n: b.helped }), how, t(b.next ? 'isl.fb.crabLevel' : 'isl.fb.crabLevelMax', { n: b.level, m: b.next }), ...helpedH, b.follower ? t('isl.fb.crabSayFollower', { name: b.follower }) : t('isl.fb.crabNobody')].join('. '));
+    speak([t('isl.fb.crabs'), t('isl.fb.crabSay', { n: b.helped }), how, t(b.next ? 'isl.fb.crabLevel' : 'isl.fb.crabLevelMax', { n: b.level, m: b.next }), ...helpedH, b.follower ? t('isl.fb.crabSayFollower', { name: b.follower }) : t('isl.fb.crabNobody')].join('. '), 'narrator');
   }
 
   picture(id) {
@@ -202,7 +202,7 @@ export class FriendsBook {
         ${heartsHtml(a.hearts || 0, 5)}</div>`).join('');
       host.hud.setPanel(`<h2>${esc(t('isl.fb.title'))}</h2><div class="nm" style="text-align:center;font-weight:700;color:#8a5a32;margin-bottom:6px">${esc(t('isl.fb.animals'))}</div>
         <div class="isl-fbanimals">${rows}</div><div class="isl-foot" style="opacity:1">${esc(t('isl.fb.animalsTip'))}</div>${dots}${foot}`);
-      if (read) speak(`${t('isl.fb.animals')}. ${this.S.ranch.animals.map((a) => t('isl.fb.animalSay', { name: a.name, n: a.hearts || 0 })).join(' ')}`);
+      if (read) speak(`${t('isl.fb.animals')}. ${this.S.ranch.animals.map((a) => t('isl.fb.animalSay', { name: a.name, n: a.hearts || 0 })).join(' ')}`, 'narrator');
       return;
     }
     const n = host.npc(id), st = npcState(this.S, id), def = NPCS[id];
@@ -225,9 +225,9 @@ export class FriendsBook {
         <div class="nm">${esc(met ? name : '???')}${met && id !== 'mumble' ? heartsHtml(h) : ''}${met && id === 'mumble' ? `<small style="font-size:.55em;opacity:.7">${esc(t('isl.fb.mumble'))}</small>` : ''}</div>
         <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl></div>${dots}${foot}`);
     if (!read) return;
-    if (!met) { speak(t('isl.fb.notMet')); return; }
+    if (!met) { speak(t('isl.fb.notMet'), 'narrator'); return; }
     const k = this.known[id] || {};
     const loves = def.loves.filter((it) => k[it] === 'love').map((it) => t(`isl.i.${it}`));
-    speak([t('isl.fb.say', { name, n: h }), bday, loves.length ? t('isl.fb.sayLoves', { list: loves.join(t('isl.or')) }) : '', n ? this.whereNow(n) : '', this.nextUp(id)].filter(Boolean).join('. '), def.voice);
+    speak([t('isl.fb.say', { name, n: h }), bday, loves.length ? t('isl.fb.sayLoves', { list: loves.join(t('isl.or')) }) : '', n ? this.whereNow(n) : '', this.nextUp(id)].filter(Boolean).join('. '), 'narrator');
   }
 }

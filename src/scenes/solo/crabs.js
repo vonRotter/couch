@@ -55,7 +55,7 @@ export class CrabCare {
     const rel = releaseOldCrabs(S);
     if (rel.n) {
       S.mail.push({ id: 'crabThanks', from: 'shelby', coins: rel.coins, items: [['spiralShell', 1]] });
-      host.later(1.6, () => { const txt = t('crab.t.released', { n: rel.n }); host.game.ui.toast(txt, 3200); speak(txt); });
+      host.later(1.6, () => { const txt = t('crab.t.released', { n: rel.n }); host.game.ui.toast(txt, 3200); speak(txt, 'narrator'); });
       host.markDirty();
     }
     this.group = new THREE.Group(); // today's crabs (out on the beaches)
@@ -149,7 +149,7 @@ export class CrabCare {
       host.later(1.2 + (i - from - 1) * 2.5, () => {
         const txt = t(`crab.cove.level${i}`);
         host.game.ui.toast(txt, 3200);
-        speak(txt);
+        speak(txt, 'narrator');
         host.confetti.burst(new THREE.Vector3(COVE.x, 2.2, COVE.z), 0, { count: 60, speed: 7, up: 5, life: 1.6, gravity: -7, colors: [0xff6a4a, 0xffd23f, 0xff9fc0, 0x8ff0ff] });
         host.game.audio.play('fanfare');
         host.grant(COVE_LEVELS[i].reward);
@@ -266,7 +266,7 @@ export class CrabCare {
   sayT(key, vars, ms = 2600) {
     const txt = t(key, vars);
     this.host.game.ui.toast(txt, ms);
-    speak(txt);
+    speak(txt, 'narrator');
   }
 
   hearts(x, z, y = 0.8) {
@@ -425,13 +425,13 @@ export class CrabCare {
     }).join('');
     host.hud.setPanel(`<h2>${esc(t('crab.pick.title'))}</h2><div class="isl-foot" style="opacity:1;margin:0 0 6px">${esc(t('crab.pick.sub', { n: C.helped }))}</div>
       <div class="isl-rows">${rows}</div><div class="isl-foot">${esc(tFor(host.player?.p, 'crab.pick.hint'))}</div>`);
-    if (read) speak(`${t('crab.pick.title')}. ${t('crab.pick.sub', { n: C.helped })}`);
+    if (read) speak(`${t('crab.pick.title')}. ${t('crab.pick.sub', { n: C.helped })}`, 'narrator');
   }
 
   updatePicker(inp, dt) {
     const host = this.host, list = this.pickList();
     this.pick.t += dt;
-    if (inp.stepY) { this.pick.i = THREE.MathUtils.clamp(this.pick.i - inp.stepY, 0, list.length - 1); host.game.audio.play('select'); this.renderPicker(); speak(list[this.pick.i] ? this.friendName(list[this.pick.i]) : t('crab.pick.nobody')); }
+    if (inp.stepY) { this.pick.i = THREE.MathUtils.clamp(this.pick.i - inp.stepY, 0, list.length - 1); host.game.audio.play('select'); this.renderPicker(); speak(list[this.pick.i] ? this.friendName(list[this.pick.i]) : t('crab.pick.nobody'), 'narrator'); }
     if (this.pick.t < 0.25) return;
     if (inp.bPressed) { this.closePicker(); return; }
     if (inp.aPressed) {

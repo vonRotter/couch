@@ -17,7 +17,7 @@ export const MenuMixin = {
     if (this.hasSave) opts.push({ id: 'continue', text: 'lh.continue' });
     opts.push({ id: 'new', text: 'lh.new', sub: this.hasSave ? 'lh.newSub' : '' });
     this.title = { options: opts, index: 0, t: 0 };
-    speak(`${t('game.lighthouse')}. ${t('lh.sub')}`);
+    speak(`${t('game.lighthouse')}. ${t('lh.sub')}`, 'narrator');
     this.renderTitle();
   },
 
@@ -178,7 +178,7 @@ export const MenuMixin = {
     this.tbcT = 0;
     this.game.audio.playMusic('results');
     this.hud.setBig({ t1: t('lh.tbc'), t2: t('lh.tbcSub'), t3: tFor(this.host.players[0], 'lh.tbcHint') });
-    speak(`${t('lh.tbc')} ${t('lh.tbcSub')}`);
+    speak(`${t('lh.tbc')} ${t('lh.tbcSub')}`, 'narrator');
     this.sfx('fanfare');
     for (let i = 0; i < 4; i++) this.later(i * 0.4, () => this.confettiAt(this.hero.x + (Math.random() - 0.5) * 6, this.hero.z - 1));
   },

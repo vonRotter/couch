@@ -362,7 +362,7 @@ export class Seasons {
       <div class="isl-foot" style="opacity:1;font-size:clamp(14px,1.4vw,20px);margin-top:6px">${esc(t('isl.cal.today'))}: ${esc(sub || '—')}</div>
       ${story ? `<div class="isl-foot" style="opacity:1;font-size:clamp(13px,1.25vw,18px);margin-top:4px">📖 ${esc(story)}</div>` : ''}
       <div class="isl-foot">${esc(tFor(host.player?.p, 'isl.cal.hint'))}</div>`);
-    if (sub || story) speak([sub ? `${t('isl.cal.today')}: ${sub}` : '', story].filter(Boolean).join('. '));
+    if (sub || story) speak([sub ? `${t('isl.cal.today')}: ${sub}` : '', story].filter(Boolean).join('. '), 'narrator');
     host.game.audio.play('select');
   }
 

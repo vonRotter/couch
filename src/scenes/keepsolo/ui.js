@@ -496,7 +496,7 @@ export class ClassPicker {
     this.el.className = 'ks-panel';
     scene.hud.layer.appendChild(this.el);
     this.render();
-    say(`${t('game.keepsolo')}. ${t('ks.pickSay')}`);
+    say(`${t('game.keepsolo')}. ${t('ks.pickSay')}`, 'narrator');
   }
 
   render() {
@@ -520,7 +520,7 @@ export class ClassPicker {
     this.render();
     const cls = CLASS_IDS[this.i];
     this.s.previewClass(cls);
-    say(`${t(`ks.cls.${cls}`)}. ${t(`ks.descSay.${cls}`)}`);
+    say(`${t(`ks.cls.${cls}`)}. ${t(`ks.descSay.${cls}`)}`, 'narrator');
   }
 
   update(dt, d) {
@@ -594,7 +594,7 @@ export class SkillMenu {
       this.s.game.audio.play('select');
       this.render();
       const x = this.entries[this.i];
-      say(x.kind === 'skill' ? t(`ks.skill.${x.id}`) : x.kind === 'use' ? t(`ks.use.${x.id}`) : t(`ks.m.${x.id}`));
+      say(x.kind === 'skill' ? t(`ks.skill.${x.id}`) : x.kind === 'use' ? t(`ks.use.${x.id}`) : t(`ks.m.${x.id}`), 'narrator');
     }
     const m = this.s.mouse;
     const row = m.leftPressed ? m.element()?.closest?.('[data-entry]') : null;

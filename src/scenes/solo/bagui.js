@@ -287,7 +287,7 @@ export class BagUi {
     if (!text || text === this.spoken) return;
     this.spoken = text;
     this.lastSpoken = text;
-    speak(text);
+    speak(text, 'narrator');
   }
 
   // ---------- the mouse ----------

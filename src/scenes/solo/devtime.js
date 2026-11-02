@@ -70,7 +70,7 @@ function mount() {
     for (const b of buttons) r.appendChild(b);
     el.appendChild(r);
   };
-  el.innerHTML = '<b>Time machine</b> <span style="opacity:.6">(F9)</span>';
+  el.innerHTML = '<b>Time machine</b> <span style="opacity:.6">(F9 · F10: voices)</span>';
   el.appendChild(info);
   row('Go to the next', [6, 9, 12, 15, 18, 21, 0, 3].map((h) => btn(`${String(h).padStart(2, '0')}:00`, () => toHour(h))));
   row('Skip ahead', [btn('+1 h', () => forward(HOUR)), btn('+6 h', () => forward(6 * HOUR)), btn('+1 day', () => forward(DAY)), btn('+1 week', () => forward(7 * DAY))]);

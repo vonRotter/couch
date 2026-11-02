@@ -7,6 +7,7 @@ import { QUESTS, GOLD_SHELLS } from './rooms.js';
 // Dialog, townsfolk, chests, items, the shop, beacon stones, the great lamp and the little cutscenes.
 // Mixed into LighthouseEngine. Every line on screen is also read aloud (if voice is on).
 
+// Name colors per speaker (their read-aloud voice types are in src/core/voices.js, 'lh.<id>').
 export const VOICES = {
   keeper: { pitch: 0.7, rate: 0.88, css: '#6b7bb0' },
   olga: { pitch: 1.25, rate: 0.85, css: '#9b5de5' },
@@ -45,7 +46,7 @@ export const StoryMixin = {
     d.choice = 0;
     const who = L.who === 'you' ? '' : t(`lh.who.${L.who}`);
     this.hud.setDialog({ who, text, css: L.who === 'you' ? this.host.players[0]?.css : v.css, choices: L.choices?.map((k) => t(k)), index: 0 });
-    speak(text, { pitch: v.pitch, rate: v.rate });
+    speak(text, `lh.${VOICES[L.who] ? L.who : 'you'}`); // voices.js: 'lh.keeper', 'lh.olga', ... (sign and you: the narrator)
     this.sfx('text');
   },
 
@@ -85,7 +86,7 @@ export const StoryMixin = {
     this.noticeCool = 2.2;
     this.noticeKey = key;
     this.game.ui.toast(t(key), 1800);
-    speak(t(key));
+    speak(t(key), 'narrator');
   },
 
   hintOnce(key) {

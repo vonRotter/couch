@@ -29,7 +29,7 @@ class BasePanel {
     this.msg = msg;
     this.good = good;
     this.s.game.audio.play(good ? 'star' : 'bump');
-    if (speak) say(msg);
+    if (speak) say(msg, 'narrator');
     this.render();
   }
 
@@ -68,7 +68,7 @@ export class CharPanel extends BasePanel {
     this.msg = '';
     this.render();
     const hs = scene.hs;
-    say(`${t(`ks.cls.${scene.cls}`)}. ${t('ks.lv', { n: hs.level })}. ${hs.statPts ? t('ks.ptsLeft', { n: hs.statPts }) : ''}`);
+    say(`${t(`ks.cls.${scene.cls}`)}. ${t('ks.lv', { n: hs.level })}. ${hs.statPts ? t('ks.ptsLeft', { n: hs.statPts }) : ''}`, 'narrator');
   }
 
   render() {
@@ -113,7 +113,7 @@ export class TreePanel extends BasePanel {
     this.msg = '';
     this.drag = null;
     this.render();
-    say(`${t('ks.treeTitle')}. ${scene.hs.skillPts ? t('ks.skillPtsLeft', { n: scene.hs.skillPts }) : ''}`);
+    say(`${t('ks.treeTitle')}. ${scene.hs.skillPts ? t('ks.skillPtsLeft', { n: scene.hs.skillPts }) : ''}`, 'narrator');
   }
 
   nodeHtml(def) {
@@ -170,7 +170,7 @@ export class TreePanel extends BasePanel {
   hover(el) {
     const n = el?.closest?.('[data-skill]');
     const id = n?.dataset.skill || null;
-    if (id !== this.said && id) { this.said = id; say(`${t(`ks.skill.${id}`)}. ${t(`ks.skillDesc.${id}`)}`); }
+    if (id !== this.said && id) { this.said = id; say(`${t(`ks.skill.${id}`)}. ${t(`ks.skillDesc.${id}`)}`, 'narrator'); }
   }
 
   click(el) {

@@ -219,7 +219,7 @@ export class KeepSoloScene extends MiniGame {
     this.saveNow();
   }
 
-  say(text) { say(text); }
+  say(text) { say(text, 'narrator'); }
 
   /** How much better (positive) an item would make this hero; null if it is for another class. */
   compareItemFor(item) {

@@ -546,12 +546,12 @@ const deck = {
   actors(s, P) {
     return {
       grum: {
-        name: 'adv.who.grum', css: GRUM_CSS, voice: { pitch: 0.5, rate: 0.85 },
+        name: 'adv.who.grum', css: GRUM_CSS,
         head: (v) => P.grum.localToWorld(v.set(0, 1.0, 0)),
       },
       gull: mineActor(s, P),
-      wob: { name: 'adv.who.wob', css: WOB_CSS, voice: { pitch: 0.75, rate: 1.15 }, head: (v) => P.wob.localToWorld(v.set(0, 0.95, 0)) },
-      claw: { name: 'adv.who.claw', css: CLAW_CSS, voice: { pitch: 1.7, rate: 1.25 }, sfx: 'clack', head: (v) => P.claw.localToWorld(v.set(0, 0.95, 0)) },
+      wob: { name: 'adv.who.wob', css: WOB_CSS, head: (v) => P.wob.localToWorld(v.set(0, 0.95, 0)) },
+      claw: { name: 'adv.who.claw', css: CLAW_CSS, sfx: 'clack', head: (v) => P.claw.localToWorld(v.set(0, 0.95, 0)) },
     };
   },
 
@@ -1131,8 +1131,8 @@ const square = {
   actors(s, P) {
     return {
       gull: mineActor(s, P),
-      claw: { name: 'adv.who.claw', css: CLAW_CSS, voice: { pitch: 1.7, rate: 1.25 }, sfx: 'clack', head: (v) => P.claw.localToWorld(v.set(0, 0.95, 0)), face: (dir) => s.tween(P.claw, { ry: dir < 0 ? -0.5 : 0.5 }, 0.2) },
-      board: { name: '', kind: 'note', css: '#c9a25a', voice: { pitch: 1.0, rate: 0.95 }, head: (v) => v.set(4.5, 1.95, -1.3) },
+      claw: { name: 'adv.who.claw', css: CLAW_CSS, sfx: 'clack', head: (v) => P.claw.localToWorld(v.set(0, 0.95, 0)), face: (dir) => s.tween(P.claw, { ry: dir < 0 ? -0.5 : 0.5 }, 0.2) },
+      board: { name: '', kind: 'note', css: '#c9a25a', head: (v) => v.set(4.5, 1.95, -1.3) },
     };
   },
 
@@ -1608,12 +1608,12 @@ const parlor = {
     return {
       gull: mineActor(s, P),
       granny: {
-        name: 'adv.who.granny', css: GRAN_CSS, voice: { pitch: 1.25, rate: 0.82 },
+        name: 'adv.who.granny', css: GRAN_CSS,
         head: (v) => P.granny.localToWorld(v.set(0, 1.55, 0)),
         face: (dir) => s.tween(P.granny, { ry: dir < 0 ? -0.4 : 0.4 }, 0.2),
       },
-      wob: { name: 'adv.who.wob', css: WOB_CSS, voice: { pitch: 0.75, rate: 1.15 }, head: (v) => P.wob.localToWorld(v.set(0, 0.95, 0)) },
-      menu: { name: '', kind: 'note', css: '#c9a25a', voice: { pitch: 1.0, rate: 0.95 }, head: (v) => v.set(1.45, 3.4, -2.2) },
+      wob: { name: 'adv.who.wob', css: WOB_CSS, head: (v) => P.wob.localToWorld(v.set(0, 0.95, 0)) },
+      menu: { name: '', kind: 'note', css: '#c9a25a', head: (v) => v.set(1.45, 3.4, -2.2) },
     };
   },
 

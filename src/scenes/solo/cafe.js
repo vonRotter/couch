@@ -9,7 +9,7 @@ import { RECIPES, RECIPE_IDS, matches, isRiverFish } from './sea.js';
 import { count, give, take, hourOf, now } from './save.js';
 import { CAFE, heightAt } from './map.js';
 import { makeCafeBoards, makeCafeOpen, makeCafeTable, mesh, box } from './models.js';
-import { NPCS, npcState, makeNpcModel } from './npcs.js';
+import { npcState, makeNpcModel } from './npcs.js';
 
 // The Driftwood Café on the beach: fix it (wood + coins), cook dishes at the stove from the recipe book,
 // and open for guests (a Dave the Diver style service: guests order what you cooked, you pick the guest
@@ -97,7 +97,7 @@ export class Cafe {
     this.menu = { i: this.menu?.i || 0, t: 0 };
     this.renderMenu();
     host.game.audio.play('select');
-    speak(t('isl.menu.intro', { n: MAX_SPECIALS }));
+    speak(t('isl.menu.intro', { n: MAX_SPECIALS }), 'narrator');
   }
 
   renderMenu() {
@@ -322,7 +322,7 @@ export class Cafe {
       g.pat = Math.max(1, g.pat - 6);
       g.say = t('isl.serve.wrong');
       g.sayT = 2;
-      speak(g.say, g.who ? NPCS[g.who].voice : {});
+      speak(g.say, g.who ? `isl.${g.who}` : 'isl.visitor');
       host.game.audio.play('bump');
       return;
     }
@@ -433,7 +433,7 @@ export class Cafe {
     sv.sumT = 0;
     const line = sv.served ? t('isl.serve.summary', { n: sv.served, c: sv.coins, t: sv.tips }) : t('isl.serve.none');
     host.hud.setPanel(`<h2>${esc(t('isl.serve.done'))}</h2><div class="isl-letter">${esc(line)}</div><div class="isl-foot">${esc(tFor(host.player?.p, 'isl.ok'))}</div>`);
-    speak(line);
+    speak(line, 'narrator');
     host.game.audio.play(sv.served ? 'fanfare' : 'leave');
   }
 

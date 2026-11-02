@@ -33,10 +33,10 @@ export function addMine(s, P) {
   if (s.flag('gullOnHead')) putGullOnHead(s, P);
 }
 
-/** Mine's speaker entry (voice: high and fast, a squawk before every line). */
+/** Mine's speaker entry (a squawk before every line; voice type 'adv.gull' in src/core/voices.js). */
 export function mineActor(s, P) {
   return {
-    name: () => (s.flag('gullOnHead') ? 'adv.who.mine' : 'adv.who.gull'), css: GULL_CSS, voice: { pitch: 2, rate: 1.3 }, sfx: 'mine',
+    name: () => (s.flag('gullOnHead') ? 'adv.who.mine' : 'adv.who.gull'), css: GULL_CSS, sfx: 'mine',
     head: (v) => P.gull.localToWorld(v.set(0.2, 0.75, 0)),
   };
 }

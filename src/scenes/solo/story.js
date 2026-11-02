@@ -214,7 +214,7 @@ export class Story {
 
   news(text) {
     this.host.game.ui.toast(text, 3000);
-    speak(text);
+    speak(text, 'narrator');
     this.host.game.audio.play('star');
   }
 
@@ -457,7 +457,7 @@ export class Story {
     const k = S.crumbs.filter(Boolean).length;
     const txt = t(k >= CRUMBS.length ? 'story.crumbLast' : 'story.crumbFound', { n: k, m: CRUMBS.length });
     host.game.ui.toast(txt, 2400);
-    speak(txt);
+    speak(txt, 'narrator');
     this.checkGoals(true);
     host.markDirty();
   }
@@ -620,7 +620,7 @@ export class Story {
       this.fadeEl.className = 'isl-fade';
       this.host.game.ui.labels.appendChild(this.fadeEl);
     }
-    if (text) { this.fadeEl.innerHTML = `<span>${esc(text)}</span>`; speak(text); } else if (to > 0) this.fadeEl.innerHTML = '';
+    if (text) { this.fadeEl.innerHTML = `<span>${esc(text)}</span>`; speak(text, 'narrator'); } else if (to > 0) this.fadeEl.innerHTML = '';
     this.fade = { from: Number(this.fadeEl.style.opacity) || 0, to, dur, t: 0, then, hold: text ? 1.6 : 0 };
   }
 

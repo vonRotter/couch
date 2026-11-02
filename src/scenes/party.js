@@ -104,7 +104,7 @@ export class PartyScene extends MiniGame {
     this.ready = new Map(this.players.map((p) => [p, false]));
     this.panelEl = this.game.ui.panel('', 'panel picker');
     this.renderHowTo();
-    say(`${this.round.title}. ${this.round.hint}`);
+    say(`${this.round.title}. ${this.round.hint}`, 'narrator');
   }
 
   renderHowTo() {
