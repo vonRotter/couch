@@ -6,6 +6,7 @@ import { now, hourOf } from './save.js';
 import { dayKey, dayRand, rainyOn } from './calendar.js';
 import { heightAt } from './map.js';
 import { makeLostThing } from './models9.js';
+import { npcState, heartsOf } from './npcs.js';
 
 // Villagers play with you (the owner's "More fun" list):
 // - They wave when you jump near them (a hop and a 👋).
@@ -122,11 +123,15 @@ export class Play {
   /** A play invitation in a chat (island.talkTo): tag with Pip, snowballs in winter, hide-and-seek with Mumble. */
   offer(n) {
     const host = this.host, games = host.games, D = this.day();
+    // friends play with you (two hearts and up), once a day each: an invitation at the end of a chat
+    if (heartsOf(npcState(this.S, n.id)) < 2 || D.offered?.includes(n.id)) return null;
     const yes = (fn) => ({ choices: ['isl.yes', 'isl.no'], onChoice: (i) => { if (i === 0) fn(); else n.talking = false; } });
-    if (n.id === 'mumble' && games.canHide()) return { who: 'mumble', key: 'play.hide.ask', ...yes(() => { n.talking = false; games.startHide(); }) };
-    if (n.id === 'pip' && games.canSnow()) return { who: 'pip', key: 'play.snow.ask', ...yes(() => { n.talking = false; games.startSnow(); }) };
-    if (n.id === 'pip' && this.canTag() && D.tag < 2) return { who: 'pip', key: 'play.tag.ask', ...yes(() => { n.talking = false; this.startTag(n); }) };
-    return null;
+    let line = null;
+    if (n.id === 'mumble' && games.canHide()) line = { who: 'mumble', key: 'play.hide.ask', ...yes(() => { n.talking = false; games.startHide(); }) };
+    else if (n.id === 'pip' && games.canSnow()) line = { who: 'pip', key: 'play.snow.ask', ...yes(() => { n.talking = false; games.startSnow(); }) };
+    else if (n.id === 'pip' && this.canTag() && D.tag < 2) line = { who: 'pip', key: 'play.tag.ask', ...yes(() => { n.talking = false; this.startTag(n); }) };
+    if (line) D.offered = [...(D.offered || []), n.id];
+    return line;
   }
 
   // ---------- the fun task ----------

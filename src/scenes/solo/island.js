@@ -933,6 +933,8 @@ export class SoloIslandScene extends BaseScene {
     if (sea) {
       if (!st.met) { st.met = true; sea.lines.unshift(L('meet')); }
       if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
+      // (on festival days too: today's little task at the end)
+      if (!sea.lines.some((l) => l.choices)) { const ask = this.play.askLine(n); if (ask) sea.lines.push(ask); }
       this.say(sea.lines, () => { sea.after?.(); this.markDirty(); this.afterTalk(n); });
       return;
     }
@@ -1312,8 +1314,9 @@ export class SoloIslandScene extends BaseScene {
   /** Jump physics in the other modes (talking, a panel...): a hop always lands, nothing moves sideways. */
   updateJump(dt) {
     const P = this.player;
-    if (!P || this.mode === 'walk' || this.mode === 'sled' || this.mode === 'sail' || !P.air) return;
-    this.updateVertical(P, dt, this.walkState);
+    if (!P || this.mode === 'walk' || this.mode === 'sled' || this.mode === 'sail') return;
+    this.groundCheck(P, this.walkState); // (a scene may move you while it talks)
+    if (P.air) this.updateVertical(P, dt, this.walkState);
   }
 
   /**
