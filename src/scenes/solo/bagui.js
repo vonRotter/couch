@@ -21,12 +21,12 @@ import { makeChest } from './models8.js';
 const CSS = `
 .zb-panel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: auto; background: rgba(255,250,240,.98); border-radius: 24px;
   border: 4px solid #8a5a32; box-shadow: 0 10px 0 rgba(43,35,64,.3); padding: 12px 18px 10px; box-sizing: border-box; font-weight: 600; --s: clamp(36px, min(6.2vh, 4.8vw), 62px);
-  user-select: none; -webkit-user-select: none; max-height: 96vh; }
+  user-select: none; -webkit-user-select: none; max-height: 96vh; width: calc(9 * var(--s) + 40px + 10px + 36px + 8px); }
 .zb-panel.chest { --s: clamp(32px, min(4.9vh, 4.4vw), 52px); }
 .zb-panel h3 { margin: 4px 0 4px; font-size: clamp(14px, 1.4vw, 21px); color: #8a5a32; display: flex; align-items: center; gap: 8px; }
 .zb-panel h3 small { font-weight: 600; opacity: .7; font-size: .8em; }
 .zb-panel h3 .ic { width: 1.4em; height: 1.4em; }
-.zb-grid { display: grid; grid-template-columns: repeat(9, var(--s)); gap: 5px; }
+.zb-grid { display: grid; grid-template-columns: repeat(9, var(--s)); gap: 5px; width: max-content; }
 .zb-grid.chestgrid { max-height: calc(4 * (var(--s) + 5px)); overflow-y: auto; }
 .zb-grid.hot { margin-top: 8px; padding: 5px; background: rgba(43,35,64,.55); border-radius: 14px; }
 .zb-slot { width: var(--s); height: var(--s); border-radius: 10px; background: rgba(138,90,50,.12); position: relative; padding: 5px; box-sizing: border-box; cursor: pointer; }
@@ -272,7 +272,7 @@ export class BagUi {
     const used = S.inv.length, size = bagSize(S);
     let h = '';
     if (this.chest) h += `<h3><span class="ic">${icon('chest')}</span>${esc(t('zb.chest'))} <small>${esc(t('zb.count', { n: S.chest.length, m: chestSize(S) }))}</small></h3>${this.grid('chest', 0, chestSize(S), 'chestgrid')}`;
-    h += `<h3><span class="ic">${icon(S.bagRows >= 4 ? 'backpack2' : S.bagRows >= 3 ? 'backpack1' : 'chest')}</span>${esc(t('zb.bag'))} <small>${esc(t('zb.count', { n: used, m: size }))}</small></h3>`;
+    h += `<h3><span class="ic">${icon(S.bagRows >= 4 ? 'backpack2' : 'backpack1')}</span>${esc(t('zb.bag'))} <small>${esc(t('zb.count', { n: used, m: size }))}</small></h3>`;
     h += this.grid('inv', HOTBAR, size);
     h += this.grid('inv', 0, HOTBAR, 'hot');
     const tipP = this.hover || this.cur;

@@ -26,7 +26,7 @@ const CSS = `
 .isl-hotbar { left: 50%; bottom: 1.4vh; transform: translateX(-50%); display: flex; gap: 6px; background: rgba(43,35,64,.55); padding: 6px; border-radius: 18px; }
 .isl-slot { width: clamp(42px, 4.2vw, 64px); height: clamp(42px, 4.2vw, 64px); border-radius: 12px; background: rgba(255,250,240,.9); position: relative; padding: 6px; box-sizing: border-box; }
 .isl-more { color: #fff; font-weight: 700; align-self: center; padding: 0 2px; }
-.isl-slot.empty { background: rgba(255,250,240,.45); }
+.isl-slot.empty { background: rgba(255,250,240,.72); }
 .isl-slot.on { background: #ffd84a; box-shadow: 0 0 0 3px #fff; transform: translateY(-4px); }
 .isl-slot .n { position: absolute; right: 3px; bottom: 0; font-weight: 700; font-size: clamp(11px, 1vw, 16px); paint-order: stroke fill; -webkit-text-stroke: .25em #fff; }
 .isl-slot .k { position: absolute; left: 4px; top: 1px; font-size: 10px; font-weight: 700; opacity: .5; }

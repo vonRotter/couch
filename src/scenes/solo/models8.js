@@ -16,8 +16,8 @@ export const ownToon = (color, emissive = 0x000000) => {
   return m;
 };
 /** A fresh additive glow material. */
-export const glowMat = (color, opacity = 0.5) => {
-  const m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending });
+export const glowMat = (color, opacity = 0.5, additive = true) => {
+  const m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending });
   m.userData = {};
   return m;
 };

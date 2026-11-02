@@ -20,7 +20,7 @@ import { BATTLE_COUNT, ISLANDS as BREACH_ISLANDS } from '../breach/levels.js';
 import { Ranch } from './animals.js';
 import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
-import { now, hourOf, since, loadIsland, count, owns, give, take, held as heldOf, freeSlot, HOTBAR, MIN, HOUR } from './save.js';
+import { now, hourOf, since, loadIsland, count, owns, give, take, held as heldOf, freeSlot, fixSlots, HOTBAR, MIN, HOUR } from './save.js';
 import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures, inSeason } from './items.js';
 import { FISH, FISH_IDS, RECIPES, SEA, NIGHT_FINDS, seaModel, makeDish, hasSeaModel } from './sea.js';
 import { thumb } from './thumbs.js';
@@ -390,9 +390,12 @@ export class SoloIslandScene extends BaseScene {
 
   secondTick() {
     const at = now();
+    fixSlots(this.save); // every stack keeps its own slot (a full bag sends extras to the chest)
     this.farm.tick(at);
     // tutorial: a crop became ripe
     if (this.save.tut === 4 && Object.values(this.save.tiles).some((tl) => stageOf(tl) === 3)) this.setTut(5);
+    // tutorial: the seeds got wet another way (rain, snow, a sprinkler): the watering step is done
+    if (this.save.tut === 3 && Object.values(this.save.tiles).some((tl) => tl.crop && tl.wetUntil > at)) this.setTut(4);
     for (const n of this.npcs) this.scheduleNpc(n, at);
     for (const b of this.branches) b.g.visible = since(this.save.branches[b.i], BRANCH_RESPAWN, at);
     for (const [id, f] of Object.entries(this.finds)) f.g.visible = this.findActive(id);
@@ -1802,7 +1805,7 @@ export class SoloIslandScene extends BaseScene {
     if (tool !== P.toolId) {
       if (P.toolMesh) P.hand.remove(P.toolMesh);
       P.toolMesh = tool ? makeZipZap() : null;
-      if (P.toolMesh) { P.toolMesh.scale.setScalar(1.05); P.hand.add(P.toolMesh); }
+      if (P.toolMesh) { P.toolMesh.scale.setScalar(1.55); P.hand.add(P.toolMesh); }
       P.toolId = tool;
     }
     this.swing = Math.max(0, this.swing - dt * 3.5);

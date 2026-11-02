@@ -56,14 +56,14 @@ const STONES = [[18, -28], [32, -24], [42, -27], [-6, -30], [50, 4], [20, 25], [
 const GRASS = [[-21, 6], [-21.5, 10.5], [-6.5, 6], [-5.5, 10], [-8, 15], [40, -6], [44, -1], [36, -2], [-36, -12], [-42, -2], [12, 14], [16, 18], [24, 6], [-2, 16]];
 const BIG = [[47, -22], [-38, 17], [36, 22]];
 const TREES = [[-32, -3.5], [9.5, 20], [29, 13], [46.5, 9.5], [35, -19], [-10, -24], [-19, -16.5], [1.5, -17]];
-const ISLE_STONES = [[-13.5, 191], [10.5, 200], [-1.5, 186.5]];
+const ISLE_STONES = [[-13.5, 191], [12, 188], [-1.5, 186.5]];
 const ISLE_GRASS = [[-8, 196.5], [2.5, 194], [9.5, 191.5]];
-const ISLE_BIG = [[-12, 199]];
+const ISLE_BIG = [[-5, 189]];
 const RESPAWN = { stone: 20 * MIN, grass: 10 * MIN, big: 60 * MIN, tree: 30 * MIN };
 const SAVE_KEY = { stone: 'stones', grass: 'grass', big: 'big', tree: 'trees' };
 const REACH = { stone: 1.6, grass: 1.4, big: 2.0, tree: 1.7 };
 const GLOW = { stone: 'rock', big: 'rock', grass: 'grass', tree: 'tree' };
-const GLOW_COLOR = { rock: 0xff8fe0, grass: 0xb8ff6a, tree: 0xffe066 };
+const GLOW_COLOR = { rock: 0xff5fd0, grass: 0x8ddf4a, tree: 0xffc93c };
 const SCAN_R = 11;
 const CAVE_CRYSTALS = ['roseQuartz', 'skyTopaz', 'sunCitrine'];
 
@@ -95,7 +95,7 @@ export class ZipZap {
     }
     // the scan glow: one ring and one dome material per kind, pulsing together
     this.glowMats = {};
-    for (const [k, c] of Object.entries(GLOW_COLOR)) this.glowMats[k] = { ring: glowMat(c, 0.5), dome: glowMat(c, 0.12) };
+    for (const [k, c] of Object.entries(GLOW_COLOR)) this.glowMats[k] = { ring: glowMat(c, 0.6, false), dome: glowMat(c, 0.15, false) }; // (tints, so it also shows on snow)
     this.targets = [];
     const add = (kind, list, make, keyBase = 0) => list.map(([x, z], j) => {
       const g = make();
@@ -326,7 +326,7 @@ export class ZipZap {
     const holding = walking && this.holding();
     // the scan: things to break, cut and chop glow softly near you
     const pulse = 0.5 + 0.5 * Math.sin(this.time * 4);
-    for (const m of Object.values(this.glowMats)) { m.ring.opacity = 0.32 + pulse * 0.35; m.dome.opacity = 0.07 + pulse * 0.09; }
+    for (const m of Object.values(this.glowMats)) { m.ring.opacity = 0.5 + pulse * 0.4; m.dome.opacity = 0.1 + pulse * 0.12; }
     for (const o of this.targets) {
       const d = P ? Math.hypot(P.x - o.x, P.z - o.z) : 99;
       o.glow.visible = holding && d < SCAN_R;
@@ -381,7 +381,7 @@ export class ZipZap {
       this.beam.position.copy(_v);
       this.beam.quaternion.setFromUnitVectors(_up, dir.normalize());
       const k = this.beamT / 0.34;
-      const w = 0.06 + 0.04 * Math.sin(this.time * 40);
+      const w = 0.11 + 0.04 * Math.sin(this.time * 40);
       this.beam.scale.set(w * (0.6 + k * 0.6), len, w * (0.6 + k * 0.6));
       this.core.scale.set(0.4, 1, 0.4);
       this.beamMat.opacity = 0.75 * k + 0.1;
