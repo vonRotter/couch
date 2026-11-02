@@ -140,6 +140,7 @@ export class IslandHud {
 
   /** Cut-scene look (boat trip, Lamp Festival): only the dialog and the prompt stay. */
   setCinema(on) {
+    this.cinemaOn = on;
     for (const el of [this.top, this.tasks, this.keys, this.hotbar, this.selname]) el.style.visibility = on ? 'hidden' : '';
   }
 

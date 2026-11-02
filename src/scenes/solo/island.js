@@ -1942,8 +1942,9 @@ export class SoloIslandScene extends BaseScene {
     // the hotbar: nine slots (the bag panel shows its own copy)
     const slots = Array.from({ length: HOTBAR }, (_, i) => { const it = S.inv.find((x) => x.slot === i); return it ? { ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) } : null; });
     if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setSlots(slots, S.sel);
-    this.hud.hotbar.style.visibility = this.mode === 'bag' ? 'hidden' : '';
-    this.hud.selname.style.visibility = this.mode === 'bag' ? 'hidden' : '';
+    const hide = this.mode === 'bag' || this.hud.cinemaOn ? 'hidden' : ''; // (cut-scenes hide it too)
+    this.hud.hotbar.style.visibility = hide;
+    this.hud.selname.style.visibility = hide;
     // things that went to the cottage chest because the bag was full
     if (S.toChest && this.mode === 'walk') {
       const one = S.toChest === 1 && S.toChestId;
