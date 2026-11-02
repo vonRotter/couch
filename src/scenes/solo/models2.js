@@ -213,20 +213,7 @@ export function makePorch() {
   return g;
 }
 
-/** A pile of rock to break with the pickaxe (stone). */
-export function makeStoneNode() {
-  const g = new THREE.Group();
-  for (const [x, y, s] of [[0, 0.35, 0.55], [0.4, 0.25, 0.35], [-0.35, 0.2, 0.3]]) {
-    const r = mesh(ico(1, 0), 0xa8a2bf, x, y, 0);
-    r.scale.set(s, s * 0.8, s);
-    r.rotation.set(x, y * 4, 0.3);
-    g.add(r);
-  }
-  g.add(mesh(ico(0.08, 0), 0xffffff, 0.15, 0.55, 0.3, false));
-  return g;
-}
-
-/** Tall grass to cut with the scythe (hay and fiber). */
+/** Tall grass to cut with the Zip-Zap (hay and fiber). */
 export function makeTallGrass() {
   const g = new THREE.Group();
   for (let i = 0; i < 7; i++) {

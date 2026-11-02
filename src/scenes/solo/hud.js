@@ -26,6 +26,7 @@ const CSS = `
 .isl-hotbar { left: 50%; bottom: 1.4vh; transform: translateX(-50%); display: flex; gap: 6px; background: rgba(43,35,64,.55); padding: 6px; border-radius: 18px; }
 .isl-slot { width: clamp(42px, 4.2vw, 64px); height: clamp(42px, 4.2vw, 64px); border-radius: 12px; background: rgba(255,250,240,.9); position: relative; padding: 6px; box-sizing: border-box; }
 .isl-more { color: #fff; font-weight: 700; align-self: center; padding: 0 2px; }
+.isl-slot.empty { background: rgba(255,250,240,.45); }
 .isl-slot.on { background: #ffd84a; box-shadow: 0 0 0 3px #fff; transform: translateY(-4px); }
 .isl-slot .n { position: absolute; right: 3px; bottom: 0; font-weight: 700; font-size: clamp(11px, 1vw, 16px); paint-order: stroke fill; -webkit-text-stroke: .25em #fff; }
 .isl-slot .k { position: absolute; left: 4px; top: 1px; font-size: 10px; font-weight: 700; opacity: .5; }
@@ -176,6 +177,14 @@ export class IslandHud {
     const cur = items[sel];
     this.set('selname', this.selname, cur ? esc(open ? `${cur.name} · ${note ?? t('isl.bag')}` : cur.name) : '');
     this.hotbar.style.boxShadow = open ? '0 0 0 4px #ffd84a' : '';
+  }
+
+  /** The hotbar: nine fixed slots (null = empty), keys 1-9; the selected one is what you hold. */
+  setSlots(slots, sel) {
+    const html = slots.map((it, i) => `<div class="isl-slot ${i === sel ? 'on' : ''} ${it ? '' : 'empty'}"><span class="k">${i + 1}</span>${it ? icon(it.id) : ''}${it && (it.n > 1 || (it.kind !== 'tool' && it.kind !== 'book' && it.kind !== 'gadget')) ? `<span class="n">${it.n}</span>` : ''}</div>`).join('');
+    this.set('hotbar', this.hotbar, html);
+    this.set('selname', this.selname, slots[sel] ? esc(slots[sel].name) : '');
+    this.hotbar.style.boxShadow = '';
   }
 
   setDialog(d) {

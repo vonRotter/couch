@@ -20,7 +20,7 @@ import { BATTLE_COUNT, ISLANDS as BREACH_ISLANDS } from '../breach/levels.js';
 import { Ranch } from './animals.js';
 import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
-import { now, hourOf, since, loadIsland, count, give, take, MIN, HOUR } from './save.js';
+import { now, hourOf, since, loadIsland, count, owns, give, take, held as heldOf, freeSlot, HOTBAR, MIN, HOUR } from './save.js';
 import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures, inSeason } from './items.js';
 import { FISH, FISH_IDS, RECIPES, SEA, NIGHT_FINDS, seaModel, makeDish, hasSeaModel } from './sea.js';
 import { thumb } from './thumbs.js';
@@ -33,6 +33,10 @@ import { Homes, makeHomeMats } from './homes.js';
 import { FriendsBook } from './friends.js';
 import { CrabCare } from './crabs.js';
 import './strings9.js';
+import './strings10.js';
+import { ZipZap } from './zipzap.js';
+import { BagUi } from './bagui.js';
+import { makeZipZap } from './models8.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
 import { IslandHud } from './hud.js';
 import { Life } from './life.js';
@@ -45,7 +49,7 @@ import { Photo } from './photo.js';
 import { Tournament } from './contest.js';
 import { Story } from './story.js';
 import { LightTop } from './lighttop.js';
-import { mesh, box, sph, makeTool, makeDeco, makeBranch, makeSign } from './models.js';
+import { mesh, box, sph, makeDeco, makeBranch, makeSign } from './models.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
 // One player (with the profile's name, color and hat). Games are PLACES you walk to; some open through
@@ -61,7 +65,6 @@ const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];
 const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
 const PARTY = [0xff5d73, 0xffc93c, 0x3ddc97, 0x4cc9f0, 0x9b5de5];
-const ROCK_HITS = 5;
 const BRANCH_RESPAWN = 15 * MIN;
 const NPC_SPEED = 2.6;
 const TALK_R = 2.0;
@@ -216,6 +219,8 @@ export class SoloIslandScene extends BaseScene {
     this.homes = new Homes(this); // everyone's front door (milestone C)
     this.friends = new FriendsBook(this); // hearts, birthdays and favorite gifts (milestone C)
     this.crabs = new CrabCare(this); // crab friends: help crabs, Crab Cove, a crab who follows you (crabs.js)
+    this.zipzap = new ZipZap(this); // Pip's Zip-Zap: rocks, grass and trees to zap, the beam, the scan, upgrades
+    this.bagUi = new BagUi(this); // the bag panel (bag rows + hotbar) and the cottage chest
     this.farm.objModel = (id) => this.builder.model(id); // sprinklers and scarecrows on the field
     this.seasons = new Seasons(this);
     this.spawnNpcs();
@@ -392,7 +397,7 @@ export class SoloIslandScene extends BaseScene {
     for (const b of this.branches) b.g.visible = since(this.save.branches[b.i], BRANCH_RESPAWN, at);
     for (const [id, f] of Object.entries(this.finds)) f.g.visible = this.findActive(id);
     this.ranch.tick(at);
-    this.builder.tickGather(at);
+    this.zipzap.tick(at);
     this.seasons.tick(at);
     this.isle2.tick(at);
     this.crabs.tick(at);
@@ -593,41 +598,69 @@ export class SoloIslandScene extends BaseScene {
   // ---------- intro and tutorial ----------
 
   startIntro() {
-    const hz = this.npc('hazel');
+    const hz = this.npc('hazel'), pip = this.npc('pip');
     const P = this.player;
     if (!P) { this.later(0.5, () => this.startIntro()); return; }
-    hz.intro = true;
-    hz.route = [];
-    hz.inside = false; // (a new friend at night: she pops out to say hello)
-    hz.doorAnim = null;
-    hz.x = P.x + 1.6;
-    hz.z = P.z + 1.2;
-    hz.sleep = false;
-    this.puffs.burst(new THREE.Vector3(hz.x, 0.6, hz.z), 0xffffff, { count: 10, speed: 3, size: 0.35 });
-    hz.model.face(P.x - hz.x, P.z - hz.z);
-    P.ch.face(hz.x - P.x, hz.z - P.z);
-    const L = (k, fx) => ({ who: 'hazel', key: `isl.hazel.${k}`, fx });
-    this.say([L('intro1'), L('intro2', () => this.giveItems([['hoe', 1], ['can', 1], ['scythe', 1]], true)), L('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), { ...L('intro4'), vars: { bagHow: this.bagKey(true) } }, L('q1.ask')], () => {
+    // Aunt Hazel and Pip pop in to say hello (a new friend at night: they pop out to say hello)
+    const pop = (n, dx, dz) => {
+      n.intro = true;
+      n.route = [];
+      n.inside = false;
+      n.doorAnim = null;
+      n.x = P.x + dx;
+      n.z = P.z + dz;
+      n.sleep = false;
+      this.puffs.burst(new THREE.Vector3(n.x, 0.6, n.z), 0xffffff, { count: 10, speed: 3, size: 0.35 });
+      n.model.face(P.x - n.x, P.z - n.z);
+    };
+    pop(hz, 1.6, 1.2);
+    pop(pip, -1.6, 1.2);
+    P.ch.face(0, 1);
+    const H = (k, fx) => ({ who: 'hazel', key: `isl.hazel.${k}`, fx });
+    const Pp = (k, fx) => ({ who: 'pip', key: `zz.pip.${k}`, fx });
+    // Pip built the Zip-Zap from rocket parts; Aunt Hazel gives seeds and teaches farming with it
+    this.say([H('intro1'), Pp('intro1', () => { pip.hop = 1; }), Pp('intro2', () => { this.giveItems([['zipzap', 1]], true); this.selectItem('zipzap'); }),
+      H('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), { ...H('intro4'), vars: { bagHow: this.bagKey(true) } }, H('q1.ask')], () => {
       const S = this.save;
       S.intro = true;
       npcState(S, 'hazel').met = true;
+      npcState(S, 'pip').met = true;
       S.quests.hazel = { n: 0 };
-      S.sel = 0;
+      this.selectItem('zipzap');
       this.setTut(1);
-      hz.intro = false;
-      hz.spotName = null;
+      for (const n of [hz, pip]) { n.intro = false; n.spotName = null; }
       this.markDirty();
       this.game.ui.toast(t('isl.t.quest'));
     });
   }
 
+  /** Hold this item: select its hotbar slot (from the bag rows it first moves down to the hotbar). */
+  selectItem(id) {
+    const S = this.save;
+    const it = S.inv.find((x) => x.id === id && x.slot < HOTBAR) || S.inv.find((x) => x.id === id);
+    if (!it) return false;
+    if (it.slot >= HOTBAR) {
+      const free = freeSlot(S.inv, HOTBAR);
+      const to = free >= 0 ? free : S.sel;
+      const other = S.inv.find((x) => x.slot === to);
+      if (other) other.slot = it.slot;
+      it.slot = to;
+    }
+    S.sel = it.slot;
+    return true;
+  }
+
+  /** The stack in your hand (the selected hotbar slot), or null. */
+  get held() { return heldOf(this.save); }
+
+  /** A per-player text (its [B] names only this player's button). */
+  nm(k, v) { return tFor(this.player?.p, k, v); }
+
   setTut(n) {
     if (this.save.tut >= n && n !== 0) return;
     this.save.tut = n;
-    const S = this.save;
-    const pick = (id) => { const i = S.inv.findIndex((it) => it.id === id); if (i >= 0) S.sel = i; };
-    if (n === 2) pick('radishSeed');
-    if (n === 3) pick('can');
+    if (n === 2) this.selectItem('radishSeed');
+    if (n === 3) this.selectItem('zipzap');
     this.markDirty();
   }
 
@@ -639,7 +672,7 @@ export class SoloIslandScene extends BaseScene {
     for (const [id, q] of Object.entries(S.quests)) out.push(this.questText(id, q.n));
     out.push(...this.crabs.tasks());
     if (S.intro && !S.unlocks.bridge && S.tut >= 5) out.push(t('isl.task.bridge', { n: S.unlocks.bridgeWood, m: BRIDGE_WOOD }));
-    if (count(S, 'pickaxe') && !S.unlocks.mine) out.push(t('isl.task.mine'));
+    if (S.unlocks.rockBuster && !S.unlocks.mine) out.push(t('isl.task.mine'));
     if (S.sea.quest === 1) out.push(t('isl.task.fish', { n: Math.min(3, S.sea.caught - (S.sea.questBase || 0)) }));
     if (S.sea.suit && !S.sea.dives) out.push(t('isl.task.dive'));
     if (S.sea.suit && S.sea.dives && !S.cafe.repaired) out.push(t('isl.task.cafe', { w: Math.min(10, count(S, 'wood')) }));
@@ -667,7 +700,7 @@ export class SoloIslandScene extends BaseScene {
 
   findActive(id) {
     const S = this.save;
-    if (S.found[id] || count(S, id)) return false;
+    if (S.found[id] || owns(S, id)) return false;
     return Object.entries(S.quests).some(([npc, q]) => NPCS[npc].quests[q.n]?.find === id);
   }
 
@@ -718,7 +751,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'friends', 'crabs'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'friends', 'crabs'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   /** The usual spot of a decoration (the trophy garden), or null. */
@@ -742,7 +775,7 @@ export class SoloIslandScene extends BaseScene {
     const S = this.save;
     if (S.unlocks[key]) return;
     S.unlocks[key] = true;
-    const msg = { bridge: 'isl.t.bridge', mine: 'isl.t.mine', burrow: 'isl.t.burrow', bigCan: 'isl.t.bigCan', discount: 'isl.t.discount', starfruit: 'isl.t.starfruit', barn: 'isl.t.barn', rosaHelps: 'isl.t.rosaHelps', goldRod: 'isl.t.goldRod', greenhouse: 'isl.t.greenhouse' }[key];
+    const msg = { rockBuster: 'zz.t.rockBuster', bridge: 'isl.t.bridge', mine: 'isl.t.mine', burrow: 'isl.t.burrow', bigCan: 'isl.t.bigCan', discount: 'isl.t.discount', starfruit: 'isl.t.starfruit', barn: 'isl.t.barn', rosaHelps: 'isl.t.rosaHelps', goldRod: 'isl.t.goldRod', greenhouse: 'isl.t.greenhouse' }[key];
     if (key === 'greenhouse') this.greenhouse.fix();
     if (key === 'barn') { this.ranch.addAnimal('chicken'); this.ranch.addAnimal('chicken'); this.ranch.refresh(); }
     if (msg) { this.game.ui.toast(t(msg), 3000); speak(t(msg)); }
@@ -797,7 +830,7 @@ export class SoloIslandScene extends BaseScene {
     if (S.museum.caveDay === today) return;
     S.museum.caveDay = today;
     const kinds = ['roseQuartz', 'skyTopaz', 'sunCitrine'];
-    const id = kinds.find((k) => !S.museum.got[k] && !count(S, k) && !S.mail.some((m) => m.items?.[0]?.[0] === k)) || kinds[Math.floor(dayRand(`cave:${today}`) * 3)];
+    const id = kinds.find((k) => !S.museum.got[k] && !owns(S, k) && !S.mail.some((m) => m.items?.[0]?.[0] === k)) || kinds[Math.floor(dayRand(`cave:${today}`) * 3)];
     S.mail.push({ id: 'cave', from: 'cave', items: [[id, 1]] });
     this.markDirty();
   }
@@ -923,7 +956,7 @@ export class SoloIslandScene extends BaseScene {
   /** After talking: offer the held gift, then (Rosa) open the shop. */
   afterTalk(n) {
     const S = this.save;
-    const held = S.inv[S.sel];
+    const held = this.held;
     const st = npcState(S, n.id);
     const shop = () => { n.talking = false; if (n.id === 'rosa') this.openShop(); if (n.id === 'hoot' && !n.sleep) this.museum.open(); };
     if (held && isGift(held.id)) {
@@ -1008,10 +1041,11 @@ export class SoloIslandScene extends BaseScene {
     const out = { a: null, b: null, tile: null, hl: null };
     if (!P) return out;
     const fx = P.x + P.fx * 0.95, fz = P.z + P.fz * 0.95;
-    const held = S.inv[S.sel];
+    const held = this.held;
     const nm = (k, v) => tFor(P.p, k, v);
     if (this.indoors) {
-      this.builder.interactions(P, out, nm);
+      this.bagUi.interactions(P, out, nm); // the storage chest
+      if (!out.b) this.builder.interactions(P, out, nm);
       if (!out.b) out.b = { text: '', fn: () => this.openBag() };
       if (!out.a) out.a = { text: '', fn: () => this.doTool(held?.id, null) };
       return out;
@@ -1055,6 +1089,7 @@ export class SoloIslandScene extends BaseScene {
     // the barn, the workbench, the cottage door, the calendar board
     if (!out.b) this.ranch.interactions(P, out, nm);
     if (!out.b) this.builder.interactions(P, out, nm);
+    if (!out.b) this.zipzap.interactions(P, out, nm); // Pip's gadget bench by the rocket
     if (!out.b) this.greenhouse.interactions(P, out, nm);
     if (!out.b) this.museum.interactions(P, out, nm);
     if (!out.b) this.story.interactions(P, out, nm);
@@ -1089,12 +1124,14 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) {
       for (const s of SIGNS) if (near(s.x, s.z, 1.3)) { out.b = { text: nm('isl.h.sign'), fn: () => this.readSign(s) }; break; }
     }
-    // the rockfall
+    // the rockfall (the Zip-Zap's rock buster breaks it)
     if (!S.unlocks.mine && Math.hypot(P.x - ROCKFALL.x, P.z - ROCKFALL.z) < 3.4) {
-      out.a = held?.id === 'pickaxe' ? { text: nm('isl.h.rocks'), fn: () => this.hitRocks(), ok: true } : { text: t('isl.h.rocksNeed'), fn: () => this.game.audio.play('bump') };
+      const zip = held?.id === 'zipzap';
+      out.a = zip && S.unlocks.rockBuster ? { text: nm('isl.h.rocks'), fn: () => this.hitRocks(), ok: true, zz: { kind: 'break', pos: new THREE.Vector3(ROCKFALL.x, heightAt(ROCKFALL.x, ROCKFALL.z) + 1.8, ROCKFALL.z + 1.2) } }
+        : { text: t(S.unlocks.rockBuster ? 'zz.h.holdZipRocks' : 'isl.h.rocksNeed', { bag: this.bagKey() }), fn: () => this.game.audio.play('bump') };
     }
-    // rock piles and tall grass, the winter sled
-    if (!out.a) out.a = this.builder.gatherAction(P, held?.id, nm);
+    // ore rocks, big boulders, tall grass and trees (zipzap.js), the winter sled
+    if (!out.a) out.a = this.zipzap.gatherAction(P, held?.id, nm);
     this.seasons.sled.interactions(P, out, nm);
     // fishing, and the books
     if (!out.a && held?.id === 'rod') {
@@ -1105,34 +1142,60 @@ export class SoloIslandScene extends BaseScene {
     if (!out.a && held?.id === 'camera') out.a = { text: nm('isl.h.photo'), fn: () => this.photo.start() };
     if (!out.a && held?.id === 'album') out.a = { text: nm('isl.h.albumBook'), fn: () => this.photo.openAlbum() };
     if (!out.a && held?.id === 'recipes') out.a = { text: nm('isl.h.book'), fn: () => this.cafe.openCook(true) };
-    // the field
-    const tile = tileAt(fx, fz, !!S.unlocks.greenhouse);
-    if (tile && !out.a) {
-      out.tile = tile;
-      const tl0 = this.farm.tile(tile.c, tile.r, tile.f);
-      const tl = tl0 && !tl0.grass ? tl0 : null; // grass under a sprinkler counts as untilled
-      const weed = this.farm.hasWeed(tile.c, tile.r, tile.f);
-      const stage = tl ? stageOf(tl) : -1;
-      const id = held?.id;
-      const it = ITEMS[id];
-      if (stage === 3) out.a = { text: nm('isl.h.harvest'), fn: () => this.doHarvest(tile), ok: true };
-      else if (tl0?.obj) out.a = { text: nm('isl.h.takeObj', { item: itemName(tl0.obj) }), fn: () => this.takeFarmObj(tile), ok: true };
-      else if (FARM_OBJS.includes(id) && !weed && !tl?.crop) out.a = { text: nm('isl.h.placeObj', { item: itemName(id) }), fn: () => this.placeFarmObj(tile, id), ok: true };
-      else if (weed) out.a = id === 'scythe' ? { text: nm('isl.h.cut'), fn: () => this.doTool('scythe', tile), ok: true } : { text: t('isl.h.weed'), fn: () => this.doTool(id, tile), bad: true };
-      else if (id === 'hoe') out.a = !tl ? { text: nm('isl.h.till'), fn: () => this.doTool('hoe', tile), ok: true } : { text: '', fn: () => this.doTool('hoe', tile) };
-      else if (id === 'can') out.a = tl ? { text: nm('isl.h.water'), fn: () => this.doTool('can', tile), ok: true } : { text: '', fn: () => this.doTool('can', tile) };
-      else if (it?.kind === 'seed' && tl && !tl.crop && !this.canPlantHere(tile, it.crop)) out.a = { text: this.offSeasonText(it.crop), fn: () => this.offSeason(it.crop), bad: true };
-      else if (it?.kind === 'seed') out.a = tl && !tl.crop ? { text: nm('isl.h.plant', { item: itemName(id) }), fn: () => this.doPlant(tile, id), ok: true } : !tl ? { text: t('isl.t.tillFirst'), fn: () => this.game.audio.play('bump'), bad: true } : null;
-      else if (!tl) out.a = { text: t('isl.h.pickTool', { bag: this.bagKey() }), fn: () => this.game.audio.play('bump') };
-      if (tl?.crop && stage < 3) {
-        const crop = itemName(tl.crop);
-        // outside, crops nearly sleep at night (farm.js); the greenhouse keeps going
-        const info = tl.wetUntil > now() ? t(!tile.f && cropNight() ? 'isl.h.growingNight' : 'isl.h.growing', { item: crop, m: minutesLeft(tl) }) : t('isl.h.dry', { item: crop });
-        out.a = out.a?.ok ? { ...out.a, text: `${out.a.text} · ${info}` } : { text: info, fn: out.a?.fn || (() => this.doTool(id, tile)) };
+    // the field: the tile in front (with the Zip-Zap's long reach also the one behind it, when the first
+    // has nothing to do)
+    if (!out.a) {
+      const tiles = [];
+      for (const d of held?.id === 'zipzap' ? this.zipzap.reaches() : [0.9]) {
+        const tl = tileAt(P.x + P.fx * (d + 0.05), P.z + P.fz * (d + 0.05), !!S.unlocks.greenhouse);
+        if (tl && !tiles.some((x) => x.key === tl.key)) tiles.push(tl);
       }
-      out.hl = out.a?.ok ? 0x9ff07a : out.a?.bad ? 0xff8fa8 : 0xffffff;
+      let pick = null;
+      for (const tile of tiles) {
+        const a = this.fieldAction(tile, held, nm);
+        if (!pick) pick = { tile, a };
+        if (a?.ok) { pick = { tile, a }; break; }
+      }
+      if (pick) {
+        out.tile = pick.tile;
+        out.a = pick.a;
+        out.hl = out.a?.ok ? 0x9ff07a : out.a?.bad ? 0xff8fa8 : 0xffffff;
+      }
     }
     return this.fillDefaults(out, held);
+  }
+
+  /** What [B] does on one field tile with what you hold (the Zip-Zap picks the action by the tile). */
+  fieldAction(tile, held, nm) {
+    const S = this.save;
+    const tl0 = this.farm.tile(tile.c, tile.r, tile.f);
+    const tl = tl0 && !tl0.grass ? tl0 : null; // grass under a sprinkler counts as untilled
+    const weed = this.farm.hasWeed(tile.c, tile.r, tile.f);
+    const stage = tl ? stageOf(tl) : -1;
+    const id = held?.id, it = ITEMS[id], zip = id === 'zipzap';
+    const c = tileCenter(tile.c, tile.r, tile.f);
+    const pos = new THREE.Vector3(c.x, heightAt(c.x, c.z) + 0.4, c.z);
+    const zz = (kind) => ({ kind, pos });
+    const wet = !!tl && tl.wetUntil > now();
+    let a = null;
+    if (stage === 3) a = { text: nm('isl.h.harvest'), fn: () => this.doHarvest(tile), ok: true, zz: zz('harvest') };
+    else if (tl0?.obj) a = { text: nm('isl.h.takeObj', { item: itemName(tl0.obj) }), fn: () => this.takeFarmObj(tile), ok: true };
+    else if (FARM_OBJS.includes(id) && !weed && !tl?.crop) a = { text: nm('isl.h.placeObj', { item: itemName(id) }), fn: () => this.placeFarmObj(tile, id), ok: true };
+    else if (weed) a = zip ? { text: nm('isl.h.cut'), fn: () => this.doZap('cut', tile), ok: true, zz: zz('cut') } : { text: t('isl.h.weed', { bag: this.bagKey() }), fn: () => this.game.audio.play('bump'), bad: true };
+    else if (zip) {
+      if (!tl) a = { text: nm('isl.h.till'), fn: () => this.doZap('till', tile), ok: true, zz: zz('till') };
+      else if (!wet) a = { text: nm('isl.h.water'), fn: () => this.doZap('water', tile), ok: true, zz: zz('water') };
+      else if (!tl.crop) a = { text: t('zz.h.wetSoil', { bag: this.bagKey() }), fn: () => this.zipzap.fizzle() };
+    } else if (it?.kind === 'seed' && tl && !tl.crop && !this.canPlantHere(tile, it.crop)) a = { text: this.offSeasonText(it.crop), fn: () => this.offSeason(it.crop), bad: true };
+    else if (it?.kind === 'seed') a = tl && !tl.crop ? { text: nm('isl.h.plant', { item: itemName(id) }), fn: () => this.doPlant(tile, id), ok: true } : !tl ? { text: t('isl.t.tillFirst'), fn: () => this.game.audio.play('bump'), bad: true } : null;
+    else if (!tl) a = { text: t('isl.h.pickTool', { bag: this.bagKey() }), fn: () => this.game.audio.play('bump') };
+    if (tl?.crop && stage < 3) {
+      const crop = itemName(tl.crop);
+      // outside, crops nearly sleep at night (farm.js); the greenhouse keeps going
+      const info = wet ? t(!tile.f && cropNight() ? 'isl.h.growingNight' : 'isl.h.growing', { item: crop, m: minutesLeft(tl) }) : t('isl.h.dry', { item: crop });
+      a = a?.ok ? { ...a, text: `${a.text} · ${info}` } : { text: info, fn: a?.fn || (() => (zip ? this.zipzap.fizzle() : this.game.audio.play('dash'))) };
+    }
+    return a;
   }
 
   /** With nothing special around: the bag (b) and a swing of the held tool (a). */
@@ -1213,46 +1276,57 @@ export class SoloIslandScene extends BaseScene {
     this.player.ch.squash(0.85);
   }
 
-  doTool(id, tile) {
+  /** [B] with nothing to work on: the Zip-Zap fizzles, anything else is a little swing. */
+  doTool(id) {
+    if (id === 'zipzap') this.zipzap.fizzle();
+    else { this.swingTool(); this.game.audio.play('dash'); }
+  }
+
+  /** The tiles a beam covers: one, three in a row (across the way you face) or 3x3 (Pip's wide beam). */
+  areaTiles(tile, area) {
+    const out = [tile];
+    if (area === 1) {
+      const side = Math.abs(this.player.fx) > Math.abs(this.player.fz) ? [[0, -1], [0, 1]] : [[-1, 0], [1, 0]];
+      for (const [dc, dr] of side) out.push({ c: tile.c + dc, r: tile.r + dr, f: tile.f });
+    } else if (area >= 2) {
+      for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 1; dr++) if (dc || dr) out.push({ c: tile.c + dc, r: tile.r + dr, f: tile.f });
+    }
+    const F = (tl) => FIELDS[tl.f || 0];
+    return out.filter((tl) => tl.c >= 0 && tl.r >= 0 && tl.c < F(tl).cols && tl.r < F(tl).rows);
+  }
+
+  /** The Zip-Zap on a field tile: till, water or cut (a beam, then the farm does the work). */
+  doZap(kind, tile) {
     const S = this.save, at = now();
-    if (!TOOLS.includes(id)) return;
-    this.swingTool();
-    if (!tile) { this.game.audio.play('dash'); return; }
-    const { x, z } = tileCenter(tile.c, tile.r, tile.f);
-    const pos = new THREE.Vector3(x, heightAt(x, z) + 0.3, z);
-    if (id === 'hoe') {
-      const r = this.farm.till(tile.c, tile.r, at, tile.f);
-      if (r === 'tilled') { this.puffs.burst(pos, 0xa8703f, { count: 10, speed: 3, size: 0.3, life: 0.6 }); this.game.audio.play('land'); if (S.tut === 1) this.setTut(2); }
-      else if (r === 'weedFirst') { this.game.ui.toast(t('isl.t.weedFirst')); this.game.audio.play('bump'); }
-    } else if (id === 'can') {
-      const list = [tile];
-      if (S.unlocks.bigCan) {
-        const side = Math.abs(this.player.fx) > Math.abs(this.player.fz) ? [[0, -1], [0, 1]] : [[-1, 0], [1, 0]];
-        for (const [dc, dr] of side) list.push({ c: tile.c + dc, r: tile.r + dr, f: tile.f });
-      }
+    const c0 = tileCenter(tile.c, tile.r, tile.f);
+    const pos = new THREE.Vector3(c0.x, heightAt(c0.x, c0.z) + 0.3, c0.z);
+    if (!this.zipzap.fire(kind, pos)) return;
+    const area = this.zipzap.areaFor(kind);
+    const burst = (tl, col, o) => { const c = tileCenter(tl.c, tl.r, tl.f); this.puffs.burst(new THREE.Vector3(c.x, heightAt(c.x, c.z) + 0.4, c.z), col, o); };
+    if (kind === 'till') {
       let any = false;
-      for (const tl of list) {
-        const F = FIELDS[tl.f || 0];
-        if (tl.c < 0 || tl.r < 0 || tl.c >= F.cols || tl.r >= F.rows) continue;
-        if (this.farm.water(tl.c, tl.r, at, tl.f)) {
-          any = true;
-          const c = tileCenter(tl.c, tl.r, tl.f);
-          this.puffs.burst(new THREE.Vector3(c.x, heightAt(c.x, c.z) + 0.6, c.z), 0x6fd0ff, { count: 10, speed: 2, up: 1, size: 0.18, life: 0.6, gravity: -12 });
-        }
+      for (const tl of this.areaTiles(tile, area)) {
+        const r = this.farm.till(tl.c, tl.r, at, tl.f);
+        if (r === 'tilled') { any = true; burst(tl, 0xa8703f, { count: 10, speed: 3, size: 0.3, life: 0.6 }); }
+        else if (r === 'weedFirst' && tl === tile) { this.game.ui.toast(t('isl.t.weedFirst')); this.game.audio.play('bump'); }
       }
-      this.game.audio.play(any ? 'bubble' : 'dash');
+      if (any && S.tut === 1) this.setTut(2);
+    } else if (kind === 'water') {
+      let any = false;
+      for (const tl of this.areaTiles(tile, area)) {
+        if (this.farm.water(tl.c, tl.r, at, tl.f)) { any = true; burst(tl, 0x6fd0ff, { count: 10, speed: 2, up: 1, size: 0.18, life: 0.6, gravity: -12 }); }
+      }
       if (any && S.tut === 3 && Object.values(S.tiles).some((tl) => tl.crop && tl.wetUntil > at)) this.setTut(4);
-    } else if (id === 'scythe') {
+    } else if (kind === 'cut') {
       if (this.farm.cut(tile.c, tile.r, at)) {
-        this.puffs.burst(pos, 0x6fbf4a, { count: 12, speed: 3, size: 0.25, life: 0.6 });
-        this.game.audio.play('pop');
+        burst(tile, 0x6fbf4a, { count: 12, speed: 3, size: 0.25, life: 0.6 });
         if (Math.random() < 0.35) {
           const seed = Math.random() < 0.6 ? 'radishSeed' : 'carrotSeed';
           give(S, seed, 1);
           this.game.ui.toast(t('isl.t.drop', { item: itemName(seed) }));
         }
-      } else this.game.audio.play('dash');
-    } else this.game.audio.play('dash');
+      }
+    }
     this.markDirty();
   }
 
@@ -1303,18 +1377,22 @@ export class SoloIslandScene extends BaseScene {
     this.puffs.burst(new THREE.Vector3(x, heightAt(x, z) + 0.3, z), 0x7a4a2e, { count: 6, speed: 2, size: 0.2, life: 0.5 });
     this.game.audio.play('pop');
     if (S.tut === 2) this.setTut(3);
+    // already wet (watered before planting, rain, a sprinkler): the watering step is done too
+    if (S.tut === 3 && this.farm.tile(tile.c, tile.r, tile.f)?.wetUntil > now()) this.setTut(4);
     if (!count(S, seedId)) this.game.ui.toast(t('isl.t.noSeeds'));
     this.markDirty();
   }
 
   doHarvest(tile) {
     const S = this.save;
+    const { x, z } = tileCenter(tile.c, tile.r, tile.f);
+    // with the Zip-Zap in hand a harvest beam picks it (it never fails: no cool-down wait for crops)
+    if (this.held?.id === 'zipzap') { this.zipzap.cool = 0; this.zipzap.fire('harvest', new THREE.Vector3(x, heightAt(x, z) + 0.5, z)); }
     const crop = this.farm.harvest(tile.c, tile.r, now(), tile.f);
     if (!crop) return;
     give(S, crop, 1);
     S.stats.harvested++;
     this.swingTool();
-    const { x, z } = tileCenter(tile.c, tile.r, tile.f);
     // a scarecrow nearby sometimes finds one more
     if (this.farm.nearScarecrow(tile.c, tile.r, tile.f) && Math.random() < 0.3) {
       give(S, crop, 1);
@@ -1326,8 +1404,7 @@ export class SoloIslandScene extends BaseScene {
     this.game.ui.toast(t('isl.t.harvest', { item: itemName(crop) }));
     if (S.tut <= 5 && S.tut >= 4) this.setTut(6);
     // select what was just picked, so it is easy to ship or show
-    const i = S.inv.findIndex((it) => it.id === crop);
-    if (S.tut === 6 && i >= 0) S.sel = i;
+    if (S.tut === 6 && S.inv.some((it) => it.id === crop && it.slot < HOTBAR)) this.selectItem(crop);
     this.markDirty();
   }
 
@@ -1388,14 +1465,15 @@ export class SoloIslandScene extends BaseScene {
 
   hitRocks() {
     const S = this.save;
-    this.swingTool();
+    if (!this.zipzap.fire('break', new THREE.Vector3(ROCKFALL.x, heightAt(ROCKFALL.x, ROCKFALL.z) + 1.2, ROCKFALL.z + 1.2))) return;
+    const need = this.zipzap.hitsFor('rockfall');
     S.unlocks.mineHits++;
     this.puffs.burst(new THREE.Vector3(ROCKFALL.x, 1, ROCKFALL.z), 0xbdb8cf, { count: 10, speed: 4, size: 0.4 });
     this.game.audio.play('bump');
-    const k = 1 - S.unlocks.mineHits / ROCK_HITS;
+    const k = 1 - S.unlocks.mineHits / need;
     this.map.rockfall.scale.set(1, Math.max(0.2, k), 1);
-    if (S.unlocks.mineHits >= ROCK_HITS) this.unlock('mine');
-    else this.game.ui.toast(t('isl.t.rock', { n: ROCK_HITS - S.unlocks.mineHits }));
+    if (S.unlocks.mineHits >= need) this.unlock('mine');
+    else this.game.ui.toast(t('isl.t.rock', { n: need - S.unlocks.mineHits }));
     this.markDirty();
   }
 
@@ -1405,21 +1483,9 @@ export class SoloIslandScene extends BaseScene {
 
   // ---------- bag, shop and mail ----------
 
+  /** The bag panel (bagui.js): bag rows and the hotbar. */
   openBag() {
-    if (!this.save.inv.length) return;
-    this.mode = 'bag';
-    this.bagT = 0;
-    this.game.audio.play('select');
-  }
-
-  updateBag(inp, dt) {
-    const S = this.save;
-    this.bagT += dt;
-    if (inp.stepX) {
-      S.sel = (S.sel + inp.stepX + S.inv.length) % S.inv.length;
-      this.game.audio.play('select');
-    }
-    if (this.bagT > 0.2 && (inp.aPressed || inp.bPressed || inp.cPressed || this.game.input.pressed.has('Tab'))) { this.mode = 'walk'; this.markDirty(); }
+    this.bagUi.show(false);
   }
 
   openShop() {
@@ -1431,9 +1497,10 @@ export class SoloIslandScene extends BaseScene {
   shopRows() {
     const S = this.save;
     if (this.shop.tab === 0) {
-      return shopStock(S).map((id) => ({ id, price: Math.max(1, Math.round(ITEMS[id].buy * (S.unlocks.discount ? 0.8 : 1))), sub: ITEMS[id].kind === 'seed' ? `${t(`isl.grow.${ITEMS[id].crop}`)} · ${t('isl.grow.night')}` : '' }));
+      return shopStock(S).map((id) => ({ id, price: Math.max(1, Math.round(ITEMS[id].buy * (S.unlocks.discount ? 0.8 : 1))), sub: ITEMS[id].kind === 'seed' ? `${t(`isl.grow.${ITEMS[id].crop}`)} · ${t('isl.grow.night')}` : ITEMS[id].kind === 'pack' ? t('zb.pack.sub', { n: ITEMS[id].rows * 9 + 9 }) : '' }));
     }
-    return S.inv.filter((it) => ITEMS[it.id]?.sell && ITEMS[it.id].kind !== 'tool').map((it) => ({ id: it.id, price: ITEMS[it.id].sell, sub: '' }));
+    const seen = new Set(); // (one row per thing, even when it is in two stacks)
+    return [...S.inv].sort((a, b) => a.slot - b.slot).filter((it) => ITEMS[it.id]?.sell && ITEMS[it.id].kind !== 'tool' && !seen.has(it.id) && seen.add(it.id)).map((it) => ({ id: it.id, price: ITEMS[it.id].sell, sub: '' }));
   }
 
   renderShop() {
@@ -1465,8 +1532,11 @@ export class SoloIslandScene extends BaseScene {
         S.coins -= r.price;
         if (ITEMS[r.id].kind === 'gear') S.sea[r.id] = true;
         else if (ITEMS[r.id].kind === 'animal') this.ranch.addAnimal(r.id);
+        else if (ITEMS[r.id].kind === 'pack') S.bagRows = Math.max(S.bagRows ?? 2, ITEMS[r.id].rows); // a bigger backpack: one more row
         else give(S, r.id, 1);
-        this.game.ui.toast(t('isl.t.bought', { item: itemName(r.id) }), 900);
+        const got = ITEMS[r.id].kind === 'pack' ? t('zb.t.pack', { n: 9 + 9 * S.bagRows }) : t('isl.t.bought', { item: itemName(r.id) });
+        this.game.ui.toast(got, ITEMS[r.id].kind === 'pack' ? 2400 : 900);
+        if (ITEMS[r.id].kind === 'pack') speak(got);
       } else {
         take(S, r.id, 1);
         S.coins += r.price;
@@ -1552,8 +1622,7 @@ export class SoloIslandScene extends BaseScene {
           S.sea.quest = 1;
           S.sea.questBase = S.sea.caught;
           this.giveItems([['rod', 1], ['fishlog', 1]]);
-          const i = S.inv.findIndex((it) => it.id === 'rod');
-          if (i >= 0) S.sel = i;
+          this.selectItem('rod');
           this.game.ui.toast(t('isl.t.quest'));
         },
       };
@@ -1728,12 +1797,12 @@ export class SoloIslandScene extends BaseScene {
   updatePlayerLook(dt) {
     const P = this.player;
     if (!P) return;
-    const held = this.save.inv[this.save.sel];
-    const tool = held && TOOLS.includes(held.id) ? held.id : null;
+    const held = this.held;
+    const tool = held && TOOLS.includes(held.id) ? held.id : null; // the Zip-Zap in the bean's hand
     if (tool !== P.toolId) {
       if (P.toolMesh) P.hand.remove(P.toolMesh);
-      P.toolMesh = tool ? makeTool(tool) : null;
-      if (P.toolMesh) { P.toolMesh.scale.setScalar(0.7); P.hand.add(P.toolMesh); }
+      P.toolMesh = tool ? makeZipZap() : null;
+      if (P.toolMesh) { P.toolMesh.scale.setScalar(1.05); P.hand.add(P.toolMesh); }
       P.toolId = tool;
     }
     this.swing = Math.max(0, this.swing - dt * 3.5);
@@ -1780,7 +1849,7 @@ export class SoloIslandScene extends BaseScene {
   }
 
   updateLabels() {
-    const P = this.mode === 'walk' || this.mode === 'bag' ? this.player : null; // no tags over panels
+    const P = this.mode === 'walk' ? this.player : null; // no tags over panels (the bag is a panel now)
     const S = this.save;
     const cam = this.camera;
     // arcade cabinets: only the nearest one gets a label, else the hall's own name
@@ -1865,9 +1934,21 @@ export class SoloIslandScene extends BaseScene {
     const weather = isle ? '' : sea.festival ? t(`isl.fest.${sea.festival}`) : sea.rainy ? (sea.season === 'winter' ? `❄ ${t('isl.weather.snow')}` : `☂ ${t('isl.weather.rain')}`) : '';
     const season = isle ? '' : `${SEASON_ICON[sea.season]} ${t(`isl.season.${sea.season}`)}`;
     this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), season, weather].filter(Boolean).join(' · ') });
-    this.hud.setTasks(this.mode === 'walk' || this.mode === 'bag' ? this.tasks() : []);
-    const items = S.inv.map((it) => ({ ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) }));
-    if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setHotbar(items, S.sel, this.mode === 'bag');
+    this.hud.setTasks(this.mode === 'walk' ? this.tasks() : []);
+    // the hotbar: nine slots (the bag panel shows its own copy)
+    const slots = Array.from({ length: HOTBAR }, (_, i) => { const it = S.inv.find((x) => x.slot === i); return it ? { ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) } : null; });
+    if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setSlots(slots, S.sel);
+    this.hud.hotbar.style.visibility = this.mode === 'bag' ? 'hidden' : '';
+    this.hud.selname.style.visibility = this.mode === 'bag' ? 'hidden' : '';
+    // things that went to the cottage chest because the bag was full
+    if (S.toChest && this.mode === 'walk') {
+      const one = S.toChest === 1 && S.toChestId;
+      const txt = one ? t('zb.t.toChest1', { item: itemName(S.toChestId) }) : t('zb.t.toChest');
+      S.toChest = 0;
+      S.toChestId = null;
+      this.game.ui.toast(txt, 3200);
+      speak(txt);
+    }
     this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : this.onPad ? 'isl.keysPad' : 'isl.keys', { bag: this.bagKey() }));
     let prompt = '';
     if (this.mode === 'walk' && ia) prompt = ia.use?.text || '';
@@ -1892,14 +1973,15 @@ export class SoloIslandScene extends BaseScene {
     let ia = null;
     if (inp && !this.launching) {
       // hotbar keys work any time you walk
-      for (let k = 1; k <= 9; k++) if (this.game.input.pressed.has(`Digit${k}`) && this.save.inv[k - 1] && this.mode === 'walk') { this.save.sel = k - 1; this.game.audio.play('select'); }
+      for (let k = 1; k <= 9; k++) if (this.game.input.pressed.has(`Digit${k}`) && this.mode === 'walk') { this.save.sel = k - 1; this.game.audio.play('select'); }
       if (this.mode !== 'walk') this.bHold = null;
       // Panels and mini-modes keep their own code: "do it" arrives as their [A] and "close/back" as
       // their [B], so here the island's [B] (use) becomes their do-it and [C] their back (see README).
       const panel = { ...inp, aPressed: inp.bPressed, a: inp.b, bPressed: inp.cPressed, b: inp.c };
       switch (this.mode) {
         case 'dialog': this.updateDialog(inp, dt); break;
-        case 'bag': this.updateBag(inp, dt); break;
+        case 'bag': this.bagUi.update(inp, dt); break;
+        case 'zzbench': this.zipzap.updateBench(panel, dt); break;
         case 'shop': this.updateShop(inp, dt); break;
         case 'letter': this.updateLetter(inp, dt); break;
         case 'menu': this.updateMode(inp, dt); break;
@@ -1943,6 +2025,8 @@ export class SoloIslandScene extends BaseScene {
     this.seasons.update(dt);
     this.isle2.update(dt, this.time);
     this.crabs.update(dt);
+    this.zipzap.update(dt, ia);
+    this.bagUi.tick();
     this.tour.update(dt);
     this.story.update(dt);
     this.updatePlayerLook(dt);
@@ -1969,6 +2053,8 @@ export class SoloIslandScene extends BaseScene {
     this.story?.dispose();
     this.lightTop?.dispose();
     this.crabs?.dispose();
+    this.zipzap?.dispose();
+    this.bagUi?.dispose();
     setPictures(null);
     this.flush();
     this.game.roster.save();

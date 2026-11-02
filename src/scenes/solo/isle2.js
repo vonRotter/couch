@@ -3,7 +3,7 @@ import { toon } from '../../core/palette.js';
 import { makeRock } from '../../core/world.js';
 import { t } from '../../core/i18n.js';
 import { say as speak } from '../../core/voice.js';
-import { now, count, give, take } from './save.js';
+import { now, count, give, take, held as heldOf } from './save.js';
 import { dayKey, weekIndex } from './calendar.js';
 import { heightAt, SEA_Y, PIER } from './map.js';
 import { mesh, cyl, sph, cone, makePier, makeLamp, makeSign, makeBuoy } from './models.js';
@@ -16,7 +16,7 @@ import { ISLE2, ISLE2_DOCK, ISLE2_BOAT, ISLE2_ARRIVE, COVE, POOLS, PALMS, BERRIE
 // Grumbleton then sails you there in his little sailboat from the end of the pier (a short boat trip).
 // The isle is small and always warm: a sandy beach with three tide pools (a find in each, every day), palms
 // to shake for coconuts and wild berry bushes (every day), a hidden cove behind the rocks where special
-// fish bite, four treasure spots to dig with the hoe (new treasure every week), and Shelby the hermit crab,
+// fish bite, four treasure spots to dig with the Zip-Zap (new treasure every week), and Shelby the hermit crab,
 // who visits the main island's beach on weekends once you are friends. Sail home from the dock.
 // Milestone B4: the trip is a little show. The view swings around the boat (always at the island camera's
 // usual distance) so you see the island you leave and then the one you sail to, the fog is lighter on the
@@ -292,12 +292,12 @@ export class Isle2 {
     if (!out.b) for (const b of this.berries) if (near(b, 1.5) && I.berries[b.i] !== today) { out.b = { text: nm('isl.h.pick', { item: t('isl.i.wildBerry') }), fn: () => this.pickBerries(b) }; break; }
     if (!out.b) for (const p of this.pools) if (near(p, 2.2)) { out.b = I.pools[p.i] !== today ? { text: nm('isl.h.pool'), fn: () => this.lookInPool(p) } : { text: t('isl.h.poolDone'), fn: () => this.host.game.audio.play('bump') }; break; }
     if (!out.b && near(this.signSpot, 1.3)) out.b = { text: nm('isl.h.sign'), fn: () => this.host.say([{ key: 'isl.sign.isle' }]) };
-    // treasure: dig with the hoe
-    const held = this.S.inv[this.S.sel]?.id;
+    // treasure: dig with the Zip-Zap
+    const held = heldOf(this.S)?.id;
     if (!out.a) {
       for (const d of this.digs) {
         if (!d.g.visible || !(near(d, 1.4) || Math.hypot(P.x + P.fx * 0.9 - d.x, P.z + P.fz * 0.9 - d.z) < 1.0)) continue;
-        out.a = held === 'hoe' ? { text: nm('isl.h.dig'), fn: () => this.dig(d), ok: true } : { text: t('isl.h.digNeed'), fn: () => this.host.game.audio.play('bump') };
+        out.a = held === 'zipzap' ? { text: nm('isl.h.dig'), fn: () => this.dig(d), ok: true, zz: { kind: 'dig', pos: new THREE.Vector3(d.x, heightAt(d.x, d.z) + 0.3, d.z) } } : { text: t('isl.h.digNeed', { bag: this.host.bagKey() }), fn: () => this.host.game.audio.play('bump') };
         break;
       }
     }
@@ -343,7 +343,7 @@ export class Isle2 {
 
   dig(d) {
     const host = this.host, I = this.I;
-    host.swingTool();
+    if (!host.zipzap.fire('dig', new THREE.Vector3(d.x, heightAt(d.x, d.z) + 0.3, d.z))) return;
     I.digs[d.i] = weekIndex();
     // the first dig at the big rock finds the star crystal (for the museum); then weekly treasure
     let id;

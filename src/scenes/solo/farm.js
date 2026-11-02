@@ -117,7 +117,7 @@ export class Farm {
     this.group = new THREE.Group();
     scene.add(this.group);
     this.views = new Map();
-    // the weedy start: a few tiles have weeds to cut with the scythe
+    // the weedy start: a few tiles have weeds to cut with the Zip-Zap
     if (!save.weeds) save.weeds = ['1,1', '4,0', '6,2', '2,4', '5,4', '7,5', '0,3'];
     this.objModel = null; // set by the island: sprinkler and scarecrow models
     this.soilDry = toon(SOIL);

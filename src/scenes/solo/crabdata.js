@@ -90,7 +90,6 @@ export function releaseOldCrabs(S) {
     coins += it.n * OLD_CRABS[it.id];
     S.inv.splice(S.inv.indexOf(it), 1);
   }
-  if (S.sel >= S.inv.length) S.sel = Math.max(0, S.inv.length - 1);
   // cooked crab cakes become seaweed cakes, and the old seafood platter keeps its name
   const cake = S.inv.find((it) => it.id === 'crabCake');
   if (cake) {

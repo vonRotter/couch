@@ -4,10 +4,10 @@ import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { ITEMS, icon } from './items.js';
-import { count, give, take, now, since, MIN } from './save.js';
+import { count, give, take } from './save.js';
 import { heightAt, HOME, FIELD } from './map.js';
 import { mesh, box, cone, makeDeco, makeSign } from './models.js';
-import { makeCraft, makeDeco2, makeRoom, makePorch, makeStoneNode, makeTallGrass } from './models2.js';
+import { makeCraft, makeDeco2, makeRoom, makePorch } from './models2.js';
 import { makeDeco3, DECO3, makeSprinkler, makeScarecrow } from './models3.js';
 import { makeDeco4, DECO4 } from './models4.js';
 import { makeDeco5, DECO5 } from './models5.js';
@@ -16,7 +16,7 @@ import { makeDeco7, DECO7, makeShell } from './models7.js';
 import { SHELLS, CRAFT_SHELLS, isShell } from './crabdata.js';
 
 // Building and decorating (milestone B2).
-// - Gathering: break rock piles with the pickaxe (stone), cut tall grass with the scythe (hay and fiber).
+// - Gathering (rock piles, tall grass, trees) moved to zipzap.js: Pip's Zip-Zap does it all.
 // - The workbench by the cottage: craft yard pieces and furniture, upgrade the cottage (porch + extra room),
 //   and switch to decorate mode.
 // - Decorate mode: place, move (pick up), rotate and remove decorations, trophies and crafted things on a
@@ -54,10 +54,8 @@ Object.assign(ITEMS, { stone: { kind: 'res', sell: 3 }, fiber: { kind: 'res', se
 const YARD = { x0: -23, x1: 6, z0: -24, z1: 3 };
 export const ROOM = { x: 200, z: 120, w: 8, w2: 12, d: 6 };
 const HOME_DOOR = { x: HOME.x, z: HOME.z + 2.7 };
-
-const STONES = [[18, -28], [32, -24], [42, -27], [-6, -30], [50, 4], [20, 25], [-32, -8], [-40, 20], [30, 30], [-19, 28], [10, -31], [-46, -14]];
-const GRASS = [[-21, 6], [-21.5, 10.5], [-6.5, 6], [-5.5, 10], [-8, 15], [40, -6], [44, -1], [36, -2], [-36, -12], [-42, -2], [12, 14], [16, 18], [24, 6], [-2, 16]];
-const STONE_RESPAWN = 20 * MIN, GRASS_RESPAWN = 10 * MIN;
+/** The storage chest in the cottage: in the back right corner of the first room (bagui.js). */
+export const CHEST = { x: ROOM.x + ROOM.w / 2 - 0.5, z: ROOM.z - ROOM.d / 2 + 0.5 };
 
 export class Builder {
   constructor(host) {
@@ -68,13 +66,9 @@ export class Builder {
     if (!S.home) S.home = { upgraded: false };
     if (!S.gather) S.gather = { stones: {}, grass: {} };
     this.views = new Map();
-    this.hits = {};
     this.sel = 0;
     this.rot = 0;
     const map = host.map;
-    // gathering spots
-    this.stones = STONES.map(([x, z], i) => ({ i, x, z, g: map.live(makeStoneNode(), x, z, i), obs: map.circObs(x, z, 0.7) }));
-    this.grass = GRASS.map(([x, z], i) => ({ i, x, z, g: map.live(makeTallGrass(), x, z, i * 1.3) }));
     // workbench by the cottage
     const wb = new THREE.Group();
     wb.add(mesh(box(1.6, 0.12, 0.8), 0xc68a52, 0, 0.85, 0), mesh(box(1.5, 0.8, 0.7), 0x8a5a32, 0, 0.4, 0));
@@ -265,51 +259,6 @@ export class Builder {
     return null;
   }
 
-  // ---------- gathering ----------
-
-  tickGather(at) {
-    for (const s of this.stones) { const on = since(this.S.gather.stones[s.i], STONE_RESPAWN, at); s.g.visible = on; s.obs.x = on ? s.x : 1e5; }
-    for (const g of this.grass) g.g.visible = since(this.S.gather.grass[g.i], GRASS_RESPAWN, at);
-  }
-
-  /** [A] at a rock pile (pickaxe) or tall grass (scythe). */
-  gatherAction(P, held, nm) {
-    const fx = P.x + P.fx * 0.9, fz = P.z + P.fz * 0.9;
-    const near = (o, r) => Math.hypot(fx - o.x, fz - o.z) < r || Math.hypot(P.x - o.x, P.z - o.z) < r;
-    if (held === 'pickaxe') for (const s of this.stones) if (s.g.visible && near(s, 1.6)) return { text: nm('isl.h.mine'), fn: () => this.breakStone(s), ok: true };
-    if (held === 'scythe') for (const g of this.grass) if (g.g.visible && near(g, 1.4)) return { text: nm('isl.h.grass'), fn: () => this.cutGrass(g), ok: true };
-    return null;
-  }
-
-  breakStone(s) {
-    const host = this.host;
-    host.swingTool();
-    this.hits[s.i] = (this.hits[s.i] || 0) + 1;
-    host.puffs.burst(new THREE.Vector3(s.x, 0.8, s.z), 0xbdb8cf, { count: 10, speed: 4, size: 0.35 });
-    host.game.audio.play('bump');
-    if (this.hits[s.i] < 2) return;
-    this.hits[s.i] = 0;
-    this.S.gather.stones[s.i] = now();
-    give(this.S, 'stone', 2);
-    host.game.ui.toast(t('isl.t.stone'));
-    this.tickGather(now());
-    host.markDirty();
-  }
-
-  cutGrass(g) {
-    const host = this.host;
-    host.swingTool();
-    this.S.gather.grass[g.i] = now();
-    give(this.S, 'hay', 1);
-    const fiber = (g.i + (this.S.gather.cuts = (this.S.gather.cuts || 0) + 1)) % 3 !== 0;
-    if (fiber) give(this.S, 'fiber', 1);
-    host.puffs.burst(new THREE.Vector3(g.x, 0.5, g.z), 0x8ac926, { count: 12, speed: 3, size: 0.25, life: 0.6 });
-    host.game.audio.play('pop');
-    host.game.ui.toast(t(fiber ? 'isl.t.grass2' : 'isl.t.grass'));
-    this.tickGather(now());
-    host.markDirty();
-  }
-
   // ---------- the workbench ----------
 
   interactions(P, out, nm) {
@@ -441,7 +390,7 @@ export class Builder {
 
   cellOk(x, z) {
     const b = this.roomBounds();
-    if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 - 0.6) return !this.occupied(x, z);
+    if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 - 0.6) return !this.occupied(x, z) && Math.hypot(x - CHEST.x, z - CHEST.z) > 0.8;
     if (x < YARD.x0 || x > YARD.x1 || z < YARD.z0 || z > YARD.z1) return false;
     if (x > FIELD.x0 - 1 && x < FIELD.x0 + FIELD.cols * FIELD.size + 1 && z > FIELD.z0 - 1 && z < FIELD.z0 + FIELD.rows * FIELD.size + 1) return false;
     if (Math.hypot(x - HOME_DOOR.x, z - HOME_DOOR.z) < 1.4) return false;

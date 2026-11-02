@@ -54,11 +54,11 @@ const CSS = `
 // (their save keys start at 100, so the main island's keys stay as they were).
 const STONES = [[18, -28], [32, -24], [42, -27], [-6, -30], [50, 4], [20, 25], [-32, -8], [-40, 20], [30, 30], [-19, 28], [10, -31], [-46, -14]];
 const GRASS = [[-21, 6], [-21.5, 10.5], [-6.5, 6], [-5.5, 10], [-8, 15], [40, -6], [44, -1], [36, -2], [-36, -12], [-42, -2], [12, 14], [16, 18], [24, 6], [-2, 16]];
-const BIG = [[22, -33.4], [47, -22], [-30, 24], [36, 22]];
-const TREES = [[-26.5, -2], [-25, 12], [-12, 22], [8, 20], [28, 14], [46, 8], [34, -20], [-10, -24]];
+const BIG = [[47, -22], [-38, 17], [36, 22]];
+const TREES = [[-32, -3.5], [9.5, 20], [29, 13], [46.5, 9.5], [35, -19], [-10, -24], [-19, -16.5], [1.5, -17]];
 const ISLE_STONES = [[-13.5, 191], [10.5, 200], [-1.5, 186.5]];
 const ISLE_GRASS = [[-8, 196.5], [2.5, 194], [9.5, 191.5]];
-const ISLE_BIG = [[-15.5, 199]];
+const ISLE_BIG = [[-12, 199]];
 const RESPAWN = { stone: 20 * MIN, grass: 10 * MIN, big: 60 * MIN, tree: 30 * MIN };
 const SAVE_KEY = { stone: 'stones', grass: 'grass', big: 'big', tree: 'trees' };
 const REACH = { stone: 1.6, grass: 1.4, big: 2.0, tree: 1.7 };
@@ -75,7 +75,7 @@ export const UPGRADES = [
   { id: 'range1', key: 'range', lv: 1, coins: 250, need: [['stone', 5], ['fiber', 10]] },
   { id: 'power1', key: 'power', lv: 1, coins: 400, need: [['stone', 15], ['wood', 5]], buster: true },
 ];
-export const BENCH = { x: PAD.x - 4.2, z: PAD.z + 3.4 };
+export const BENCH = { x: PAD.x - 4, z: PAD.z + 6.5 }; // by the path below the launch pad
 
 const _v = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
 const groundY = (x, z) => (z > 150 ? Math.max(isle2Height(x, z), 0.05) : heightAt(x, z));

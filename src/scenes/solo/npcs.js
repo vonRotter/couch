@@ -61,7 +61,7 @@ export const NPCS = {
     fest: { lanterns: [17, 24, 'plazaEast'] }, // Lantern Night: he stays under the lanterns until midnight
     loves: ['pumpkin', 'fishStew'], likes: ['carrot', 'corn', 'starfruit'], dislikes: ['radish'],
     quests: [
-      { need: [['carrot', 1]], reward: { items: [['pickaxe', 1]] } },
+      { need: [['carrot', 1]], reward: { unlock: 'rockBuster' } }, // the Zip-Zap's rock buster (was: the pickaxe)
       { find: 'lens', minHearts: 1, reward: { items: [['starfruitSeed', 1]], coins: 60 } },
     ],
     events: [{ at: 2, lines: 4, reward: { items: [['pumpkinSeed', 2]] } }, { at: 4, lines: 4, reward: { deco: 'lantern' } },

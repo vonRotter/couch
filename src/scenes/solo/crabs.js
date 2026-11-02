@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
-import { now, hourOf, count, give, take } from './save.js';
+import { now, hourOf, count, give, take, held as heldOf } from './save.js';
 import { dayKey } from './calendar.js';
 import { icon } from './items.js';
 import { heightAt, isSand, bake, CRAB_COVE, HOME, PIER } from './map.js';
@@ -346,7 +346,7 @@ export class CrabCare {
 
   /** Big shells in the bag (found and crafted), the held one first. */
   shellsInBag() {
-    const S = this.S, held = S.inv[S.sel]?.id;
+    const S = this.S, held = heldOf(S)?.id;
     const list = SHELL_IDS.filter((id) => count(S, id) > 0);
     if (list.includes(held)) { list.splice(list.indexOf(held), 1); list.unshift(held); }
     return list;
