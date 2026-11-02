@@ -696,9 +696,30 @@ rainy day. Time only moves forward (crops and animals grow as if the time had pa
 browser, "Real time" goes back, and `?dev=0` turns the panel off. It changes nothing else.
 
 **Read-aloud.** V turns read-aloud on or off (on by default for new solo profiles, off on the shared
-island; each profile remembers its choice). Intro cards, Party Mix how-to cards and the story and
-campaign cards are read by the browser's own voice in English or Norwegian; if the device has no
-voice for the language it stays quiet.
+island; each profile remembers its choice). It uses the browser's own voices in English or Norwegian;
+if the device has no voice for the language it stays quiet.
+
+- **One narrator.** A calm narrator reads intro and how-to cards, story and campaign cards,
+  narration, menus, tutorials, item names and toasts, always in the device's best voice (natural or
+  online voices such as Microsoft "Natural" and Google first, then the rest; novelty voices never).
+- **Voice types for characters.** Every speaking character has a voice type: child, grandma, gruff
+  sailor, cheerful shopkeeper, owl sage, sleepy old man, villain, tiny creature, crab, bird, robot or
+  friendly grown-up. Each type gets its own voice where the device has several for the language
+  (picked by the voice name: Female/Male, known names like Zira, David, Samantha, Daniel, Iselin, Finn
+  or Nora), plus its own pitch and rate, and every character a small offset of its own, so two
+  grandmas still differ (Keeper Bram sounds the same on the island and in the Lighthouse Caves).
+  Norwegian devices often have one or two voices: then the types differ by pitch and rate only. On
+  story and campaign cards, quoted lines are said by the speaker and the rest by the narrator.
+- **Babble.** B (or *Characters* in the pause menu, or [C] on a profile card: voice on, babble, off)
+  switches characters to babble: Animal Crossing-style syllables made with WebAudio while the line is
+  on screen (squeaky for tiny creatures, a low rumble for gruff sailors and villains, beeps for the
+  robot, clicks for crabs, chirps for birds). The narrator keeps reading. Each profile remembers it,
+  the shared island has its own setting. Babble also needs read-aloud on (V).
+- **Hearing the voices.** With `?dev` (see the time machine above), F10 shows a voice panel: the
+  device's voices (local or online, guessed gender, quality score), which voice the narrator and every
+  type got, the characters of each type, and buttons that play each type read aloud or as babble.
+- **Adding a character:** add `'<game>.<id>': '<type>'` to `SPEAKERS` in `src/core/voices.js` and call
+  `say(text, '<game>.<id>')` (narration: `say(text, 'narrator')`).
 
 **Guest game contract.** A guest game is opened with
 `?profile=<id>&name=<name>&return=<url>&lang=en|no`, and the active profile is also stored in
@@ -712,7 +733,10 @@ src/
   main.js            renderer, game loop, scene switching
   core/
     profiles.js      solo profiles (storage, picker) and the guest-game contract
-    voice.js         read-aloud with the browser's speech voices
+    voice.js         read-aloud: say(text, speaker), the narrator, voice types or babble (B)
+    voices.js        speaker -> voice type table, types, choosing the device's voices per type
+    babble.js        WebAudio babble syllables per voice type
+    devvoices.js     ?dev voice panel (F10): the device's voices, play every type
     input.js         keyboard schemes + gamepads -> one controller shape
     roster.js        joined players, colors, hats, saved star count
     character.js     the shared bean buddy (squash/stretch, blink, hats)
