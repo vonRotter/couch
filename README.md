@@ -655,8 +655,8 @@ night match yours and crops grow while you are away.
   it (or falling off a hop trail) is a little splash and puts you back where that hop started. Forgiving: a
   jump still works a moment after walking off an edge, and a press just before landing jumps again. Up on a
   roof or a ledge only what is up there answers [B] (a chest, a bell), not the doors and villagers below.
-  - **Stepping stones:** across the river south of the bridge (a shortcut to the west bank; the castle and
-    the keep still need the repaired bridge), and across the new pond south of the square (stones and lily
+  - **Stepping stones:** across the river south of the bridge (they appear once the old bridge is fixed, as a
+    shortcut to the west bank), and across the new pond south of the square (stones and lily
     pads).
   - **Hidden areas,** each with a treasure chest (the first find has a yard decoration, coins and seeds; the
     chest is saved as found). **The secret grove** behind the waterfall: hop over the plunge pool, through the
@@ -685,11 +685,11 @@ night match yours and crops grow while you are away.
 - **Island mini-games:** **skipping stones** at the pile of flat stones on the beach (press [B] when the bar
   is in the green: up to 7 skips, a record brings coins); **kite flying** at the kite stand on kite hill
   (the stick keeps the kite in the sparkly wind for 30 seconds); **hide-and-seek with Mumble** (he asks when
-  you talk to him, once a day from two hearts on: count to five, then find the giggling bush at the meadow within a minute); a **snowball
-  fight with Pip** in winter weeks behind two snow forts south of the square ([B] throws, jump over her
-  snowballs); **leaf piles** in autumn weeks: jump into one and it bursts, some hide coins, a golden acorn,
+  you talk to him, once a day from four hearts on: count to five, then find the giggling bush at the meadow within a minute); a **snowball
+  fight with Pip** in winter weeks behind two snow forts south of the square ([B] throws, with only a little
+  aim help, so lead her; she ducks now and then; jump over her snowballs); **leaf piles** in autumn weeks: jump into one and it bursts, some hide coins, a golden acorn,
   seeds or a striped sock.
-- **Villagers play with you:** they **wave** when you jump near them; **Pip plays tag** (from two hearts on she asks once a day; catch her, then
+- **Villagers play with you:** they **wave** when you jump near them; **Pip plays tag** (from four hearts on she asks once a day; catch her, then
   she chases you; up on a stump she cannot get you); stand still at a view spot (the lookout, the bench on
   kite hill, the bench by the lighthouse, the end of the pier, the islet) **at sunset** (17:30-20:30) or **on a
   clear night** and a friend comes over to watch with you (once a day each); and every day one villager asks

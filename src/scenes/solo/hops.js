@@ -74,8 +74,9 @@ export class Hops {
     this.cluster = 'stones';
     this.run = null;
     this.t = 0;
-    // stepping stones (no timer): the river shortcut and the pond
-    for (const p of RIVER_STONES) this.piece(p);
+    // stepping stones (no timer): the river shortcut (once the bridge is fixed) and the pond
+    this.riverStones = !!host.save.unlocks.bridge;
+    if (this.riverStones) for (const p of RIVER_STONES) this.piece(p);
     this.cluster = 'pond';
     for (const p of POND_STONES) this.piece(p);
     this.buildSecrets();
@@ -90,6 +91,21 @@ export class Hops {
   }
 
   get S() { return this.host.save; }
+
+  /** The river stones appear when the old bridge is fixed (so the bridge quest still matters). */
+  addRiverStones() {
+    if (this.riverStones) return;
+    this.riverStones = true;
+    this.clusters = new Map();
+    this.cluster = 'stones';
+    for (const p of RIVER_STONES) this.piece(p);
+    for (const root of this.clusters.values()) {
+      const { group, keepers } = bake(root);
+      this.host.scene.add(group);
+      for (const k of keepers) { k.removeFromParent(); this.host.scene.add(k); }
+    }
+    this.clusters = null;
+  }
 
   /** The group of static models for the place being built (baked once all is built). */
   statics() {

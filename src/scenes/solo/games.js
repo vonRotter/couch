@@ -368,13 +368,16 @@ export class IslandGames {
     const host = this.host, P = host.player, s = this.snow;
     if (s.cool > 0) return;
     s.cool = 0.55;
-    // facing Pip's way: the snowball flies to where she is running (kids aim with their whole bean)
+    // roughly facing Pip: the snowball curves a little toward where she is now (not where she runs),
+    // so you still have to lead her; she sometimes ducks (updateSnow)
     const y0 = P.fy + 1.0;
     let T = 0.5, tx = s.n.x - P.x, tz = s.n.z - P.z;
     const d0 = Math.hypot(tx, tz) || 1;
-    if ((P.fx * tx + P.fz * tz) / d0 > 0.2) {
+    if ((P.fx * tx + P.fz * tz) / d0 > 0.6) {
       T = d0 / 11;
-      tx += s.dir * 2.4 * T + (Math.random() - 0.5) * 1.4; // her next steps (and a little wobble)
+      // half aim help: halfway between straight ahead and at her, plus a wobble
+      tx = (tx + P.fx * d0) / 2 + (Math.random() - 0.5) * 1.6;
+      tz = (tz + P.fz * d0) / 2;
       const vy = (s.n.y + 0.9 - y0) / T + 6 * T;
       this.ball(new THREE.Vector3(P.x, y0, P.z), tx / T, vy, tz / T, 'me');
     } else this.ball(new THREE.Vector3(P.x + P.fx * 0.4, y0, P.z + P.fz * 0.4), P.fx * 11, 3.2, P.fz * 11, 'me');
@@ -419,7 +422,11 @@ export class IslandGames {
       let hit = null;
       // the forts stop low snowballs
       for (const f of this.forts) if (Math.abs(p.x - f.position.x) < 1.2 && Math.abs(p.z - f.position.z) < 0.35 && p.y < f.position.y + 0.7) hit = 'fort';
-      if (!hit && b.from === 'me' && !s.done && Math.hypot(p.x - n.x, p.z - n.z) < 0.75 && p.y < n.y + 1.4) { hit = 'pip'; s.me++; n.hop = 1; this.sayNpc('pip', Math.random() < 0.5 ? 'gm.snow.hitPip' : 'gm.snow.hitPip2', {}, false); }
+      if (!hit && b.from === 'me' && !s.done && Math.hypot(p.x - n.x, p.z - n.z) < 0.75 && p.y < n.y + 1.4) {
+        if (b.dodge === undefined) b.dodge = Math.random() < 0.2; // Pip ducks one throw in five
+        if (b.dodge) n.hop = 1;
+        else { hit = 'pip'; s.me++; n.hop = 1; this.sayNpc('pip', Math.random() < 0.5 ? 'gm.snow.hitPip' : 'gm.snow.hitPip2', {}, false); }
+      }
       if (!hit && b.from === 'them' && !s.done && Math.hypot(p.x - P.x, p.z - P.z) < 0.7 && p.y < P.fy + 1.3 && p.y > P.fy) { hit = 'me'; s.them++; P.ch.squash(0.7); }
       if (!hit && p.y < heightAt(p.x, p.z)) hit = 'ground';
       if (hit || b.life <= 0) {

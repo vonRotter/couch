@@ -800,6 +800,7 @@ export class SoloIslandScene extends BaseScene {
     S.unlocks[key] = true;
     const msg = { rockBuster: 'zz.t.rockBuster', bridge: 'isl.t.bridge', mine: 'isl.t.mine', burrow: 'isl.t.burrow', bigCan: 'isl.t.bigCan', discount: 'isl.t.discount', starfruit: 'isl.t.starfruit', barn: 'isl.t.barn', rosaHelps: 'isl.t.rosaHelps', goldRod: 'isl.t.goldRod', greenhouse: 'isl.t.greenhouse' }[key];
     if (key === 'greenhouse') this.greenhouse.fix();
+    if (key === 'bridge') this.hops.addRiverStones();
     if (key === 'barn') { this.ranch.addAnimal('chicken'); this.ranch.addAnimal('chicken'); this.ranch.refresh(); }
     if (msg) { this.game.ui.toast(t(msg), 3000); speak(t(msg), 'narrator'); }
     this.game.audio.play('fanfare');

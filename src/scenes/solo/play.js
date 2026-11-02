@@ -123,8 +123,8 @@ export class Play {
   /** A play invitation in a chat (island.talkTo): tag with Pip, snowballs in winter, hide-and-seek with Mumble. */
   offer(n) {
     const host = this.host, games = host.games, D = this.day();
-    // friends play with you (two hearts and up), once a day each: an invitation at the end of a chat
-    if (heartsOf(npcState(this.S, n.id)) < 2 || D.offered?.includes(n.id)) return null;
+    // close friends play with you (four hearts and up), once a day each: an invitation at the end of a chat
+    if (heartsOf(npcState(this.S, n.id)) < 4 || D.offered?.includes(n.id)) return null;
     const yes = (fn) => ({ choices: ['isl.yes', 'isl.no'], onChoice: (i) => { if (i === 0) fn(); else n.talking = false; } });
     let line = null;
     if (n.id === 'mumble' && games.canHide()) line = { who: 'mumble', key: 'play.hide.ask', ...yes(() => { n.talking = false; games.startHide(); }) };
