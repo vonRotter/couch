@@ -69,22 +69,33 @@ export class Hops {
     host.hud.root.appendChild(this.countEl);
     this.group = new THREE.Group(); // things that move (chests, bells)
     host.scene.add(this.group);
-    this.statics = new THREE.Group(); // everything else is baked into a few meshes (fast to draw)
+    // everything else is baked into a few meshes per place (fast to draw, and culled when out of view)
+    this.clusters = new Map();
+    this.cluster = 'stones';
     this.run = null;
     this.t = 0;
     // stepping stones (no timer): the river shortcut and the pond
     for (const p of RIVER_STONES) this.piece(p);
+    this.cluster = 'pond';
     for (const p of POND_STONES) this.piece(p);
     this.buildSecrets();
     this.buildTrails();
-    const { group, keepers } = bake(this.statics);
-    host.scene.add(group);
-    for (const k of keepers) { k.removeFromParent(); host.scene.add(k); }
-    this.statics = null;
+    for (const root of this.clusters.values()) {
+      const { group, keepers } = bake(root);
+      host.scene.add(group);
+      for (const k of keepers) { k.removeFromParent(); host.scene.add(k); }
+    }
+    this.clusters = null;
     this.refreshChests();
   }
 
   get S() { return this.host.save; }
+
+  /** The group of static models for the place being built (baked once all is built). */
+  statics() {
+    if (!this.clusters.has(this.cluster)) this.clusters.set(this.cluster, new THREE.Group());
+    return this.clusters.get(this.cluster);
+  }
 
   // ---------- building ----------
 
@@ -113,7 +124,7 @@ export class Hops {
     if (p.kind !== 'pad') m.position.y = base;
     m.position.x = p.x;
     m.position.z = p.z;
-    this.statics.add(m);
+    this.statics().add(m);
     const shape = p.hw !== undefined ? { x: p.x, z: p.z, hw: p.hw, hd: p.hd } : { x: p.x, z: p.z, r: p.r };
     return map.platform({ ...shape, top, kind: p.kind, ...extra });
   }
@@ -123,6 +134,7 @@ export class Hops {
     this.chests = {};
     for (const id of SECRET_IDS) {
       const sc = SECRETS[id];
+      this.cluster = id;
       sc.path.forEach((p, i) => this.piece(p, { secret: id }, i));
       let y = heightAt(sc.chest.x, sc.chest.z);
       if (id === 'roof') {
@@ -136,14 +148,14 @@ export class Hops {
         const T = sc.tree, top = heightAt(T.x, T.z) + T.top;
         const m = makeHollowTree(T.r, T.top);
         m.position.set(T.x, heightAt(T.x, T.z), T.z);
-        this.statics.add(m);
+        this.statics().add(m);
         map.platform({ x: T.x, z: T.z, r: T.r, top, secret: id });
         y = top;
       } else if (id === 'islet') {
         const I = sc.island;
         const m = makeIslet(I.r, I.abs - SEA_Y);
         m.position.set(I.x, SEA_Y, I.z);
-        this.statics.add(m);
+        this.statics().add(m);
         map.platform({ x: I.x, z: I.z, r: I.r, top: I.abs, secret: id });
         map.circObs(I.x + I.r * 0.45 * 0.8, I.z - I.r * 0.35 * 0.8, 0.22); // the palm trunk
         y = I.abs;
@@ -153,13 +165,13 @@ export class Hops {
         // a glade on the cliff top: moss, glowing mushrooms and flowers, trees around it
         const g = makeGroveBits(6, 4.6);
         g.position.set(sc.area.x, heightAt(sc.area.x, sc.area.z) + 0.01, sc.area.z);
-        this.statics.add(g);
+        this.statics().add(g);
         this.groveGlow = g.userData.glowCap;
         for (const [x, z, s] of [[-16.4, -41.0, 1.0], [-12.0, -39.8, 1.15], [-11.4, -35.4, 0.9], [-17.6, -34.4, 0.85], [-13.8, -41.2, 0.9]]) {
           const tr = makeGroveTree(s);
           tr.position.set(x, heightAt(x, z), z);
           tr.rotation.y = x;
-          this.statics.add(tr);
+          this.statics().add(tr);
           map.circObs(x, z, 0.4 * s);
         }
       }
@@ -175,10 +187,11 @@ export class Hops {
     this.trails = {};
     for (const id of TRAIL_IDS) {
       const T = TRAILS[id];
+      this.cluster = id;
       const sign = makeTrailSign(SIGN_COLOR[id]);
       sign.position.set(T.sign.x, heightAt(T.sign.x, T.sign.z), T.sign.z);
       sign.rotation.y = -0.3;
-      this.statics.add(sign);
+      this.statics().add(sign);
       this.host.map.circObs(T.sign.x, T.sign.z, 0.3);
       const plats = T.path.map((p, i) => this.piece(p, { trail: id, step: i }, i));
       const last = plats[plats.length - 1];

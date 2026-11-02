@@ -295,6 +295,7 @@ export class Surprises {
     const on = this.meteor && P && host.mode === 'walk' && !host.indoors;
     for (const s of this.shooters) {
       const m = s.m;
+      m.visible = !!this.meteor && s.life > 0;
       if (!this.meteor) { m.material.opacity = 0; continue; }
       s.t -= dt;
       if (s.t <= 0) { s.t = 1.5 + Math.random() * 2.5; s.life = 0.9; const a = Math.random() * 6; s.from = new THREE.Vector3((P?.x || 0) + Math.cos(a) * 14, 16 + Math.random() * 6, (P?.z || 0) - 10 - Math.random() * 8); s.dir = new THREE.Vector3(-1 + Math.random() * 2, -0.5, 0.4).normalize(); }
