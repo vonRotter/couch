@@ -17,15 +17,15 @@ const GRID_COLS = 8;
 
 addStrings({
   en: {
-    'prof.title': 'Who is playing?', 'prof.new': 'New player', 'prof.hint': 'Stick: choose · [A]: play · [C]: voice on/off · [B]: back',
-    'prof.voiceOn': 'voice on', 'prof.voiceOff': 'voice off', 'prof.nameTitle': 'What is your name?',
+    'prof.title': 'Who is playing?', 'prof.new': 'New player', 'prof.hint': 'Stick: choose · [A]: play · [C]: voice on, babble or off · [B]: back',
+    'prof.voiceOn': 'voice on', 'prof.voiceOff': 'voice off', 'prof.voiceBabble': 'voice on, characters babble', 'prof.nameTitle': 'What is your name?',
     'prof.nameHint': 'Stick: letter · [A]: type · [B]: delete · choose OK when done', 'prof.ok': 'OK', 'prof.del': '⌫',
     'prof.colorTitle': 'Pick your color', 'prof.colorHint': 'Stick left/right · [A]: done', 'prof.full': 'There is room for {n} players.',
     'prof.created': 'Welcome, {name}!',
   },
   no: {
-    'prof.title': 'Hvem spiller?', 'prof.new': 'Ny spiller', 'prof.hint': 'Pinne: velg · [A]: spill · [C]: stemme av/på · [B]: tilbake',
-    'prof.voiceOn': 'stemme på', 'prof.voiceOff': 'stemme av', 'prof.nameTitle': 'Hva heter du?',
+    'prof.title': 'Hvem spiller?', 'prof.new': 'Ny spiller', 'prof.hint': 'Pinne: velg · [A]: spill · [C]: stemme på, babling eller av · [B]: tilbake',
+    'prof.voiceOn': 'stemme på', 'prof.voiceOff': 'stemme av', 'prof.voiceBabble': 'stemme på, figurene babler', 'prof.nameTitle': 'Hva heter du?',
     'prof.nameHint': 'Pinne: bokstav · [A]: skriv · [B]: slett · velg OK når du er ferdig', 'prof.ok': 'OK', 'prof.del': '⌫',
     'prof.colorTitle': 'Velg farge', 'prof.colorHint': 'Pinne venstre/høyre · [A]: ferdig', 'prof.full': 'Det er plass til {n} spillere.',
     'prof.created': 'Velkommen, {name}!',
@@ -51,7 +51,7 @@ export function activeProfileId() {
   return read(ACTIVE_KEY, null);
 }
 
-/** Save changes to a profile (name, colorIndex, hat, voice). */
+/** Save changes to a profile (name, colorIndex, hat, voice, babble). */
 export function updateProfile(profile) {
   const list = listProfiles();
   const i = list.findIndex((p) => p.id === profile.id);
@@ -62,7 +62,7 @@ export function updateProfile(profile) {
 export function createProfile({ name, colorIndex }) {
   const list = listProfiles();
   const id = `${name.toLowerCase().replace(/[^a-zæøå0-9]+/g, '') || 'p'}-${Date.now().toString(36)}`;
-  const profile = { id, name, colorIndex, hat: 1, voice: true };
+  const profile = { id, name, colorIndex, hat: 1, voice: true, babble: false };
   list.push(profile);
   write(LIST_KEY, list);
   return profile;
@@ -107,7 +107,7 @@ export class ProfilePicker {
       const cards = this.profiles.map((p, i) => {
         const c = PLAYER_COLORS[p.colorIndex] || PLAYER_COLORS[0];
         return `<div class="prof-card ${i === this.index ? 'on' : ''}" style="--c:${c.css}">
-          <div class="prof-bean"></div><b>${esc(p.name)}</b><small>${p.voice ? '🔊' : '🔇'} ${t(p.voice ? 'prof.voiceOn' : 'prof.voiceOff')}</small></div>`;
+          <div class="prof-bean"></div><b>${esc(p.name)}</b><small>${p.voice ? (p.babble ? '💬' : '🔊') : '🔇'} ${t(p.voice ? (p.babble ? 'prof.voiceBabble' : 'prof.voiceOn') : 'prof.voiceOff')}</small></div>`;
       });
       if (this.profiles.length < MAX_PROFILES) {
         cards.push(`<div class="prof-card new ${this.index === this.profiles.length ? 'on' : ''}"><div class="prof-plus">+</div><b>${t('prof.new')}</b></div>`);
@@ -148,7 +148,9 @@ export class ProfilePicker {
     if (step) { this.index = (this.index + step + n) % n; this.scene.game.audio.play('select'); this.render(); }
     const p = this.profiles[this.index];
     if (d.cPressed && p) {
-      p.voice = !p.voice;
+      // read-aloud on (character voices) -> on, characters babble -> off -> on
+      if (p.voice && !p.babble) p.babble = true;
+      else if (p.voice) { p.voice = false; p.babble = false; } else p.voice = true;
       updateProfile(p);
       this.scene.game.audio.play(p.voice ? 'join' : 'leave');
       this.render();

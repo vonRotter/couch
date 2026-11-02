@@ -46,7 +46,8 @@ import { BreachScene } from './scenes/breach.js';
 import { KeepSoloScene } from './scenes/keepsolo.js';
 import { StoryScene, STORY_GAMES } from './scenes/story.js';
 import { activateProfile, updateProfile, soloSaveKey } from './core/profiles.js';
-import { setVoice, voiceOn, say } from './core/voice.js';
+import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './core/voice.js';
+import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -97,6 +98,7 @@ class Game {
     this.roster = new Roster();
     setLang(this.roster.progress.lang || 'en');
     setVoice(this.roster.progress.voice === true);
+    setBabble(this.roster.progress.babble === true);
     // Solo island state: { profile } while a solo profile is playing, else null.
     this.solo = null;
     // Guest games link back with #solo: go straight to the profiles after the first join.
@@ -108,6 +110,7 @@ class Game {
       return [...new Set(devs.map((d) => buttonLabel(d, b)))];
     });
     this.audio = new AudioEngine();
+    setVoiceAudio(this.audio); // babble plays on the game's sound bus
     this.ui = new UI(document.getElementById('ui'));
     this.input.onActivity = () => this.audio.ensure();
 
@@ -189,7 +192,8 @@ class Game {
     this.solo = { profile };
     if (keep) this.applyProfile(keep);
     setVoice(profile.voice);
-    if (profile.voice) say(t('solo.welcome', { name: profile.name }));
+    setBabble(profile.babble === true);
+    if (profile.voice) say(t('solo.welcome', { name: profile.name }), 'narrator');
     this.transition(() => new SoloIslandScene(this, {}));
   }
 
@@ -208,6 +212,7 @@ class Game {
     this.roster.useSave();
     for (const p of this.roster.players) delete p.profileName;
     setVoice(this.roster.progress.voice === true);
+    setBabble(this.roster.progress.babble === true);
     if (mode === 'story') this.startGame('story');
     else this.transition(() => new HubScene(this, {}));
   }
@@ -241,7 +246,18 @@ class Game {
     setVoice(on);
     if (this.solo) { this.solo.profile.voice = on; updateProfile(this.solo.profile); } else { this.roster.progress.voice = on; this.roster.save(); }
     this.ui.toast(t(on ? 'voice.on' : 'voice.off'));
-    if (on) say(t('voice.on'));
+    if (on) say(t('voice.on'), 'narrator');
+  }
+
+  /** B: characters babble (WebAudio syllables) or speak with their voice types; the narrator always reads. */
+  toggleBabble() {
+    const on = !babbleMode();
+    setBabble(on);
+    if (this.solo) { this.solo.profile.babble = on; updateProfile(this.solo.profile); } else { this.roster.progress.babble = on; this.roster.save(); }
+    this.audio.play('select');
+    this.ui.toast(voiceOn() ? t(on ? 'voice.babbleOn' : 'voice.babbleOff') : `${t(on ? 'voice.babbleOn' : 'voice.babbleOff')} · ${t('voice.babbleNeedsVoice')}`, 2600);
+    // the narrator says what changed, then a character shows how it sounds now
+    if (voiceOn()) say([[t(on ? 'voice.babbleOn' : 'voice.babbleOff'), 'narrator'], [t('voice.sample'), 'isl.pip']]);
   }
 
   toggleLanguage() {
@@ -261,9 +277,10 @@ class Game {
   }
 
   renderPause() {
-    const items = ['resume', 'retry', 'end'];
+    const items = ['resume', 'retry', 'end', 'chars'];
+    const label = (k) => (k === 'chars' ? `${t('pause.chars')}: ${t(babbleMode() ? 'pause.charsBabble' : 'pause.charsVoices')}` : t(`pause.${k}`));
     const html = `<div class="results-title">${t('pause.title')}</div>
-      <div class="pause-list">${items.map((k, i) => `<div class="pause-item ${i === this.pause.index ? 'on' : ''}">${t(`pause.${k}`)}</div>`).join('')}</div>
+      <div class="pause-list">${items.map((k, i) => `<div class="pause-item ${i === this.pause.index ? 'on' : ''}">${label(k)}</div>`).join('')}</div>
       <div class="results-footer">${t('pause.hint')}</div>`;
     if (!this.pause.el) this.pause.el = this.ui.panel(html, 'panel pause');
     else this.pause.el.innerHTML = html;
@@ -281,10 +298,12 @@ class Game {
       if (!d) continue;
       const dir = -d.stepY;
       if (dir) {
-        P.index = (P.index + dir + 3) % 3;
+        P.index = (P.index + dir + 4) % 4;
         this.audio.play('select');
         this.renderPause();
       }
+      // the last item is a setting: [A]/[B] or left/right switches it, the menu stays open
+      if (P.index === 3 && (d.aPressed || d.bPressed || d.stepX)) { this.toggleBabble(); this.renderPause(); continue; }
       if (d.aPressed || d.bPressed) {
         const choice = P.index;
         this.closePause();
@@ -327,6 +346,7 @@ class Game {
     if (this.input.mutePressed) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
     if (this.input.pressed.has('KeyN')) this.toggleLanguage();
     if (this.input.pressed.has('KeyV')) this.toggleVoice();
+    if (this.input.pressed.has('KeyB')) this.toggleBabble();
     if (this.input.menuPressed && !this.switching && this.current && !(this.current instanceof HubScene) && !this.current.ownMenu) {
       if (this.pause) this.closePause();
       else this.openPause();
