@@ -17,7 +17,7 @@ export class MiniGame extends BaseScene {
 
   async intro(title, sub) {
     this.state = 'intro';
-    say(`${title}. ${sub || ''}`);
+    say(`${title}. ${sub || ''}`, 'narrator');
     await this.game.ui.banner(title, sub, 2300);
     if (this.game.current !== this) return;
     await this.game.ui.countdown(this.game.audio);
