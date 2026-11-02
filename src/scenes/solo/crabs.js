@@ -179,7 +179,7 @@ export class CrabCare {
     this.host.markDirty();
   }
 
-  groundY(x, z) { return this.host.map.floorAt(x, z, true); }
+  groundY(x, z) { return this.host.map.restY(x, z); } // (a crab friend hops onto stones and crates after you)
 
   spawn(c, isDone = false) {
     const o = { ...c, x: c.at.x, z: c.at.z, state: isDone ? 'happy' : 'wait', t: 0, tugs: 0, yaw: 0, seen: false, area: c.id.split('-')[0] };

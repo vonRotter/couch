@@ -27,7 +27,7 @@ import { thumb } from './thumbs.js';
 import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
 import { DiveScene } from './dive.js';
-import { IslandMap, heightAt, riverDist, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
+import { IslandMap, heightAt, riverDist, SEA_Y, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
 import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS, cropNight } from './farm.js';
 import { Homes, makeHomeMats } from './homes.js';
 import { FriendsBook } from './friends.js';
@@ -50,6 +50,10 @@ import { Tournament } from './contest.js';
 import { Story } from './story.js';
 import { LightTop } from './lighttop.js';
 import { mesh, box, sph, makeDeco, makeBranch, makeSign } from './models.js';
+import { Hops } from './hops.js';
+import { Surprises } from './surprise.js';
+import { IslandGames } from './games.js';
+import { Play } from './play.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
 // One player (with the profile's name, color and hat). Games are PLACES you walk to; some open through
@@ -72,7 +76,8 @@ const DOOR_R = 1.9;
 // The solo island's buttons: [A] jumps, [B] is the one "use" button (tools, talking, picking up, going in),
 // [C] opens the menu. The bag is Tab on a keyboard or a long press of [B] on a gamepad; F is the Friends book.
 const HOLD_BAG = 0.45; // seconds of [B] on a gamepad that open the bag instead of using
-const JUMP_V = 7.4, GRAVITY = 26; // a small bean hop (about a meter high, 0.6 s in the air)
+const JUMP_V = 7.4, GRAVITY = 26; // a bean hop: about a meter high, 0.57 s and 3.5 m in the air
+const SNAP = 0.3; // walking down a slope or a small step keeps your feet on the ground (more: you fall)
 
 // The trophy garden between the farm and the square: 3 rows of 5 spots for decorations.
 const DECO_ORDER = ['lhLamp', 'lhTrophy', 'duckTrophy', 'kite', 'hopTrophy', 'banner', 'statue', 'gnome', 'pumpkinLamp', 'bottle', 'lantern', 'spyglass', 'rocket', 'moonrock', 'castleTrophy'];
@@ -220,10 +225,14 @@ export class SoloIslandScene extends BaseScene {
     this.friends = new FriendsBook(this); // hearts, birthdays and favorite gifts (milestone C)
     this.crabs = new CrabCare(this); // crab friends: help crabs, Crab Cove, a crab who follows you (crabs.js)
     this.zipzap = new ZipZap(this); // Pip's Zip-Zap: rocks, grass and trees to zap, the beam, the scan, upgrades
+    this.hops = new Hops(this); // jumping: stepping stones, hidden areas with chests, hop trails and races
     this.bagUi = new BagUi(this); // the bag panel (bag rows + hotbar) and the cottage chest
     this.farm.objModel = (id) => this.builder.model(id); // sprinklers and scarecrows on the field
     this.seasons = new Seasons(this);
     this.spawnNpcs();
+    this.surprise = new Surprises(this); // daily surprises: meteor shower, merchant, balloon visitor, bottle map
+    this.games = new IslandGames(this); // skipping stones, kites, hide-and-seek, snowballs, leaf piles
+    this.play = new Play(this); // villagers play: tag, waves, sunset and stars together, little tasks
     this.story = new Story(this); // milestone B4: the lighthouse story and the lighthouse top
     this.lightTop = new LightTop(this);
     this.checkRewards();
@@ -360,6 +369,7 @@ export class SoloIslandScene extends BaseScene {
     hand.position.set(0.42, 0.42, 0.12);
     ch.pivot.add(hand);
     this.player = { p, ch, x, z, y: heightAt(x, z), jy: 0, vy: 0, fx: 0, fz: 1, hand, toolId: null, toolMesh: null };
+    this.groundCheck(this.player, this.walkState);
     ch.face(0, 1);
     this.puffs.burst(new THREE.Vector3(x, 0.6, z), 0xffffff, { count: 14, speed: 4, size: 0.4 });
   }
@@ -404,6 +414,10 @@ export class SoloIslandScene extends BaseScene {
     this.seasons.tick(at);
     this.isle2.tick(at);
     this.crabs.tick(at);
+    this.hops.tick(at);
+    this.surprise.tick(at);
+    this.games.tick(at);
+    this.play.tick(at);
     this.photo.check();
     this.story.tick(at);
     this.applySky(false);
@@ -686,6 +700,7 @@ export class SoloIslandScene extends BaseScene {
     if (S.unlocks.barn && S.ranch.animals.length && S.ranch.trough <= 0) out.push(t('isl.task.hay'));
     if ((S.quests.hazel?.n === 2) && !count(S, 'stone')) out.push(t('isl.task.bench'));
     out.unshift(...this.seasons.tasks());
+    out.unshift(...this.surprise.tasks(), ...this.games.tasks(), ...this.play.tasks());
     out.unshift(...this.tour.tasks());
     out.unshift(...this.story.tasks());
     if (this.isle2.here()) out.unshift(t('isl.task.isle'));
@@ -954,6 +969,7 @@ export class SoloIslandScene extends BaseScene {
     n.chatI = (n.chatI || 0) + 1;
     if (gk && n.chatI % 2 === 1) return L(gk, { n: id === 'bram' ? p.lighthouse?.crystals || 0 : p.skyhop || 0 });
     if (id === 'shelby' && n.chatI % 2 === 1) return this.crabs.shelbyLine(); // Shelby looks after Crab Cove
+    if (n.chatI % 3 === 2) { const hint = this.hops.hintLine(n); if (hint) return hint; } // a hidden spot you have not found
     const pool = heartsOf(st) >= 2 ? [1, 2, 3, 4, 5] : [1, 2, 3];
     return L(`chat${pool[(n.chatI + st.pts) % pool.length]}`);
   }
@@ -1048,6 +1064,12 @@ export class SoloIslandScene extends BaseScene {
     const fx = P.x + P.fx * 0.95, fz = P.z + P.fz * 0.95;
     const held = this.held;
     const nm = (k, v) => tFor(P.p, k, v);
+    // up on a roof, a ledge, a rock or in the air: only what is up there (a chest, a bell), not the doors,
+    // villagers or fields down below
+    if (!this.indoors && (P.air || P.fy > this.map.floorAt(P.x, P.z, S.unlocks.bridge) + 1.0)) {
+      this.hops.interactions(P, out, nm, true);
+      return this.fillDefaults(out, held);
+    }
     if (this.indoors) {
       this.bagUi.interactions(P, out, nm); // the storage chest
       if (!out.b) this.builder.interactions(P, out, nm);
@@ -1101,6 +1123,10 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.seasons.interactions(P, out, nm);
     if (!out.b) this.seasons.shellAction(P, out, nm);
     if (!out.b) this.crabs.interactions(P, out, nm); // crabs to help, Crab Cove's sign and dance
+    if (!out.b) this.hops.interactions(P, out, nm, false); // hop trails, chests, the lookout (hops.js)
+    if (!out.b) this.surprise.interactions(P, out, nm); // the day's surprise (surprise.js)
+    if (!out.b) this.games.interactions(P, out, nm); // island mini-games (games.js)
+    if (!out.b) this.play.interactions(P, out, nm); // villagers at play (play.js)
     // Shell Isle: the boat trip, and the palms, pools and treasure there
     if (!out.b) this.isle2.boatAction(P, out, nm);
     this.isle2.interactions(P, out, nm);
@@ -1250,30 +1276,111 @@ export class SoloIslandScene extends BaseScene {
     } else { this.bHold = null; use?.fn(); }
   }
 
-  /** [A]: a little bean hop (no falling, no damage: just for fun). */
+  /**
+   * [A]: jump. The bean jumps about a meter high and three meters far: onto stumps, crates, rocks and
+   * ledges (hops.js). Forgiving: a jump still works a moment after walking off an edge, and a press just
+   * before landing jumps again on landing.
+   */
   jump() {
     const P = this.player;
-    if (!P || P.jy > 0.02 || P.vy > 0) return;
+    if (!P) return;
+    if (P.air && !(P.coyote > 0)) { P.buffer = 0.14; return; }
+    // the hop starts here (a jump just after walking off an edge keeps the edge as its start)
+    if (!P.air) P.takeoff = P.safe ? { ...P.safe } : { x: P.x, z: P.z, fy: P.fy };
+    P.air = true;
+    P.coyote = 0;
+    P.buffer = 0;
     P.vy = JUMP_V;
-    P.jy = 0.001;
+    P.peak = P.fy;
     P.ch.squash(0.72);
     this.game.audio.play('jump');
     this.crabs?.onJump(); // a crab friend dances when you jump
+    this.play?.onJump(); // villagers nearby wave (play.js)
   }
 
-  /** Jump physics, every frame in any mode (so a hop always lands). */
+  /** Jump physics in the other modes (talking, a panel...): a hop always lands, nothing moves sideways. */
   updateJump(dt) {
     const P = this.player;
-    if (!P || !(P.jy > 0 || P.vy > 0)) return;
-    P.vy -= GRAVITY * dt;
-    P.jy += P.vy * dt;
-    if (P.jy <= 0) {
-      P.jy = 0;
-      P.vy = 0;
-      P.ch.squash(0.7);
-      this.game.audio.play('land');
-      this.puffs.burst(new THREE.Vector3(P.x, P.y + 0.1, P.z), 0xffffff, { count: 5, speed: 1.6, up: 0.6, size: 0.22, life: 0.4 });
+    if (!P || this.mode === 'walk' || this.mode === 'sled' || this.mode === 'sail' || !P.air) return;
+    this.updateVertical(P, dt, this.walkState);
+  }
+
+  /**
+   * Height (the bean can jump): P.fy is where the feet are; P.air while jumping or falling. P.y stays the
+   * height you stand on (it follows a fall down, not a jump up: the camera and the other code use it) and
+   * P.jy = P.fy - P.y is drawn on top. Standing spots come from map.supportAt: the ground, decks, and the
+   * tops of stumps, crates, rocks, ledges and roofs (map.platform, hops.js).
+   */
+  updateVertical(P, dt, st) {
+    const map = this.map;
+    if (!P.air) {
+      const s = map.supportAt(P.x, P.z, P.fy, st);
+      if (s.y >= P.fy - SNAP) {
+        P.fy = s.y;
+        P.on = s.plat;
+        if (!s.water) P.safe = { x: P.x, z: P.z, fy: s.y, plat: s.plat };
+      } else {
+        // walked off an edge: fall (a jump still works for a moment)
+        P.air = true;
+        P.vy = 0;
+        P.coyote = 0.12;
+        P.peak = P.fy;
+        P.takeoff = P.safe ? { ...P.safe } : { x: P.x, z: P.z, fy: P.fy };
+      }
     }
+    if (P.air) {
+      P.coyote = Math.max(0, (P.coyote || 0) - dt);
+      P.buffer = Math.max(0, (P.buffer || 0) - dt);
+      const prev = P.fy;
+      P.vy -= GRAVITY * dt;
+      P.fy += P.vy * dt;
+      P.peak = Math.max(P.peak ?? P.fy, P.fy);
+      const s = map.supportAt(P.x, P.z, Math.max(prev, P.fy), st);
+      if (P.vy <= 0 && P.fy <= s.y) {
+        if (s.water) this.splash(P);
+        else this.land(P, s, prev);
+      }
+    }
+    P.standY = P.air ? Math.min(P.standY ?? P.fy, P.fy) : P.fy;
+    P.y = P.standY;
+    P.jy = P.fy - P.y;
+    P.sy = P.y;
+  }
+
+  /** Feet on something again. */
+  land(P, s, prevFy) {
+    const fell = (P.peak ?? prevFy) - s.y;
+    P.fy = s.y;
+    P.vy = 0;
+    P.air = false;
+    P.on = s.plat;
+    P.ch.squash(fell > 2 ? 0.55 : 0.7);
+    this.game.audio.play('land');
+    this.puffs.burst(new THREE.Vector3(P.x, s.y + 0.1, P.z), 0xffffff, { count: fell > 2 ? 10 : 5, speed: 1.6, up: 0.6, size: 0.22, life: 0.4 });
+    P.safe = { x: P.x, z: P.z, fy: s.y, plat: s.plat };
+    this.hops?.onLand(P, s.plat); // hop trails: off the trail puts you back
+    this.games?.onLand(P, s.plat); // leaf piles in autumn
+    if (P.buffer > 0) { P.buffer = 0; this.jump(); }
+  }
+
+  /** Into the water (or off a hop trail): a little splash, then back where that hop started. */
+  splash(P, color = 0x9fe4ff) {
+    const at = new THREE.Vector3(P.x, Math.max(P.fy, SEA_Y) + 0.1, P.z);
+    this.puffs.burst(at, color, { count: 14, speed: 3, up: 3, size: 0.3, life: 0.6 });
+    this.game.audio.play(color === 0x9fe4ff ? 'splat' : 'boing');
+    this.putBack(P);
+  }
+
+  /** Back to the start of the last hop (with a poof). */
+  putBack(P) {
+    const to = P.takeoff || P.safe || { x: P.x, z: P.z, fy: this.map.floorAt(P.x, P.z, this.walkState.bridge) };
+    P.x = to.x; P.z = to.z; P.fy = to.fy;
+    P.air = false; P.vy = 0; P.coyote = 0; P.buffer = 0;
+    P.lx = P.x; P.lz = P.z;
+    P.standY = P.fy;
+    P.ch.squash(0.7);
+    this.puffs.burst(new THREE.Vector3(P.x, P.fy + 0.5, P.z), 0xffffff, { count: 10, speed: 2.5, size: 0.3, life: 0.5 });
+    this.hops?.onPutBack(P);
   }
 
   swingTool() {
@@ -1774,19 +1881,50 @@ export class SoloIslandScene extends BaseScene {
     const len = Math.hypot(mx, mz);
     if (len > 1) { mx /= len; mz /= len; }
     const st = this.walkState;
+    this.groundCheck(P, st);
     if (len > 0.15) {
       const dx = mx * SPEED * dt, dz = mz * SPEED * dt;
-      if (this.map.walkable(P.x + dx, P.z, PR, st)) P.x += dx;
-      if (this.map.walkable(P.x, P.z + dz, PR, st)) P.z += dz;
+      if (this.canMove(P, P.x + dx, P.z, st)) P.x += dx;
+      if (this.canMove(P, P.x, P.z + dz, st)) P.z += dz;
       P.fx = mx / Math.max(len, 1e-3);
       P.fz = mz / Math.max(len, 1e-3);
       P.ch.face(mx, mz);
     }
     // never get stuck (e.g. after an unlock changes the map): nudge toward home
-    if (!this.indoors && !this.map.walkable(P.x, P.z, PR * 0.5, st)) this.unstick(P, st);
+    if (!this.indoors && !P.air && this.map.overlap(P.x, P.z, PR * 0.5, st, P.fy) > 0) this.unstick(P, st);
     if (this.indoors) this.builder.clampInside(P);
-    P.y = this.map.floorAt(P.x, P.z, st.bridge);
+    this.updateVertical(P, dt, st);
+    P.lx = P.x; P.lz = P.z;
     P.moving = Math.min(1, len);
+  }
+
+  /**
+   * Can the bean step to (x, z)? Not into things (but always out of them), not up a bank higher than a
+   * step, and never into water on foot (jumping over water is fine: landing in it puts you back).
+   */
+  canMove(P, x, z, st) {
+    const map = this.map;
+    const d = map.overlap(x, z, PR, st, P.fy);
+    if (d > 0 && d >= map.overlap(P.x, P.z, PR, st, P.fy) - 1e-4) return false;
+    if (!P.air && map.supportAt(x, z, P.fy, st).water) return false;
+    // on foot, no climbing up steep banks and cliff faces (whatever the frame rate): jump instead
+    if (!P.air && !map.deckAt(x, z, st.bridge) && heightAt(x, z) - P.fy > Math.max(0.06, 1.1 * Math.hypot(x - P.x, z - P.z))) return false;
+    return true;
+  }
+
+  /** After a jump to another place (a door, a boat, a scene) or a ride that moved us: stand on the ground there. */
+  groundCheck(P, st) {
+    const moved = P.lx === undefined || Math.hypot(P.x - P.lx, P.z - P.lz) > 2.5;
+    if (!moved && P.fy !== undefined && (P.air || Math.abs(P.y - P.sy) < 0.01)) return;
+    const base = this.map.floorAt(P.x, P.z, st.bridge);
+    const s = this.map.supportAt(P.x, P.z, moved ? base : Math.max(base, P.y ?? base), st);
+    P.fy = s.water ? SEA_Y : s.y;
+    P.air = false; P.vy = 0; P.coyote = 0; P.buffer = 0;
+    P.standY = P.fy; P.y = P.fy; P.jy = 0; P.sy = P.y;
+    P.safe = { x: P.x, z: P.z, fy: P.fy };
+    P.takeoff = null;
+    if (s.water && !this.indoors) this.unstick(P, st); // (never left standing in the water)
+    P.lx = P.x; P.lz = P.z;
   }
 
   /** Step out of anything we ended up inside (an unlock or a teleport): the nearest free spot. */
@@ -1795,7 +1933,8 @@ export class SoloIslandScene extends BaseScene {
       for (let k = 0; k < 16; k++) {
         const a = (k / 16) * Math.PI * 2;
         const x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
-        if (this.map.walkable(x, z, PR, st)) { P.x = x; P.z = z; return; }
+        const feet = Math.max(P.fy ?? -9, this.map.floorAt(x, z, st.bridge));
+        if (this.map.walkable(x, z, PR, st, feet) && !this.map.supportAt(x, z, feet, st).water) { P.x = x; P.z = z; P.lx = x; P.lz = z; return; }
       }
     }
   }
@@ -1815,7 +1954,7 @@ export class SoloIslandScene extends BaseScene {
     P.hand.rotation.x = this.swing > 0 ? -Math.sin(this.swing * Math.PI) * 1.6 + 0.3 : 0.3;
     this.updateJump(dt);
     P.ch.group.position.set(P.x, P.y + (P.jy || 0), P.z);
-    P.ch.update(dt, { moving: this.mode === 'walk' ? P.moving : 0, grounded: !(P.jy > 0), vy: P.vy || 0 });
+    P.ch.update(dt, { moving: this.mode === 'walk' ? P.moving : 0, grounded: !P.air, vy: P.vy || 0 });
   }
 
   snapCamera() {
@@ -1855,7 +1994,9 @@ export class SoloIslandScene extends BaseScene {
   }
 
   updateLabels() {
-    const P = this.mode === 'walk' ? this.player : null; // no tags over panels (the bag is a panel now)
+    const W = this.mode === 'walk' ? this.player : null; // no tags over panels (the bag is a panel now)
+    // up on a roof or a ledge: no game signs (the doors are down below)
+    const P = W && W.fy > this.map.floorAt(W.x, W.z, this.save.unlocks.bridge) + 1.0 ? null : W;
     const S = this.save;
     const cam = this.camera;
     // arcade cabinets: only the nearest one gets a label, else the hall's own name
@@ -2011,6 +2152,8 @@ export class SoloIslandScene extends BaseScene {
         case 'knock': break; // knock knock... (homes.js)
         case 'friends': this.friends.update(inp, dt); break;
         case 'crabs': this.crabs.updatePicker(panel, dt); break;
+        case 'hopgo': this.hops.updateCount(dt); break; // 3, 2, 1 before a hop trail
+        case 'game': this.games.updateMode(inp, dt); break; // a mini-game with its own controls (games.js)
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();
@@ -2032,6 +2175,10 @@ export class SoloIslandScene extends BaseScene {
     this.seasons.update(dt);
     this.isle2.update(dt, this.time);
     this.crabs.update(dt);
+    this.hops.update(dt);
+    this.surprise.update(dt);
+    this.games.update(dt);
+    this.play.update(dt);
     this.zipzap.update(dt, ia);
     this.bagUi.tick();
     this.tour.update(dt);
@@ -2060,6 +2207,10 @@ export class SoloIslandScene extends BaseScene {
     this.story?.dispose();
     this.lightTop?.dispose();
     this.crabs?.dispose();
+    this.hops?.dispose();
+    this.surprise?.dispose();
+    this.games?.dispose();
+    this.play?.dispose();
     this.zipzap?.dispose();
     this.bagUi?.dispose();
     setPictures(null);

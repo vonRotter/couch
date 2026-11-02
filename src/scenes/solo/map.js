@@ -11,6 +11,7 @@ import {
 } from './models.js';
 import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
 import { makeGarage } from './models5.js';
+import { POND, inCliffOpen, inKeepClear } from './hopdata.js';
 
 // The hand-made island town. North is -z (the cliffs), south is +z (the beach and the dock), the camera
 // looks north. A river runs from the waterfall in the cliffs down to the sea and cuts off the west bank
@@ -158,6 +159,15 @@ function coast(x, z) {
 
 /** Ground height (without bridges or the pier). */
 export function heightAt(x, z) {
+  const h = baseHeight(x, z);
+  // the pond south of the square (with stepping stones, see hopdata.js)
+  const pd = Math.hypot(x - POND.x, z - POND.z);
+  if (pd < POND.r + 0.8) { const k = sstep(POND.r + 0.8, POND.r - 0.6, pd); return h * (1 - k) + -1.15 * k; }
+  return h;
+}
+
+/** The terrain before the pond was dug (the random trees and flowers are still placed by it, so they stay put). */
+function baseHeight(x, z) {
   if (z > 120) return isle2Height(x, z); // Shell Isle, far to the south (milestone B3)
   const c = coast(x, z);
   let h = c < 0 ? -1.2 + c * 18 : -1.2 + 1.2 * sstep(0, 0.11, c);
@@ -195,7 +205,7 @@ function colorAt(x, z, h, out) {
   if (h < -0.62) out.set(0x7fc7c9).lerp(_c.set(0x3f9fc9), sstep(-0.62, -2.5, h));
   else if (c < 0.09 && h < 0.02) out.set(0xf7e1a6);
   else if (h > 0.4 && z < cliffZ(x) + 0.7 && h < CLIFF_H - 0.2) out.set(0xc2a98a).lerp(_c.set(0xa48d74), n);
-  else if (riverDist(x, z) < RIVER_W + 0.9) out.set(0xe2d39a);
+  else if (riverDist(x, z) < RIVER_W + 0.9 || Math.hypot(x - POND.x, z - POND.z) < POND.r + 0.7) out.set(0xe2d39a);
   else if (z < cliffZ(x)) out.set(0x7fc556).lerp(_c.set(0x6db34a), n);
   else out.set(0x92d85c).lerp(_c.set(0x7fcb52), n);
   if (c < 0.12 && c >= 0.09 && h < 0.02) out.lerp(_c.set(0xf7e1a6), 0.5);
@@ -247,6 +257,7 @@ export class IslandMap {
     this.M = M;
     this.obstacles = []; // { x, z, r } circles, { x, z, hw, hd } boxes, { ax, az, bx, bz, r } segments
     this.decks = []; // walkable rectangles over water: { x0, x1, z0, z1, y, on: () => bool }
+    this.plats = []; // obstacles you can also stand on: they have a top (see platform() and hopdata.js)
     this.lampSpots = [];
     this.chimneys = [];
     this.places = PLACES.map((p) => ({ ...p }));
@@ -470,8 +481,9 @@ export class IslandMap {
     const hall = makeHall(M, ['tachyon', 'starlite', 'foothold', 'starhop']);
     this.live(hall, HALL.x, HALL.z, 0, 0);
     this.hall = hall;
-    this.boxObs(HALL.x, HALL.z - 2.5, 5.7, 0.35);
-    for (const sx of [-1, 1]) this.boxObs(HALL.x + sx * 5.5, HALL.z, 0.35, 2.7);
+    // (the walls end under the roof: up there you can walk over them, see hops.js)
+    this.boxObs(HALL.x, HALL.z - 2.5, 5.7, 0.35, { top: 4.0 });
+    for (const sx of [-1, 1]) this.boxObs(HALL.x + sx * 5.5, HALL.z, 0.35, 2.7, { top: 4.0 });
     for (const c of hall.userData.cabinets) this.boxObs(HALL.x + c.x, HALL.z - 1.2, 0.7, 0.55);
     this.lamp(HALL.x - 6.6, HALL.z + 3.2);
     this.lamp(HALL.x + 6.6, HALL.z + 3.2);
@@ -683,7 +695,7 @@ export class IslandMap {
       ...this.places.map((p) => ({ x: p.x, z: p.z, r: 5.5 })),
     ];
     const ok = (x, z, pad = 0) => {
-      const h = heightAt(x, z);
+      const h = baseHeight(x, z);
       if (h < -0.15 || coast(x, z) < 0.08) return false;
       if (z < cliffZ(x) + 1.6 && z > cliffZ(x) - 1.6) return false;
       if (riverDist(x, z) < RIVER_W + 1.6) return false;
@@ -696,8 +708,10 @@ export class IslandMap {
       if (!ok(x, z, 0.4)) return;
       for (const t of trees) if (Math.hypot(t.x - x, t.z - z) < 2.4 * s) return;
       const tr = makeTree(r, s, leaf);
-      this.put(tr, x, z, r() * 6);
+      const rot = r() * 6;
       trees.push({ x, z });
+      if (inKeepClear(x, z)) return; // (made all the same, so the random trees after it stay where they were)
+      this.put(tr, x, z, rot);
       if (z > cliffZ(x)) this.circObs(x, z, 0.45 * s);
     };
     // dense forest on the west bank, light woods elsewhere, trees on the cliff tops
@@ -720,25 +734,9 @@ export class IslandMap {
       const x = -60 + r() * 120, z = -48 + r() * 92;
       if (!ok(x, z, -1.0)) continue;
       const k = r();
-      if (k < 0.45) {
-        const f = makeFlower(r);
-        f.scale.setScalar(1.4);
-        this.put(f, x, z, r() * 6);
-      } else if (k < 0.7) {
-        this.put(makeBush(r, 0.9 + r() * 0.6), x, z, r() * 6);
-      } else if (k < 0.85) {
-        const rk = makeRock(r, 0.35 + r() * 0.5);
-        this.put(rk, x, z, 0, heightAt(x, z) + 0.05);
-      } else if (k < 0.92 && (x < -27 || z < -20)) {
-        const m = makeMushroom(r() < 0.5 ? 0xff5d73 : 0xffc93c);
-        m.scale.setScalar(0.5);
-        this.put(m, x, z, r() * 6);
-      } else {
-        // grass tuft
-        const g = new THREE.Group();
-        for (let k2 = 0; k2 < 3; k2++) g.add(mesh(sharedTuft(), 0x6fbf4a, (k2 - 1) * 0.12, 0.18, (r() - 0.5) * 0.1, false).rotateZ((k2 - 1) * 0.35));
-        this.put(g, x, z, r() * 6);
-      }
+      // spots kept clear for the jumping content: the same random numbers are used, nothing is placed
+      if (inKeepClear(x, z)) { const keep = this.statics; this.statics = new THREE.Group(); this.undergrowth(r, k, x, z); this.statics = keep; continue; }
+      this.undergrowth(r, k, x, z);
     }
     // reeds along the river
     for (let i = 0; i < 70; i++) {
@@ -750,6 +748,29 @@ export class IslandMap {
       for (let k = 0; k < 3; k++) g.add(mesh(cyl(0.03, 0.03, 0.9, 4), 0x5fae3a, (k - 1) * 0.12, 0.3, 0, false));
       g.add(mesh(cyl(0.06, 0.06, 0.25, 6), 0x8a5a32, 0, 0.8, 0, false));
       this.put(g, x, z, r() * 3, heightAt(x, z) - 0.2);
+    }
+  }
+
+  /** One random flower, bush, rock, mushroom or grass tuft (k picks which; uses r like before). */
+  undergrowth(r, k, x, z) {
+    if (k < 0.45) {
+      const f = makeFlower(r);
+      f.scale.setScalar(1.4);
+      this.put(f, x, z, r() * 6);
+    } else if (k < 0.7) {
+      this.put(makeBush(r, 0.9 + r() * 0.6), x, z, r() * 6);
+    } else if (k < 0.85) {
+      const rk = makeRock(r, 0.35 + r() * 0.5);
+      this.put(rk, x, z, 0, heightAt(x, z) + 0.05);
+    } else if (k < 0.92 && (x < -27 || z < -20)) {
+      const m = makeMushroom(r() < 0.5 ? 0xff5d73 : 0xffc93c);
+      m.scale.setScalar(0.5);
+      this.put(m, x, z, r() * 6);
+    } else {
+      // grass tuft
+      const g = new THREE.Group();
+      for (let k2 = 0; k2 < 3; k2++) g.add(mesh(sharedTuft(), 0x6fbf4a, (k2 - 1) * 0.12, 0.18, (r() - 0.5) * 0.1, false).rotateZ((k2 - 1) * 0.35));
+      this.put(g, x, z, r() * 6);
     }
   }
 
@@ -831,28 +852,109 @@ export class IslandMap {
     return d ? Math.max(h, d.y) : h;
   }
 
-  /** Can a walker of radius r stand at (x, z)? state = { bridge, mine, burrow } from the save. */
-  walkable(x, z, r, state) {
-    const deck = this.deckAt(x, z, state.bridge);
-    if (!deck) {
-      if (heightAt(x, z) < -0.3) return false;
-      if (z < cliffZ(x) + 1.0) return false;
+  /**
+   * Can a walker of radius r stand at (x, z)? state = { bridge, mine, burrow, cafe } from the save.
+   * feet: the walker's height (the jumping bean); without it the old flat rules hold (water and cliffs are
+   * walls, and so is everything you could stand on).
+   */
+  walkable(x, z, r, state, feet = -Infinity) {
+    return this.overlap(x, z, r, state, feet) <= 0;
+  }
+
+  /**
+   * How deep a walker of radius r at (x, z) is inside something (0 or less: free; 9: a wall of terrain).
+   * With feet (a height): terrain higher than a step is a wall, the cliffs are walls except on the open
+   * cliff tops (hopdata.js), and things with a top you are above (feet over top - STEP) are not in the way.
+   * Water is not a wall here (the bean decides: never walk into it, but you can jump over it).
+   */
+  overlap(x, z, r, state, feet = -Infinity) {
+    const flat = feet === -Infinity;
+    if (!this.deckAt(x, z, state.bridge)) {
+      const h = heightAt(x, z);
+      if (flat) {
+        if (h < -0.3) return 9;
+        if (z < cliffZ(x) + 1.0) return 9;
+      } else {
+        if (z < cliffZ(x) + 1.0 && !inCliffOpen(x, z)) return 9;
+        if (h > feet + STEP) return 9; // a steep bank or a cliff face
+      }
     }
+    let worst = 0;
     for (const o of this.obstacles) {
       if (o.rockfall && state.mine) continue;
       if (o.burrow && !state.burrow) continue;
       if (o.cafe && !state.cafe) continue;
-      if (o.hw !== undefined) {
-        if (Math.abs(x - o.x) < o.hw + r && Math.abs(z - o.z) < o.hd + r) return false;
-      } else if (o.ax !== undefined) {
-        const dx = o.bx - o.ax, dz = o.bz - o.az;
-        const L = dx * dx + dz * dz || 1;
-        const t = Math.max(0, Math.min(1, ((x - o.ax) * dx + (z - o.az) * dz) / L));
-        if (Math.hypot(x - o.ax - dx * t, z - o.az - dz * t) < o.r + r) return false;
-      } else if (Math.hypot(x - o.x, z - o.z) < o.r + r) return false;
+      if (o.top !== undefined && (o.block === false || feet >= topOf(o, x, z) - STEP)) continue;
+      if (o.bottom !== undefined && (flat || feet + 1.2 < o.bottom)) continue; // up in the air: only in the way up there
+      const d = depth(o, x, z, r);
+      if (d > worst) worst = d;
     }
-    return true;
+    return worst;
   }
+
+  /** Add something you can stand on (also an obstacle while you are below its top). See hopdata.js. */
+  platform(o) {
+    this.obstacles.push(o);
+    this.plats.push(o);
+    return o;
+  }
+
+  /**
+   * What holds you up at (x, z) for feet at that height: { y, plat, water }. The ground (or a deck), or the
+   * highest top under you that you can reach (no more than a step above your feet). Over water with nothing
+   * under you: water (y is the water level).
+   */
+  supportAt(x, z, feet, state) {
+    const deck = this.deckAt(x, z, state.bridge);
+    const h = heightAt(x, z);
+    let y = deck ? Math.max(h, deck.y) : h, plat = null;
+    let water = !deck && h < -0.3;
+    if (water) y = SEA_Y;
+    for (const o of this.plats) {
+      if (o.off || !inside(o, x, z, EDGE)) continue;
+      const ty = topOf(o, x, z);
+      if (ty > feet + STEP || (ty <= y && !water)) continue;
+      if (ty > y || water) { y = ty; plat = o; water = false; }
+    }
+    return { y, plat, water };
+  }
+
+  /** Where a crab or a little critter rests at (x, z): the ground, a deck, a solid top, or the water surface. */
+  restY(x, z) {
+    const s = this.supportAt(x, z, 99, { bridge: true });
+    if (s.plat?.block === false) return this.floorAt(x, z, true); // (not up on a roof)
+    return s.water ? SEA_Y - 0.08 : s.y;
+  }
+}
+
+// ---------- shapes of obstacles and platforms ----------
+
+/** A step you walk up without jumping, and how far past an edge your middle can be while you still stand on it. */
+export const STEP = 0.34;
+export const EDGE = 0.26;
+
+/** The top of a platform at (x, z) (a sloped roof has its own function). */
+export function topOf(o, x, z) { return o.topAt ? o.topAt(x, z) : o.top; }
+
+/** Is (x, z) on obstacle o grown by m? */
+export function inside(o, x, z, m) {
+  if (o.hw !== undefined) return Math.abs(x - o.x) < o.hw + m && Math.abs(z - o.z) < o.hd + m;
+  if (o.ax !== undefined) return segDist(o, x, z) < o.r + m;
+  return Math.hypot(x - o.x, z - o.z) < o.r + m;
+}
+
+function segDist(o, x, z) {
+  const dx = o.bx - o.ax, dz = o.bz - o.az;
+  const L = dx * dx + dz * dz || 1;
+  const t = Math.max(0, Math.min(1, ((x - o.ax) * dx + (z - o.az) * dz) / L));
+  return Math.hypot(x - o.ax - dx * t, z - o.az - dz * t);
+}
+
+/** How far a walker of radius r at (x, z) reaches into obstacle o (0 or less: not touching). */
+function depth(o, x, z, r) {
+  if (o.hw !== undefined) return Math.min(o.hw + r - Math.abs(x - o.x), o.hd + r - Math.abs(z - o.z));
+  if (o.ax !== undefined) return o.r + r - segDist(o, x, z);
+  return o.r + r - Math.hypot(x - o.x, z - o.z);
 }
 
 /** A cheap low-poly flower (the shared one is too detailed for hundreds of copies). */
