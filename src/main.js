@@ -11,6 +11,7 @@ import { UI } from './core/ui.js';
 import { t, setLang, getLang, setButtonSource } from './core/i18n.js';
 import { HubScene } from './scenes/hub.js';
 import { SoloIslandScene } from './scenes/solo/island.js';
+import './scenes/solo/devtime.js'; // playtest time machine, hidden unless ?dev (F9)
 import { BubbleScene } from './scenes/bubble.js';
 import { PlatformerScene } from './scenes/platformer.js';
 import { PaintScene } from './scenes/paint.js';

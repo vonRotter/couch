@@ -636,6 +636,12 @@ night match yours and crops grow while you are away.
   | Sled | – (stick steers) | – | – |
   | Diving | kick (swim faster for a moment) | pick up, open, help or wave to a crab, climb out, or the bubble net | swim up to the boat |
 
+**Playtest time machine.** Open the site once with `?dev` in the address (for example
+`https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock
+forward to the next 06:00, 18:00 and so on, skips hours, days or a week, or jumps to the next new season, festival or
+rainy day. Time only moves forward (crops and animals grow as if the time had passed), the shift is remembered in that
+browser, "Real time" goes back, and `?dev=0` turns the panel off. It changes nothing else.
+
 **Read-aloud.** V turns read-aloud on or off (on by default for new solo profiles, off on the shared
 island; each profile remembers its choice). Intro cards, Party Mix how-to cards and the story and
 campaign cards are read by the browser's own voice in English or Norwegian; if the device has no
