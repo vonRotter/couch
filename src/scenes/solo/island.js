@@ -622,7 +622,7 @@ export class SoloIslandScene extends BaseScene {
     const H = (k, fx) => ({ who: 'hazel', key: `isl.hazel.${k}`, fx });
     const Pp = (k, fx) => ({ who: 'pip', key: `zz.pip.${k}`, fx });
     // Pip built the Zip-Zap from rocket parts; Aunt Hazel gives seeds and teaches farming with it
-    this.say([H('intro1'), Pp('intro1', () => { pip.hop = 1; }), Pp('intro2', () => { this.giveItems([['zipzap', 1]], true); this.selectItem('zipzap'); }),
+    this.say([H('intro1'), Pp('intro', () => { pip.hop = 1; this.giveItems([['zipzap', 1]], true); this.selectItem('zipzap'); }),
       H('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), { ...H('intro4'), vars: { bagHow: this.bagKey(true) } }, H('q1.ask')], () => {
       const S = this.save;
       S.intro = true;

@@ -8,8 +8,7 @@ addStrings({
   en: {
     'isl.i.zipzap': 'Zip-Zap', 'isl.i.backpack1': 'Bigger backpack', 'isl.i.backpack2': 'Huge backpack', 'isl.i.chest': 'Chest',
     // the welcome: Pip gives the Zip-Zap
-    'zz.pip.intro1': 'Hi hi! I am Pip, astronaut! My rocket landed here. I built you something from spare rocket parts!',
-    'zz.pip.intro2': 'The Zip-Zap! Point it at something and press [B]. It knows what to do: it tills, waters, cuts weeds and grass, and chops trees. A little picture shows what it will do!',
+    'zz.pip.intro': 'Hi hi! I am Pip, astronaut! I built you a gadget from spare rocket parts: the Zip-Zap! Point it at something and press [B]. It knows what to do, and a little picture shows what!',
     'isl.mail.zipzap': 'Hi hi {name}! I took your old hoe, watering can and scythe to my rocket and built them into one gadget: the Zip-Zap! Point it at something and press the use button. It tills, waters, cuts, breaks rocks and chops trees all by itself. Zip zap!',
     // what [B] does with it
     'zz.h.needBuster': 'The Zip-Zap needs a rock buster for this. Ask Keeper Bram!',
@@ -43,8 +42,7 @@ addStrings({
   },
   no: {
     'isl.i.zipzap': 'Zipp-Zapp', 'isl.i.backpack1': 'Større ryggsekk', 'isl.i.backpack2': 'Kjempestor ryggsekk', 'isl.i.chest': 'Kiste',
-    'zz.pip.intro1': 'Hei hei! Jeg er Pip, astronaut! Raketten min landet her. Jeg har bygd noe til deg av ekstra rakettdeler!',
-    'zz.pip.intro2': 'Zipp-Zappen! Pek den mot noe og trykk [B]. Den vet hva den skal gjøre: den graver, vanner, kutter ugress og gress og hogger trær. Et lite bilde viser hva den kommer til å gjøre!',
+    'zz.pip.intro': 'Hei hei! Jeg er Pip, astronaut! Jeg har bygd en dings til deg av ekstra rakettdeler: Zipp-Zappen! Pek den mot noe og trykk [B]. Den vet hva den skal gjøre, og et lite bilde viser hva!',
     'isl.mail.zipzap': 'Hei hei {name}! Jeg tok med hakka, vannkanna og ljåen din til raketten og bygde dem om til én dings: Zipp-Zappen! Pek den mot noe og trykk på bruk-knappen. Den graver, vanner, kutter, knuser stein og hogger trær helt av seg selv. Zipp zapp!',
     'zz.h.needBuster': 'Zipp-Zappen trenger en steinknuser til dette. Spør Fyrvokter Bram!',
     'zz.h.needPower': 'For stor! Pip kan gi Zipp-Zappen mer kraft på dingsbenken sin.',

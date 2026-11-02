@@ -476,9 +476,42 @@ night match yours and crops grow while you are away.
   Game Hall with cabinets for the guest games (Tachyon, Starlite, Foothold, Starhop). Repair the
   bridge with 10 wood to reach Knights & Builders: The Golden Bean and Pillow Keep Solo (the keep
   tower; its sign shows the best hero or the deepest Deep Keep floor); trade Keeper Bram
-  a carrot for his pickaxe and clear the rockfall to open Crystal Caves; give Mumble the grumble three
+  a carrot for the Zip-Zap's rock buster and clear the rockfall to open Crystal Caves; give Mumble the grumble three
   radishes to find the burrow to Grumble Guides.
-- **Farming:** Aunt Hazel gives you a hoe, a watering can and a scythe. Till, plant, water (one
+- **Pip's Zip-Zap:** one sci-fi gadget instead of a hoe, a watering can, a scythe and a pickaxe (in the
+  spirit of a sonic screwdriver). On a new island Aunt Hazel and Pip pop in together: Pip has built the
+  Zip-Zap from spare rocket parts and gives it to you, then Hazel gives seeds and her farming tutorial
+  teaches it (zap the soil, plant, zap the seeds with water, harvest, ship). It works by what it points
+  at, with [B]; a small icon floats over the target, every action has its own beam color and sound, the
+  tip glows in that color and the gadget hums softly in the bean's hand:
+
+  | Target | Action | Needs |
+  | --- | --- | --- |
+  | untilled field soil | till | – |
+  | tilled dry soil, or a thirsty crop | water (a blue water beam) | – |
+  | weeds on the field, tall grass | cut (tall grass: hay and fiber) | – |
+  | sparkly ore rock (stone) and the Crystal Caves rockfall | break | the rock buster (Keeper Bram's carrot trade) |
+  | big purple ore boulder | break (6 stone, every third has a crystal) | the rock buster and Pip's Mega Buster |
+  | choppable tree (a round oak with a light bark band and apples) | chop: 3 wood; a stump with a sprout grows back in 30 minutes | – |
+  | ripe crop | harvest (with any item in hand; a harvest beam with the Zip-Zap) | – |
+  | buried treasure on Shell Isle | dig | – |
+
+  Things to break, cut or chop look different from the scenery: ore rocks are round warm sandstone
+  chunks with dark cracks and glowing colored ore gems (the scenery rocks are flat grey ones), big
+  boulders are purple with big crystals, and the rockfall has the same cracks and gems. While you hold
+  the Zip-Zap, everything it can break, cut or chop within about 11 m glows softly (a colored ring and
+  dome: pink rocks, green grass, yellow trees). There are 12 ore rocks, 14 tall grass spots, 3 big
+  boulders and 8 choppable trees on the main island, and 3 ore rocks, 3 tall grass spots and a big
+  boulder on Shell Isle; branches still give wood too. **Pip's gadget bench** stands by the path below
+  her rocket: Fast Zap (150 coins, 5 wood, 5 stone: fewer zaps for rocks, boulders, trees and the
+  rockfall), Wide Beam (200 coins, 10 wood, 5 fiber: till and water three tiles in a row), Big Beam (500
+  coins, 15 wood, 15 stone, after the Wide Beam: 3 × 3), Long Reach (250 coins, 5 stone, 10 fiber: the
+  beam reaches a tile two steps away when the near one has nothing to do) and Mega Buster (400 coins, 15
+  stone, 5 wood, after the rock buster: big boulders). Aunt Hazel's 4-heart gift, her mother's magic
+  spout, now makes the water beam three tiles wide. Old saves: the hoe, can, scythe and pickaxe become one
+  Zip-Zap (an old pickaxe, or Bram's trade already done, switches on the rock buster) and Pip writes a
+  letter about it.
+- **Farming:** till, plant, water with the Zip-Zap (one
   watering lasts six hours of daytime; dry crops wait and never die), harvest and sell in the shipping bin
   or at Rosa's store. Fourteen crops, from radishes (4 minutes) to star fruit (8 hours), by season.
   **At night (21:00 to 6:00) outdoor crops grow very slowly** (a tenth of the speed; the soil does not dry
@@ -525,10 +558,10 @@ night match yours and crops grow while you are away.
   **Seaweed cakes** (2 seaweed and a carrot) replace the old crab cake, and the seafood platter is clam,
   shrimp and squid (no lobster).
 - **Animals:** Aunt Hazel's barn quest (15 wood and 10 stone) brings two chickens; Rosa then sells
-  more chickens, a goat and a cow. Cut tall grass for hay and put it in the trough; each real day an
+  more chickens, a goat and a cow. Zap tall grass for hay and put it in the trough; each real day an
   animal with hay lays an egg or can be milked (no hay just skips the day, nothing gets sick). Pet each
   animal once a day for up to 5 animal hearts. Eggs and milk add four café dishes (16 in total).
-- **Building and decorating:** break rock piles for stone and cut tall grass for hay and fiber. The
+- **Building and decorating:** zap ore rocks for stone, trees for wood and tall grass for hay and fiber. The
   workbench by the cottage crafts 12 yard pieces and furniture, upgrades the cottage (porch and a
   second room) and has a decorate mode: the stick moves a cursor over the grid, B places or picks
   up, A turns (hold A for the next thing), C ends. Game trophies are movable pieces too. The front door leads into the cottage,
@@ -618,14 +651,34 @@ night match yours and crops grow while you are away.
 - **Controls (solo island only):** stick to walk, **A jumps** (a little hop), **B is the one use
   button** (the held tool or seeds, talking, picking up, shipping, mail, doors, shops and knocking; a
   villager you face wins over the field), **C opens the start menu** (Island, Story, Solo, Friends book).
-  The bag is **Tab** on a keyboard and a **long press of B** on a gamepad; 1–9 pick a bag slot; **F**
+  The bag is **Tab** on a keyboard and a **long press of B** on a gamepad; 1–9 pick a hotbar slot; **F**
   opens the Friends book. Keyboard 1: Space / E / Q. A new controller pressing jump takes over.
+- **The bag, the hotbar and the cottage chest** (like Stardew Valley): the 9-slot hotbar at the bottom is
+  what you hold (keys 1–9; an empty slot means empty hands). The bag panel shows the bag rows (9 wide)
+  above the hotbar; it starts with the hotbar and 2 bag rows (27 slots), and Rosa sells a Bigger backpack
+  (250 coins, a 3rd row) and then a Huge backpack (750 coins, a 4th row). New things go onto the same thing
+  already in the bag, else into the first free slot (hotbar first); a full bag sends them to the cottage
+  chest with a toast, so nothing is ever lost. The **storage chest** stands in the back right corner of
+  the cottage (36 slots, it grows a row if it ever overflows): [B] next to it opens the same panel with
+  the chest above the bag. The name and sell price of the thing under the cursor or mouse is shown and
+  read aloud. Shops, the shipping bin, gifts, the café, the museum, crafting and quests use what is in
+  the bag (not the chest). Old saves: the old list fills the hotbar, then the bag rows, the rest goes
+  into the cottage chest.
+
+  | Bag panel | Mouse | Keyboard | Gamepad |
+  | --- | --- | --- | --- |
+  | open / close | – | Tab / Tab or Q | hold B / X (C) |
+  | move a stack (empty slot: move, same thing: merge, other thing: swap) | drag it | WASD or arrows move the cursor, E picks up, E puts down | stick moves the cursor, B picks up, B puts down |
+  | move across at once (bag ↔ hotbar, or bag ↔ chest) | right click or shift+click | Space ([A]) | A |
+  | pick what you hold | click a hotbar slot | 1–9, or the cursor on the hotbar | the cursor on the hotbar |
 
   | Mode | A | B | C |
   | --- | --- | --- | --- |
   | Walking | jump | use, talk, go in, knock (gamepad: hold for the bag) | start menu |
   | Dialog | next | next / pick the highlighted answer | answer "no" |
-  | Bag, letters, fish log, calendar, album, Friends book | close | close | close |
+  | Bag (see the table above) | move across | pick up / put down | close |
+  | Letters, fish log, calendar, album, Friends book | close | close | close |
+  | Pip's gadget bench | – | build the upgrade | close |
   | Shop | – | buy or sell one | leave |
   | Fishing | – | cast, hook, reel in the green | let go / close the result |
   | Café stove, specials board, workbench, museum, Crab Cove sign | – | cook / special on-off / make / donate / choose a crab friend | close |
