@@ -640,6 +640,7 @@ export class SoloIslandScene extends BaseScene {
   /** Hold this item: select its hotbar slot (from the bag rows it first moves down to the hotbar). */
   selectItem(id) {
     const S = this.save;
+    fixSlots(S); // (a stack someone just pushed may not have its slot yet)
     const it = S.inv.find((x) => x.id === id && x.slot < HOTBAR) || S.inv.find((x) => x.id === id);
     if (!it) return false;
     if (it.slot >= HOTBAR) {
