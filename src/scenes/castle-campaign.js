@@ -1400,7 +1400,8 @@ export class CastleCampaignScene extends MiniGame {
       <div class="kc-tiers"><span class="${won ? 'on' : ''}">★ ${esc(t('kc.tier.goal'))}</span><span class="${all ? 'on' : ''}">★ ${esc(t('kc.tier.all'))}</span><span class="${fast ? 'on' : ''}">★ ${esc(t('kc.tier.fast', { t: clock(this.level.par) }))}</span></div>`);
   }
 
-  /** Results: [A] back to the campaign map, [B] try the level again. */
+  /** Results: [A] back to the campaign map, [C] try the level again (a gamepad's B goes back to the map
+   * too: B never picks; a keyboard's use key still plays again, as before). */
   updateResults(dt) {
     if (this.state !== 'results') return false;
     this.resultsDelay -= dt;
@@ -1408,8 +1409,8 @@ export class CastleCampaignScene extends MiniGame {
     for (const p of this.players) {
       const d = this.input(p);
       if (!d) continue;
-      if (d.aPressed) { this.leaving = true; this.backToMap(this.result); break; }
-      if (d.bPressed) {
+      if (d.aPressed || d.backPressed) { this.leaving = true; this.backToMap(this.result); break; }
+      if (d.cPressed || (d.type === 'keyboard' && d.bPressed)) {
         this.leaving = true;
         const opts = this.retryOptions();
         const game = this.game;

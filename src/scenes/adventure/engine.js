@@ -842,15 +842,16 @@ export class AdventureEngine {
   updateInv(inp) {
     const inv = this.save.inventory;
     const n = inv.length;
-    if (!n || inp.c) { this.mode = 'play'; this.game.audio.play('select'); return; }
+    if (!n || inp.c || inp.back) { this.mode = 'play'; this.game.audio.play('select'); return; }
     this.invSel = Math.min(this.invSel, n - 1);
     if (inp.sx) { this.invSel = (this.invSel + inp.sx + n) % n; this.game.audio.play('select'); }
     if (this.mouse.active && this.hover.slot >= 0 && this.mouse.moved) this.invSel = this.hover.slot;
     const id = inv[this.invSel];
-    if (inp.a || (inp.click && this.hover.slot >= 0)) {
+    // (a gamepad's Y is also its A: here it looks instead of picking)
+    if ((inp.a && !inp.padY) || (inp.click && this.hover.slot >= 0)) {
       if (this.held && this.held !== id) this.combineItems(this.held, id);
       else { this.held = id; this.game.audio.play('select'); this.mode = 'play'; }
-    } else if (inp.b || (inp.right && this.hover.slot >= 0)) {
+    } else if (inp.bKey || inp.padY || (inp.right && this.hover.slot >= 0)) {
       this.lookItem(id);
     } else if (inp.click || inp.right) {
       this.mode = 'play';
@@ -890,6 +891,11 @@ export class AdventureEngine {
       if (Math.hypot(d.x, d.y) > Math.hypot(inp.x, inp.y)) { inp.x = d.x; inp.y = d.y; }
       inp.a ||= d.aPressed; inp.b ||= d.bPressed; inp.c ||= d.cPressed;
       inp.sx ||= d.stepX; inp.sy ||= d.stepY;
+      // menus: a gamepad's B goes back (it never picks); Y looks at an item in the inventory
+      const pad = d.type === 'gamepad';
+      inp.back ||= pad && !!d.backPressed;
+      inp.bKey ||= !pad && d.bPressed;
+      inp.padY ||= pad && !!d.btnPressed?.y;
     }
     return inp;
   }

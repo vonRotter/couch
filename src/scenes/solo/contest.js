@@ -132,7 +132,7 @@ export class Tournament {
   updateEnd(inp, dt) {
     const host = this.host, S = this.S;
     this.endT += dt;
-    if (this.endT < 0.4 || !(inp.aPressed || inp.bPressed)) return;
+    if (this.endT < 0.4 || !(inp.aPressed || inp.bPressed || inp.cPressed)) return; // ([C]: a gamepad's B closes it too)
     host.hud.setPanel(null);
     host.mode = 'walk';
     const res = this.result;

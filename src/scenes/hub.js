@@ -708,7 +708,15 @@ export class HubScene extends BaseScene {
         this.game.audio.play('select');
         this.renderMode();
       }
-      if ((d.aPressed || d.bPressed) && this.modeT > 0.25) {
+      // a gamepad's B goes back (closes the menu: you stay on the island); it never picks
+      if (d.backPressed && this.modeT > 0.25) {
+        this.modeEl.remove();
+        this.modeEl = null;
+        this.game.audio.play('select');
+        return true;
+      }
+      // A picks (on a keyboard also E, as before)
+      if (d.okPressed && this.modeT > 0.25) {
         this.modeEl.remove();
         this.modeEl = null;
         this.game.audio.play('join');
