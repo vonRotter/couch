@@ -18,6 +18,7 @@ const en = {
   'device.kb0': 'WASD', 'device.kb1': 'Arrows', 'device.kb2': 'IJKL', 'device.kb3': 'Numpad', 'device.gp': 'Pad {n}',
   'hint.kb0': 'WASD move · Space jump · E use · Q extra', 'hint.kb1': 'Arrows move · Enter jump · R-Shift use · R-Ctrl extra', 'hint.kb2': 'IJKL move · U jump · O use · P extra', 'hint.kb3': 'Num 8456 move · Num 0 jump · Num . use · Num Enter extra',
   'key.space': 'Space', 'key.rshift': 'R-Shift', 'key.rctrl': 'R-Ctrl', 'key.numdec': 'Num .',
+  'pad.up': 'D-pad ↑', 'pad.down': 'D-pad ↓', 'pad.leftRight': 'D-pad ←/→',
   'gamepad': 'Gamepad',
   'akey.kb0': 'Space', 'akey.kb1': 'Enter', 'akey.kb2': 'U', 'akey.kb3': 'Num 0',
 
@@ -41,7 +42,7 @@ const en = {
   'pause.chars': 'Characters', 'pause.charsVoices': 'speak', 'pause.charsBabble': 'babble',
   'mode.title': 'What do you want to play?', 'mode.island': 'Island', 'mode.island.sub': 'Roam the island and pick any game',
   'mode.story': 'Story', 'mode.story.sub': 'Play through the lands together and cheer up the Grumble King',
-  'mode.hint': 'Stick left/right · [A] or [B] to choose · more players can still join',
+  'mode.hint': 'Stick left/right · [OK]: choose · more players can still join',
   'help.8': 'Press [C] on the island to open the start menu: Island, Story or Solo (one player with a profile). V turns read-aloud on or off.',
   'hub.nextHat': 'next hat at {n}',
   'hub.padJoin': 'Join to play!',
@@ -73,7 +74,7 @@ const en = {
   'help.5': 'Jump on the book button (or press G) to show or hide the learning games. Jump on the flag (or press N) to change language.',
   'help.6': 'In a game, Esc (or Start on a gamepad) opens the menu: resume, retry or end the game. M toggles sound.',
   'pause.title': 'Paused', 'pause.resume': 'Resume', 'pause.retry': 'Retry', 'pause.end': 'End game',
-  'pause.hint': 'Stick up/down · [B] or [A] to choose · Esc or Start to resume',
+  'pause.hint': 'Stick up/down · [OK]: choose · [BACK] or Start: resume',
 
   'bubble.intro': '[B]: blow bubbles · pop trapped grumbles for fruit',
   'bubble.wave': 'Wave {n}', 'bubble.last': 'Last one!', 'bubble.chain': 'Chain pop!',
@@ -177,6 +178,7 @@ const no = {
   'device.kb0': 'WASD', 'device.kb1': 'Piler', 'device.kb2': 'IJKL', 'device.kb3': 'Talltastatur', 'device.gp': 'Kontroll {n}',
   'hint.kb0': 'WASD gå · Mellomrom hopp · E bruk · Q ekstra', 'hint.kb1': 'Piler gå · Enter hopp · H-Shift bruk · H-Ctrl ekstra', 'hint.kb2': 'IJKL gå · U hopp · O bruk · P ekstra', 'hint.kb3': 'Num 8456 gå · Num 0 hopp · Num , bruk · Num Enter ekstra',
   'key.space': 'Mellomrom', 'key.rshift': 'H-Shift', 'key.rctrl': 'H-Ctrl', 'key.numdec': 'Num ,',
+  'pad.up': 'Styrekryss ↑', 'pad.down': 'Styrekryss ↓', 'pad.leftRight': 'Styrekryss ←/→',
   'gamepad': 'Spillkontroll',
   'akey.kb0': 'Mellomrom', 'akey.kb1': 'Enter', 'akey.kb2': 'U', 'akey.kb3': 'Num 0',
 
@@ -200,7 +202,7 @@ const no = {
   'pause.chars': 'Figurer', 'pause.charsVoices': 'snakker', 'pause.charsBabble': 'babler',
   'mode.title': 'Hva vil dere spille?', 'mode.island': 'Øya', 'mode.island.sub': 'Gå rundt på øya og velg et hvilket som helst spill',
   'mode.story': 'Historie', 'mode.story.sub': 'Spill dere gjennom landene sammen og muntre opp Grumle-kongen',
-  'mode.hint': 'Pinne venstre/høyre · [A] eller [B] for å velge · flere kan fortsatt bli med',
+  'mode.hint': 'Pinne venstre/høyre · [OK]: velg · flere kan fortsatt bli med',
   'help.8': 'Trykk [C] på øya for å åpne startmenyen: Øya, Historie eller Alene (én spiller med profil). V slår opplesing av og på.',
   'hub.nextHat': 'neste hatt ved {n}',
   'hub.padJoin': 'Bli med for å spille!',
@@ -232,7 +234,7 @@ const no = {
   'help.5': 'Hopp på bokknappen (eller trykk G) for å vise eller skjule læringsspillene. Hopp på flagget (eller trykk N) for å bytte språk.',
   'help.6': 'I et spill åpner Esc (eller Start på spillkontrollen) menyen: fortsett, prøv igjen eller avslutt. M slår lyden av og på.',
   'pause.title': 'Pause', 'pause.resume': 'Fortsett', 'pause.retry': 'Prøv igjen', 'pause.end': 'Avslutt spillet',
-  'pause.hint': 'Pinne opp/ned · [B] eller [A] for å velge · Esc eller Start for å fortsette',
+  'pause.hint': 'Pinne opp/ned · [OK]: velg · [BACK] eller Start: fortsett',
 
   'bubble.intro': '[B]: blås bobler · sprekk boblene med grumlinger for frukt',
   'bubble.wave': 'Bølge {n}', 'bubble.last': 'Den siste!', 'bubble.chain': 'Kjedesprekk!',
@@ -334,12 +336,15 @@ export function getLang() {
 export function t(key, vars) {
   let s = DICTS[lang][key] ?? en[key] ?? key;
   if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
-  if (s.includes('[')) s = s.replace(/\[([ABC])\]/g, (_, b) => buttonText(b.toLowerCase()));
+  if (s.includes('[')) s = s.replace(BUTTON_TOKEN, (_, b) => buttonText(b.toLowerCase()));
   return s;
 }
 
 // Button names in text: strings write [A], [B] or [C], and t() swaps in what the current players
 // actually press ("E", "R-Shift", "B", "○"...). main.js supplies the list for the joined players.
+// Also: [OK] (what picks in a menu: E / A), [BACK] (Esc / B), [MENU] (Q / Start), [BAG] (Tab / D-pad up), [JOURNAL]
+// (F / D-pad down), [ITEMS] (1-9 / D-pad left/right) and [TABS] ([ ] / LB/RB): see input.js buttonLabel.
+const BUTTON_TOKEN = /\[(A|B|C|OK|BACK|MENU|BAG|JOURNAL|ITEMS|TABS)\]/g;
 let buttonSource = null;
 export function setButtonSource(fn) { buttonSource = fn; }
 

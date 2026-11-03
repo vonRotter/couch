@@ -1,9 +1,10 @@
 // Unified input: up to 4 keyboard schemes + up to 4 gamepads.
 // Every device exposes the same tiny controller: a stick (x, y) and buttons A, B and C.
 // A is jump / confirm, B is the "use" button, C is the third button. No key counts as two buttons.
-// y is +1 for "up".
+// y is +1 for "up". Menus pick with okPressed (A; on a keyboard also the use key) and go back with B:
+// a gamepad's B never picks anything in a menu (see README, Controls).
 
-import { keyName } from './i18n.js';
+import { keyName, t } from './i18n.js';
 
 export const KEYBOARD_SCHEMES = [
   {
@@ -32,16 +33,48 @@ export const KEYBOARD_SCHEMES = [
   },
 ];
 
-/** What the A / B / C buttons are called on each kind of gamepad (standard mapping: 0, 1, 2). */
+// Gamepad buttons by their Xbox name (the standard Gamepad API mapping) and what they are called on each kind.
+// Nintendo pads swap the letters: the bottom button is B, the right one A, the left one Y, the top one X.
+export const PAD_BUTTONS = { a: 0, b: 1, x: 2, y: 3, lb: 4, rb: 5, lt: 6, rt: 7, view: 8, start: 9, up: 12, down: 13, left: 14, right: 15 };
 export const PAD_LABELS = {
-  xbox: { a: 'A', b: 'B', c: 'X' },
-  ps: { a: '✕', b: '○', c: '□' },
-  nintendo: { a: 'B', b: 'A', c: 'Y' },
+  xbox: { a: 'A', b: 'B', x: 'X', y: 'Y', lb: 'LB', rb: 'RB', lt: 'LT', rt: 'RT', start: 'Start' },
+  ps: { a: '✕', b: '○', x: '□', y: '△', lb: 'L1', rb: 'R1', lt: 'L2', rt: 'R2', start: 'Options' },
+  nintendo: { a: 'B', b: 'A', x: 'Y', y: 'X', lb: 'L', rb: 'R', lt: 'ZL', rt: 'ZR', start: '+' },
 };
 
-/** What a player presses for button 'a' | 'b' | 'c' on this device: "E", "R-Shift", "B", "○"... */
+/**
+ * Which gamepad buttons are the game buttons A / B / C (the first one names it in text).
+ * 'default' (every co-op game): A jump/confirm, B the "use" button, X the third one.
+ * 'island' (the solo island and its dive, set by the scene's padLayout): A jumps, X uses, B is back;
+ * the D-pad does not walk there (left/right: hotbar, up: bag, down: journal) and Y is free.
+ */
+export const PAD_LAYOUTS = {
+  default: { a: ['a', 'y'], b: ['b', 'rb', 'rt'], c: ['x', 'lb', 'lt'], dpadMoves: true },
+  island: { a: ['a'], b: ['x'], c: ['b'], dpadMoves: false },
+};
+let layoutNow = 'default';
+/** The scene's gamepad layout ('default' | 'island'): main.js sets it every frame from scene.padLayout. */
+export function setPadLayout(name) { layoutNow = PAD_LAYOUTS[name] ? name : 'default'; }
+export function padLayout() { return layoutNow; }
+
+// Extra things a hint can name ([OK], [BACK], [MENU], [BAG], [JOURNAL], [ITEMS], [TABS] in text, see i18n.js).
+// [OK] is what picks in a menu: the use key on a keyboard (Space works too), A on a gamepad.
+// [BACK] closes the pause menu: Esc on a keyboard, B on a gamepad. [MENU] is the solo island's menu (Q / Start).
+const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–5', back: 'Esc' };
+const PAD_EXTRA = { ok: 'a', back: 'b', menu: 'start', tabs: ['lb', 'rb'] };
+const DPAD = { bag: 'pad.up', journal: 'pad.down', items: 'pad.leftRight' };
+
+/** What a player presses for 'a' | 'b' | 'c' (or 'ok', 'menu', 'bag', 'journal', 'items', 'tabs') on this device. */
 export function buttonLabel(device, btn) {
-  return device.type === 'keyboard' ? keyName(device.scheme[btn][0]) : PAD_LABELS[device.kind][btn];
+  if (device.type === 'keyboard') {
+    if (btn === 'ok') return keyName(device.scheme.b[0]);
+    if (btn === 'menu') return keyName(device.scheme.c[0]);
+    return KEY_EXTRA[btn] ?? keyName(device.scheme[btn][0]);
+  }
+  const names = PAD_LABELS[device.kind] || PAD_LABELS.xbox;
+  if (DPAD[btn]) return t(DPAD[btn]);
+  const b = PAD_EXTRA[btn] ?? PAD_LAYOUTS[layoutNow][btn]?.[0];
+  return Array.isArray(b) ? b.map((x) => names[x]).join('/') : names[b] ?? btn.toUpperCase();
 }
 
 /** Guess the controller family from the Gamepad id string. */
@@ -62,7 +95,9 @@ function makeDevice(id, type, label, scheme = null) {
     id, type, label, scheme, kind: type === 'keyboard' ? 'keyboard' : 'xbox',
     x: 0, y: 0, a: false, b: false, c: false,
     aPressed: false, bPressed: false, cPressed: false,
+    okPressed: false, backPressed: false, // menus: pick / go back (see update())
     prevA: false, prevB: false, prevC: false,
+    btn: {}, btnPressed: {}, // gamepads: every button by name (PAD_BUTTONS), held / pressed this frame
     connected: type === 'keyboard',
   };
 }
@@ -118,6 +153,9 @@ export class Input {
       d.cPressed = tapped(s.c) || (c && !d.prevC);
       d.c = c || d.cPressed;
       d.prevC = c;
+      // keyboards keep picking with jump or use (E) in menus; going back is up to each menu
+      d.okPressed = d.aPressed || d.bPressed;
+      d.backPressed = false;
     }
 
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -126,37 +164,53 @@ export class Input {
       const gp = pads[i];
       if (!gp || !gp.connected) {
         d.connected = false;
-        d.x = d.y = 0; d.a = d.b = d.c = d.aPressed = d.bPressed = d.cPressed = false;
+        d.x = d.y = 0; d.a = d.b = d.c = d.aPressed = d.bPressed = d.cPressed = d.okPressed = d.backPressed = false;
+        d.btn = {}; d.btnPressed = {};
         d.stepX = d.stepY = 0;
         continue;
       }
       d.connected = true;
       if (d.padId !== gp.id) { d.padId = gp.id; d.kind = padKind(gp.id); }
-      const btn = (n) => !!gp.buttons[n]?.pressed;
+      const L = PAD_LAYOUTS[layoutNow];
+      // every button by name, and which ones went down this frame
+      for (const [name, n] of Object.entries(PAD_BUTTONS)) {
+        const on = !!gp.buttons[n]?.pressed;
+        d.btnPressed[name] = on && !d.btn[name];
+        d.btn[name] = on;
+      }
+      const btn = (name) => d.btn[name];
+      const any = (names) => names.some(btn);
       let x = gp.axes[0] || 0;
       let y = -(gp.axes[1] || 0);
       const mag = Math.hypot(x, y);
       if (mag < DEADZONE) { x = 0; y = 0; } else if (mag > 1) { x /= mag; y /= mag; }
-      if (btn(14)) x = -1;
-      if (btn(15)) x = 1;
-      if (btn(12)) y = 1;
-      if (btn(13)) y = -1;
+      if (L.dpadMoves) {
+        if (btn('left')) x = -1;
+        if (btn('right')) x = 1;
+        if (btn('up')) y = 1;
+        if (btn('down')) y = -1;
+      }
       d.x = x; d.y = y;
-      this.step(d, 0, 0);
-      const start = btn(9) || btn(8);
+      // a D-pad that does not walk still steps through menus
+      const P = d.btnPressed;
+      this.step(d, L.dpadMoves ? 0 : (P.right ? 1 : 0) - (P.left ? 1 : 0), L.dpadMoves ? 0 : (P.up ? 1 : 0) - (P.down ? 1 : 0));
+      const start = btn('start') || btn('view');
       if (start && !d.prevStart) this.menuPressed = true;
       d.prevStart = start;
-      const a = btn(0) || btn(3);
-      const b = btn(1) || btn(5) || btn(7); // B, RB, RT
+      const a = any(L.a);
+      const b = any(L.b);
       d.aPressed = a && !d.prevA;
       d.bPressed = b && !d.prevB;
       d.a = a; d.b = b;
       d.prevA = a; d.prevB = b;
-      const c = btn(2) || btn(4) || btn(6); // X, LB, LT
+      const c = any(L.c);
       d.cPressed = c && !d.prevC;
       d.c = c;
       d.prevC = c;
-      if (a || b || c) this.onActivity?.();
+      // menus: A picks, B goes back (never picks), whatever the layout
+      d.okPressed = !!P.a || (L.a.includes('y') && !!P.y);
+      d.backPressed = !!P.b;
+      if (a || b || c || start) this.onActivity?.();
     }
   }
 

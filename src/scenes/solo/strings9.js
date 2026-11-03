@@ -71,7 +71,7 @@ addStrings({
     // Crab Cove
     'crab.sign.empty': 'Crab Cove. Shelby looks after the crabs here. Help crabs on the beaches, and they will become your crab friends! Crabs helped so far: {n}.',
     'crab.pick.title': 'Crab Cove: who comes along?', 'crab.pick.sub': 'Crabs helped: {n}. One crab friend can follow you.',
-    'crab.pick.nobody': 'Nobody', 'crab.pick.nobodySub': 'everyone stays at the cove', 'crab.pick.hint': 'Stick: choose · [B] pick · [C] close',
+    'crab.pick.nobody': 'Nobody', 'crab.pick.nobodySub': 'everyone stays at the cove', 'crab.pick.hint': 'Stick: choose · [OK] pick · [C] close',
     'crab.kind.red': 'red crab', 'crab.kind.snow': 'snow crab', 'crab.kind.lobster': 'lobster', 'crab.kind.baby': 'baby crab', 'crab.kind.hermit': 'hermit crab',
     'crab.friend.ruby': 'Ruby', 'crab.friend.frost': 'Frost', 'crab.friend.captain': 'Captain', 'crab.friend.tiny': 'Tiny',
     'crab.cove.level1': 'Crab Cove grew! A crab family moved into a sandcastle house. (+30 coins)',
@@ -145,7 +145,7 @@ addStrings({
     'crab.notNow': 'Ikke nå',
     'crab.sign.empty': 'Krabbebukta. Shelby passer på krabbene her. Hjelp krabber på strendene, så blir de krabbevennene dine! Krabber hjulpet så langt: {n}.',
     'crab.pick.title': 'Krabbebukta: hvem blir med?', 'crab.pick.sub': 'Krabber hjulpet: {n}. Én krabbevenn kan følge deg.',
-    'crab.pick.nobody': 'Ingen', 'crab.pick.nobodySub': 'alle blir i bukta', 'crab.pick.hint': 'Spak: velg · [B] velg · [C] lukk',
+    'crab.pick.nobody': 'Ingen', 'crab.pick.nobodySub': 'alle blir i bukta', 'crab.pick.hint': 'Spak: velg · [OK] velg · [C] lukk',
     'crab.kind.red': 'rød krabbe', 'crab.kind.snow': 'snøkrabbe', 'crab.kind.lobster': 'hummer', 'crab.kind.baby': 'krabbeunge', 'crab.kind.hermit': 'eremittkreps',
     'crab.friend.ruby': 'Rubin', 'crab.friend.frost': 'Frost', 'crab.friend.captain': 'Kaptein', 'crab.friend.tiny': 'Pjokken',
     'crab.cove.level1': 'Krabbebukta vokste! En krabbefamilie flyttet inn i et sandslott. (+30 mynter)',

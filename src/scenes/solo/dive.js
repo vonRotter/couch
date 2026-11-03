@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BaseScene } from '../../core/scene.js';
+import { setPadLayout } from '../../core/input.js';
 import { Character } from '../../core/character.js';
 import { toon, basic } from '../../core/palette.js';
 import { seeded } from '../../core/world.js';
@@ -68,6 +69,8 @@ export class DiveScene extends BaseScene {
     this.toasts = new ToastQueue(game.ui);
     this.key = 'dive';
     this.ownMenu = true;
+    this.padLayout = 'island'; // the island's gamepad buttons: A kick, X pick up / net, B swim up (input.js)
+    setPadLayout('island');
     this.save = loadIsland(game.roster);
     const sea = this.save.sea;
     this.airMax = sea.tank ? 100 : 60;

@@ -5,8 +5,9 @@ import { toon, basic } from '../../core/palette.js';
 import { addLights } from '../../core/world.js';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say as speak } from '../../core/voice.js';
+import { say as speak, voiceOn, babbleMode } from '../../core/voice.js';
 import { ProfilePicker } from '../../core/profiles.js';
+import { setPadLayout } from '../../core/input.js';
 import { SKYHOP_LEVELS } from '../skyhop-levels.js';
 import './strings.js';
 import './strings2.js';
@@ -31,6 +32,7 @@ import { IslandMap, heightAt, riverDist, SEA_Y, DIVE_BOAT, CAFE, HOME, FIELD, BI
 import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS, cropNight } from './farm.js';
 import { Homes, makeHomeMats } from './homes.js';
 import { FriendsBook } from './friends.js';
+import { Journal } from './journal.js';
 import { CrabCare } from './crabs.js';
 import './strings9.js';
 import './strings10.js';
@@ -64,7 +66,8 @@ import { Play } from './play.js';
 const SPEED = 6.2;
 const PR = 0.42;
 const CAM_UP = 14.8, CAM_BACK = 13; // a little higher up (a more top-down view) and never closer than before (12.5 / 13)
-const MODES = ['island', 'story', 'solo', 'friends']; // the start menu ('friends' opens the Friends book)
+// the menu ([MENU]: Q or Start): keep playing, the other ways to play, and the settings a gamepad has no key for
+const MENU = ['resume', 'island', 'story', 'solo', 'voice', 'chars', 'lang', 'help'];
 const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];
 const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
@@ -74,8 +77,9 @@ const NPC_SPEED = 2.6;
 const TALK_R = 2.0;
 const DOOR_R = 1.9;
 // The solo island's buttons: [A] jumps, [B] is the one "use" button (tools, talking, picking up, going in),
-// [C] opens the menu. The bag is Tab on a keyboard or a long press of [B] on a gamepad; F is the Friends book.
-const HOLD_BAG = 0.45; // seconds of [B] on a gamepad that open the bag instead of using
+// [C] is back in panels. Keyboard: Space / E / Q, Q opens the menu, Tab the bag, F the journal, 1-9 the
+// hotbar. Gamepad (padLayout 'island', input.js): A jumps, X uses, B is back (it never picks), Start opens
+// the menu, the D-pad picks the hotbar slot (left/right), opens the bag (up) and the journal (down).
 const JUMP_V = 7.4, GRAVITY = 26; // a bean hop: about a meter high, 0.57 s and 3.5 m in the air
 const SNAP = 0.3; // walking down a slope or a small step keeps your feet on the ground (more: you fall)
 
@@ -164,6 +168,7 @@ export class SoloIslandScene extends BaseScene {
     this.toasts = new ToastQueue(game.ui); // one or two pop-ups at a time, paused under panels
     this.key = null;
     this.ownMenu = true; // main.js: Esc is our help, not the game pause menu
+    setPadLayout('island'); // (main.js keeps it from padLayout every frame)
     // Tab opens the bag here: keep the browser from moving the focus
     this.onTabKey = (e) => { if (e.code === 'Tab') e.preventDefault(); };
     window.addEventListener('keydown', this.onTabKey);
@@ -223,6 +228,7 @@ export class SoloIslandScene extends BaseScene {
     this.tour = new Tournament(this);
     this.homes = new Homes(this); // everyone's front door (milestone C)
     this.friends = new FriendsBook(this); // hearts, birthdays and favorite gifts (milestone C)
+    this.journal = new Journal(this); // Friends, Tasks, Calendar, Fish log and Museum in one book with tabs
     this.crabs = new CrabCare(this); // crab friends: help crabs, Crab Cove, a crab who follows you (crabs.js)
     this.zipzap = new ZipZap(this); // Pip's Zip-Zap: rocks, grass and trees to zap, the beam, the scan, upgrades
     this.hops = new Hops(this); // jumping: stepping stones, hidden areas with chests, hop trails and races
@@ -592,8 +598,12 @@ export class SoloIslandScene extends BaseScene {
         this.renderLine(L, L.text ?? t(L.key, { name: this.playerName, ...L.vars }), this.lineVoice(L), L.who && NPCS[L.who] ? npcState(this.save, L.who) : null);
       }
     }
-    const back = !!L.choices && inp.cPressed; // [C] on a question picks the last answer ("no")
-    if (d.t < 0.25 || !(inp.aPressed || inp.bPressed || back)) return;
+    // [C] on a question picks the last answer ("no") on a keyboard (Q). A gamepad's B never picks an
+    // answer: on a question it does nothing, on a plain line it goes on like A and X.
+    const pad = this.onPad;
+    const back = !!L.choices && inp.cPressed && !pad;
+    const next = inp.aPressed || inp.bPressed || back || (pad && !L.choices && inp.cPressed);
+    if (d.t < 0.25 || !next) return;
     d.i++;
     if (L.choices) {
       const pick = back && !inp.aPressed && !inp.bPressed ? L.choices.length - 1 : d.choice;
@@ -685,7 +695,12 @@ export class SoloIslandScene extends BaseScene {
     this.markDirty();
   }
 
+  /** The first tasks, for the list on screen (the journal's Tasks tab shows them all). */
   tasks() {
+    return this.allTasks().slice(0, 5);
+  }
+
+  allTasks() {
     const S = this.save;
     const out = [];
     if (S.intro && S.tut >= 1 && S.tut <= 7) out.push(t(`isl.tut.${S.tut}`));
@@ -708,7 +723,7 @@ export class SoloIslandScene extends BaseScene {
     out.unshift(...this.story.tasks());
     if (this.isle2.here()) out.unshift(t('isl.task.isle'));
     if (count(S, 'seaChart') && !S.isle2.chart) out.unshift(t('isl.task.chart'));
-    return out.slice(0, 5);
+    return out;
   }
 
   questText(id, n) {
@@ -774,7 +789,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'friends', 'crabs', 'map'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   /** The usual spot of a decoration (the trophy garden), or null. */
@@ -1267,7 +1282,7 @@ export class SoloIslandScene extends BaseScene {
     return a || null;
   }
 
-  /** How this player opens the bag: "Tab" on a keyboard, "hold B" on a gamepad. */
+  /** How this player opens the bag: "Tab" on a keyboard, the D-pad up on a gamepad. */
   bagKey(long = false) {
     const p = this.player?.p;
     const pad = p && this.game.input.get(p.deviceId)?.type === 'gamepad';
@@ -1275,19 +1290,23 @@ export class SoloIslandScene extends BaseScene {
   }
 
   get onPad() {
-    const p = this.player?.p;
-    return !!p && this.game.input.get(p.deviceId)?.type === 'gamepad';
+    return this.playerDevice?.type === 'gamepad';
   }
 
-  /** [B] in walk mode: on a keyboard it uses at once; on a gamepad a tap uses and a long press opens the bag. */
+  /** The player's device (gamepads: btnPressed has the D-pad, Start, LB/RB... by name). */
+  get playerDevice() {
+    const p = this.player?.p;
+    return p ? this.game.input.get(p.deviceId) : null;
+  }
+
+  /** Gamepad layout (input.js): the island's own, except while the profile picker (a shared menu) is up. */
+  get padLayout() {
+    return this.profilePicker ? 'default' : 'island';
+  }
+
+  /** [B] in walk mode (E / X): use. */
   useButton(inp, dt, use) {
-    if (!this.onPad) { if (inp.bPressed) use?.fn(); return; }
-    if (inp.bPressed) this.bHold = 0;
-    if (this.bHold == null) return;
-    if (inp.b) {
-      this.bHold += dt;
-      if (this.bHold >= HOLD_BAG) { this.bHold = null; this.openBag(); }
-    } else { this.bHold = null; use?.fn(); }
+    if (inp.bPressed) use?.fn();
   }
 
   /**
@@ -1651,7 +1670,7 @@ export class SoloIslandScene extends BaseScene {
     if (inp.stepY) { const rows = this.shopRows(); sh.i = THREE.MathUtils.clamp(sh.i - inp.stepY, 0, Math.max(0, rows.length - 1)); this.game.audio.play('select'); this.renderShop(); }
     if (sh.t < 0.25) return;
     if (inp.cPressed) { this.mode = 'walk'; this.hud.setPanel(null); this.npc('rosa').talking = false; if (S.tut === 7) this.setTut(8); this.markDirty(); return; }
-    if (inp.bPressed) {
+    if (inp.bPressed || (this.onPad && inp.aPressed)) { // E / X, or A on a gamepad (B leaves)
       const r = this.shopRows()[sh.i];
       if (!r) return;
       if (sh.tab === 0) {
@@ -1781,11 +1800,10 @@ export class SoloIslandScene extends BaseScene {
     this.game.transition(() => new DiveScene(this.game));
   }
 
+  /** The fish log book opens the journal at its Fish log tab (journal.js). */
   openLog() {
-    this.mode = 'log';
     this.log = { i: this.log?.i || 0, t: 0 };
-    this.renderLog();
-    this.game.audio.play('select');
+    this.journal.open('fish');
   }
 
   renderLog() {
@@ -1811,56 +1829,78 @@ export class SoloIslandScene extends BaseScene {
       info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t('isl.where.reef'))} · 🌙 ${esc(t('isl.log.nightOnly'))}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}`;
     }
     this.hud.setPanel(`<h2>${esc(t('isl.log.title'))} <small style="font-size:.5em;opacity:.7">${esc(t('isl.log.count', { n, m: ids.length }))}</small></h2>
-      <div class="isl-loggrid">${cells}</div><div class="isl-foot" style="font-size:clamp(14px,1.4vw,20px);opacity:1">${info}</div>
-      <div class="isl-foot">${esc(tFor(this.player?.p, 'isl.log.hint'))}</div>`);
+      <div class="isl-loggrid">${cells}</div><div class="isl-foot" style="font-size:clamp(14px,1.4vw,20px);opacity:1">${info}</div>`);
   }
 
-  updateLog(inp, dt) {
-    this.log.t += dt;
+  /** In the journal: the stick looks through the fish log. */
+  logStep(inp) {
     const step = inp.stepX + -inp.stepY * 8;
     if (step) { this.log.i = (this.log.i + step + LOG_IDS.length) % LOG_IDS.length; this.game.audio.play('select'); this.renderLog(); }
-    if (this.log.t > 0.25 && (inp.bPressed || inp.aPressed || inp.cPressed)) { this.hud.setPanel(null); this.mode = 'walk'; }
   }
 
-  // ---------- start menu (Island, Story or Solo), same as the shared island's ----------
+  // ---------- the menu ([MENU]: Q on a keyboard, Start on a gamepad) ----------
+  // Keep playing, the other ways to play (the shared island, the story, another solo player) and the
+  // settings a gamepad has no key for (read-aloud, characters, language, help). [OK] or [B] picks
+  // (A or X on a gamepad, E or Space on a keyboard), [C] or Start closes it: a gamepad's B never picks.
 
   openMode(index = 0) {
     if (this.helpEl) this.toggleHelp();
     this.mode = 'menu';
     this.modeIndex = index;
     this.modeT = 0;
-    this.modeEl = this.game.ui.panel('', 'panel picker');
+    this.modeEl = this.game.ui.panel('', 'panel pause isl-menu');
     this.renderMode();
     this.game.audio.play('select');
   }
 
+  menuLabel(k) {
+    if (k === 'voice') return `${t('isl.mn.voice')}: ${t(voiceOn() ? 'isl.mn.on' : 'isl.mn.off')}`;
+    if (k === 'chars') return `${t('pause.chars')}: ${t(babbleMode() ? 'pause.charsBabble' : 'pause.charsVoices')}`;
+    if (k === 'lang') return `${t('isl.mn.lang')}: ${t('isl.mn.langName')}`;
+    return t(`isl.mn.${k}`);
+  }
+
   renderMode() {
-    const icons = { island: '🏝️', story: '📖', solo: '🗺️', friends: '💛' };
-    const opts = MODES.map((k, i) => `<div class="vote-opt mode-opt ${i === this.modeIndex ? 'on' : ''}">
-      <div class="mode-icon">${icons[k]}</div><b>${t(`mode.${k}`)}</b><small>${t(`mode.${k}.sub`)}</small></div>`).join('');
-    this.modeEl.innerHTML = `<div class="results-title">${t('mode.title')}</div><div class="vote-row">${opts}</div><div class="results-footer">${t('mode.hint')}</div>`;
+    if (!this.modeEl) return;
+    const items = MENU.map((k, i) => `<div class="pause-item ${i === this.modeIndex ? 'on' : ''}">${esc(this.menuLabel(k))}</div>`).join('');
+    this.modeEl.innerHTML = `<div class="results-title">${esc(t('isl.mn.title'))}</div>
+      <div class="pause-list">${items}</div><div class="results-footer">${esc(tFor(this.player?.p, 'isl.mn.hint'))}</div>`;
   }
 
   updateMode(inp, dt) {
     if (this.profilePicker) { this.profilePicker.update(dt); return; }
     this.modeT += dt;
-    const to = THREE.MathUtils.clamp(this.modeIndex + inp.stepX, 0, MODES.length - 1);
-    if (inp.stepX && to !== this.modeIndex) { this.modeIndex = to; this.game.audio.play('select'); this.renderMode(); }
-    if (inp.cPressed && this.modeT > 0.25) { this.closeMode(); return; }
-    if ((inp.aPressed || inp.bPressed) && this.modeT > 0.25) {
-      this.modeEl.remove();
-      this.modeEl = null;
-      this.game.audio.play('join');
-      const mode = MODES[this.modeIndex];
-      if (mode === 'friends') { this.mode = 'walk'; this.friends.open(); return; }
-      this.flush();
-      if (mode === 'solo') {
-        this.profilePicker = new ProfilePicker(this, {
-          onDone: (profile, deviceId) => { this.profilePicker = null; this.launching = true; this.game.enterSolo(profile, deviceId); },
-          onCancel: () => { this.profilePicker = null; this.openMode(MODES.indexOf('solo')); },
-        });
-      } else { this.launching = true; this.game.leaveSolo(mode); }
-    }
+    const n = MENU.length;
+    if (inp.stepY) { this.modeIndex = (this.modeIndex - inp.stepY + n) % n; this.game.audio.play('select'); this.renderMode(); }
+    if (this.modeT < 0.25) return;
+    const k = MENU[this.modeIndex];
+    const start = !!this.playerDevice?.btnPressed?.start;
+    if (inp.cPressed || start) { this.closeMode(); return; }
+    // settings switch with left/right too, and the menu stays open
+    const setting = k === 'voice' || k === 'chars' || k === 'lang';
+    if (setting && inp.stepX) { this.menuSetting(k); return; }
+    if (!(inp.aPressed || inp.bPressed)) return;
+    if (setting) { this.menuSetting(k); return; }
+    if (k === 'resume') { this.closeMode(); return; }
+    if (k === 'help') { this.closeMode(); this.toggleHelp(); return; }
+    this.modeEl.remove();
+    this.modeEl = null;
+    this.game.audio.play('join');
+    this.flush();
+    if (k === 'solo') {
+      setPadLayout('default'); // the profile picker is a shared menu: A picks, B goes back, X voice
+      this.profilePicker = new ProfilePicker(this, {
+        onDone: (profile, deviceId) => { this.profilePicker = null; this.launching = true; this.game.enterSolo(profile, deviceId); },
+        onCancel: () => { this.profilePicker = null; setPadLayout('island'); this.openMode(MENU.indexOf('solo')); },
+      });
+    } else { this.launching = true; this.game.leaveSolo(k); }
+  }
+
+  menuSetting(k) {
+    if (k === 'voice') this.game.toggleVoice();
+    else if (k === 'chars') this.game.toggleBabble();
+    else this.game.toggleLanguage();
+    this.renderMode();
   }
 
   closeMode() {
@@ -1881,8 +1921,7 @@ export class SoloIslandScene extends BaseScene {
     if (this.modeEl) this.renderMode();
     if (this.mode === 'shop') this.renderShop();
     if (this.mode === 'cook') this.cafe.renderCook();
-    if (this.mode === 'log') this.renderLog();
-    if (this.mode === 'friends') this.friends.render();
+    if (this.mode === 'journal') this.journal.show();
     if (this.mode === 'crabs') this.crabs.renderPicker();
     if (this.mode === 'dialog' && this.dlg) this.showLine();
     this.lightTop?.onLanguage();
@@ -2134,13 +2173,20 @@ export class SoloIslandScene extends BaseScene {
     const P = this.player;
     const inp = P ? this.input(P.p) : null;
     let ia = null;
-    if (inp && !this.launching) {
+    // the help card on a gamepad (opened from the menu): A, B or Start puts it away
+    const dev = this.playerDevice;
+    const helpOff = !!this.helpEl && dev?.type === 'gamepad' && (dev.okPressed || dev.backPressed || dev.btnPressed.start);
+    if (helpOff) this.toggleHelp();
+    if (inp && !this.launching && !helpOff) {
       // hotbar keys work any time you walk
       for (let k = 1; k <= 9; k++) if (this.game.input.pressed.has(`Digit${k}`) && this.mode === 'walk') { this.save.sel = k - 1; this.game.audio.play('select'); }
-      if (this.mode !== 'walk') this.bHold = null;
+      // the journal's tabs only on its own pages
+      if (this.mode !== 'journal' && this.hud.panelPrefix) this.hud.panelPrefix = this.hud.panelSuffix = '';
       // Panels and mini-modes keep their own code: "do it" arrives as their [A] and "close/back" as
-      // their [B], so here the island's [B] (use) becomes their do-it and [C] their back (see README).
-      const panel = { ...inp, aPressed: inp.bPressed, a: inp.b, bPressed: inp.cPressed, b: inp.c };
+      // their [B], so here the island's [B] (use: E / X) becomes their do-it and [C] (Q / B) their back
+      // (see README). On a gamepad A picks too, so A picks and B goes back everywhere.
+      const pad = this.onPad;
+      const panel = { ...inp, aPressed: inp.bPressed || (pad && inp.aPressed), a: inp.b || (pad && inp.a), bPressed: inp.cPressed, b: inp.c };
       switch (this.mode) {
         case 'dialog': this.updateDialog(inp, dt); break;
         case 'bag': this.bagUi.update(inp, dt); break;
@@ -2151,10 +2197,8 @@ export class SoloIslandScene extends BaseScene {
         case 'fish': this.fishing.update(panel, dt); if (!this.fishing.active) this.mode = 'walk'; break;
         case 'cook': this.cafe.updateCook(panel, dt); break;
         case 'service': this.cafe.updateService(panel, dt); break;
-        case 'log': this.updateLog(inp, dt); break;
         case 'bench': this.builder.updateBench(panel, dt); break;
         case 'deco': this.builder.updateDecorate({ ...inp, aPressed: inp.bPressed, a: inp.b, bPressed: inp.aPressed, b: inp.a }, dt); break; // [B] places, [A] turns
-        case 'cal': this.seasons.updateCalendar(inp, dt); break;
         case 'sled': this.seasons.sled.update(inp, dt); break;
         case 'museum': this.museum.update(panel, dt); break;
         case 'sail': this.isle2.updateSail(inp, dt); break;
@@ -2165,7 +2209,7 @@ export class SoloIslandScene extends BaseScene {
         case 'top': case 'scope': this.lightTop.update(panel, dt); break;
         case 'festival': break; // the Lamp Festival plays by itself
         case 'knock': break; // knock knock... (homes.js)
-        case 'friends': this.friends.update(inp, dt); break;
+        case 'journal': this.journal.update(inp, dt); break; // Friends, Tasks, Calendar, Fish log, Museum
         case 'crabs': this.crabs.updatePicker(panel, dt); break;
         case 'hopgo': this.hops.updateCount(dt); break; // 3, 2, 1 before a hop trail
         case 'map': break; // the treasure map from a bottle (surprise.js closes it)
@@ -2176,9 +2220,13 @@ export class SoloIslandScene extends BaseScene {
           ia.use = this.useAction(ia);
           this.farm.showHighlight(ia.tile, ia.hl ?? 0xffffff);
           const keys = this.game.input.pressed;
-          if (inp.cPressed) { this.bHold = null; this.openMode(0); break; }
-          if (keys.has('KeyF')) { this.bHold = null; this.friends.open(); break; }
-          if (keys.has('Tab') && !this.onPad) { this.openBag(); break; }
+          const pb = this.playerDevice?.btnPressed || {}; // a gamepad's D-pad and Start (input.js)
+          // the menu: Q, or Start (a gamepad's B is back: it does nothing out here)
+          if ((!pad && inp.cPressed) || pb.start) { this.openMode(0); break; }
+          if (keys.has('KeyF') || pb.down) { this.journal.open(); break; }
+          if (keys.has('Tab') || pb.up) { this.openBag(); break; }
+          // D-pad left/right: the hotbar slot (what you hold)
+          if (pb.left || pb.right) { this.save.sel = ((this.save.sel ?? 0) + (pb.right ? 1 : -1) + HOTBAR) % HOTBAR; this.game.audio.play('select'); }
           if (inp.aPressed) this.jump();
           this.useButton(inp, dt, ia.use);
         }
@@ -2217,6 +2265,7 @@ export class SoloIslandScene extends BaseScene {
 
   dispose() {
     window.removeEventListener('keydown', this.onTabKey);
+    this.journal?.dispose();
     this.toasts.dispose();
     this.cafe?.dispose();
     this.fishing?.dispose();

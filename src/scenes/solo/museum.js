@@ -80,8 +80,39 @@ export class Museum {
     speak(n ? t('isl.museum.youHave', { n }) : t('isl.museum.title'), 'narrator');
   }
 
-  render() {
-    const host = this.host, B = this.board, room = ROOMS[B.room];
+  /** The journal's Museum tab: the same rooms to look at (donating stays at Curator Hoot's board). */
+  renderList() {
+    this.view ||= { room: 0, i: 0, t: 0 };
+    this.render(this.view, true);
+  }
+
+  /** In the journal: the stick looks through the rooms. */
+  listStep(inp) {
+    if (this.nav(this.view, inp)) this.renderList();
+  }
+
+  /** Move a cursor { room, i } with the stick; true if it moved. */
+  nav(B, inp) {
+    const n = ROOMS[B.room].ids.length;
+    let moved = false;
+    if (inp.stepX) {
+      // walking off the end of a room goes to the next room
+      const i = B.i + inp.stepX;
+      if (i < 0) { B.room = (B.room + ROOMS.length - 1) % ROOMS.length; B.i = ROOMS[B.room].ids.length - 1; }
+      else if (i >= n) { B.room = (B.room + 1) % ROOMS.length; B.i = 0; }
+      else B.i = i;
+      moved = true;
+    }
+    if (inp.stepY) {
+      const i = B.i - inp.stepY * COLS;
+      if (i >= 0 && i < n) { B.i = i; moved = true; }
+    }
+    if (moved) this.host.game.audio.play('select');
+    return moved;
+  }
+
+  render(B = this.board, list = false) {
+    const host = this.host, room = ROOMS[B.room];
     const tabs = ROOMS.map((r, i) => {
       const got = r.ids.filter((id) => this.got[id]).length;
       return `<span class="${i === B.room ? 'on' : ''}">${esc(t(`isl.museum.${r.id}`))} ${got}/${r.ids.length}</span>`;
@@ -95,7 +126,7 @@ export class Museum {
     }).join('');
     const id = room.ids[B.i];
     const have = !!this.got[id], carry = !have && count(this.S, id) > 0;
-    let info = have ? t('isl.museum.shown', { item: t(`isl.i.${id}`) }) : carry ? tFor(host.player?.p, 'isl.museum.donate', { item: t(`isl.i.${id}`) }) : t('isl.museum.missing');
+    let info = have ? t('isl.museum.shown', { item: t(`isl.i.${id}`) }) : carry ? tFor(host.player?.p, list ? 'isl.museum.donateAt' : 'isl.museum.donate', { item: t(`isl.i.${id}`) }) : t('isl.museum.missing');
     if (room.helped) info = have ? t('isl.museum.crabShown', { item: t(`isl.i.${id}`) }) : t(`isl.museum.crabHint.${id}`);
     if (NIGHT(id)) info += ` 🌙 ${t('isl.museum.night')}`;
     const next = MILESTONES.find((m) => m.n > this.total);
@@ -104,26 +135,13 @@ export class Museum {
       <div class="isl-tabs">${tabs}</div>${room.helped ? `<div class="isl-foot" style="opacity:1;margin:0 0 4px">${esc(t('isl.museum.crabWall'))}</div>` : ''}
       <div class="isl-loggrid" style="grid-template-columns:repeat(${COLS},1fr)">${cells}</div>
       <div class="isl-foot" style="font-size:clamp(14px,1.4vw,20px);opacity:1">${esc(info)}</div>
-      <div class="isl-foot">${esc(goal)} · ${esc(tFor(host.player?.p, 'isl.museum.hint'))}</div>`);
+      <div class="isl-foot">${esc(goal)}${list ? '' : ` · ${esc(tFor(host.player?.p, 'isl.museum.hint'))}`}</div>`);
   }
 
   update(inp, dt) {
     const host = this.host, B = this.board;
     B.t += dt;
-    const n = ROOMS[B.room].ids.length;
-    if (inp.stepX) {
-      // walking off the end of a room goes to the next room
-      const i = B.i + inp.stepX;
-      if (i < 0) { B.room = (B.room + ROOMS.length - 1) % ROOMS.length; B.i = ROOMS[B.room].ids.length - 1; }
-      else if (i >= n) { B.room = (B.room + 1) % ROOMS.length; B.i = 0; }
-      else B.i = i;
-      host.game.audio.play('select');
-      this.render();
-    }
-    if (inp.stepY) {
-      const i = B.i - inp.stepY * COLS;
-      if (i >= 0 && i < n) { B.i = i; host.game.audio.play('select'); this.render(); }
-    }
+    if (this.nav(B, inp)) this.render();
     if (B.t < 0.25) return;
     if (inp.bPressed) { this.close(); return; }
     if (inp.aPressed) {

@@ -4,7 +4,7 @@ import '@fontsource/fredoka/600.css';
 import '@fontsource/fredoka/700.css';
 import './style.css';
 
-import { Input, buttonLabel } from './core/input.js';
+import { Input, buttonLabel, setPadLayout } from './core/input.js';
 import { Roster } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
@@ -302,9 +302,11 @@ class Game {
         this.audio.play('select');
         this.renderPause();
       }
-      // the last item is a setting: [A]/[B] or left/right switches it, the menu stays open
-      if (P.index === 3 && (d.aPressed || d.bPressed || d.stepX)) { this.toggleBabble(); this.renderPause(); continue; }
-      if (d.aPressed || d.bPressed) {
+      // a gamepad's B goes back (resumes); it never picks (keyboards pick with Space or E, Esc resumes)
+      if (d.backPressed) { this.closePause(); this.audio.play('select'); return; }
+      // the last item is a setting: pick or left/right switches it, the menu stays open
+      if (P.index === 3 && (d.okPressed || d.stepX)) { this.toggleBabble(); this.renderPause(); continue; }
+      if (d.okPressed) {
         const choice = P.index;
         this.closePause();
         if (choice === 1) {
@@ -342,6 +344,8 @@ class Game {
   }
 
   tick(dt) {
+    // the solo island and its dive have their own gamepad layout (A jump, X use, B back; input.js)
+    setPadLayout(this.current?.padLayout || 'default');
     this.input.update();
     if (this.input.mutePressed) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
     if (this.input.pressed.has('KeyN')) this.toggleLanguage();

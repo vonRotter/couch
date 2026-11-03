@@ -10,9 +10,9 @@ import { now } from './save.js';
 
 // The Friends book (milestone C): the hearts moved off the name tags into a little book. One page per
 // villager (picture, hearts, birthday, the gifts they love / like / dislike as you learn them, where they
-// are right now and what comes next with them), and a last page for the farm animals. F opens it, or the
-// start menu ([C]) on a gamepad; the stick (or the arrow keys) flips pages; any button closes. Each page is
-// read aloud.
+// are right now and what comes next with them), and a last page for the farm animals. It is the first tab of
+// the journal (journal.js: F or the D-pad down); the stick (or the arrow keys) flips pages. Each page is
+// read aloud (a book you open).
 //
 // Gift tastes are learned (save.friends.known[id][item] = 'love' | 'like' | 'dislike'): by giving that gift,
 // or because the villager mentions a favorite while chatting (one per heart, see tellLine()).
@@ -104,24 +104,20 @@ export class FriendsBook {
 
   // ---------- the panel ----------
 
+  /** The Friends tab of the journal (journal.js), at a page (default: the last one). */
   open(page = null) {
-    const host = this.host;
-    host.mode = 'friends';
-    this.t = 0;
     const list = this.pages();
     if (page !== null) this.page = page;
     this.page = Math.min(this.page, list.length - 1);
-    this.render(true);
-    host.game.audio.play('select');
+    this.host.journal.open('friends');
   }
 
   close() {
-    this.host.hud.setPanel(null);
-    this.host.mode = 'walk';
+    this.host.journal.close();
   }
 
-  update(inp, dt) {
-    this.t += dt;
+  /** In the journal: the stick (or the arrow keys) turns the pages. */
+  flip(inp) {
     const list = this.pages();
     const keys = this.host.game.input.pressed;
     const step = inp.stepX || -inp.stepY || (keys.has('ArrowRight') || keys.has('ArrowDown') ? 1 : keys.has('ArrowLeft') || keys.has('ArrowUp') ? -1 : 0);
@@ -130,7 +126,6 @@ export class FriendsBook {
       this.host.game.audio.play('select');
       this.render(true);
     }
-    if (this.t > 0.25 && (inp.aPressed || inp.bPressed || inp.cPressed || keys.has('KeyF') || keys.has('Tab'))) this.close();
   }
 
   /** Where a villager is right now, in words. */
@@ -193,7 +188,9 @@ export class FriendsBook {
   }
 
   render(read = false) {
-    const host = this.host, list = this.pages(), id = list[this.page];
+    const host = this.host, list = this.pages();
+    this.page = Math.max(0, Math.min(this.page, list.length - 1));
+    const id = list[this.page];
     const dots = `<div class="isl-fbdots">${list.map((_, i) => `<span class="${i === this.page ? 'on' : ''}"></span>`).join('')}</div>`;
     const foot = `<div class="isl-foot">${esc(tFor(host.player?.p, 'isl.fb.hint'))}</div>`;
     if (id === 'crabs') { this.renderCrabs(dots, foot, read); return; }

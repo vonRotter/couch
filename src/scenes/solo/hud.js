@@ -196,9 +196,10 @@ export class IslandHud {
     this.set('dialog', this.dialog, `${d.who ? `<div class="who">${esc(d.who)}</div>` : ''}${esc(d.text)}${choices}${d.choices ? '' : '<div class="more">▼</div>'}`);
   }
 
+  /** The big panel (null closes it). The journal (journal.js) wraps its pages in panelPrefix / panelSuffix. */
   setPanel(html) {
     this.show(this.panel, !!html);
-    if (html) this.set('panel', this.panel, html);
+    if (html) this.set('panel', this.panel, `${this.panelPrefix || ''}${html}${this.panelSuffix || ''}`);
     else this.cache.panel = null;
   }
 }

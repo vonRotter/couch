@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { t, tFor, getLang } from '../../core/i18n.js';
+import { t, getLang } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say as speak } from '../../core/voice.js';
 import { now, count, give, take } from './save.js';
 import { dayKey, dayRand, birthdayOf, festivalOn, rainyOn, monthDays, seasonOf, weekIndex, SEASONS, SEASON_ICON, SEASON_FEST } from './calendar.js';
 import { wetEnd } from './farm.js';
@@ -335,10 +334,14 @@ export class Seasons {
     if (Math.hypot(P.x - CAL_BOARD.x, P.z - CAL_BOARD.z) < 1.9) out.b = { text: nm('isl.h.calendar'), fn: () => this.openCalendar() };
   }
 
+  /** The calendar board opens the journal at its Calendar tab (journal.js). */
   openCalendar() {
+    this.host.journal.open('cal');
+  }
+
+  /** The Calendar tab: this month, its festivals, birthdays and rainy days, and the season. */
+  renderCalendar() {
     const host = this.host;
-    host.mode = 'cal';
-    this.calT = 0;
     const md = monthDays();
     const loc = getLang() === 'no' ? 'nb-NO' : 'en-GB';
     const title = new Date(md.year, md.month, 1).toLocaleString(loc, { month: 'long', year: 'numeric' });
@@ -360,10 +363,7 @@ export class Seasons {
       <div class="isl-cal">${head}${blanks}${cells}</div>
       <div class="isl-foot" style="opacity:1;font-size:clamp(11px,1vw,15px);margin-top:6px">${legend}</div>
       <div class="isl-foot" style="opacity:1;font-size:clamp(14px,1.4vw,20px);margin-top:6px">${esc(t('isl.cal.today'))}: ${esc(sub || '—')}</div>
-      ${story ? `<div class="isl-foot" style="opacity:1;font-size:clamp(13px,1.25vw,18px);margin-top:4px">📖 ${esc(story)}</div>` : ''}
-      <div class="isl-foot">${esc(tFor(host.player?.p, 'isl.cal.hint'))}</div>`);
-    if (sub || story) speak([sub ? `${t('isl.cal.today')}: ${sub}` : '', story].filter(Boolean).join('. '), 'narrator');
-    host.game.audio.play('select');
+      ${story ? `<div class="isl-foot" style="opacity:1;font-size:clamp(13px,1.25vw,18px);margin-top:4px">📖 ${esc(story)}</div>` : ''}`);
   }
 
   /** "Autumn week" and what comes next. */
@@ -372,8 +372,4 @@ export class Seasons {
     return t('isl.season.week', { season: `${SEASON_ICON[this.season]} ${t(`isl.season.${this.season}`)}`, next: t(`isl.season.${next}`) });
   }
 
-  updateCalendar(inp, dt) {
-    this.calT += dt;
-    if (this.calT > 0.25 && (inp.aPressed || inp.bPressed)) { this.host.hud.setPanel(null); this.host.mode = 'walk'; }
-  }
 }

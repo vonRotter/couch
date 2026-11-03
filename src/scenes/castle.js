@@ -7,8 +7,8 @@ import { makeGrumble } from '../core/critters.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeBush, makeStar, seeded } from '../core/world.js';
 import { moveBody, platformerControl, approach } from '../core/physics2d.js';
-import { t, addStrings, getLang, keyName, buttonText } from '../core/i18n.js';
-import { PAD_LABELS } from '../core/input.js';
+import { t, addStrings, getLang, buttonText } from '../core/i18n.js';
+import { buttonLabel } from '../core/input.js';
 import { esc } from '../core/ui.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 import { voteLength, VotePicker } from '../core/vote.js';
@@ -81,7 +81,7 @@ addStrings(STRINGS);
 function buttonFor(game, p, b) {
   const d = p && game.input.get(p.deviceId);
   if (!d) return buttonText(b);
-  return d.type === 'keyboard' ? keyName(d.scheme[b][0]) : PAD_LABELS[d.kind][b];
+  return buttonLabel(d, b);
 }
 
 /** Like t(), but [A]/[B]/[C] become this one player's keys (for hints over a bean's head). */

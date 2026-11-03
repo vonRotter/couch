@@ -21,7 +21,7 @@ addStrings({
     'zz.t.rockBuster': 'Rock buster on! Your Zip-Zap can break the sparkly ore rocks now.',
     // Pip's gadget bench
     'zz.bench.title': "Pip's gadget bench", 'zz.bench.hello': 'Welcome to my gadget bench! What shall we add to your Zip-Zap?',
-    'zz.bench.hint': '[B] build it · [C] close', 'zz.bench.status': 'Rock buster: {buster} · Beam: {area}',
+    'zz.bench.hint': '[OK] build it · [C] close', 'zz.bench.status': 'Rock buster: {buster} · Beam: {area}',
     'zz.on': 'on', 'zz.off': 'off (Keeper Bram)', 'zz.area0': 'one tile', 'zz.area1': 'three in a row', 'zz.area2': '3 × 3',
     'zz.up.done': 'built!', 'zz.up.first': 'the one above first', 'zz.up.needBuster': 'needs the rock buster',
     'zz.up.speed1': 'Fast Zap', 'zz.up.speed1.sub': 'Quicker beams: rocks, trees and the rockfall need fewer zaps.', 'zz.up.speed1.got': 'Fast Zap! Fewer zaps for rocks and trees.',
@@ -53,7 +53,7 @@ addStrings({
     'zz.t.big': '+6 stein!', 'zz.t.bigCrystal': '+6 stein, og en krystall inni: {item}!', 'zz.t.wood': '+3 ved (treet vokser opp igjen)',
     'zz.t.rockBuster': 'Steinknuseren er på! Zipp-Zappen kan knuse de glitrende malmsteinene nå.',
     'zz.bench.title': 'Dingsbenken til Pip', 'zz.bench.hello': 'Velkommen til dingsbenken min! Hva skal vi bygge inn i Zipp-Zappen din?',
-    'zz.bench.hint': '[B] bygg den · [C] lukk', 'zz.bench.status': 'Steinknuser: {buster} · Stråle: {area}',
+    'zz.bench.hint': '[OK] bygg den · [C] lukk', 'zz.bench.status': 'Steinknuser: {buster} · Stråle: {area}',
     'zz.on': 'på', 'zz.off': 'av (Fyrvokter Bram)', 'zz.area0': 'én rute', 'zz.area1': 'tre på rad', 'zz.area2': '3 × 3',
     'zz.up.done': 'bygd!', 'zz.up.first': 'den over først', 'zz.up.needBuster': 'trenger steinknuseren',
     'zz.up.speed1': 'Lynzapp', 'zz.up.speed1.sub': 'Raskere stråler: steiner, trær og steinraset trenger færre zapp.', 'zz.up.speed1.got': 'Lynzapp! Færre zapp for steiner og trær.',
