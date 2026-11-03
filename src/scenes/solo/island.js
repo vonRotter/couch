@@ -81,6 +81,7 @@ const DOOR_R = 1.9;
 // hotbar. Gamepad (padLayout 'island', input.js): A jumps, X uses, B is back (it never picks), Start opens
 // the menu, the D-pad picks the hotbar slot (left/right), opens the bag (up) and the journal (down).
 const JUMP_V = 7.4, GRAVITY = 26; // a bean hop: about a meter high, 0.57 s and 3.5 m in the air
+const ZZ_SCALE = 0.8; // the Zip-Zap in the hand: about half the bean's height (it was 1.55, longer than the bean)
 const SNAP = 0.3; // walking down a slope or a small step keeps your feet on the ground (more: you fall)
 
 // The trophy garden between the farm and the square: 3 rows of 5 spots for decorations.
@@ -2008,7 +2009,7 @@ export class SoloIslandScene extends BaseScene {
     if (tool !== P.toolId) {
       if (P.toolMesh) P.hand.remove(P.toolMesh);
       P.toolMesh = tool ? makeZipZap() : null;
-      if (P.toolMesh) { P.toolMesh.scale.setScalar(1.55); P.hand.add(P.toolMesh); }
+      if (P.toolMesh) { P.toolMesh.scale.setScalar(ZZ_SCALE); P.hand.add(P.toolMesh); }
       P.toolId = tool;
     }
     this.swing = Math.max(0, this.swing - dt * 3.5);

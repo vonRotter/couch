@@ -64,6 +64,7 @@ const REACH = { stone: 1.6, grass: 1.4, big: 2.0, tree: 1.7 };
 const GLOW = { stone: 'rock', big: 'rock', grass: 'grass', tree: 'tree' };
 const GLOW_COLOR = { rock: 0xff5fd0, grass: 0x8ddf4a, tree: 0xffc93c };
 const SCAN_R = 11;
+export const SCAN_K = 0.25; // how strong the scan glow is (1 = the first version)
 const CAVE_CRYSTALS = ['roseQuartz', 'skyTopaz', 'sunCitrine'];
 
 /** Pip's upgrades (bought at the gadget bench by the rocket): coins plus things from the island. */
@@ -322,9 +323,10 @@ export class ZipZap {
     this.cool = Math.max(0, this.cool - dt);
     const walking = host.mode === 'walk' && !!P && !host.launching;
     const holding = walking && this.holding();
-    // the scan: things to break, cut and chop glow softly near you
+    // the scan: things to break, cut and chop glow softly near you (a hint, not a spotlight: a quarter of the
+    // first version's strength, after the owner's playtest)
     const pulse = 0.5 + 0.5 * Math.sin(this.time * 4);
-    for (const m of Object.values(this.glowMats)) { m.ring.opacity = 0.5 + pulse * 0.4; m.dome.opacity = 0.1 + pulse * 0.12; }
+    for (const m of Object.values(this.glowMats)) { m.ring.opacity = SCAN_K * (0.5 + pulse * 0.4); m.dome.opacity = SCAN_K * (0.1 + pulse * 0.12); }
     for (const o of this.targets) {
       const d = P ? Math.hypot(P.x - o.x, P.z - o.z) : 99;
       o.glow.visible = holding && d < SCAN_R;

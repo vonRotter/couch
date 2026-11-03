@@ -24,6 +24,7 @@ const HIDE = [[51.8, -7.6], [53.4, -11.6], [48.6, -13.6], [44.8, -9.4], [51.2, -
 export const LEAF_PILES = [[-4.2, -13.4], [2.5, -11.6], [16.4, 4.2], [7.6, 14.6], [26.4, 12.0], [-6.2, 16.4], [36.6, -6.2], [30.4, -6.8]];
 const ARENA = { x0: 15.5, x1: 22.5, them: 1.9, fort: 2.9, me: 9.4, myFort: 8.4 }; // the snowball fight, south of the square
 const SKIP_SWEET = [0.72, 0.9];
+const RIPPLE_GEO = new THREE.RingGeometry(0.75, 1, 28);
 const CSS = `.isl-meter { left: 50%; bottom: 24vh; transform: translateX(-50%); width: min(420px, 60vw); height: 26px; border-radius: 999px; background: rgba(255,255,255,.9);
   box-shadow: 0 3px 0 rgba(43,35,64,.2); overflow: hidden; }
 .isl-meter .sweet { position: absolute; top: 0; bottom: 0; background: #8ddf4a; }
@@ -89,6 +90,8 @@ export class IslandGames {
     this.forts[1].position.set((ARENA.x0 + ARENA.x1) / 2, heightAt(19, ARENA.myFort), ARENA.myFort);
     for (const f of this.forts) { f.visible = false; this.group.add(f); }
     this.balls = [];
+    this.ripples = []; // skipping stones: ripple rings and floating counts
+    this.nums = [];
     this.cur = null; // the mini-game with its own controls (mode 'game')
     this.hide = null;
     this.snow = null;
@@ -155,9 +158,10 @@ export class IslandGames {
         const sweet = power >= SKIP_SWEET[0] && power <= SKIP_SWEET[1];
         const skips = sweet ? 5 + Math.round((1 - Math.abs(power - 0.81) / 0.09) * 2) : Math.max(0, Math.floor(power * 5) - (power > SKIP_SWEET[1] ? 1 : 0));
         const stone = makeFlatStone();
+        stone.scale.multiplyScalar(2.2); // (big enough to follow from the island camera)
         this.group.add(stone);
         c.phase = 'fly';
-        c.fly = { stone, skips, k: 0, i: 0, x: P.x + P.fx * 0.6, z: P.z + P.fz * 0.6, y: P.fy + 1.0, hop: 2.2 + power * 1.5 };
+        c.fly = { stone, skips, k: 0, i: 0, x: P.x + P.fx * 0.6, z: P.z + P.fz * 0.6, y: P.fy + 1.0, hop: 2.4 + power * 1.6, trail: 0 };
         P.ch.squash(0.8);
         host.swing = 1;
         host.game.audio.play('whoosh');
@@ -165,33 +169,61 @@ export class IslandGames {
       return;
     }
     if (c.phase === 'done') return;
-    // the stone flies and skips: each skip a bit shorter
+    // the stone flies and skips: each skip a bit shorter. The camera slides along with it (same distance, the
+    // photo mode's offset), and the last skip plays in slow motion.
     const f = c.fly;
     if (inp.cPressed) c.quit = true; // (stops once this stone is down)
-    f.k += dt * 2.2;
-    const len = f.hop * Math.pow(0.82, f.i);
+    const slow = f.i === f.skips && f.skips >= 2 ? 0.4 : 1;
+    f.k += dt * 2.0 * slow;
+    const len = f.hop * Math.pow(0.84, f.i);
     const x0 = f.x, z0 = f.z;
     const k = Math.min(1, f.k);
-    f.stone.position.set(x0 + P.fx * len * k, (f.i === 0 ? f.y * (1 - k) + SEA_Y * k : SEA_Y) + Math.sin(k * Math.PI) * (f.i === 0 ? 0.6 : 0.5 * Math.pow(0.8, f.i)), z0 + P.fz * len * k);
-    f.stone.rotation.y += dt * 20;
+    const arc = f.i === 0 ? 1.0 : 0.95 * Math.pow(0.84, f.i);
+    f.stone.position.set(x0 + P.fx * len * k, (f.i === 0 ? f.y * (1 - k) + SEA_Y * k : SEA_Y + 0.04) + Math.sin(k * Math.PI) * arc, z0 + P.fz * len * k);
+    f.stone.rotation.y += dt * 20 * slow;
+    f.trail -= dt;
+    if (f.trail <= 0) { f.trail = 0.06; host.puffs.burst(f.stone.position.clone(), 0xffffff, { count: 1, speed: 0.2, up: 0.2, size: 0.16, life: 0.35 }); }
+    host.camOffset = { x: THREE.MathUtils.clamp((f.stone.position.x - P.x) * 0.8, -8, 8), z: THREE.MathUtils.clamp((f.stone.position.z - P.z) * 0.8, -2, 12) };
     if (f.k >= 1) {
       f.x = x0 + P.fx * len; f.z = z0 + P.fz * len; f.k = 0; f.i++;
       const at = new THREE.Vector3(f.x, SEA_Y + 0.05, f.z);
       if (f.i <= f.skips) {
-        host.puffs.burst(at, 0xbff0ff, { count: 6, speed: 2, up: 1.5, size: 0.2, life: 0.4 });
+        host.puffs.burst(at, 0xdff8ff, { count: 12, speed: 2.4, up: 2.6, size: 0.3, life: 0.55 });
+        this.ripple(at, 1.0);
+        this.skipNum(at, f.i, f.i === f.skips);
         host.game.audio.play('pop');
       } else {
-        host.puffs.burst(at, 0xbff0ff, { count: 12, speed: 2.5, up: 2.5, size: 0.3, life: 0.6 });
+        host.puffs.burst(at, 0xdff8ff, { count: 18, speed: 2.8, up: 3.2, size: 0.38, life: 0.7 });
+        this.ripple(at, 1.5);
         host.game.audio.play('splat');
         f.stone.removeFromParent();
         c.best = Math.max(c.best, f.skips);
         this.say(f.skips ? (f.skips >= 5 ? 'gm.skip.great' : 'gm.skip.n') : 'gm.skip.plop', { n: f.skips });
         c.throws--;
         c.phase = 'aim';
-        c.wait = 0.6;
+        c.wait = 0.9;
+        this.later(0.7, () => { if (this.cur?.kind === 'skip' && this.cur.phase !== 'fly') host.camOffset = null; });
         if (c.throws <= 0 || c.quit) { c.phase = 'done'; this.later(1.4, () => this.endSkip()); }
       }
     }
+  }
+
+  /** A ring of ripples spreading on the water where the stone touched it. */
+  ripple(at, size) {
+    const m = new THREE.Mesh(RIPPLE_GEO, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }));
+    m.material.userData = {};
+    m.rotation.x = -Math.PI / 2;
+    m.position.copy(at).setY(SEA_Y + 0.03);
+    m.scale.setScalar(0.3);
+    this.group.add(m);
+    this.ripples.push({ m, t: 0, size });
+  }
+
+  /** The skip count floats up over each splash ("1", "2", "3!"). */
+  skipNum(at, n, last) {
+    const el = this.host.game.ui.label('label party-num');
+    el.textContent = last ? `${n}!` : `${n}`;
+    this.nums.push({ el, pos: at.clone().setY(SEA_Y + 0.6), t: 0 });
   }
 
   endSkip() {
@@ -200,6 +232,7 @@ export class IslandGames {
     this.meter.style.display = 'none';
     this.cur = null;
     host.mode = 'walk';
+    host.camOffset = null;
     if (c.best > this.G.skipBest) {
       const first = !this.G.skipBest;
       this.G.skipBest = c.best;
@@ -502,6 +535,23 @@ export class IslandGames {
       if (h.t <= 0) this.endHide(false);
     }
     if (this.snow) this.updateSnow(dt);
+    // skipping stones: the ripples spread and fade, the numbers float up
+    this.ripples = this.ripples.filter((r) => {
+      r.t += dt;
+      const k = r.t / 0.9;
+      r.m.scale.setScalar(0.3 + k * 1.6 * r.size);
+      r.m.material.opacity = 0.9 * (1 - k);
+      if (k >= 1) { r.m.removeFromParent(); r.m.material.dispose(); return false; }
+      return true;
+    });
+    this.nums = this.nums.filter((n) => {
+      n.t += dt;
+      n.pos.y += dt * 0.9;
+      host.game.ui.place(n.el, n.pos, host.camera);
+      n.el.style.opacity = String(Math.min(1, 2.5 * (1.4 - n.t)));
+      if (n.t >= 1.4) { n.el.remove(); return false; }
+      return true;
+    });
     // the status pill
     let html = '';
     if (h && !h.done && host.mode === 'walk') html = `🙈 ${esc(t('gm.hide.pill', { s: Math.ceil(h.t) }))}`;
@@ -540,5 +590,6 @@ export class IslandGames {
   dispose() {
     this.el.remove();
     this.meter.remove();
+    for (const n of this.nums) n.el.remove();
   }
 }
