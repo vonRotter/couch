@@ -139,10 +139,9 @@ export class Surprises {
     return list;
   }
 
+  /** The day's news, a toast (not read aloud: the narrator reads story and help). */
   news(key, vars) {
-    const s = t(key, vars);
-    this.host.dayToast(s);
-    speak(s, 'narrator');
+    this.host.dayToast(t(key, vars));
   }
 
   // ---------- [B] ----------
@@ -338,7 +337,6 @@ export class Surprises {
         host.confetti.burst(new THREE.Vector3(b.x, b.y, b.z), 0, { count: 18, speed: 3.5, up: 3, life: 0.9, gravity: -5, colors: [0xfff27a, 0xffffff, 0x9ff0ff] });
         host.game.audio.play('star');
         host.gotToast(inAir ? t('sur.t.bitAir') : t('isl.i.starBit'));
-        if (inAir) speak(t('sur.t.bitAir'), 'narrator');
         if (D.bits === BITS_PER_NIGHT) this.later(0.8, () => this.news('sur.t.wish'));
         host.markDirty();
       } else if (b.life <= 0) { b.on = false; b.g.visible = false; }

@@ -418,7 +418,6 @@ export const WorldMixin = {
     const delta = this.compareItemFor(it.item);
     this.pickFloater(it.item, isBetter(delta));
     this.game.audio.play(it.item.rarity >= 3 ? 'fanfare' : it.item.rarity === 2 ? 'star' : 'select');
-    this.say(`${itemName(it.item)}${isBetter(delta) ? `. ${t('ks.better')}` : ''}`);
     this.dirty = true;
     return true;
   },
@@ -435,7 +434,6 @@ export const WorldMixin = {
       this.removeItem(it);
       if (this.hs.drop === drop) this.hs.drop = null;
       this.game.ui.toast(t('ks.bagBack'), 2400);
-      this.say(t('ks.bagBack'));
     } else {
       this.game.ui.toast(t('ks.bagSome', { n: left.length }), 2400);
       it.t = -2; // wait a moment before trying again

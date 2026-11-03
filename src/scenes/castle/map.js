@@ -339,7 +339,7 @@ export class CampaignMap {
       <div class="results-sub">${esc(t(`kc.tip.${lv.mech}`))}</div>
       ${best ? `<div class="results-sub">${esc(t('kc.best'))} ${'★'.repeat(best)}${'☆'.repeat(3 - best)}</div>` : ''}
       <div class="results-footer blink" style="margin-top:10px">${esc(t('kc.goalHint'))}</div>`;
-    say(`${t(`kc.level.${lv.id}`)}. ${t(`kc.story.${lv.id}`)} ${goals.join('. ')}.`, 'narrator');
+    say(t(`kc.story.${lv.id}`), 'narrator'); // the level's story (not its name or goals)
     if (!this.panelEl) this.panelEl = this.game.ui.panel(html, 'panel kc-goal');
     else this.panelEl.innerHTML = html;
   }

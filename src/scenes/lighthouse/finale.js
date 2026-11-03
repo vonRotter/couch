@@ -202,7 +202,7 @@ export const FinaleMixin = {
           t2: t('lh.endStats', { p: this.heartPiecesFound(), pm: this.heartPiecesTotal(), g: this.gshellsFound(), gm: this.gshellsTotal(), h: s.maxHp / 2 }),
           t3: tFor(this.host.players[0], 'lh.endHint'),
         });
-        speak(`${t('lh.theEnd')} ${t('lh.endStats', { p: this.heartPiecesFound(), pm: this.heartPiecesTotal(), g: this.gshellsFound(), gm: this.gshellsTotal(), h: s.maxHp / 2 })}`, 'narrator');
+        speak(t('lh.theEnd'), 'narrator'); // the ending (not the numbers)
         this.sfx('fanfare');
       }
       return;

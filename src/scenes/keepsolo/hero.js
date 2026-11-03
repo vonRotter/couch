@@ -280,7 +280,6 @@ export const HeroMixin = {
     const opens = TREE[this.cls].filter((s) => s.lv === hs.level).map((s) => t(`ks.skill.${s.id}`));
     const sub = tFor(this.player, this.isPad() ? 'ks.levelPtsPad' : 'ks.levelPts', { n: STAT_POINTS });
     this.game.ui.banner(t('ks.levelUp', { n: hs.level }), sub, 2200);
-    this.say(`${t('ks.levelUp', { n: hs.level })} ${sub}${opens.length ? ` ${t('ks.newSkills', { list: opens.join(', ') })}` : ''}`);
   },
 
   /** A floating name for a picked-up item, in its rarity color. */

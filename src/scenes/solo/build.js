@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { toon } from '../../core/palette.js';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say as speak } from '../../core/voice.js';
 import { ITEMS, icon } from './items.js';
 import { count, give, take } from './save.js';
 import { heightAt, HOME, FIELD } from './map.js';
@@ -348,7 +347,6 @@ export class Builder {
     host.game.audio.play('fanfare');
     const txt = t('isl.t.upgraded');
     host.game.ui.toast(txt, 2600);
-    speak(txt, 'narrator');
     host.markDirty();
     this.renderBench();
   }

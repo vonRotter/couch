@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { t, tFor, getLang } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say as speak } from '../../core/voice.js';
 import { now, count, give } from './save.js';
 import { dayKey } from './calendar.js';
 
@@ -124,7 +123,7 @@ export class Photo {
     this.snapT = 0;
     host.game.audio.play('pop');
     const txt = t(full ? 'isl.photo.sentFull' : 'isl.photo.sent', { n: MAX });
-    host.later(0.8, () => { host.game.ui.toast(txt, 2600); speak(txt, 'narrator'); });
+    host.later(0.8, () => host.game.ui.toast(txt, 2600));
     host.markDirty();
   }
 
@@ -164,6 +163,6 @@ export class Photo {
     A.t += dt;
     const step = inp.stepX - inp.stepY * 4;
     if (step && n) { A.i = (A.i + step + n * 4) % n; this.host.game.audio.play('select'); this.renderAlbum(); }
-    if (A.t > 0.25 && (inp.aPressed || inp.bPressed)) { this.host.hud.setPanel(null); this.host.mode = 'walk'; }
+    if (A.t > 0.25 && (inp.aPressed || inp.bPressed || inp.cPressed)) { this.host.hud.setPanel(null); this.host.mode = 'walk'; } // [C] (gamepad B) closes too
   }
 }

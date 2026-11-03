@@ -765,8 +765,7 @@ export class StoryScene extends BaseScene {
       </div>
       ${best ? `<div class="results-sub">${esc(t('story.result.best', { n: best }))}</div>` : ''}
       <div class="results-footer blink" style="margin-top:12px">${esc(t('story.startHint'))}</div>`;
-    this.setPanel(html, 'panel story-goal');
-    say(`${t('story.goalTitle')}. ${g.main}`, 'narrator');
+    this.setPanel(html, 'panel story-goal'); // (goals are not read aloud: the game's own how-to card is)
   }
 
   setPanel(html, cls) {

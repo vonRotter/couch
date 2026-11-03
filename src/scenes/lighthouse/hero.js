@@ -328,7 +328,7 @@ export const HeroMixin = {
     if (warp.lockBoss && this.room.enemies.some((en) => en.boss && !en.dead)) { h.warpArmed = false; this.notice('lh.noEscape'); return; }
     if (warp.need && !this.save.items[warp.need]) {
       h.warpArmed = false;
-      this.say([{ who: 'you', key: 'lh.dark' }]);
+      this.say([{ who: 'you', key: 'lh.dark', quiet: true }]); // (a bump: not read aloud)
       const v = DIRS[h.face];
       h.x -= v.dx * 0.6; h.z -= v.dz * 0.6;
       return;

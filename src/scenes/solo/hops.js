@@ -527,11 +527,10 @@ export class Hops {
 
   // ---------- talk ----------
 
-  /** A toast that is also read aloud (the narrator). */
+  /** A toast (not read aloud: the narrator reads story and help; the villagers say their own lines). */
   sayT(key, text = null, vars = {}) {
     const s = text ?? t(key, vars);
     this.host.game.ui.toast(s, Math.max(2200, s.length * 60));
-    speak(s, 'narrator');
   }
 
   /** A villager's line as a toast, in their voice. */

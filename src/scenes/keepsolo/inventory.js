@@ -1,6 +1,5 @@
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say } from '../../core/voice.js';
 import { BAG_W, BAG_H, STASH_W, STASH_H, MAX_PLUS, SLOTS, sizeOf, itemName, upgradeCost, salvageValue, sellValue, identifyCost, meetsReq, USE_PRICE, rollItem, rollRarity, shopBelt } from './items.js';
 import { Grid } from './grid.js';
 import { itemIcon, slotIcon, itemCard, heroSummary } from './ui.js';
@@ -155,11 +154,11 @@ export class GridPanel {
     this.dirty = false;
   }
 
-  note(msg, good = true, speak = false) {
+  /** A short line in the panel (not read aloud: the narrator reads only story and help). */
+  note(msg, good = true) {
     this.msg = msg;
     this.good = good;
     this.s.game.audio.play(good ? 'star' : 'bump');
-    if (speak) say(msg, 'narrator');
     this.render();
   }
 
@@ -262,11 +261,7 @@ export class GridPanel {
       if (x + r.width > window.innerWidth - 6) x = m.x - r.width - 18;
       if (y + r.height > window.innerHeight - 6) y = Math.max(6, window.innerHeight - r.height - 6);
       this.tip.style.transform = `translate(${x}px, ${y}px)`;
-      if (this.lastSay !== it.id) {
-        this.lastSay = it.id;
-        const dd = s.compareItemFor(it);
-        say(`${itemName(it)}. ${it.cls && it.cls !== s.cls ? t('ks.forClass', { cls: t(`ks.cls.${it.cls}`) }) : isBetter(dd) && s.hs.gear[it.slot] !== it ? t('ks.better') : ''}`, 'narrator');
-      }
+      this.lastSay = it.id; // (item names are not read aloud)
     } else { this.tip.style.display = 'none'; this.tip.dataset.k = ''; this.lastSay = null; }
     this.el.classList.toggle('identify', !!this.identifying);
   }

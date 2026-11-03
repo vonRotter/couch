@@ -76,8 +76,6 @@ export class Museum {
     this.board = { room, i: want ? ROOMS[room].ids.indexOf(want) : 0, t: 0 };
     this.render();
     host.game.audio.play('select');
-    const n = this.donatable().length;
-    speak(n ? t('isl.museum.youHave', { n }) : t('isl.museum.title'), 'narrator');
   }
 
   /** The journal's Museum tab: the same rooms to look at (donating stays at Curator Hoot's board). */

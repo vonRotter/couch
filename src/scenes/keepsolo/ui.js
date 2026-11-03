@@ -519,8 +519,7 @@ export class ClassPicker {
     this.s.game.audio.play('select');
     this.render();
     const cls = CLASS_IDS[this.i];
-    this.s.previewClass(cls);
-    say(`${t(`ks.cls.${cls}`)}. ${t(`ks.descSay.${cls}`)}`, 'narrator');
+    this.s.previewClass(cls); // (menu items are not read aloud)
   }
 
   update(dt, d) {
@@ -593,8 +592,6 @@ export class SkillMenu {
       this.i = (this.i + st.y + this.entries.length) % this.entries.length;
       this.s.game.audio.play('select');
       this.render();
-      const x = this.entries[this.i];
-      say(x.kind === 'skill' ? t(`ks.skill.${x.id}`) : x.kind === 'use' ? t(`ks.use.${x.id}`) : t(`ks.m.${x.id}`), 'narrator');
     }
     const m = this.s.mouse;
     const row = m.leftPressed ? m.element()?.closest?.('[data-entry]') : null;

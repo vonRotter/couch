@@ -692,7 +692,17 @@ export class SoloIslandScene extends BaseScene {
     this.save.tut = n;
     if (n === 2) this.selectItem('radishSeed');
     if (n === 3) this.selectItem('zipzap');
+    if (n >= 1 && n <= 7) this.readTut(n, 0);
     this.markDirty();
+  }
+
+  /** Read a tutorial step aloud (help) once you are walking again, so it does not cut off a villager. */
+  readTut(n, tries) {
+    this.later(0.8, () => {
+      if (this.save.tut !== n) return;
+      if (this.mode !== 'walk' && tries < 20) { this.readTut(n, tries + 1); return; }
+      if (this.mode === 'walk') speak(tFor(this.player?.p, `isl.tut.${n}`), 'narrator');
+    });
   }
 
   /** The first tasks, for the list on screen (the journal's Tasks tab shows them all). */
@@ -817,7 +827,7 @@ export class SoloIslandScene extends BaseScene {
     if (key === 'greenhouse') this.greenhouse.fix();
     if (key === 'bridge') this.hops.addRiverStones();
     if (key === 'barn') { this.ranch.addAnimal('chicken'); this.ranch.addAnimal('chicken'); this.ranch.refresh(); }
-    if (msg) { this.game.ui.toast(t(msg), 3000); speak(t(msg), 'narrator'); }
+    if (msg) this.game.ui.toast(t(msg), 3000); // (toasts are not read aloud: the narrator reads story and help)
     this.game.audio.play('fanfare');
     this.applyUnlocks(false);
     this.markDirty();
@@ -1508,7 +1518,6 @@ export class SoloIslandScene extends BaseScene {
   offSeason(crop) {
     const txt = this.offSeasonText(crop);
     this.game.ui.toast(txt, 2600);
-    speak(txt, 'narrator');
     this.game.audio.play('bump');
   }
 
@@ -1592,7 +1601,6 @@ export class SoloIslandScene extends BaseScene {
     this.game.audio.play('star');
     const txt = t('isl.t.found', { item: t(`isl.i.${id}`) });
     this.game.ui.toast(txt, 2200);
-    speak(txt, 'narrator');
     this.markDirty();
   }
 
@@ -1682,7 +1690,6 @@ export class SoloIslandScene extends BaseScene {
         else give(S, r.id, 1);
         const got = ITEMS[r.id].kind === 'pack' ? t('zb.t.pack', { n: 9 + 9 * S.bagRows }) : t('isl.t.bought', { item: itemName(r.id) });
         this.game.ui.toast(got, ITEMS[r.id].kind === 'pack' ? 2400 : 900);
-        if (ITEMS[r.id].kind === 'pack') speak(got, 'narrator');
       } else {
         take(S, r.id, 1);
         S.coins += r.price;
@@ -2149,7 +2156,6 @@ export class SoloIslandScene extends BaseScene {
       S.toChest = 0;
       S.toChestId = null;
       this.game.ui.toast(txt, 3200);
-      speak(txt, 'narrator');
     }
     this.hud.setKeys(tFor(this.player?.p, this.mode === 'service' ? 'isl.serve.keys' : this.onPad ? 'isl.keysPad' : 'isl.keys', { bag: this.bagKey() }));
     let prompt = '';

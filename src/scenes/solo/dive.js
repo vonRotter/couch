@@ -6,7 +6,6 @@ import { toon, basic } from '../../core/palette.js';
 import { seeded } from '../../core/world.js';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say as speak } from '../../core/voice.js';
 import './strings.js';
 import './strings2.js';
 import './strings9.js';
@@ -109,7 +108,6 @@ export class DiveScene extends BaseScene {
     const n = this.night;
     const first = n.night ? (n.lamp ? 'dive.nightLamp' : 'dive.nightHead') : n.evening ? 'dive.evening' : 'dive.zone1';
     this.game.ui.toast(t(first), first === 'dive.zone1' ? 1800 : 3200);
-    if (first !== 'dive.zone1') speak(t(first), 'narrator');
   }
 
   picture(id) {
@@ -429,7 +427,7 @@ export class DiveScene extends BaseScene {
     // air
     if (!this.ending) {
       this.air = Math.max(0, this.air - dt);
-      if (this.air < this.airMax * 0.25 && !this.lowWarned) { this.lowWarned = true; this.game.ui.toast(t('dive.lowAir'), 2000); speak(t('dive.lowAir'), 'narrator'); this.game.audio.play('beep'); }
+      if (this.air < this.airMax * 0.25 && !this.lowWarned) { this.lowWarned = true; this.game.ui.toast(t('dive.lowAir'), 2000); this.game.audio.play('beep'); }
       if (this.air <= 0) this.ascend('air');
     }
     let prompt = '';
@@ -469,12 +467,12 @@ export class DiveScene extends BaseScene {
       if (this.save.sea[need] || Math.abs(D.x) > half + 1) continue;
       if (D.y < y) {
         D.y = y; D.vy = Math.max(D.vy, 2.5);
-        if (this.warnT <= 0) { this.warnT = 4; this.game.ui.toast(t(key), 2400); speak(t(key), 'narrator'); this.game.audio.play('bump'); }
+        if (this.warnT <= 0) { this.warnT = 4; this.game.ui.toast(t(key), 2400); this.game.audio.play('bump'); }
       }
     }
     if (!this.save.sea.seaLamp && D.x > CAVE_X - 0.8) {
       D.x = CAVE_X - 0.8; D.vx = Math.min(D.vx, -1);
-      if (this.warnT <= 0) { this.warnT = 4; this.game.ui.toast(t('dive.dark'), 2400); speak(t('dive.dark'), 'narrator'); this.game.audio.play('bump'); }
+      if (this.warnT <= 0) { this.warnT = 4; this.game.ui.toast(t('dive.dark'), 2400); this.game.audio.play('bump'); }
     }
     this.warnT -= dt;
     this.netCd -= dt;
@@ -538,7 +536,6 @@ export class DiveScene extends BaseScene {
     this.game.audio.play(c.id === 'seaChart' ? 'fanfare' : 'star');
     const txt = t(c.id === 'seaChart' ? 'dive.chart' : 'dive.caught', { item: t(`isl.i.${c.id}`) });
     this.game.ui.toast(txt, 2600);
-    speak(txt, 'narrator');
   }
 
   pickKelp(k) {
@@ -559,7 +556,6 @@ export class DiveScene extends BaseScene {
     this.game.audio.play('fanfare');
     const txt = t('dive.chest', { n: c.coins, item: t(`isl.i.${c.item}`) });
     this.game.ui.toast(txt, 2200);
-    speak(txt, 'narrator');
   }
 
   bubbleNet() {
@@ -691,7 +687,7 @@ export class DiveScene extends BaseScene {
   ascend(why) {
     this.ending = 'ascend';
     this.why = why;
-    if (why === 'air') { this.game.ui.toast(t('dive.noAir'), 2600); speak(t('dive.noAir'), 'narrator'); }
+    if (why === 'air') this.game.ui.toast(t('dive.noAir'), 2600);
     this.game.audio.play('whoosh');
   }
 
@@ -721,7 +717,7 @@ export class DiveScene extends BaseScene {
 
   updateSummary(inp) {
     this.sumT += 1 / 60;
-    if (this.sumT > 0.4 && inp && (inp.aPressed || inp.bPressed) && !this.leaving) {
+    if (this.sumT > 0.4 && inp && (inp.aPressed || inp.bPressed || inp.cPressed) && !this.leaving) {
       this.leaving = true;
       this.game.goHub('dive');
     }

@@ -457,7 +457,6 @@ export class Story {
     const k = S.crumbs.filter(Boolean).length;
     const txt = t(k >= CRUMBS.length ? 'story.crumbLast' : 'story.crumbFound', { n: k, m: CRUMBS.length });
     host.game.ui.toast(txt, 2400);
-    speak(txt, 'narrator');
     this.checkGoals(true);
     host.markDirty();
   }

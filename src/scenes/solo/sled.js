@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { t } from '../../core/i18n.js';
-import { say as speak } from '../../core/voice.js';
 import { heightAt } from './map.js';
 import { give } from './save.js';
 import { weekIndex } from './calendar.js';
@@ -143,7 +142,7 @@ export class Sled {
       if (r.v > 2 && Math.random() < 0.5) host.puffs.burst(new THREE.Vector3(r.x - r.dir.x * 0.6, r.y + 0.1, r.z - r.dir.z * 0.6), 0xffffff, { count: 1, speed: 1, up: 1, size: 0.25, life: 0.5 });
     } else {
       r.endT += dt;
-      if (r.endT > 0.5 && (inp?.aPressed || inp?.bPressed || r.endT > 2.5)) { this.leave(); return; }
+      if (r.endT > 0.5 && (inp?.aPressed || inp?.bPressed || inp?.cPressed || r.endT > 2.5)) { this.leave(); return; }
     }
     // the bean rides on the sled
     const slope = r.s > 0 && r.s < RAMP.len ? Math.atan2(RAMP.h, RAMP.len) : 0;
@@ -163,7 +162,6 @@ export class Sled {
     const n = r.got.size;
     const txt = t(n === this.flakes.length ? 'isl.sled.all' : 'isl.sled.done', { n, m: this.flakes.length });
     host.game.ui.toast(txt, 2600);
-    speak(txt, 'narrator');
     host.game.audio.play(n >= 4 ? 'fanfare' : 'star');
     const week = weekIndex();
     if (S.sled.week !== week) {

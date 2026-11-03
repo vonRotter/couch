@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { t } from '../../core/i18n.js';
-import { say as speak, stopVoice } from '../../core/voice.js';
+import { stopVoice } from '../../core/voice.js';
 import { W, H, DIRS, tileX, tileZ, colOf, rowOf, inGrid } from './tiles.js';
 import { ROOMS, AREAS, START, neighbor } from './rooms.js';
 import { THEMES } from './build.js';
@@ -387,8 +387,7 @@ export class LighthouseEngine {
     if (s.potion) {
       s.potion = 0;
       s.hp = s.maxHp;
-      this.game.ui.toast(t('lh.tonicUsed'), 2000);
-      speak(t('lh.tonicUsed'), 'narrator');
+      this.game.ui.toast(t('lh.tonicUsed'), 2000); // (toasts are not read aloud)
       this.sfx('save');
       this.hero.inv = 2;
       this.persist();
@@ -402,7 +401,6 @@ export class LighthouseEngine {
     this.game.audio.stopMusic();
     this.sfx('dizzy');
     this.hud.setBig({ t1: t('lh.fainted'), t2: t('lh.faintedSub') });
-    speak(t('lh.fainted'), 'narrator');
   }
 
   updateDead(dt) {
@@ -438,6 +436,7 @@ export class LighthouseEngine {
       if (!inp.x && !inp.y && (d.x || d.y)) { inp.x = d.x; inp.y = d.y; }
       inp.a ||= d.aPressed;
       inp.b ||= d.bPressed;
+      inp.bKey ||= d.bPressed && d.type === 'keyboard'; // (a keyboard's E may still answer "no"; a gamepad's B never picks)
       inp.c ||= d.cPressed;
       inp.aHeld ||= d.a;
       inp.sx ||= d.stepX || 0;

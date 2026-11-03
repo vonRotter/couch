@@ -502,7 +502,6 @@ export class QuestPanel {
     scene.hud.layer.appendChild(this.el);
     this.render();
     const q = scene.hs.quests[0];
-    if (q) say(questText(scene.hs, q), 'narrator');
   }
 
   render() {
@@ -532,7 +531,6 @@ export class QuestPanel {
     hs.quests.splice(this.i, 1, makeQuest(hs, hs.quests.map((x) => x.kind)));
     this.msg = t('ks.q.claimed', { coins: q.reward.coins }) + extra;
     s.game.audio.play('fanfare');
-    say(this.msg, 'narrator');
     s.saveNow();
     this.render();
   }
@@ -542,7 +540,6 @@ export class QuestPanel {
     hs.quests.splice(this.i, 1, makeQuest(hs, hs.quests.map((x) => x.kind)));
     this.msg = t('ks.q.swapped');
     s.game.audio.play('whoosh');
-    say(questText(hs, hs.quests[this.i]), 'narrator');
     s.saveNow();
     this.render();
   }
@@ -554,8 +551,7 @@ export class QuestPanel {
       this.i = (this.i + st.y + this.s.hs.quests.length) % this.s.hs.quests.length;
       this.msg = '';
       this.s.game.audio.play('select');
-      this.render();
-      say(questText(this.s.hs, this.s.hs.quests[this.i]), 'narrator');
+      this.render(); // (quest rows are not read aloud)
     }
     // mouse: click a quest to claim it, right click to swap it
     const m = this.s.mouse;
@@ -591,7 +587,6 @@ export class GatePanel {
     this.el.className = 'ks-panel';
     scene.hud.layer.appendChild(this.el);
     this.render();
-    say(t('ks.gateSay'), 'narrator');
   }
 
   build() {
@@ -658,7 +653,6 @@ export class GatePanel {
     this.r = -1; this.c = d;
     s.game.audio.play('fanfare');
     s.game.ui.toast(t('ks.diffNow', { tier: t(`ks.diff.${d}`) }), 2000);
-    say(`${t('ks.diffNow', { tier: t(`ks.diff.${d}`) })} ${t(`ks.diffSub.${d}`)}`, 'narrator');
     s.saveNow();
     this.render();
   }
@@ -683,9 +677,7 @@ export class GatePanel {
       }
       this.s.game.audio.play('select');
       this.msg = '';
-      this.render();
-      if (this.r === -1) say(t(`ks.diff.${this.c}`), 'narrator');
-      else say(`${this.cols[this.c].head}. ${this.cols[this.c].list[this.r].name}`, 'narrator');
+      this.render(); // (gate entries are not read aloud)
     }
     // mouse: point at a floor or a difficulty, click to choose
     const m = this.s.mouse;

@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { t, tFor } from '../../core/i18n.js';
-import { say as speak } from '../../core/voice.js';
 import { makeCrab, animateCrab, makeTangle, makeFamilySpot, makeHelpBubble, makeShell } from './models7.js';
 import { crabSave, doneToday, dailyCrabs, crabHelped } from './crabdata.js';
 import { seasonOf } from './calendar.js';
@@ -108,8 +107,7 @@ export class DiveCrabs {
 
   say(key, vars) {
     const txt = t(key, vars);
-    this.host.game.ui.toast(txt, 2400);
-    speak(txt, 'narrator');
+    this.host.game.ui.toast(txt, 2400); // (not read aloud: the narrator reads story and help)
   }
 
   hearts(x, y) {

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say as speak } from '../../core/voice.js';
 import { ITEMS, icon } from './items.js';
 import { HOTBAR, ROW, bagSize, chestSize, freeSlot, fixSlots } from './save.js';
 import { CHEST } from './build.js';
@@ -286,8 +285,7 @@ export class BagUi {
     const text = this.tipText(this.hover || this.cur);
     if (!text || text === this.spoken) return;
     this.spoken = text;
-    this.lastSpoken = text;
-    speak(text, 'narrator');
+    this.lastSpoken = text; // (item names are not read aloud: the narrator reads story and help)
   }
 
   // ---------- the mouse ----------

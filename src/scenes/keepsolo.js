@@ -219,6 +219,7 @@ export class KeepSoloScene extends MiniGame {
     this.saveNow();
   }
 
+  /** The narrator: only story and help here (the welcome, tips shown once, a new act); not banners, items or pop-ups. */
   say(text) { say(text, 'narrator'); }
 
   /** How much better (positive) an item would make this hero; null if it is for another class. */
@@ -286,7 +287,6 @@ export class KeepSoloScene extends MiniGame {
     this.puffs.burst(new THREE.Vector3(e.x, 0.8, e.z), 0xc9a8ff, { count: 16, size: 0.5, life: 1, speed: 2 });
     const hasItems = this.hs.bag.length > 0;
     this.game.ui.banner(t('ks.fainted'), t(hasItems ? 'ks.faintedBag' : 'ks.faintedNoBag'), 2600);
-    this.say(`${t('ks.fainted')} ${t(hasItems ? 'ks.faintedBag' : 'ks.faintedNoBag')}`);
     this.later(2.4, () => this.afterFaint());
   }
 
@@ -361,8 +361,7 @@ export class KeepSoloScene extends MiniGame {
     this.updateCamera(0, true);
     this.updateLight(0, true);
     this.game.audio.playMusic(isDeep(g) ? 'keepDeep' : 'bubble');
-    this.game.ui.banner(this.placeTitle(), this.placeSub(), 1900);
-    this.say(`${this.placeTitle()}. ${this.placeSub()}`);
+    this.game.ui.banner(this.placeTitle(), this.placeSub(), 1900); // (floor names are not read aloud)
     if (!hs.tips.dungeon) {
       hs.tips.dungeon = true;
       const tip = this.isPad() ? 'ks.tipDungeonPad' : 'ks.tipDungeon';
@@ -432,7 +431,7 @@ export class KeepSoloScene extends MiniGame {
     if (final && this.hs.diff < 2 && !this.hs.tips[`tier${this.hs.diff + 1}`]) {
       const d = this.hs.diff + 1;
       this.hs.tips[`tier${d}`] = true;
-      this.later(6.5, () => { this.game.ui.banner(t('ks.tierOpen', { tier: t(`ks.diff.${d}`) }), t('ks.tierOpenSub'), 3200); this.say(`${t('ks.tierOpen', { tier: t(`ks.diff.${d}`) })} ${t('ks.tierOpenSub')}`); });
+      this.later(6.5, () => { this.game.ui.banner(t('ks.tierOpen', { tier: t(`ks.diff.${d}`) }), t('ks.tierOpenSub'), 3200); });
     }
   }
 

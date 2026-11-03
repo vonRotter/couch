@@ -1,6 +1,5 @@
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say } from '../../core/voice.js';
 import { TREE, MAX_RANK, STAT_IDS, BASE_STATS, MAIN_STAT, skillDef, manaCost, canRaise, armorCut, xpNeed, CLASS_COLOR, GLYPH } from './classes.js';
 import { skillIcon } from './ui.js';
 
@@ -25,11 +24,11 @@ class BasePanel {
     }
   }
 
-  note(msg, good = true, speak = false) {
+  /** A short line in the panel (not read aloud: the narrator reads only story and help). */
+  note(msg, good = true) {
     this.msg = msg;
     this.good = good;
     this.s.game.audio.play(good ? 'star' : 'bump');
-    if (speak) say(msg, 'narrator');
     this.render();
   }
 
@@ -67,8 +66,6 @@ export class CharPanel extends BasePanel {
     super(scene);
     this.msg = '';
     this.render();
-    const hs = scene.hs;
-    say(`${t(`ks.cls.${scene.cls}`)}. ${t('ks.lv', { n: hs.level })}. ${hs.statPts ? t('ks.ptsLeft', { n: hs.statPts }) : ''}`, 'narrator');
   }
 
   render() {
@@ -113,7 +110,6 @@ export class TreePanel extends BasePanel {
     this.msg = '';
     this.drag = null;
     this.render();
-    say(`${t('ks.treeTitle')}. ${scene.hs.skillPts ? t('ks.skillPtsLeft', { n: scene.hs.skillPts }) : ''}`, 'narrator');
   }
 
   nodeHtml(def) {
@@ -170,7 +166,7 @@ export class TreePanel extends BasePanel {
   hover(el) {
     const n = el?.closest?.('[data-skill]');
     const id = n?.dataset.skill || null;
-    if (id !== this.said && id) { this.said = id; say(`${t(`ks.skill.${id}`)}. ${t(`ks.skillDesc.${id}`)}`, 'narrator'); }
+    if (id !== this.said && id) this.said = id; // (skill names are not read aloud)
   }
 
   click(el) {

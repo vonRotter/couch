@@ -140,7 +140,7 @@ export class IslandGames {
     host.mode = 'game';
     this.cur = { kind: 'skip', throws: 3, t: 0, phase: 'aim', best: 0, wait: 0.3 };
     this.meter.style.display = '';
-    this.say('gm.skip.how');
+    this.say('gm.skip.how', {}, true);
   }
 
   updateSkip(inp, dt) {
@@ -226,7 +226,7 @@ export class IslandGames {
     this.group.add(line);
     this.stand.userData.kite.visible = false;
     this.cur = { kind: 'kite', t: 30, kx: 0, ky: 1.5, wind: 0, kite, line, ph: Math.random() * 6, gust: 0 };
-    this.say('gm.kite.how');
+    this.say('gm.kite.how', {}, true);
   }
 
   updateKite(inp, dt) {
@@ -294,7 +294,7 @@ export class IslandGames {
     n.busy = true; n.route = []; n.talking = false;
     host.mode = 'game';
     this.cur = { kind: 'count' };
-    this.say('gm.hide.count');
+    this.say('gm.hide.count', {}, true);
     host.markDirty();
   }
 
@@ -311,7 +311,6 @@ export class IslandGames {
       this.cur = null;
       host.mode = 'walk';
       host.game.audio.play('go');
-      speak(t('gm.hide.ready'), 'narrator');
       return;
     }
     if (Math.ceil(h.count) !== before || el.style.display === 'none') { el.textContent = String(Math.min(5, Math.ceil(h.count))); el.style.display = ''; host.game.audio.play('beep'); }
@@ -468,7 +467,7 @@ export class IslandGames {
     if (L.done.includes(p.i)) return; // (already found what it hid today: just a whoosh of leaves)
     L.done.push(p.i);
     const r = dayRand(`leaf:${L.day}:${p.i}`);
-    if (r < 0.35) { const n = 5 + Math.round(r * 30); host.save.coins += n; host.coinToast(n); host.game.audio.play('coin'); speak(t('isl.t.coins', { n }), 'narrator'); }
+    if (r < 0.35) { const n = 5 + Math.round(r * 30); host.save.coins += n; host.coinToast(n); host.game.audio.play('coin'); }
     else if (r < 0.55) { give(host.save, 'goldenAcorn', 1); this.say('gm.leaf.acorn'); }
     else if (r < 0.7) { give(host.save, 'beetSeed', 2); this.say('gm.leaf.seeds'); }
     else if (r < 0.8) this.say('gm.leaf.sock'), give(host.save, 'oddSock', 1);
@@ -515,10 +514,11 @@ export class IslandGames {
 
   // ---------- talk ----------
 
-  say(key, vars = {}) {
+  /** A toast; read aloud only when it is help (how to play: read = true). */
+  say(key, vars = {}, read = false) {
     const s = t(key, vars);
     this.host.game.ui.toast(s, Math.max(2200, s.length * 60));
-    speak(s, 'narrator');
+    if (read) speak(s, 'narrator');
   }
 
   sayNpc(id, key, vars = {}, toast = true) {

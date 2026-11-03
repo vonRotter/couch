@@ -237,7 +237,6 @@ export const MonsterMixin = {
       hs.stats.uniques++;
       this.dropLoot(g.x, g.z, 'unique', g.named ? 2 : 1 + (Math.random() < 0.5 ? 1 : 0), g.named ? 1 : 0);
       this.spawnItem('scroll', g.x, g.z, true);
-      this.say(t('ks.uniqDone', { name: g.name }));
       this.floater(t('ks.uniqDone', { name: g.name }), new THREE.Vector3(g.x, 2.6, g.z), '#ffd23f', 1.6, true);
     }
     return true;

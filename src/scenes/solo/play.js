@@ -162,7 +162,6 @@ export class Play {
     host.game.audio.play('star');
     const s = t(`play.task.${taskOn()}.got`);
     host.game.ui.toast(s, 2400);
-    speak(s, 'narrator');
     host.markDirty();
   }
 

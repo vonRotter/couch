@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { toon } from '../../core/palette.js';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { say as speak } from '../../core/voice.js';
 import { FISH, pickFish } from './sea.js';
 import { give } from './save.js';
 import { hourOf } from './save.js';
@@ -201,7 +200,6 @@ export class Fishing {
       host.hud.setPrompt('');
       const txt = t(why);
       host.game.ui.toast(txt, 1600);
-      speak(txt, 'narrator');
       host.game.audio.play('splat');
       this.t = 2.6; // short pause, then fish again
       return;
@@ -217,7 +215,6 @@ export class Fishing {
     const name = t(`isl.i.${id}`);
     this.card.innerHTML = `${isNew ? `<div class="new">${esc(t('isl.fish.new'))}</div>` : ''}<img src="${host.picture(id)}" alt=""><div class="nm">${esc(name)}</div><div class="sub">${esc(t(`isl.where.${FISH[id].where}`))}</div>`;
     this.card.style.display = '';
-    speak(t('isl.fish.caught', { item: name }), 'narrator');
   }
 
   dispose() {

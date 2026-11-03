@@ -221,7 +221,6 @@ export class ZipZap {
   nope(key) {
     const txt = t(key);
     this.host.game.ui.toast(txt, 2200);
-    speak(txt, 'narrator');
     this.host.game.audio.play('bump');
   }
 
@@ -442,7 +441,7 @@ export class ZipZap {
     const Pn = this.panel, host = this.host;
     Pn.t += dt;
     const n = UPGRADES.length;
-    if (inp.stepY || inp.stepX) { Pn.i = THREE.MathUtils.clamp(Pn.i - inp.stepY + inp.stepX, 0, n - 1); host.game.audio.play('select'); this.renderBench(); speak(t(`zz.up.${UPGRADES[Pn.i].id}.sub`), 'narrator'); }
+    if (inp.stepY || inp.stepX) { Pn.i = THREE.MathUtils.clamp(Pn.i - inp.stepY + inp.stepX, 0, n - 1); host.game.audio.play('select'); this.renderBench(); }
     if (Pn.t < 0.25) return;
     if (inp.bPressed) { host.hud.setPanel(null); host.mode = 'walk'; return; }
     if (inp.aPressed) this.buy(UPGRADES[Pn.i].id);

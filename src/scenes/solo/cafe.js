@@ -97,7 +97,6 @@ export class Cafe {
     this.menu = { i: this.menu?.i || 0, t: 0 };
     this.renderMenu();
     host.game.audio.play('select');
-    speak(t('isl.menu.intro', { n: MAX_SPECIALS }), 'narrator');
   }
 
   renderMenu() {
@@ -433,7 +432,6 @@ export class Cafe {
     sv.sumT = 0;
     const line = sv.served ? t('isl.serve.summary', { n: sv.served, c: sv.coins, t: sv.tips }) : t('isl.serve.none');
     host.hud.setPanel(`<h2>${esc(t('isl.serve.done'))}</h2><div class="isl-letter">${esc(line)}</div><div class="isl-foot">${esc(tFor(host.player?.p, 'isl.ok'))}</div>`);
-    speak(line, 'narrator');
     host.game.audio.play(sv.served ? 'fanfare' : 'leave');
   }
 

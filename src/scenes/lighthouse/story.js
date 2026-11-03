@@ -46,7 +46,8 @@ export const StoryMixin = {
     d.choice = 0;
     const who = L.who === 'you' ? '' : t(`lh.who.${L.who}`);
     this.hud.setDialog({ who, text, css: L.who === 'you' ? this.host.players[0]?.css : v.css, choices: L.choices?.map((k) => t(k)), index: 0 });
-    speak(text, `lh.${VOICES[L.who] ? L.who : 'you'}`); // voices.js: 'lh.keeper', 'lh.olga', ... (sign and you: the narrator)
+    // voices.js: 'lh.keeper', 'lh.olga', ... (signs, notes and what you find: the narrator; quiet: info lines)
+    if (!L.quiet) speak(text, `lh.${VOICES[L.who] ? L.who : 'you'}`);
     this.sfx('text');
   },
 
@@ -63,8 +64,11 @@ export const StoryMixin = {
       }
     }
     if (d.t < 0.25) return;
+    // A goes on or picks the highlighted answer; on a question a gamepad's B does nothing (B never picks),
+    // a keyboard's E still answers the last one ("no"), as before
+    if (L.choices && !inp.a && !inp.bKey) return;
     if (inp.a || inp.b) {
-      const pick = L.choices ? (inp.b ? L.choices.length - 1 : d.choice) : -1;
+      const pick = L.choices ? (inp.a ? d.choice : L.choices.length - 1) : -1;
       d.i++;
       if (L.onChoice) {
         this.hud.setDialog(null);
@@ -80,20 +84,23 @@ export const StoryMixin = {
     }
   },
 
-  /** A short note that does not stop the game (bumping a locked door...). */
-  notice(key) {
+  /**
+   * A short note that does not stop the game (bumping a locked door...). Read aloud only when it is help
+   * (a hint shown once, hintOnce): plain notes are toasts and stay quiet.
+   */
+  notice(key, read = false) {
     if (this.noticeCool > 0 && this.noticeKey === key) return;
     this.noticeCool = 2.2;
     this.noticeKey = key;
     this.game.ui.toast(t(key), 1800);
-    speak(t(key), 'narrator');
+    if (read) speak(t(key), 'narrator');
   },
 
   hintOnce(key) {
     this.save.flags.hints ||= {};
     if (this.save.flags.hints[key]) return;
     this.save.flags.hints[key] = true;
-    this.notice(key);
+    this.notice(key, true);
   },
 
   // ---------- townsfolk ----------
@@ -297,8 +304,8 @@ export const StoryMixin = {
     this.persist();
     this.sfx('save');
     this.puffAt(e.x, e.z, 0xffe27a, 14, 1.2);
-    if (e.t === 'lamp') this.say([{ who: 'sign', key: 'lh.lamp', vars: { n: s.placed || 0 } }]);
-    else this.say([{ who: 'sign', key: 'lh.saved' }]);
+    if (e.t === 'lamp') this.say([{ who: 'sign', key: 'lh.lamp', vars: { n: s.placed || 0 }, quiet: true }]);
+    else this.say([{ who: 'sign', key: 'lh.saved', quiet: true }]);
   },
 
   // ---------- cutscenes ----------

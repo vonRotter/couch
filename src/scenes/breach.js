@@ -158,6 +158,11 @@ export class BreachScene extends MiniGame {
   }
 
   /** Read aloud: the narrator, or who = 'breach.helper' for the helper bean (voice types in src/core/voices.js). */
+  /**
+   * Read aloud. The narrator reads only story and help here (the title card, each battle's story on the
+   * map, the tutorial and the deploy tip, the ending); menus, tiles, units, banners and results are not
+   * read. The helper bean speaks its own lines.
+   */
   speak(text, who = 'narrator') {
     say(text, who);
   }
@@ -233,18 +238,13 @@ export class BreachScene extends MiniGame {
 
   updateTitle(inp) {
     const M = this.menuSel;
-    if (inp.dy) { M.i = (M.i + inp.dy + M.opts.length) % M.opts.length; this.sfx('select'); this.renderTitle(); this.speakOpt(); }
+    if (inp.dy) { M.i = (M.i + inp.dy + M.opts.length) % M.opts.length; this.sfx('select'); this.renderTitle(); }
     if (!inp.a) return;
     const o = M.opts[M.i];
     this.sfx('select');
     if (o === 'continue') this.showMap();
     else if (o === 'new') this.showDiff();
     else this.leave();
-  }
-
-  speakOpt() {
-    const el = this.hud.card.querySelector('.opt.on, .br-squad.on, .up.on');
-    if (el) this.speak(el.textContent);
   }
 
   leave() {
@@ -259,7 +259,6 @@ export class BreachScene extends MiniGame {
     this.view.labelsOn = false; // board labels would show through the panel
     this.menuSel = { opts: ['easy', 'hard'], i: this.save.run?.diff === 'hard' ? 1 : 0 };
     this.renderDiff();
-    this.speak(`${t('breach.diff.title')} ${t('breach.diff.easy')}: ${t('breach.diff.easySub')}`);
   }
 
   renderDiff() {
@@ -270,7 +269,7 @@ export class BreachScene extends MiniGame {
 
   updateDiff(inp) {
     const M = this.menuSel;
-    if (inp.dy) { M.i = (M.i + inp.dy + 2) % 2; this.sfx('select'); this.renderDiff(); this.speakOpt(); }
+    if (inp.dy) { M.i = (M.i + inp.dy + 2) % 2; this.sfx('select'); this.renderDiff(); }
     if (inp.b) { this.sfx('select'); this.showTitle(); return; }
     if (inp.a) { this.sfx('select'); this.pickDiff = M.opts[M.i]; this.showSquads(); }
   }
@@ -292,7 +291,6 @@ export class BreachScene extends MiniGame {
     this.hud.setCard(`<h2>${esc(t('breach.squad.title'))}</h2><div class="br-squads">${cols}</div><div class="foot">${esc(tFor(this.player, 'breach.squadHint'))}</div>`);
     const id = opts[i];
     if (rebuild) this.showBackdrop(0, id);
-    this.speak(`${t(`breach.sq.${id}`)}. ${t(`breach.sq.${id}Sub`)}`);
   }
 
   updateSquads(inp) {
@@ -327,7 +325,7 @@ export class BreachScene extends MiniGame {
     this.game.audio.playMusic('breachMap');
     this.renderMap();
     const o = ORDER[run.step];
-    this.speak(`${t(`breach.isl.${ISLANDS[o.island].id}`)}. ${t('breach.map.next', { name: t(`breach.bt.${o.def.id}`) })}. ${t(`breach.bi.${o.def.id}`)}`);
+    this.speak(t(`breach.bi.${o.def.id}`)); // the next battle's story
   }
 
   canShop() {
@@ -369,7 +367,6 @@ export class BreachScene extends MiniGame {
     this.hud.hideBattle();
     this.shop = { col: 0, row: 0 };
     this.renderShop();
-    this.speak(`${t('breach.shop.title')}. ${t('breach.shop.stars', { n: this.save.run.stars })}`);
   }
 
   upState(m, up) {
@@ -419,16 +416,15 @@ export class BreachScene extends MiniGame {
 
   updateShop(inp) {
     const S = this.shop;
-    if (inp.dx) { S.col = (S.col + inp.dx + 3) % 3; this.sfx('tick'); this.renderShop(); this.speakShop(); }
-    if (inp.dy) { S.row = (S.row + inp.dy + UPGRADES.length) % UPGRADES.length; this.sfx('tick'); this.renderShop(); this.speakShop(); }
+    if (inp.dx) { S.col = (S.col + inp.dx + 3) % 3; this.sfx('tick'); this.renderShop(); }
+    if (inp.dy) { S.row = (S.row + inp.dy + UPGRADES.length) % UPGRADES.length; this.sfx('tick'); this.renderShop(); }
     if (inp.a) {
       const m = this.save.run.mechs[S.col], up = UPGRADES[S.row];
       if (this.buy(S.col, up.id)) {
         this.sfx('coin');
         const msg = t('breach.shop.bought', { mech: t(`breach.m.${m.type}`), up: this.upName(m, up) });
         this.hud.banner(msg, '', 1400);
-        this.speak(msg);
-      } else { this.sfx('error'); this.speakShop(); }
+      } else this.sfx('error');
       this.renderShop();
     }
     if (inp.b || inp.c) {
@@ -437,11 +433,6 @@ export class BreachScene extends MiniGame {
       this.persist();
       this.showMap();
     }
-  }
-
-  speakShop() {
-    const el = this.hud.card.querySelector('.desc');
-    if (el) this.speak(el.textContent);
   }
 
   // ---------- battles ----------
@@ -475,9 +466,7 @@ export class BreachScene extends MiniGame {
     this.game.audio.playMusic('breach');
     const name = t(`breach.bt.${o.def.id}`);
     this.hud.banner(name, this.mode === 'deploy' ? t('breach.dep.short') : t(`breach.isl.${this.isl.id}`), 1600);
-    const goals = [t('breach.obj.survive', { n: o.def.turns }), ...o.def.objectives.map((ob) => this.objText(ob))].join('. ');
-    if (this.mode === 'deploy') { this.startDeploy(`${name}. ${t(`breach.bi.${o.def.id}`)} ${goals}.`); return; }
-    this.speak(`${name}. ${t(`breach.bi.${o.def.id}`)} ${goals}.`);
+    if (this.mode === 'deploy') { this.startDeploy(); return; }
     this.tut = o.def.tutorial && !this.save.tutorial ? { step: 0 } : null;
     this.firstTurn();
     if (this.tut) this.later(0.6, () => this.showTip());
@@ -497,7 +486,7 @@ export class BreachScene extends MiniGame {
 
   // ---------- deploy: land the mechs before turn 1 ----------
 
-  startDeploy(intro) {
+  startDeploy() {
     const run = this.save.run;
     this.dep = { placed: [], focus: 'board' };
     // a retry of the same battle suggests the tiles used last time
@@ -507,7 +496,7 @@ export class BreachScene extends MiniGame {
     this.cursor = this.suggestSpot();
     const first = !this.save.deployTip;
     if (first) this.hud.setTip(tFor(this.player, 'breach.dep.tip'));
-    this.speak(`${intro} ${first ? t('breach.dep.tip') : t('breach.dep.short')}`);
+    if (first) this.speak(t('breach.dep.tip')); // help, once (the battle's story was read on the map)
     this.refreshDeploy();
   }
 
@@ -543,17 +532,11 @@ export class BreachScene extends MiniGame {
       else {
         const nx = Math.max(0, Math.min(R.W - 1, this.cursor[0] + inp.dx));
         const ny = Math.max(0, Math.min(R.H - 1, this.cursor[1] + inp.dy));
-        if (nx !== this.cursor[0] || ny !== this.cursor[1]) { this.cursor = [nx, ny]; this.sfx('tick'); this.dwell = 0; this.refreshDeploy(); }
+        if (nx !== this.cursor[0] || ny !== this.cursor[1]) { this.cursor = [nx, ny]; this.sfx('tick'); this.refreshDeploy(); }
       }
     }
     if (inp.a) this.deployA();
     else if (inp.b) this.deployB();
-    this.dwell = (this.dwell || 0) + dt;
-    if (D.focus === 'board' && this.dwell > 1.1 && this.spokenAt !== this.cursor.join()) {
-      this.spokenAt = this.cursor.join();
-      const el = this.hud.info;
-      if (el.style.display !== 'none') this.speak(el.textContent);
-    }
   }
 
   deployA() {
@@ -571,19 +554,17 @@ export class BreachScene extends MiniGame {
       return;
     }
     const m = this.depMech;
-    if (!m) { D.focus = 'start'; this.sfx('select'); this.refreshDeploy(); this.speak(t('breach.dep.ready')); return; }
-    if (!R.deployMech(s, m.id, x, y)) { this.sfx('error'); this.hud.banner(t('breach.dep.notHere'), '', 1000); this.speak(t('breach.dep.notHere')); return; }
+    if (!m) { D.focus = 'start'; this.sfx('select'); this.refreshDeploy(); return; }
+    if (!R.deployMech(s, m.id, x, y)) { this.sfx('error'); this.hud.banner(t('breach.dep.notHere'), '', 1000); return; }
     D.placed.push(m.id);
     this.lastDeploy.spots[m.slot] = [x, y];
     this.view.sync(s);
     this.sfx('land');
     if (this.depMech) {
       this.cursor = this.suggestSpot();
-      this.speak(t('breach.dep.landed', { mech: t(`breach.m.${m.type}`) }));
     } else {
       D.focus = 'start';
       this.hud.setTip(null);
-      this.speak(t('breach.dep.ready'));
     }
     this.refreshDeploy();
   }
@@ -613,7 +594,6 @@ export class BreachScene extends MiniGame {
     if (!this.save.deployTip) { this.save.deployTip = true; this.persist(); }
     this.sfx('yourTurn');
     this.hud.banner(t('breach.yourTurn'), t('breach.turn', { n: 1, m: this.bs.maxTurns }), 1100);
-    this.speak(t('breach.yourTurn'));
     this.firstTurn();
   }
 
@@ -697,17 +677,10 @@ export class BreachScene extends MiniGame {
     if (inp.dx || inp.dy) {
       const nx = Math.max(0, Math.min(R.W - 1, this.cursor[0] + inp.dx));
       const ny = Math.max(0, Math.min(R.H - 1, this.cursor[1] + inp.dy));
-      if (nx !== this.cursor[0] || ny !== this.cursor[1]) { this.cursor = [nx, ny]; this.sfx('tick'); this.dwell = 0; this.refresh(); }
+      if (nx !== this.cursor[0] || ny !== this.cursor[1]) { this.cursor = [nx, ny]; this.sfx('tick'); this.refresh(); }
     }
     if (inp.a) this.pressA();
     else if (inp.b) this.pressB();
-    // read the tile under the cursor aloud after a moment
-    this.dwell = (this.dwell || 0) + dt;
-    if (this.dwell > 1.1 && this.spokenAt !== this.cursor.join()) {
-      this.spokenAt = this.cursor.join();
-      const el = this.hud.info;
-      if (el.style.display !== 'none') this.speak(el.textContent);
-    }
   }
 
   pressA() {
@@ -728,11 +701,10 @@ export class BreachScene extends MiniGame {
     }
     if (u && u.side === 'mech') {
       if (this.canSelect(u)) this.select(u);
-      else { this.sfx('error'); this.speak(this.hud.info.textContent); }
+      else this.sfx('error');
       return;
     }
     this.sfx('tick');
-    this.speak(this.hud.info.textContent);
   }
 
   pressB() {
@@ -753,15 +725,14 @@ export class BreachScene extends MiniGame {
     this.sfx('select');
     this.refresh();
     const w = R.MECHS[u.type].weapon;
-    this.speak(`${t(`breach.m.${u.type}`)}. ${t(`breach.d.${w}`)}`);
     if (u.moved) this.explainAim(u);
     this.tutEvent('select');
   }
 
   explainAim(m) {
     const why = R.cantAct(this.bs, m);
-    if (why === 'smoke') { this.hud.banner(t('breach.cantSmoke'), '', 1600); this.speak(t('breach.cantSmoke')); }
-    else if (m.wet) { this.hud.banner(t('breach.cantWet'), '', 1600); this.speak(t('breach.cantWet')); }
+    if (why === 'smoke') { this.hud.banner(t('breach.cantSmoke'), '', 1600); }
+    else if (m.wet) { this.hud.banner(t('breach.cantWet'), '', 1600); }
   }
 
   doMove(m, x, y) {
@@ -790,14 +761,14 @@ export class BreachScene extends MiniGame {
       if (this.bs.phase === 'won') { this.battleWon(); return; }
       if (this.bs.phase === 'lost') { this.battleLost(); return; }
       this.refresh();
-      if (R.mechs(this.bs).every((u) => u.ko || u.acted) && !this.tut) { this.hud.banner(t('breach.allDone'), '', 1800); this.speak(t('breach.allDone')); }
+      if (R.mechs(this.bs).every((u) => u.ko || u.acted) && !this.tut) { this.hud.banner(t('breach.allDone'), '', 1800); }
     });
     this.tutEvent('act');
   }
 
   undoMove() {
     if (!this.undo.length) { this.sfx('error'); return; }
-    if (this.undoLeft <= 0) { this.sfx('error'); this.hud.banner(t('breach.noUndo'), '', 1400); this.speak(t('breach.noUndo')); return; }
+    if (this.undoLeft <= 0) { this.sfx('error'); this.hud.banner(t('breach.noUndo'), '', 1400); return; }
     this.bs = this.undo.pop();
     this.undoLeft--;
     this.view.sync(this.bs);
@@ -818,7 +789,6 @@ export class BreachScene extends MiniGame {
     this.view.sync(this.bs);
     this.sfx('whoosh');
     this.hud.banner(t('breach.rewound'), '', 1400);
-    this.speak(t('breach.rewound'));
     this.refresh();
     return true;
   }
@@ -844,7 +814,7 @@ export class BreachScene extends MiniGame {
   }
 
   onPhase(e) {
-    if (e.phase === 'enemy') { this.hud.banner(t('breach.bugTurn'), '', 1000); this.speak(t('breach.bugTurn')); }
+    if (e.phase === 'enemy') { this.hud.banner(t('breach.bugTurn'), '', 1000); }
   }
 
   onPower() {
@@ -861,7 +831,6 @@ export class BreachScene extends MiniGame {
     this.undoLeft = this.easy ? Infinity : 1;
     const last = s.turn >= s.maxTurns;
     this.hud.banner(last ? t('breach.lastTurn') : t('breach.yourTurn'), t('breach.turn', { n: s.turn, m: s.maxTurns }), 1300);
-    this.speak(last ? t('breach.lastTurn') : t('breach.yourTurn'));
     this.sfx('yourTurn');
     const first = R.mechs(s).find((m) => !m.ko);
     if (first) this.cursor = [first.x, first.y];
@@ -880,7 +849,6 @@ export class BreachScene extends MiniGame {
     this.menu = { items, i: 0 };
     this.sfx('select');
     this.renderMenu();
-    this.speakOpt();
   }
 
   renderMenu() {
@@ -892,7 +860,7 @@ export class BreachScene extends MiniGame {
 
   updateMenu(inp) {
     const M = this.menu;
-    if (inp.dy) { M.i = (M.i + inp.dy + M.items.length) % M.items.length; this.sfx('select'); this.renderMenu(); this.speakOpt(); }
+    if (inp.dy) { M.i = (M.i + inp.dy + M.items.length) % M.items.length; this.sfx('select'); this.renderMenu(); }
     if (inp.b || inp.c) { this.closeMenu(); return; }
     if (!inp.a) return;
     const k = M.items[M.i];
@@ -1167,7 +1135,6 @@ export class BreachScene extends MiniGame {
     this.resultT = 0;
     this.game.audio.play('fanfare');
     this.celebrateBoard();
-    this.speak(`${t('breach.res.title')} ${title} ${islandLine}`);
   }
 
   celebrateBoard() {
@@ -1186,14 +1153,12 @@ export class BreachScene extends MiniGame {
     this.resultT = 0;
     if (this.easy) {
       this.hud.setCard(`<h2>${esc(t('breach.lost'))}</h2><div class="sub">${esc(why)}</div><div class="foot">${esc(tFor(this.player, 'breach.retry'))}</div>`);
-      this.speak(`${t('breach.lost')} ${why}`);
     } else {
       // Hard: the campaign is over; the medals stay
       this.save.run = null;
       this.save.restarts++;
       this.persist();
       this.hud.setCard(`<h2>${esc(t('breach.lost'))}</h2><div class="sub">${esc(why)}</div><div class="sub">${esc(t('breach.hardOver'))}</div><div class="foot">${esc(tFor(this.player, 'breach.hardOk'))}</div>`);
-      this.speak(`${t('breach.lost')} ${why} ${t('breach.hardOver')}`);
     }
     this.game.audio.play('leave');
   }

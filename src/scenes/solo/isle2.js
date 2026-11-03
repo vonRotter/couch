@@ -267,7 +267,6 @@ export class Isle2 {
       this.placeBoat('isle');
       const txt = t(I.visits === 1 ? 'isl.isle.welcome1' : 'isl.isle.welcome');
       host.game.ui.toast(txt, 2800);
-      speak(txt, 'narrator');
       host.game.audio.play('fanfare');
     } else {
       I.at = 'main';
@@ -336,7 +335,6 @@ export class Isle2 {
     host.game.audio.play('star');
     const txt = t('isl.isle.pool', { item: t(`isl.i.${id}`) });
     host.game.ui.toast(txt, 2000);
-    speak(txt, 'narrator');
     this.refresh();
     host.markDirty();
   }
@@ -356,7 +354,6 @@ export class Isle2 {
     host.game.audio.play('fanfare');
     const txt = t('isl.isle.dug', { item: t(`isl.i.${id}`) });
     host.game.ui.toast(txt, 2400);
-    speak(txt, 'narrator');
     this.refresh();
     host.markDirty();
   }
