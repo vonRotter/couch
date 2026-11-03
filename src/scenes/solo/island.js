@@ -1881,7 +1881,7 @@ export class SoloIslandScene extends BaseScene {
     if (inp.stepY) { this.modeIndex = (this.modeIndex - inp.stepY + n) % n; this.game.audio.play('select'); this.renderMode(); }
     if (this.modeT < 0.25) return;
     const k = MENU[this.modeIndex];
-    const start = !!this.playerDevice?.btnPressed?.start;
+    const start = !!(this.playerDevice?.btnPressed?.start || this.playerDevice?.btnPressed?.view);
     if (inp.cPressed || start) { this.closeMode(); return; }
     // settings switch with left/right too, and the menu stays open
     const setting = k === 'voice' || k === 'chars' || k === 'lang';
@@ -2228,7 +2228,7 @@ export class SoloIslandScene extends BaseScene {
           const keys = this.game.input.pressed;
           const pb = this.playerDevice?.btnPressed || {}; // a gamepad's D-pad and Start (input.js)
           // the menu: Q, or Start (a gamepad's B is back: it does nothing out here)
-          if ((!pad && inp.cPressed) || pb.start) { this.openMode(0); break; }
+          if ((!pad && inp.cPressed) || pb.start || pb.view) { this.openMode(0); break; }
           if (keys.has('KeyF') || pb.down) { this.journal.open(); break; }
           if (keys.has('Tab') || pb.up) { this.openBag(); break; }
           // D-pad left/right: the hotbar slot (what you hold)

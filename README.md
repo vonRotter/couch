@@ -36,6 +36,23 @@ Each game shows its own controls before it starts.
 | Keyboard 3 | I J K L | U | O | P |
 | Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . | Numpad Enter |
 
+**Menus (every game):** A picks, B goes back. A gamepad's B never picks anything: not in the pause
+menu, the start menu, the profile picker, shops, questions in dialogs, item and skill panels, quest
+boards, the gate, map, level, squad and difficulty pickers, votes or result screens (it closes or goes
+back, or does nothing where there is nowhere to go back to). Start opens and closes the pause menu.
+Keyboards pick as before: the jump key, and in most menus also the use key (E), which is how the pause
+menu picks; `Esc` closes it. The solo island has its own gamepad layout (A jump, X use, B back,
+D-pad for the hotbar, bag and journal, Start for the menu): see Solo island, Controls. Hints name
+the buttons of every kind of pad (Xbox A/B/X/Y, LB/RB, Start; PlayStation ✕/○/□/△, L1/R1, Options;
+Nintendo B/A/Y/X, L/R, +).
+
+| Menu | Gamepad | Keyboard 1 |
+| --- | --- | --- |
+| move | stick or D-pad | W A S D |
+| pick | A (✕) | Space, or E where it picked before (pause menu, start menu) |
+| back / close | B (○) | the menu's back key (E in game menus that already went back with E, Q on the solo island, `Esc` for the pause menu) |
+| pause menu | Start (Options / +) | `Esc` |
+
 - Press A on any device to join (up to 6 players). The first player picks a mode in the start
   menu: **Island** (roam and pick games on the pads) or **Paint Pilots** (side-view biplane dogfight, inspired by Triplane Turmoil and Luftrausers). Vote
 on Free for all, Teams or Co-op against waves of grumble planes and blimps ending with the King Blimp.
@@ -168,7 +185,7 @@ to spend. Progress is saved per profile.
 **Story** (the co-op campaign). Press C on
   the island to open the start menu again; leaving the Story also returns to it.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
-- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). Pick with B (use) or A; `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound.
+- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound.
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
 - `G` shows or hides the learning games, or jump on the green book button.
 
@@ -535,7 +552,12 @@ night match yours and crops grow while you are away.
   and they come to the door to chat. The store and the museum are closed with a sign while their owner
   is home. Quests and story steps say who is asleep and until when; friends come to the café only while
   they are up during opening hours; story scenes and the Lamp Festival bring everyone out.
-- **Friends book:** F (or the start menu) opens a page per villager: picture, hearts, birthday, the
+- **The journal** (F on a keyboard, the D-pad down on a gamepad) is one book with tabs: **Friends**,
+  **Tasks** (everything on your list, not just the first five), **Calendar** (the calendar board opens it
+  here), **Fish log** (the fish log book opens it here) and **Museum** (the collection to look at; you
+  still donate at Curator Hoot's board). LB/RB (L1/R1, L/R) or the keys 1–5 (also `[` and `]`) switch
+  tabs, the stick looks through a page, B or Q (also F, Tab) closes it; the mouse can click a tab.
+- **Friends book** (the journal's first tab): a page per villager: picture, hearts, birthday, the
   gifts they love, like and dislike (filled in when you give that gift, or when a friend mentions a
   favorite while chatting, one per heart), where they are right now and what comes next with them
   (quest, story, heart event or request). The stick or the arrow keys turn the pages, each page is read
@@ -697,52 +719,76 @@ night match yours and crops grow while you are away.
   Mitten on the Barrel Run, Pip's model rocket on the game hall roof, Grumbleton's hat on Gull Rock, Keeper
   Bram's glass float on the cliff path, Curator Hoot's book on the hollow tree's branch. Pick it up with [B]
   and bring it back.
-- **Controls (solo island only):** stick to walk, **A jumps** (see Jumping above), **B is the one use
-  button** (the held tool or seeds, talking, picking up, shipping, mail, doors, shops and knocking; a
-  villager you face wins over the field), **C opens the start menu** (Island, Story, Solo, Friends book).
-  The bag is **Tab** on a keyboard and a **long press of B** on a gamepad; 1–9 pick a hotbar slot; **F**
-  opens the Friends book. Keyboard 1: Space / E / Q. A new controller pressing jump takes over.
+- **Controls (solo island only).** A gamepad uses the island layout (the dive too): **A jumps**, **X is
+  the one use button** (the held tool or seeds, talking, picking up, shipping, mail, doors, shops and
+  knocking; a villager you face wins over the field), **B is back** (it closes panels and never uses or
+  picks anything; out in the world it does nothing), the **D-pad picks the hotbar slot (left/right)**,
+  **opens the bag (up)** and **the journal (down)** (it does not walk), **Start opens the menu**, and Y
+  is free. The keyboard stays Space / E / Q: Space jumps, E uses, Q opens the menu (and is back in
+  panels), Tab the bag, F the journal, 1–9 the hotbar, `Esc` help. A new controller pressing jump takes
+  over. The menu has Keep playing, Shared island, Story, Change player (the profile picker), Read aloud
+  on/off, Characters (speak or babble), Language and Help, so a gamepad reaches every setting. The
+  Friends book is in the journal now, not in the menu.
+
+  | Solo island | Gamepad (Xbox / PlayStation) | Keyboard 1 |
+  | --- | --- | --- |
+  | walk | left stick | W A S D |
+  | jump | A / ✕ | Space |
+  | use, talk, pick up, go in, knock | X / □ | E |
+  | back, close a panel | B / ○ | Q |
+  | hotbar slot | D-pad ← → | 1–9 |
+  | bag | D-pad ↑ | Tab |
+  | journal | D-pad ↓ | F |
+  | journal tabs | LB / RB (L1 / R1) | 1–5, `[` `]` |
+  | menu | Start (Options) | Q |
+  | help | the menu's Help | `Esc` |
+  | (free) | Y / △ | – |
+
 - **The bag, the hotbar and the cottage chest** (like Stardew Valley): the 9-slot hotbar at the bottom is
-  what you hold (keys 1–9; an empty slot means empty hands). The bag panel shows the bag rows (9 wide)
+  what you hold (keys 1–9 or the D-pad left/right; an empty slot means empty hands). The bag panel shows the bag rows (9 wide)
   above the hotbar; it starts with the hotbar and 2 bag rows (27 slots), and Rosa sells a Bigger backpack
   (250 coins, a 3rd row) and then a Huge backpack (750 coins, a 4th row). New things go onto the same thing
   already in the bag, else into the first free slot (hotbar first); a full bag sends them to the cottage
   chest with a toast, so nothing is ever lost. The **storage chest** stands in the back right corner of
-  the cottage (36 slots, it grows a row if it ever overflows): [B] next to it opens the same panel with
-  the chest above the bag. The name and sell price of the thing under the cursor or mouse is shown and
-  read aloud. Shops, the shipping bin, gifts, the café, the museum, crafting and quests use what is in
+  the cottage (36 slots, it grows a row if it ever overflows): use it to open the same panel with
+  the chest above the bag. The name and sell price of the thing under the cursor or mouse is shown.
+  Shops, the shipping bin, gifts, the café, the museum, crafting and quests use what is in
   the bag (not the chest). Old saves: the old list fills the hotbar, then the bag rows, the rest goes
   into the cottage chest.
 
   | Bag panel | Mouse | Keyboard | Gamepad |
   | --- | --- | --- | --- |
-  | open / close | – | Tab / Tab or Q | hold B / X (C) |
-  | move a stack (empty slot: move, same thing: merge, other thing: swap) | drag it | WASD or arrows move the cursor, E picks up, E puts down | stick moves the cursor, B picks up, B puts down |
+  | open / close | – | Tab / Tab or Q | D-pad ↑ / B |
+  | move a stack (empty slot: move, same thing: merge, other thing: swap) | drag it | WASD or arrows move the cursor, E picks up, E puts down | stick or D-pad moves the cursor, X picks up, X puts down |
   | move across at once (bag ↔ hotbar, or bag ↔ chest) | right click or shift+click | Space ([A]) | A |
   | pick what you hold | click a hotbar slot | 1–9, or the cursor on the hotbar | the cursor on the hotbar |
 
-  | Mode | A | B | C |
+  In panels the island's use button does the thing and its back button closes; on a gamepad A also
+  does the thing (so A picks and B goes back everywhere). Below, "use" is E / X and "back" is Q / B.
+
+  | Mode | jump (Space / A) | use (E / X) | back (Q / B) |
   | --- | --- | --- | --- |
-  | Walking | jump | use, talk, go in, knock (gamepad: hold for the bag) | start menu |
-  | Dialog | next | next / pick the highlighted answer | answer "no" |
+  | Walking | jump | use, talk, go in, knock | keyboard: the menu (gamepad: Start) |
+  | Dialog | next / pick the highlighted answer | next / pick the highlighted answer | keyboard: answer "no"; gamepad: next on a plain line, nothing on a question |
   | Bag (see the table above) | move across | pick up / put down | close |
-  | Letters, fish log, calendar, album, Friends book | close | close | close |
-  | Pip's gadget bench | – | build the upgrade | close |
-  | Shop | – | buy or sell one | leave |
-  | Fishing | – | cast, hook, reel in the green | let go / close the result |
-  | Café stove, specials board, workbench, museum, Crab Cove sign | – | cook / special on-off / make / donate / choose a crab friend | close |
-  | Café service | – | serve | close the café |
+  | Journal | – | keyboard: close | close |
+  | Letters, album, treasure map | close | close | close |
+  | Menu | pick (left/right switches a setting) | pick | close (Start too) |
+  | Pip's gadget bench | gamepad: build | build the upgrade | close |
+  | Shop | gamepad: buy or sell one | buy or sell one | leave |
+  | Fishing | gamepad: as use | cast, hook, reel in the green | let go / close the result |
+  | Café stove, specials board, workbench, museum, Crab Cove sign | gamepad: as use | cook / special on-off / make / donate / choose a crab friend | close |
+  | Café service | gamepad: serve | serve | close the café |
   | Decorate | turn (hold: next thing) | place or pick up | done |
-  | Photo mode | – | click | back |
-  | Lighthouse top and telescope | – | telescope / look closer | climb down / back |
-  | Sled | – (stick steers) | – | – |
+  | Photo mode | gamepad: click | click | back |
+  | Lighthouse top and telescope | gamepad: as use | telescope / look closer | climb down / back |
+  | Sled | – (stick steers) | – | close the result |
   | Diving | kick (swim faster for a moment) | pick up, open, help or wave to a crab, climb out, or the bubble net | swim up to the boat |
-  | Hop trail | jump | (at the sign: start, race) | start menu |
+  | Hop trail | jump | (at the sign: start, race) | keyboard: the menu |
   | Skipping stones | – | throw (when the bar is green) | stop |
   | Kite flying | – (stick steers the kite) | – | stop |
-  | Snowball fight | jump (over snowballs) | throw | start menu |
-  | Hide-and-seek | jump | look in a bush | start menu |
-  | Treasure map | close | close | close |
+  | Snowball fight | jump (over snowballs) | throw | keyboard: the menu |
+  | Hide-and-seek | jump | look in a bush | keyboard: the menu |
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock
@@ -754,9 +800,16 @@ browser, "Real time" goes back, and `?dev=0` turns the panel off. It changes not
 island; each profile remembers its choice). It uses the browser's own voices in English or Norwegian;
 if the device has no voice for the language it stays quiet.
 
-- **One narrator.** A calm narrator reads intro and how-to cards, story and campaign cards,
-  narration, menus, tutorials, item names and toasts, always in the device's best voice (natural or
+- **One narrator, only for story and help.** A calm narrator reads intro and how-to cards, story,
+  campaign and cut-scene text, letters, signs, notes and books you open (the journal's Friends pages
+  and Tasks), tutorial steps and hints shown once, always in the device's best voice (natural or
   online voices such as Microsoft "Natural" and Google first, then the rest; novelty voices never).
+  It does not read toasts, HUD hints, menu items, item names, tile, unit or foe info, score pop-ups,
+  banners (floor names, "Your turn!"), quest board, shop and gate rows, objectives, result screens or
+  game messages. In Bean Brigade it reads the title, each battle's story on the map, the tutorial,
+  the first deploy tip and the ending; in the Lighthouse Caves signs, notes, what you find and hints
+  shown once (not bumps, save stones or the lamp); in Pillow Keep Solo the welcome, tips shown once and
+  a newly opened act. Characters still speak (or babble) their own lines.
 - **Voice types for characters.** Every speaking character has a voice type: child, grandma, gruff
   sailor, cheerful shopkeeper, owl sage, sleepy old man, villain, tiny creature, crab, bird, robot or
   friendly grown-up. Each type gets its own voice where the device has several for the language
@@ -792,7 +845,8 @@ src/
     voices.js        speaker -> voice type table, types, choosing the device's voices per type
     babble.js        WebAudio babble syllables per voice type
     devvoices.js     ?dev voice panel (F10): the device's voices, play every type
-    input.js         keyboard schemes + gamepads -> one controller shape
+    input.js         keyboard schemes + gamepads -> one controller shape; gamepad layouts ('default',
+                     'island'), menu pick/back (okPressed/backPressed), button names per pad kind
     roster.js        joined players, colors, hats, saved star count
     character.js     the shared bean buddy (squash/stretch, blink, hats)
     palette.js       colors, cached toon materials and geometry
