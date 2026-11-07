@@ -56,6 +56,7 @@ import { Hops } from './hops.js';
 import { Surprises } from './surprise.js';
 import { IslandGames } from './games.js';
 import { Play } from './play.js';
+import { SeeThrough } from './seethrough.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
 // One player (with the profile's name, color and hat). Games are PLACES you walk to; some open through
@@ -157,6 +158,7 @@ const nightOnly = (id) => !!SEA[id]?.night || (!!FISH[id] && FISH[id].hours[0] >
 
 
 const _sv = new THREE.Vector3();
+const _bean = new THREE.Vector3();
 /** Screen pixels of a world point (the same math as UI.place). */
 function screenAt(pos, cam) {
   _sv.copy(pos).project(cam);
@@ -1954,6 +1956,11 @@ export class SoloIslandScene extends BaseScene {
     }
     // never get stuck (e.g. after an unlock changes the map): nudge toward home
     if (!this.indoors && !P.air && this.map.overlap(P.x, P.z, PR * 0.5, st, P.fy) > 0) this.unstick(P, st);
+    // and the safety net: pushing the stick for a while without moving an inch while inside something
+    // (a gap between props that is narrower than the bean): out to the nearest free spot
+    const pushed = len > 0.5 && !P.air && !this.indoors && Math.hypot(P.x - (P.lx ?? P.x), P.z - (P.lz ?? P.z)) < 0.002;
+    P.stuckT = pushed && this.map.overlap(P.x, P.z, PR, st, P.fy) > 0 ? (P.stuckT || 0) + dt : 0;
+    if (P.stuckT > 0.6) { P.stuckT = 0; this.unstick(P, st); this.puffs.burst(new THREE.Vector3(P.x, P.fy + 0.4, P.z), 0xffffff, { count: 6, speed: 2, size: 0.25, life: 0.4 }); }
     if (this.indoors) this.builder.clampInside(P);
     this.updateVertical(P, dt, st);
     P.lx = P.x; P.lz = P.z;
@@ -1967,7 +1974,13 @@ export class SoloIslandScene extends BaseScene {
   canMove(P, x, z, st) {
     const map = this.map;
     const d = map.overlap(x, z, PR, st, P.fy);
-    if (d > 0 && d >= map.overlap(P.x, P.z, PR, st, P.fy) - 1e-4) return false;
+    if (d > 0) {
+      // into things: never. Already a little inside something (landed in a narrow gap, pushed by a visitor):
+      // any move that does not go deeper is fine, so you can always slide out along it. (Inside a terrain
+      // wall, 9, only a move out of it.)
+      const d0 = map.overlap(P.x, P.z, PR, st, P.fy);
+      if (d0 <= 0 || (d0 >= 9 ? d >= 9 : d > d0 + 1e-4)) return false;
+    }
     if (!P.air && map.supportAt(x, z, P.fy, st).water) return false;
     // on foot, no climbing up steep banks and cliff faces (whatever the frame rate): jump instead
     if (!P.air && !map.deckAt(x, z, st.bridge) && heightAt(x, z) - P.fy > Math.max(0.06, 1.1 * Math.hypot(x - P.x, z - P.z))) return false;
@@ -2259,6 +2272,9 @@ export class SoloIslandScene extends BaseScene {
     this.life.update(dt, this.night || 0, P || { x: 0, z: 0 });
     for (const f of Object.values(this.finds)) if (f.g.visible) { f.g.userData.glint.rotation.y += dt * 3; f.g.userData.glint.scale.y = 0.6 + Math.sin(this.time * 5) * 0.4; }
     this.updateCamera(dt);
+    // tall things between the camera and the bean turn see-through around it (seethrough.js)
+    if (!this.seeThrough) this.seeThrough = new SeeThrough(this.scene, this.game.renderer);
+    if (P) this.seeThrough.update(dt, this.camera, _bean.set(P.x, P.y + (P.jy || 0) + 0.6, P.z), P.y + (P.jy || 0), !this.camView && !this.indoorsView);
     this.updateLabels();
     this.updateHud(ia);
   }
@@ -2271,6 +2287,7 @@ export class SoloIslandScene extends BaseScene {
   }
 
   dispose() {
+    this.seeThrough?.dispose();
     window.removeEventListener('keydown', this.onTabKey);
     this.journal?.dispose();
     this.toasts.dispose();

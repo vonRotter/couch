@@ -7,15 +7,8 @@
 /** A small pond south of the square with stepping stones across (map.js digs it into the terrain). */
 export const POND = { x: 14.5, z: 25, r: 3.4 };
 
-/**
- * Cliff tops you can walk on once you get up there (everywhere else the cliffs stay a wall): the secret
- * grove beside the waterfall gorge and the lookout above kite hill. Inside these boxes the terrain itself
- * decides: you cannot walk up a steep face, but you can jump onto it from a ledge.
- */
-export const CLIFF_OPEN = [
-  { x0: -26, x1: -10, z0: -42, z1: -29.6 }, // the waterfall gorge and the grove
-  { x0: 11, x1: 22.5, z0: -41, z1: -33.2 }, // the cliff path and the lookout
-];
+// The cliff tops are open land (no invisible walls): the cliff faces are walls because they are steep, and you
+// get up there by the hidden steps behind the waterfall or by the cliff path to the lookout (map.js).
 
 /** Spots kept free of the random trees, bushes and flowers (the random sequence itself is kept). */
 export const KEEP_CLEAR = [
@@ -31,7 +24,6 @@ export const KEEP_CLEAR = [
 ];
 
 export const inKeepClear = (x, z) => KEEP_CLEAR.some((k) => (k.r !== undefined ? Math.hypot(x - k.x, z - k.z) < k.r : x > k.x0 && x < k.x1 && z > k.z0 && z < k.z1));
-export const inCliffOpen = (x, z) => CLIFF_OPEN.some((k) => x > k.x0 && x < k.x1 && z > k.z0 && z < k.z1);
 
 // ---------- stepping stones and ledges (not timed) ----------
 // kind: stone (round, flat top), rock (a lumpy ledge rock), stump, crate, barrel, log, plank, pad (lily pad)
@@ -50,16 +42,17 @@ export const POND_STONES = [
 
 /** Hidden areas. Each has a chest (hops.js); the path there is its list of ledges. */
 export const SECRETS = {
-  // behind the waterfall: hop over the plunge pool, through the falling water and up the gorge wall
+  // behind the waterfall: hop over the plunge pool, through the falling water into the slot behind it, up the
+  // wet rocks in there and out onto the cliff top (map.js: FALL, UPPER)
   grove: {
     chest: { x: -14.4, z: -37.6 }, area: { x: -14.6, z: -36.8 },
     path: [
       { kind: 'stone', x: -20.3, z: -29.9, r: 0.55, abs: 0.1 },
-      { kind: 'stone', x: -21.4, z: -32.1, r: 0.6, abs: 0.45 },
-      { kind: 'rock', x: -21.9, z: -34.3, r: 0.62, abs: 1.25 },
-      { kind: 'rock', x: -20.6, z: -36.1, r: 0.6, abs: 2.1 },
-      { kind: 'rock', x: -21.5, z: -38.0, r: 0.6, abs: 2.95 },
-      { kind: 'rock', x: -20.2, z: -39.7, r: 0.62, abs: 3.8 },
+      { kind: 'stone', x: -21.9, z: -30.4, r: 0.55, abs: 0.3 },
+      { kind: 'rock', x: -23.2, z: -31.95, r: 0.55, abs: 1.0 },
+      { kind: 'rock', x: -21.95, z: -32.0, r: 0.55, abs: 1.8 },
+      { kind: 'rock', x: -20.7, z: -31.95, r: 0.55, abs: 2.6 },
+      { kind: 'rock', x: -19.55, z: -32.75, r: 0.85, abs: 3.6 },
     ],
   },
   // Gull Rock off the beach: small rocks in the sea up to a ledge (the precise one)
@@ -120,14 +113,14 @@ export const TRAILS = {
     ],
   },
   barrels: {
-    racer: 'grumbleton', start: { x: 3.6, z: 34.2 }, sign: { x: 4.2, z: 35.6 }, level: 2,
+    racer: 'grumbleton', start: { x: 2.9, z: 35.2 }, sign: { x: 2.0, z: 36.6 }, level: 2, // (start and flag beside the beach road, not on it)
     path: [
       { kind: 'barrel', x: 2.0, z: 33.4, r: 0.42, top: 0.9 },
       { kind: 'crate2', x: 0.2, z: 34.2, hw: 0.45, hd: 0.45, top: 1.4 },
       { kind: 'plank', x: -1.9, z: 33.5, hw: 1.0, hd: 0.2, top: 1.3 },
       { kind: 'barrel', x: -3.9, z: 34.2, r: 0.42, top: 0.95 },
       { kind: 'crate', x: -5.7, z: 33.1, hw: 0.45, hd: 0.45, top: 0.75 },
-      { kind: 'crate2', x: -7.3, z: 34.3, hw: 0.45, hd: 0.45, top: 1.45, bell: true },
+      { kind: 'crate2', x: -7.3, z: 33.6, hw: 0.45, hd: 0.45, top: 1.45, bell: true }, // (a wide gap to the café: nobody gets stuck between)
     ],
   },
   cliff: {

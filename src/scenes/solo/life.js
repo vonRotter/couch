@@ -149,6 +149,7 @@ export class Life {
       c.c.rotation.z = -Math.sin(c.peck * Math.PI * 4) * 0.4;
     }
     this.cat.update(dt, {});
+    map.updateFalls?.(dt); // the waterfall's drops and foam
     // chimney smoke
     this.smokeT -= dt;
     if (this.smokeT <= 0) {

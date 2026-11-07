@@ -7,11 +7,11 @@ import {
   mesh, box, cyl, ico, cone, WOOD, WOOD_DARK, makeCottage, makeStore, makeLighthouse, makeTent, makeBalloon, makeMine, makeRockfall,
   makeKeepTower, makeBurrow, makeCastleGate, makeHall, makeLaunchPad, makeBridge, makeFence, makeLamp, makeSign, makeBench, makeBarrel,
   makeCrate, makeMailbox, makeShippingBin, makeWell, makeFountain, makeNoticeBoard, makeBunting, makeCafe, makeBarn, makePier, makeBuoy, makeDiveBoat,
-  makeRowboat, makeTelescope, makeWaterfall, makeCrop,
+  makeRowboat, makeTelescope, makeCrop, sph,
 } from './models.js';
 import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
 import { makeGarage } from './models5.js';
-import { POND, inCliffOpen, inKeepClear } from './hopdata.js';
+import { POND, inKeepClear } from './hopdata.js';
 
 // The hand-made island town. North is -z (the cliffs), south is +z (the beach and the dock), the camera
 // looks north. A river runs from the waterfall in the cliffs down to the sea and cuts off the west bank
@@ -157,18 +157,42 @@ function coast(x, z) {
   return 1 - Math.pow(e, 0.25);
 }
 
+/**
+ * The waterfall (after the owner's playtest: it has to look whole). Behind the falling water the gorge is
+ * filled up to the cliff top, and the upper river runs in a channel from a spring of boulders to the lip;
+ * the water arcs over the lip and falls into the plunge pool. Under the arc, behind the falling sheet, is a
+ * narrow slot at pool level where the grove's hidden steps climb (hopdata.js).
+ */
+export const FALL = { x: -22.6, z: cliffZ(-22.6) - 0.2, w: 4.6 }; // the falling sheet: center and width
+export const UPPER = { y: 4.2, bed: 3.6, w: 2.55, zLip: -32.7, zFill: -32.5, zEnd: -40.2 }; // the upper river
+
+/** Is (x, z) in the upper river's water (on the cliff top behind the waterfall)? */
+export function inUpperWater(x, z) {
+  if (z > UPPER.zLip || z < UPPER.zEnd || x < -30 || x > -16) return false;
+  return riverDist(x, z) < UPPER.w - 0.1;
+}
+
 /** Ground height (without bridges or the pier). */
 export function heightAt(x, z) {
-  const h = baseHeight(x, z);
+  let h = baseHeight(x, z);
+  // behind the waterfall: the gorge filled up to the cliff top, with the upper river's channel in it
+  if (z < UPPER.zFill && z > -47 && x > -30 && x < -16) {
+    const rd = riverDist(x, z);
+    if (rd < RIVER_W + 1.4) {
+      const kf = sstep(UPPER.zFill, UPPER.zFill - 0.5, z);
+      const kc = sstep(UPPER.w + 0.9, UPPER.w - 0.25, rd) * sstep(UPPER.zEnd - 0.7, UPPER.zEnd + 0.3, z);
+      const top = uncarved(x, z);
+      h = h * (1 - kf) + (top * (1 - kc) + UPPER.bed * kc) * kf;
+    }
+  }
   // the pond south of the square (with stepping stones, see hopdata.js)
   const pd = Math.hypot(x - POND.x, z - POND.z);
   if (pd < POND.r + 0.8) { const k = sstep(POND.r + 0.8, POND.r - 0.6, pd); return h * (1 - k) + -1.15 * k; }
   return h;
 }
 
-/** The terrain before the pond was dug (the random trees and flowers are still placed by it, so they stay put). */
-function baseHeight(x, z) {
-  if (z > 120) return isle2Height(x, z); // Shell Isle, far to the south (milestone B3)
+/** The land before the river was cut into it (coast, cliffs, hills). */
+function uncarved(x, z) {
   const c = coast(x, z);
   let h = c < 0 ? -1.2 + c * 18 : -1.2 + 1.2 * sstep(0, 0.11, c);
   if (c > 0.05) {
@@ -180,6 +204,13 @@ function baseHeight(x, z) {
       if (d < hl.r) h += hl.h * (0.5 + 0.5 * Math.cos((d / hl.r) * Math.PI));
     }
   }
+  return h;
+}
+
+/** The terrain before the pond was dug (the random trees and flowers are still placed by it, so they stay put). */
+function baseHeight(x, z) {
+  if (z > 120) return isle2Height(x, z); // Shell Isle, far to the south (milestone B3)
+  let h = uncarved(x, z);
   // the river channel (also a gorge through the cliffs)
   const rd = riverDist(x, z);
   if (rd < RIVER_W + 1.4) {
@@ -337,12 +368,14 @@ export class IslandMap {
     geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
     geo.computeVertexNormals();
     const mat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: toon(0xffffff).gradientMap });
+    mat.userData = { noCut: true }; // (the see-through around the bean leaves the ground alone: seethrough.js)
     const ground = new THREE.Mesh(geo, mat);
     ground.receiveShadow = true;
     this.scene.add(ground);
     this.ground = ground;
 
     const wmat = new THREE.MeshToonMaterial({ color: 0x56c6f0, transparent: true, opacity: 0.86, gradientMap: toon(0xffffff).gradientMap });
+    wmat.userData = { noCut: true };
     this.water = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), wmat);
     this.water.rotation.x = -Math.PI / 2;
     this.water.position.y = SEA_Y;
@@ -357,12 +390,170 @@ export class IslandMap {
       const r = makeRock(this.rand, 1.0 + this.rand() * 0.9);
       this.put(r, x + this.rand() - 0.5, z + this.rand() * 0.6, 0, heightAt(x, z) + 0.2);
     }
-    const wx = -22.6, wz = cliffZ(-22.6);
-    const fall = makeWaterfall(CLIFF_H + 0.6, 4.4);
-    fall.position.set(wx, SEA_Y, wz - 0.2);
-    fall.rotation.y = -0.05;
+    this.buildFalls(wmat);
+    this.buildCliffFace();
+  }
+
+  /**
+   * A rocky face on the cliffs (the ground mesh alone made them look like a grassy slope you could walk up,
+   * the owner's "invisible wall"): bands of rock from the foot to the top, left open at the waterfall and
+   * the mine. Its foot is where the bean stops (the terrain gets too steep there).
+   */
+  buildCliffFace() {
+    const rr = seeded(311);
+    const pos = [], col = [];
+    const C = [new THREE.Color(0xb7a189), new THREE.Color(0xa58f78), new THREE.Color(0x97836e), new THREE.Color(0x8fae6a)];
+    const tmp = new THREE.Color();
+    const cols = [];
+    for (let x = -58; x <= 58.01; x += 1.0) {
+      const cz = cliffZ(x);
+      const open = Math.abs(x - FALL.x) < 3.2 || Math.abs(x - 26) < 2.3 || coast(x, cz) < 0.07;
+      const top = heightAt(x, cz - 0.75);
+      const base = heightAt(x, cz + 1.05) - 0.25;
+      // four rows: the foot, two middles (bulging a little) and the top edge
+      const rows = [[base, cz + 0.95], [base + (top - base) * 0.36, cz + 0.62], [base + (top - base) * 0.7, cz + 0.2], [top + 0.06, cz - 0.55]];
+      cols.push(open ? null : rows.map(([y, z], j) => [x + (j % 3 ? (rr() - 0.5) * 0.35 : 0), y + (j === 1 || j === 2 ? (rr() - 0.5) * 0.3 : 0), z + (j === 1 || j === 2 ? rr() * 0.28 : 0)]));
+    }
+    for (let i = 1; i < cols.length; i++) {
+      const a = cols[i - 1], b = cols[i];
+      if (!a || !b) continue;
+      for (let j = 0; j < 3; j++) {
+        const quad = [a[j], b[j], b[j + 1], a[j + 1]];
+        for (const [p, q, r] of [[0, 1, 2], [0, 2, 3]]) {
+          tmp.copy(C[j === 2 && rr() < 0.25 ? 3 : Math.floor(rr() * 3)]).multiplyScalar(0.94 + rr() * 0.1);
+          for (const k of [p, q, r]) { pos.push(...quad[k]); col.push(tmp.r, tmp.g, tmp.b); }
+        }
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.computeVertexNormals(); // (not indexed: flat facets)
+    const face = new THREE.Mesh(g, new THREE.MeshToonMaterial({ vertexColors: true, side: THREE.DoubleSide, gradientMap: toon(0xffffff).gradientMap }));
+    face.receiveShadow = true;
+    face.castShadow = true;
+    face.userData.cliffFace = true;
+    this.scene.add(face);
+    this.cliffFace = face;
+  }
+
+  /**
+   * The waterfall, whole: the upper river on the cliff top (a spring of boulders at its head), the water
+   * arcing over the lip and falling into the plunge pool, foam at its foot. The falling water is its own
+   * (fading) material: the camera's see-through fade includes it (island.js), so you see the bean behind it.
+   */
+  buildFalls(wmat) {
+    const F = FALL, U = UPPER;
+    // the upper river's surface: a ribbon along the river line, from the lip to the spring
+    const pts = RIVER.getSpacedPoints(400).filter((p) => p.z <= U.zLip + 0.05 && p.z >= U.zEnd - 0.3);
+    const verts = [], idx = [];
+    pts.forEach((p, i) => {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+      let dx = b.x - a.x, dz = b.z - a.z;
+      const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+      const w = U.w + 0.15;
+      verts.push(p.x - dz * w, U.y, p.z + dx * w, p.x + dz * w, U.y, p.z - dx * w);
+      if (i > 0) { const k = i * 2; idx.push(k - 2, k, k - 1, k - 1, k, k + 1); } // (facing up)
+    });
+    const rg = new THREE.BufferGeometry();
+    rg.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    rg.setIndex(idx);
+    rg.computeVertexNormals();
+    const upper = new THREE.Mesh(rg, wmat);
+    upper.receiveShadow = true;
+    this.scene.add(upper);
+    // the falling water: a sheet that arcs over the lip and drops straight down to the pool
+    const D = F.z - U.zLip, top = U.y + 0.03, bend = 0.8;
+    const prof = [];
+    for (let i = 0; i <= 6; i++) { const a = (i / 6) * Math.PI / 2; prof.push([Math.sin(a) * D, top - (1 - Math.cos(a)) * bend]); }
+    for (let i = 1; i <= 4; i++) prof.push([D, top - bend - (i / 4) * (top - bend - SEA_Y)]);
+    const sheetGeo = (w, nx, out = 0) => {
+      const v = [], ix = [];
+      for (let j = 0; j < prof.length; j++) for (let i = 0; i <= nx; i++) {
+        const x = -w / 2 + (i / nx) * w;
+        const wob = Math.sin(x * 2.3 + j * 0.9) * 0.05;
+        v.push(x, prof[j][1], prof[j][0] + out + wob);
+        if (i > 0 && j > 0) { const a = j * (nx + 1) + i, b = a - 1, c = a - (nx + 1), d = c - 1; ix.push(d, c, b, c, a, b); }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+      g.setIndex(ix);
+      g.computeVertexNormals();
+      return g;
+    };
+    const fall = new THREE.Group();
+    const sheetMat = new THREE.MeshToonMaterial({ color: 0x9fe4ff, transparent: true, opacity: 0.86, side: THREE.DoubleSide, depthWrite: false, gradientMap: toon(0xffffff).gradientMap });
+    sheetMat.userData = { fade: 0.86 };
+    fall.add(new THREE.Mesh(sheetGeo(F.w, 10), sheetMat));
+    // white streaks down the water, and a foamy curl along the lip
+    const streakMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false });
+    streakMat.userData = { fade: 0.7 };
+    for (const [x, w] of [[-1.8, 0.14], [-1.05, 0.1], [-0.3, 0.16], [0.5, 0.1], [1.2, 0.14], [1.85, 0.1]]) {
+      const m = new THREE.Mesh(sheetGeo(w, 1, 0.04), streakMat);
+      m.position.x = x;
+      fall.add(m);
+    }
+    const curl = new THREE.Mesh(cyl(0.16, 0.16, F.w + 0.1, 8), streakMat);
+    curl.rotation.z = Math.PI / 2;
+    curl.position.set(0, top - 0.02, 0.12);
+    fall.add(curl);
+    fall.position.set(F.x, 0, U.zLip);
     this.scene.add(fall);
-    this.waterfall = { x: wx, z: wz + 0.6 };
+    this.falls = { group: fall, mats: [sheetMat, streakMat], drops: [], t: 0 };
+    // drops sliding down the sheet (they make it look like it is falling) and foam at its foot
+    const dropMat = basicOwn(0xffffff, 0.85);
+    for (let i = 0; i < 14; i++) {
+      const d = new THREE.Mesh(sph(0.07, 6, 4), dropMat);
+      d.scale.set(1, 3.2, 1);
+      d.userData = { x: -F.w / 2 + 0.25 + ((i * 0.37) % 1) * (F.w - 0.5), k: (i * 0.29) % 1 };
+      fall.add(d);
+      this.falls.drops.push(d);
+    }
+    this.falls.prof = prof;
+    const foamMat = basicOwn(0xffffff, 0.9);
+    const foam = new THREE.Group();
+    for (let i = 0; i < 11; i++) {
+      const b = new THREE.Mesh(ico(0.42 + (i % 3) * 0.12, 1), foamMat);
+      b.position.set(-F.w / 2 - 0.2 + i * (F.w + 0.4) / 10, SEA_Y + 0.05, D + 0.25 + (i % 2) * 0.35);
+      b.scale.y = 0.45;
+      foam.add(b);
+    }
+    const pool = new THREE.Mesh(sharedDisc(), basicOwn(0xe8fbff, 0.45));
+    pool.rotation.x = -Math.PI / 2;
+    pool.scale.set(F.w * 0.75, 1.9, 1);
+    pool.position.set(0, SEA_Y + 0.03, D + 1.1);
+    foam.add(pool);
+    fall.add(foam);
+    this.falls.foam = foam;
+    this.waterfall = { x: F.x, z: F.z + 0.8 };
+    // the spring: a heap of boulders at the head of the upper river (in the way, and you can see why)
+    const rr = seeded(77); // (its own random numbers: the island's sequence, and so its trees, stays as it was)
+    for (const [x, z, r] of [[-24.6, -40.6, 1.5], [-22.4, -41.2, 1.7], [-20.4, -40.5, 1.3], [-23.4, -42.9, 1.6], [-21.1, -42.6, 1.3], [-25.6, -42.2, 1.2]]) {
+      const rk = makeRock(rr, r * 1.12);
+      this.put(rk, x, z, 0, heightAt(x, z) + 0.1);
+      this.circObs(x, z, r * 0.95);
+    }
+    // the plunge pool's west rim: big rocks (the west bank stays across the river until the bridge is fixed)
+    for (let z = -26.4; z >= -31.4; z -= 1.0) {
+      const x = -26.6 + Math.sin(z * 2.1) * 0.15;
+      const rk = makeRock(rr, 0.95);
+      this.put(rk, x, z, 0, heightAt(x, z) + 0.15);
+      this.circObs(x, z, 0.75);
+    }
+  }
+
+  /** The water of the falls slides down (called every frame from life.js). */
+  updateFalls(dt) {
+    const f = this.falls;
+    if (!f) return;
+    f.t += dt;
+    const P = f.prof, n = P.length - 1;
+    for (const d of f.drops) {
+      d.userData.k = (d.userData.k + dt * 0.55) % 1;
+      const u = d.userData.k * n, j = Math.min(n - 1, Math.floor(u)), t = u - j;
+      d.position.set(d.userData.x, P[j][1] + (P[j + 1][1] - P[j][1]) * t, P[j][0] + (P[j + 1][0] - P[j][0]) * t + 0.06);
+    }
+    f.foam.children.forEach((b, i) => { if (b.geometry.type !== 'CircleGeometry') { const k = 1 + Math.sin(f.t * 5 + i * 1.7) * 0.15; b.scale.set(k, 0.45 * k, k); } });
   }
 
   /** Street lamps every ~16 units along the longer roads (cozy at night). */
@@ -717,7 +908,7 @@ export class IslandMap {
       trees.push({ x, z });
       if (inKeepClear(x, z)) return; // (made all the same, so the random trees after it stay where they were)
       this.put(tr, x, z, rot);
-      if (z > cliffZ(x)) this.circObs(x, z, 0.45 * s);
+      this.circObs(x, z, 0.45 * s); // (also up on the cliff tops: you can walk there now)
     };
     // dense forest on the west bank, light woods elsewhere, trees on the cliff tops
     for (let i = 0; i < 900; i++) {
@@ -868,8 +1059,8 @@ export class IslandMap {
 
   /**
    * How deep a walker of radius r at (x, z) is inside something (0 or less: free; 9: a wall of terrain).
-   * With feet (a height): terrain higher than a step is a wall, the cliffs are walls except on the open
-   * cliff tops (hopdata.js), and things with a top you are above (feet over top - STEP) are not in the way.
+   * With feet (a height): terrain higher than a step is a wall (a cliff face, a steep bank: you see it), the
+   * cliff tops are open land, and things with a top you are above (feet over top - STEP) are not in the way.
    * Water is not a wall here (the bean decides: never walk into it, but you can jump over it).
    */
   overlap(x, z, r, state, feet = -Infinity) {
@@ -879,10 +1070,7 @@ export class IslandMap {
       if (flat) {
         if (h < -0.3) return 9;
         if (z < cliffZ(x) + 1.0) return 9;
-      } else {
-        if (z < cliffZ(x) + 1.0 && !inCliffOpen(x, z)) return 9;
-        if (h > feet + STEP) return 9; // a steep bank or a cliff face
-      }
+      } else if (h > feet + STEP) return 9; // a steep bank or a cliff face (the cliff tops are open: no invisible walls)
     }
     let worst = 0;
     for (const o of this.obstacles) {
@@ -915,6 +1103,7 @@ export class IslandMap {
     let y = deck ? Math.max(h, deck.y) : h, plat = null;
     let water = !deck && h < -0.3;
     if (water) y = SEA_Y;
+    else if (!deck && inUpperWater(x, z)) { water = true; y = UPPER.y; } // the upper river behind the waterfall
     for (const o of this.plats) {
       if (o.off || !inside(o, x, z, EDGE)) continue;
       const ty = topOf(o, x, z);
@@ -928,7 +1117,7 @@ export class IslandMap {
   restY(x, z) {
     const s = this.supportAt(x, z, 99, { bridge: true });
     if (s.plat?.block === false) return this.floorAt(x, z, true); // (not up on a roof)
-    return s.water ? SEA_Y - 0.08 : s.y;
+    return s.water ? s.y - 0.08 : s.y;
   }
 }
 
@@ -961,6 +1150,14 @@ function depth(o, x, z, r) {
   if (o.ax !== undefined) return o.r + r - segDist(o, x, z);
   return o.r + r - Math.hypot(x - o.x, z - o.z);
 }
+
+/** A fresh unlit see-through material (the waterfall's own, so it can fade). */
+function basicOwn(color, opacity) {
+  const m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+  m.userData = { fade: opacity };
+  return m;
+}
+const sharedDisc = () => new THREE.CircleGeometry(1, 24);
 
 /** A cheap low-poly flower (the shared one is too detailed for hundreds of copies). */
 const FLOWER_COLS = [0xff7eb6, 0xffd23f, 0xffffff, 0xb08bff, 0xff8c42];
