@@ -60,7 +60,9 @@ export const HeroMixin = {
     }
     for (let i = 0; i < 4; i++) if (this.keyPressed(BELT_KEYS[i])) this.useBelt(i);
     if (this.kind !== 'dungeon' || e.state !== 'walk') return false;
-    const at = this.ground && this.mouse.used ? this.ground : null;
+    // skills go where you point: at the grumble under the pointer (its middle, led a little for shots), else the floor
+    const hv = this.hover && (this.hover.kind === 'foe' || this.hover.kind === 'nest' || this.hover.kind === 'boss') ? this.hover : null;
+    const at = this.mouse.used ? (hv ? this.aimPoint(hv) : this.ground) : null;
     let block = false;
     const tryCast = (id, pressed) => {
       if (!id) return;

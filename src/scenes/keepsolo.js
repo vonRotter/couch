@@ -8,7 +8,7 @@ import { t, tFor } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { say } from '../core/voice.js';
 import { KeepScene } from './keep.js';
-import { PR, SPEED, clamp, mesh } from './keep/common.js';
+import { PR, GR, SPEED, clamp, mesh } from './keep/common.js';
 import { FoeMixin } from './keep/foes.js';
 import './keepsolo/strings.js';
 import './keepsolo/strings2.js';
@@ -624,6 +624,7 @@ export class KeepSoloScene extends MiniGame {
     if (active && this.flowT <= 0) { this.flowT = 0.25; this.updateFlow(); }
     this.updateNests(dt, active);
     this.updateGrumbles(dt, active);
+    this.keepApart();
     this.updateMods(dt, active);
     this.updateShots(dt);
     this.updateZones(dt);
@@ -644,6 +645,19 @@ export class KeepSoloScene extends MiniGame {
       this.stairsArrow.visible = !this.fog;
       this.stairsArrow.position.y = 3 + Math.sin(this.time * 3) * 0.3;
       this.stairsArrow.rotation.y += dt * 1.5;
+    }
+  }
+
+  /** Grumbles stand next to the hero, never on top of it (they used to walk right into it: hard to aim at). */
+  keepApart() {
+    const e = this.hero;
+    if (e.state !== 'walk') return;
+    for (const g of this.grumbles) {
+      if (g.dead || g.state === 'bubble' || g.state === 'dash') continue;
+      const dx = g.x - e.x, dz = g.z - e.z, d = Math.hypot(dx, dz), min = (PR + GR * g.size) * 0.85;
+      if (d >= min) continue;
+      const k = d > 0.001 ? (min - d) / d : 0;
+      this.moveCircle(g, d > 0.001 ? dx * k : min, d > 0.001 ? dz * k : 0, GR * g.size);
     }
   }
 
@@ -673,8 +687,9 @@ export class KeepSoloScene extends MiniGame {
     } else {
       // the stick / keys walk directly; without them a mouse click goal steers (control.js)
       let mx = inp.x, mz = -inp.y;
-      if (Math.hypot(mx, mz) > 0.25) this.ctlCancel();
-      else if (active) { const v = this.steer(dt); if (v) { mx = v.x; mz = v.z; } }
+      const keys = Math.hypot(mx, mz) > 0.25;
+      if (keys) this.ctlKeys(); // (a clicked grumble stays the target while you walk with the keys)
+      if (active) { const v = this.steer(dt, keys); if (v && !keys) { mx = v.x; mz = v.z; } }
       const len = Math.hypot(mx, mz);
       if (len > 1) { mx /= len; mz /= len; }
       if (len > 0.25) { const l = Math.hypot(mx, mz); e.fx = mx / l; e.fz = mz / l; }
@@ -688,7 +703,12 @@ export class KeepSoloScene extends MiniGame {
       if (active) {
         if (inp.bPressed && this.cls !== 'knight' && this.kind === 'dungeon') this.bMove(e, inp);
         if (this.kind === 'town') { if (inp.aPressed) this.useTown(); }
-        else if (inp.a && e.cdA <= 0 && !e.blocking) this.attack(e);
+        else if (inp.a && e.cdA <= 0 && !e.blocking) {
+          // with a mouse in use, [A] attacks toward the grumble under the pointer (or the pointer itself)
+          const hv = this.mouse?.used && !this.mouse.virtual ? this.hover : null;
+          const p = hv && (hv.kind === 'foe' || hv.kind === 'nest' || hv.kind === 'boss') ? this.aimPoint(hv) : this.mouse?.used && !this.mouse.virtual && this.ground && Math.hypot(this.ground.x - e.x, this.ground.z - e.z) > 0.4 ? this.ground : null;
+          if (p) this.attackAt(p.x, p.z); else this.attack(e);
+        }
       }
     }
     e.moving = moving;

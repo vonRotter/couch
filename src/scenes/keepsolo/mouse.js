@@ -65,6 +65,8 @@ export class Mouse {
     this.virtual = false;
     // the modifier keys held at the moment of the click (they may be let go before the next frame)
     this.clickShift = e.shiftKey; this.clickCtrl = e.ctrlKey || e.metaKey; this.clickAlt = e.altKey;
+    // where the click was: what it is on is picked there (the hand may move on before the next frame)
+    this.clickX = e.clientX; this.clickY = e.clientY;
     if (e.button === 0) { this.left = true; this.leftPressed = true; }
     if (e.button === 2) { this.right = true; this.rightPressed = true; }
   }
@@ -100,7 +102,12 @@ export class Mouse {
 
   /** Where the pointer meets the floor (y = 0), or null. */
   ground(camera, out = new THREE.Vector3()) {
-    _v2.set((this.x / window.innerWidth) * 2 - 1, -(this.y / window.innerHeight) * 2 + 1);
+    return this.groundAt(camera, this.x, this.y, out);
+  }
+
+  /** Where a screen point (CSS pixels) meets the floor, or null. */
+  groundAt(camera, px, py, out = new THREE.Vector3()) {
+    _v2.set((px / window.innerWidth) * 2 - 1, -(py / window.innerHeight) * 2 + 1);
     _ray.setFromCamera(_v2, camera);
     return _ray.ray.intersectPlane(PLANE, out);
   }

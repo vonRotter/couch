@@ -11,7 +11,14 @@ import { itemName, RARITY_TEXT } from './items.js';
 //   left click the floor          walk there (on a path around walls); hold to keep walking toward the pointer
 //   left click a grumble / nest   walk up and attack it; hold to keep attacking
 //   left click an item, chest, locked door, portal, person or shop   walk there and use it
-//   shift + left click            attack in place toward the pointer
+//   shift + left click            attack in place toward the pointer (or the grumble under it)
+//   left click a grumble while walking with the keys: it stays your target, the swing comes when it is in reach
+//   [A] (Space) with the mouse in use: attack toward the grumble under the pointer (or the pointer)
+// The owner's playtest ("I can't seem to hit my enemies") found: the click was picked where the pointer was
+// a frame later (a quick click on a moving grumble missed), the clickable area was a thin column, the keys
+// cancelled a clicked target, [A] ignored the pointer, shots flew at the floor point behind a grumble (not at
+// it, and not where it would be), the knight stopped at the edge of his reach (one knock back and the next
+// swing missed), and grumbles walked right into the hero. All fixed here and in keepsolo.js / hero.js.
 //   mouse wheel                   zoom out a little (never closer than the normal camera)
 // What is under the pointer gets a ring on the floor (red for grumbles, gold for things to use) and
 // grumbles show their name and health bar at the top of the screen. The keyboard / gamepad stick
@@ -43,39 +50,47 @@ export const ControlMixin = {
     this.scene.add(this.clickMark);
   },
 
-  /** Is the pointer over the HUD or a panel (then clicks are not for the world)? */
-  pointerOnUi() {
-    const el = this.mouse.element();
+  /** Is the pointer (or a point) over the HUD or a panel (then clicks are not for the world)? */
+  pointerOnUi(px, py) {
+    const el = px === undefined ? this.mouse.element() : document.elementFromPoint(px, py);
     return !!el?.closest?.('.ks-ui, .ks-panel');
   },
 
   // ---------------------------------------------------------------- what is under the pointer
 
-  pickHover() {
+  pickHover(px = this.mouse.x, py = this.mouse.y) {
     const m = this.mouse;
-    this.ground = m.ground(this.camera, _gp) ? { x: _gp.x, z: _gp.z } : null;
-    if (!m.used || m.virtual || this.moving || this.hero.state !== 'walk' || this.pointerOnUi()) return null;
-    const gp = this.ground;
+    const at = px === m.x && py === m.y;
+    const gHit = m.groundAt(this.camera, px, py, _gp) ? { x: _gp.x, z: _gp.z } : null;
+    if (at) this.ground = gHit;
+    if (!m.used || m.virtual || this.moving || this.hero.state !== 'walk' || this.pointerOnUi(px, py)) return null;
+    const gp = gHit;
     let best = null, bs = Infinity;
     const take = (h, score) => { if (score < bs) { bs = score; best = h; } };
     // Item labels first (like Diablo: the labels sit on top).
     for (const it of this.items) {
       if (it.taken || !it.label || it.label.style.display === 'none' || !it.label.innerHTML) continue;
       const r = it.label.getBoundingClientRect();
-      if (m.x >= r.left - 3 && m.x <= r.right + 3 && m.y >= r.top - 2 && m.y <= r.bottom + 2) take({ kind: 'item', ref: it, x: it.x, z: it.z }, -1);
+      if (px >= r.left - 3 && px <= r.right + 3 && py >= r.top - 2 && py <= r.bottom + 2) take({ kind: 'item', ref: it, x: it.x, z: it.z }, -1);
     }
     if (best) return best;
     // Things standing in the world, tested on the screen (their height counts).
-    const onScreen = (x, z, h, w, kind, ref, score0 = 0) => {
+    // (a grumble's box is generous, like Diablo II's: its whole body and a little around it)
+    const onScreen = (x, z, h, w, kind, ref, score0 = 0, pad = 0.25) => {
       const a = toScreen(this.camera, x, 0, z), b = toScreen(this.camera, x, h, z);
       if (a.behind) return;
       const ht = Math.max(12, a.y - b.y), hw = Math.max(10, ht * w);
-      const dx = Math.abs(m.x - a.x), top = b.y - 6, bot = a.y + ht * 0.25;
-      if (dx > hw || m.y < top || m.y > bot) return;
-      take({ kind, ref, x, z }, score0 + dx / hw + Math.abs(m.y - (a.y + b.y) / 2) / ht);
+      const dx = Math.abs(px - a.x), top = b.y - 6 - ht * pad * 0.5, bot = a.y + ht * pad;
+      if (dx > hw || py < top || py > bot) return;
+      take({ kind, ref, x, z }, score0 + dx / hw + Math.abs(py - (a.y + b.y) / 2) / ht);
     };
     if (this.kind === 'dungeon') {
-      for (const g of this.grumbles) if (!g.dead) onScreen(g.x, g.z, 1.25 * g.size + g.y, 0.55, 'foe', g);
+      for (const g of this.grumbles) {
+        if (g.dead) continue;
+        onScreen(g.x, g.z, 1.25 * g.size + g.y, 0.8, 'foe', g, 0, 0.45);
+        // the floor right around it counts too
+        if (gp && Math.hypot(g.x - gp.x, g.z - gp.z) < GR * g.size + 0.6) take({ kind: 'foe', ref: g, x: g.x, z: g.z }, 0.6 + Math.hypot(g.x - gp.x, g.z - gp.z));
+      }
       for (const n of this.nests) if (!n.done) onScreen(n.x, n.z, 1.5, 0.7, 'nest', n, 0.3);
       const b = this.boss;
       if (b && !b.gone && b.state !== 'asleep' && b.y < 2.5) onScreen(b.x, b.z, b.r * 2.4, 0.5, 'boss', b, 0.2);
@@ -135,9 +150,11 @@ export const ControlMixin = {
     if (e.state !== 'walk' || this.moving) { ctl.goal = null; return; }
     const gp = this.ground;
     if (m.leftPressed && !m.virtual && !this.pointerOnUi()) {
-      const h = this.hover;
+      // what the click was on: picked where the button went down (not where the pointer is a frame later)
+      const cx = m.clickX ?? m.x, cy = m.clickY ?? m.y;
+      const h = cx === m.x && cy === m.y ? this.hover : this.pickHover(cx, cy);
       ctl.path = null; ctl.pathT = 0; ctl.stuckT = 0; ctl.holdMove = false;
-      if ((m.shift || m.clickShift) && this.kind === 'dungeon') ctl.goal = { kind: 'inplace' };
+      if ((m.shift || m.clickShift) && this.kind === 'dungeon') ctl.goal = { kind: 'inplace', h: h && FOE_KINDS.has(h.kind) ? h : null };
       else if (h && FOE_KINDS.has(h.kind)) ctl.goal = { kind: 'attack', h };
       else if (h) ctl.goal = { kind: 'use', h };
       else if (gp) {
@@ -165,10 +182,33 @@ export const ControlMixin = {
     this.ctl.holdMove = false;
   },
 
+  /** The keys walk: a walk or use goal ends, but a grumble you clicked stays your target (the swing comes in reach). */
+  ctlKeys() {
+    const g = this.ctl.goal;
+    if (g && (g.kind === 'attack' || g.kind === 'inplace')) return;
+    this.ctlCancel();
+  },
+
+  /**
+   * Where to aim at a target: its middle, and for shots where it will be when the shot gets there (Diablo's
+   * missiles fly at the monster; ours lead a walking grumble a little).
+   */
+  aimPoint(h) {
+    const r = h.ref, e = this.hero;
+    let x = r.x, z = r.z;
+    if (this.cls !== 'knight' && h.kind === 'foe') {
+      const sp = this.cls === 'archer' ? 19 : 11;
+      const tt = Math.hypot(x - e.x, z - e.z) / sp;
+      x += ((r.vx || 0) + (r.kx || 0) * 0.3) * tt; z += ((r.vz || 0) + (r.kz || 0) * 0.3) * tt;
+    }
+    return { x, z };
+  },
+
   /** How close the hero must be to hit `h` with the basic attack, and does it need a clear line? */
   attackReach(h) {
     const r = h.kind === 'foe' ? GR * h.ref.size : h.kind === 'nest' ? h.ref.r : h.ref.r || 1;
-    if (this.cls === 'knight') return { reach: 2.1 + r, line: false };
+    // (the knight steps well into his swing, so a knocked-back grumble is still in it for the next one)
+    if (this.cls === 'knight') return { reach: 1.6 + r, line: false };
     return { reach: (this.cls === 'archer' ? 11 : 9) + r * 0.5, line: true };
   },
 
@@ -193,13 +233,15 @@ export const ControlMixin = {
    * Walk toward the click goal and act when there. Returns the wanted move direction (x, z) with
    * length 0..1, or null when there is no goal (then the stick decides).
    */
-  steer(dt) {
+  steer(dt, keys = false) {
     const ctl = this.ctl, g = ctl.goal, e = this.hero, m = this.mouse;
     if (!g || e.state !== 'walk') return null;
     const stop = { x: 0, z: 0 };
     let tx, tz, reach = 0.2;
     if (g.kind === 'inplace') {
-      const gp = this.ground;
+      // at the grumble that was clicked (while it lives), else at the grumble under the pointer, else the pointer
+      const hv = g.h && this.targetAlive(g.h) ? g.h : this.hover && FOE_KINDS.has(this.hover.kind) ? this.hover : null;
+      const gp = hv ? this.aimPoint(hv) : this.ground;
       g.t = (g.t || 0) + dt;
       if (gp && e.cdA <= 0 && !e.blocking) { this.attackAt(gp.x, gp.z); g.hits = (g.hits || 0) + 1; }
       // a click attacks once (even if the last swing is still recharging); holding keeps going
@@ -219,9 +261,13 @@ export const ControlMixin = {
       tx = h.ref.x; tz = h.ref.z;
       const { reach: R, line } = this.attackReach(h);
       const d = Math.hypot(tx - e.x, tz - e.z);
-      if (d <= R && (!line || this.clearLine(e.x, e.z, tx, tz))) {
+      // walking with the keys: no steering, but the swing comes as soon as it is in reach (a little more)
+      const inReach = d <= R + (keys && this.cls === 'knight' ? 0.7 : 0) && (!line || this.clearLine(e.x, e.z, tx, tz));
+      if (keys && !inReach) return null;
+      if (inReach) {
         if (e.cdA <= 0 && !e.blocking) {
-          this.attackAt(tx, tz);
+          const p = this.aimPoint(h);
+          this.attackAt(p.x, p.z);
           g.hits = (g.hits || 0) + 1;
         } else { const k = d || 1; e.fx = (tx - e.x) / k; e.fz = (tz - e.z) / k; }
         if (!m.left && g.hits) ctl.goal = null; // one click, one attack; hold to keep going
