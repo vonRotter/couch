@@ -4,7 +4,7 @@ import { Character } from '../core/character.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeBush, makeStar, seeded } from '../core/world.js';
 import { moveBody, platformerControl, approach } from '../core/physics2d.js';
-import { t } from '../core/i18n.js';
+import { t, tFor } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { TileMap, ROWS, EMPTY, DIRT, STONE, CASTLE, WOOD, DOOR, LADDER, PAD, BEDROCK, WATER, GATE, DIG_TIME, KNIGHT_HP, REFUND, STICKY } from './castle/tilemap.js';
 import { LEVELS, parseLevel, troopersNeeded } from './castle/levels.js';
@@ -44,7 +44,7 @@ const PIECES = [
   { key: 'pad', tile: PAD, cost: 2 },
 ];
 const CLASSES = ['builder', 'knight', 'archer'];
-const GLYPH = { builder: '⚒', knight: '⚔', archer: '➶' };
+const GLYPH = { builder: '⚒', knight: '⚔', archer: '➶', hero: '⚔⚒' };
 const NO_INPUT = { x: 0, y: 0, a: false, b: false, c: false, aPressed: false, bPressed: false, cPressed: false, stepX: 0, stepY: 0 };
 const clamp = THREE.MathUtils.clamp;
 const clock = (s) => {
@@ -253,7 +253,12 @@ export class CastleCampaignScene extends MiniGame {
       this.picker = null;
       this.intro(this.levelTitle(), this.goalLine());
     };
-    if (this.opts.classes) {
+    if (this.heroes.length === 1) {
+      // alone: no class to pick, you are the Knight-Builder (fight and build at the same time)
+      const keep = this.opts.classes?.[this.heroes[0].p.deviceId];
+      this.setClass(this.heroes[0], keep === 'archer' ? 'archer' : 'hero');
+      this.later(0.05, () => { this.picker = null; this.intro(this.levelTitle(), `${this.goalLine()} · ${t('kc.heroHow')}`); });
+    } else if (this.opts.classes) {
       for (const e of this.heroes) if (this.opts.classes[e.p.deviceId]) this.setClass(e, this.opts.classes[e.p.deviceId]);
       this.later(0.05, go); // after setScene, so intro() sees this as the current scene
     } else {
@@ -446,8 +451,9 @@ export class CastleCampaignScene extends MiniGame {
   setClass(e, cls) {
     e.cls = cls;
     const G2 = e.gear;
-    G2.sword.visible = G2.shield.visible = cls === 'knight';
-    G2.hammer.visible = cls === 'builder';
+    G2.sword.visible = cls === 'knight' || cls === 'hero';
+    G2.shield.visible = cls === 'knight';
+    G2.hammer.visible = cls === 'builder' || cls === 'hero';
     G2.bow.visible = G2.quiver.visible = cls === 'archer';
     e.holdMode = null;
     e.charging = e.drawing = e.shield = false;
@@ -601,7 +607,7 @@ export class CastleCampaignScene extends MiniGame {
   breakTile(c, r, by = null) {
     const m = this.map;
     const ty = m.at(c, r);
-    if (by && by.cls === 'builder' && REFUND[ty] && m.ownerAt(c, r) === 0) by.wood = Math.min(WOOD_MAX, by.wood + REFUND[ty]);
+    if (by && (by.cls === 'builder' || by.cls === 'hero') && REFUND[ty] && m.ownerAt(c, r) === 0) by.wood = Math.min(WOOD_MAX, by.wood + REFUND[ty]);
     const col = ty === WOOD || ty === DOOR || ty === LADDER ? 0xe2a96b : ty === PAD ? 0xff7eb6 : ty === CASTLE ? 0xc9c0dd : ty === STONE ? 0xaaa4c6 : 0xd99a62;
     this.puffs.burst(new THREE.Vector3(c + 0.5, r + 0.5, 0.8), col, { count: 8, size: 0.35, life: 0.5 });
     m.set(c, r, EMPTY, -1);
@@ -708,6 +714,19 @@ export class CastleCampaignScene extends MiniGame {
       this.swing(e, e.charge >= CHARGE_FULL);
       e.charge = 0;
     }
+  }
+
+  /**
+   * Playing alone: the Knight-Builder fights and builds without a trip to a tent. [B]: the sword (hold for a big
+   * slash, smashes grumble doors); [C]: build where you aim (hold to keep building, or on a block to dig; it
+   * bonks a grumble right in front); stick down + [B]: the next piece. A tent still turns you into the archer.
+   */
+  updateKnightBuilder(e, inp, dt) {
+    const down = inp.y < -0.5;
+    const sword = { ...inp, c: false, cPressed: false };
+    if (down && !e.charging) { sword.b = false; sword.bPressed = false; }
+    this.updateKnight(e, sword, !!sword.b, !!sword.bPressed, dt);
+    this.updateBuilder(e, { ...inp, cPressed: down && !!inp.bPressed && !e.charging }, !!inp.c, !!inp.cPressed, dt);
   }
 
   // ---------- archers ----------
@@ -988,7 +1007,8 @@ export class CastleCampaignScene extends MiniGame {
     if (inp.stepY !== -1 || !e.body.grounded) return;
     const tn = this.tents.find((x) => Math.abs(e.body.x - x.x) < 1.3 && Math.abs(e.body.y - x.y) < 1.2);
     if (!tn) return;
-    const next = CLASSES[(CLASSES.indexOf(e.cls) + 1) % 3];
+    // (alone: the Knight-Builder and the archer; together: builder, knight, archer)
+    const next = this.heroes.length === 1 ? (e.cls === 'hero' ? 'archer' : 'hero') : CLASSES[(CLASSES.indexOf(e.cls) + 1) % 3];
     this.setClass(e, next);
     this.floater(`${GLYPH[next]} ${t(`castle.cls.${next}`)}`, new THREE.Vector3(e.body.x, e.body.y + 2.2, 0.5), e.css, 1.2);
     this.puffs.burst(new THREE.Vector3(e.body.x, e.body.y + 0.8, 0.5), e.p.color, { count: 10, size: 0.35 });
@@ -1016,11 +1036,11 @@ export class CastleCampaignScene extends MiniGame {
     if (playing) this.tentSwap(e, inp);
 
     e.refill += dt;
-    if (act === 'builder' && e.refill > 1) { e.refill = 0; if (e.wood < WOOD_MAX) e.wood++; }
+    if ((act === 'builder' || act === 'hero') && e.refill > 1) { e.refill = 0; if (e.wood < WOOD_MAX) e.wood++; }
     if (act === 'archer' && e.refill > 2) { e.refill = 0; if (e.arrows < ARROWS_START) e.arrows++; }
 
     if (e.wobble > 0) inp = { ...inp, x: inp.x * 0.3 };
-    const slow = (act === 'knight' && (e.shield || e.charging)) || (act === 'archer' && e.drawing);
+    const slow = ((act === 'knight' || act === 'hero') && (e.shield || e.charging)) || (act === 'archer' && e.drawing);
     const P = slow ? PHYS_SLOW : PHYS;
 
     if (e.zip) {
@@ -1084,6 +1104,7 @@ export class CastleCampaignScene extends MiniGame {
 
     if (playing) {
       if (act === 'builder') this.updateBuilder(e, inp, bHeld, bPress, dt);
+      else if (act === 'hero') this.updateKnightBuilder(e, inp, dt);
       else if (act === 'knight') this.updateKnight(e, inp, bHeld, bPress, dt);
       else if (act === 'archer') this.updateArcher(e, inp, bHeld, bPress, dt);
     } else {
@@ -1299,7 +1320,7 @@ export class CastleCampaignScene extends MiniGame {
   }
 
   countText(e) {
-    if (e.cls === 'builder') return `${GLYPH.builder} ${e.wood}`;
+    if (e.cls === 'builder' || e.cls === 'hero') return `${GLYPH[e.cls]} ${e.wood}`;
     if (e.cls === 'archer') return `${GLYPH.archer} ${e.arrows}`;
     return GLYPH.knight;
   }
@@ -1307,7 +1328,9 @@ export class CastleCampaignScene extends MiniGame {
   updateLabels() {
     const show = this.state === 'play';
     for (const e of this.heroes) {
-      const html = show && e.state === 'play' ? `<span style="color:${e.css}">${this.countText(e)}</span>` : '';
+      // the Knight-Builder's keys under the tag for the first moments of a level
+      const keys = e.cls === 'hero' && this.level.time - this.timeLeft < 20 ? `<div style="font-size:.8em;margin-top:2px;padding:0 7px;border-radius:9px;background:rgba(255,255,255,.88);color:#2b2340;white-space:nowrap">${esc(tFor(e.p, 'castle.hint.hero'))}</div>` : '';
+      const html = show && e.state === 'play' ? `<span style="color:${e.css}">${this.countText(e)}${keys}</span>` : '';
       if (html !== e.labelHtml) { e.label.innerHTML = html; e.labelHtml = html; }
       if (html) this.game.ui.place(e.label, new THREE.Vector3(e.body.x, e.body.y + 2.05, 0.3), this.camera);
       else e.label.style.display = 'none';
@@ -1316,7 +1339,7 @@ export class CastleCampaignScene extends MiniGame {
 
   chip(e) {
     let txt = esc(t(`castle.cls.${e.cls}`));
-    if (e.cls === 'builder') txt += ` · ${esc(t('castle.wood', { n: e.wood }))}`;
+    if (e.cls === 'builder' || e.cls === 'hero') txt += ` · ${esc(t('castle.wood', { n: e.wood }))}`;
     else if (e.cls === 'archer') txt += ` · ${esc(t('castle.arrows', { n: e.arrows }))}`;
     return `${GLYPH[e.cls]} ${txt}`;
   }

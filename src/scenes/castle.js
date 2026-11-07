@@ -18,6 +18,11 @@ const STRINGS = {
     'game.castle': 'Knights & Builders',
     'castle.hint.build': '[B] build · [C] next piece',
     'castle.hint.knight': '[B] sword · [C] shield',
+    'castle.hint.hero': '[B] sword · [C] build · down + [B] next piece',
+    'castle.cls.hero': 'Knight-Builder',
+    'castle.desc.hero': 'Playing alone you do both: [B]: foam sword, hold for a big slash · [C]: build where you aim, hold [C] on a block to take it down · stick down + [B]: next piece',
+    'castle.introSolo': "Grab the other team's flag and carry it to yours! You fight AND build: [A]: jump and climb · [B]: sword (hold for a big slash) · [C]: build where you aim · stick down + [B]: next piece",
+    'castle.buildPillSolo': 'Build: [C] · next piece: down + [B]',
     'castle.hint.archer': '[B] shoot · [C] rope arrow',
     'castle.buildPill': 'Build: [B] · next piece: [C]',
     'castle.modeVote': 'How do you want to play?', 'castle.mode.versus': 'Versus: capture the flag', 'castle.mode.campaign': 'Campaign: save the Golden Bean',
@@ -48,6 +53,11 @@ const STRINGS = {
     'game.castle': 'Riddere og byggere',
     'castle.hint.build': '[B] bygg · [C] neste brikke',
     'castle.hint.knight': '[B] sverd · [C] skjold',
+    'castle.hint.hero': '[B] sverd · [C] bygg · ned + [B] neste brikke',
+    'castle.cls.hero': 'Ridder-bygger',
+    'castle.desc.hero': 'Når du spiller alene, gjør du begge deler: [B]: skumsverd, hold for et stort slag · [C]: bygg der du sikter, hold [C] på en kloss for å ta den ned · stikka ned + [B]: neste brikke',
+    'castle.introSolo': 'Ta flagget til det andre laget og bær det til deres eget! Du sloss OG bygger: [A]: hopp og klatre · [B]: sverd (hold for et stort slag) · [C]: bygg der du sikter · stikka ned + [B]: neste brikke',
+    'castle.buildPillSolo': 'Bygg: [C] · neste brikke: ned + [B]',
     'castle.hint.archer': '[B] skyt · [C] taupil',
     'castle.buildPill': 'Bygg: [B] · neste brikke: [C]',
     'castle.modeVote': 'Hvordan vil dere spille?', 'castle.mode.versus': 'Mot hverandre: ta flagget', 'castle.mode.campaign': 'Kampanje: redd Gullbønna',
@@ -137,7 +147,7 @@ const PIECES = [
 ];
 const CLASSES = ['builder', 'knight', 'archer'];
 const BLADE = [0xffe47a, 0x8fd8ff]; // foam sword colors per team
-const GLYPH = { builder: '⚒', knight: '⚔', archer: '➶' };
+const GLYPH = { builder: '⚒', knight: '⚔', archer: '➶', hero: '⚔⚒' };
 
 const idx = (c, r) => c * ROWS + r;
 const colOf = (x) => Math.floor(x - X0);
@@ -258,7 +268,15 @@ export class CastleScene extends MiniGame {
           for (let i = 0; i < need; i++) this.ents.push(this.makeEnt(null, team, i));
         });
         this.placeEnts();
-        this.picker = new ClassPicker(this, this.ents.filter((e) => !e.bot), () => {
+        const humans = this.ents.filter((e) => !e.bot);
+        // Playing alone: no class to pick, you are the Knight-Builder (fight and build at the same time)
+        if (humans.length === 1) {
+          this.setClass(humans[0], 'hero');
+          this.picker = null;
+          this.intro(t('game.castle'), t('castle.introSolo'));
+          return;
+        }
+        this.picker = new ClassPicker(this, humans, () => {
           this.picker = null;
           this.intro(t('game.castle'), t('castle.intro'));
         });
@@ -787,8 +805,9 @@ export class CastleScene extends MiniGame {
 
   showGear(e, cls) {
     const G2 = e.gear;
-    G2.sword.visible = G2.shield.visible = cls === 'knight';
-    G2.hammer.visible = cls === 'builder';
+    G2.sword.visible = cls === 'knight' || cls === 'hero';
+    G2.shield.visible = cls === 'knight';
+    G2.hammer.visible = cls === 'builder' || cls === 'hero';
     G2.bow.visible = G2.quiver.visible = cls === 'archer';
     G2.shown = cls;
   }
@@ -911,7 +930,7 @@ export class CastleScene extends MiniGame {
   /** Take a cell down; builders get the wood of their pieces back. */
   breakTile(c, r, by = null) {
     const i = idx(c, r), ty = this.tile[i];
-    if (by && !by.bot && REFUND[ty] && (by.cls === 'builder' || this.phase === 'build')) by.wood = Math.min(WOOD_MAX, by.wood + REFUND[ty]);
+    if (by && !by.bot && REFUND[ty] && (by.cls === 'builder' || by.cls === 'hero' || this.phase === 'build')) by.wood = Math.min(WOOD_MAX, by.wood + REFUND[ty]);
     const col = ty === WOOD || ty === DOOR || ty === LADDER ? 0xe2a96b : ty === PAD ? 0xff7eb6 : TILE_COLOR[ty] || 0xffffff;
     this.puffs.burst(new THREE.Vector3(cellX(c) + 0.5, r + 0.5, 0.8), col, { count: 8, size: 0.35, life: 0.5 });
     this.setTile(c, r, EMPTY, -1);
@@ -1005,6 +1024,19 @@ export class CastleScene extends MiniGame {
       this.swing(e, e.charge >= CHARGE_FULL);
       e.charge = 0;
     }
+  }
+
+  /**
+   * Playing alone: the Knight-Builder fights and builds without changing class. [B]: the knight's sword (hold
+   * for a big slash); [C]: the builder's build where you aim (hold [C] to keep building, or on a block to take
+   * it down); stick down + [B]: the next piece. (No shield: [C] is the hammer.)
+   */
+  updateKnightBuilder(e, inp, dt) {
+    const down = inp.y < -0.5;
+    const sword = { ...inp, c: false, cPressed: false };
+    if (down && !e.charging) { sword.b = false; sword.bPressed = false; }
+    this.updateKnight(e, sword, !!sword.b, !!sword.bPressed, dt);
+    this.updateBuilder(e, { ...inp, cPressed: down && !!inp.bPressed && !e.charging }, !!inp.c, !!inp.cPressed, dt);
   }
 
   // ---------- archers ----------
@@ -1453,18 +1485,18 @@ export class CastleScene extends MiniGame {
     e.cursor = null;
     if (e.state === 'bubble') { this.updateBubble(e, dt); return; }
 
-    const act = this.phase === 'build' && this.state === 'play' && !e.bot ? 'builder' : e.cls;
+    const act = this.phase === 'build' && this.state === 'play' && !e.bot && e.cls !== 'hero' ? 'builder' : e.cls;
     let inp = !playing ? NO_INPUT : e.bot ? this.botInput(e, dt) : (this.input(e.p) || NO_INPUT);
     if (e.state !== 'play') return; // the bot gave up and is floating home
     const bHeld = !!inp.b, bPress = !!inp.bPressed;
 
     // Wood and arrows slowly refill.
     e.refill += dt;
-    if (act === 'builder' && e.refill > (this.phase === 'build' ? 0.5 : 2)) { e.refill = 0; if (e.wood < WOOD_MAX) e.wood++; }
+    if ((act === 'builder' || act === 'hero') && e.refill > (this.phase === 'build' ? 0.5 : 2)) { e.refill = 0; if (e.wood < WOOD_MAX) e.wood++; }
     if (act === 'archer' && e.refill > 2.5) { e.refill = 0; if (e.arrows < ARROWS_START) e.arrows++; }
 
     if (e.wobble > 0) inp = { ...inp, x: inp.x * 0.3 };
-    const slow = (act === 'knight' && (e.shield || e.charging)) || (act === 'archer' && e.drawing);
+    const slow = ((act === 'knight' || act === 'hero') && (e.shield || e.charging)) || (act === 'archer' && e.drawing);
     const P = e.bot ? PHYS_BOT : slow ? PHYS_SLOW : e.carrying ? PHYS_CARRY : PHYS;
 
     if (e.zip) {
@@ -1522,6 +1554,7 @@ export class CastleScene extends MiniGame {
 
     if (playing) {
       if (act === 'builder') this.updateBuilder(e, inp, bHeld, bPress, dt);
+      else if (act === 'hero') this.updateKnightBuilder(e, inp, dt);
       else if (act === 'knight' && !e.bot) this.updateKnight(e, inp, bHeld, bPress, dt);
       else if (act === 'knight' && e.bot) e.shield = !!inp.c;
       else if (act === 'archer') this.updateArcher(e, inp, bHeld, bPress, dt);
@@ -1655,7 +1688,7 @@ export class CastleScene extends MiniGame {
 
   countText(e) {
     const act = e.act || e.cls;
-    if (act === 'builder') return `${GLYPH.builder} ${e.wood}`;
+    if (act === 'builder' || act === 'hero') return `${GLYPH[act]} ${e.wood}`;
     if (act === 'archer') return `${GLYPH.archer} ${e.arrows}`;
     return GLYPH.knight;
   }
@@ -1663,10 +1696,10 @@ export class CastleScene extends MiniGame {
   /** Small key reminder under a player's tag: until builders have built and switched pieces, early in battle for the rest. */
   hintText(e) {
     const act = e.act || e.cls;
-    if (act === 'builder') {
+    if (act === 'builder' || act === 'hero') {
       const piece = esc(t(`castle.piece.${PIECES[e.piece].key}`));
-      const learning = e.built < 3 || !e.switched || this.phase === 'build';
-      return `<div style="${HINT_CSS}"><b>${piece}</b>${learning ? ` · ${esc(tFor(this.game, e.p, 'castle.hint.build'))}` : ''}</div>`;
+      const learning = e.built < 3 || !e.switched || this.phase === 'build' || (act === 'hero' && this.battleT < 15);
+      return `<div style="${HINT_CSS}"><b>${piece}</b>${learning ? ` · ${esc(tFor(this.game, e.p, act === 'hero' ? 'castle.hint.hero' : 'castle.hint.build'))}` : ''}</div>`;
     }
     if (this.phase === 'battle' && this.battleT < 15) return `<div style="${HINT_CSS}">${esc(tFor(this.game, e.p, `castle.hint.${act}`))}</div>`;
     return '';
@@ -1686,7 +1719,7 @@ export class CastleScene extends MiniGame {
   chip(e) {
     const act = e.act || e.cls;
     let txt = esc(t(`castle.cls.${e.cls}`));
-    if (act === 'builder') txt += ` · ${esc(t('castle.wood', { n: e.wood }))}`;
+    if (act === 'builder' || act === 'hero') txt += ` · ${esc(t('castle.wood', { n: e.wood }))}`;
     else if (act === 'archer') txt += ` · ${esc(t('castle.arrows', { n: e.arrows }))}`;
     return `<span style="color:${TEAM_CSS[e.team]}">●</span> ${GLYPH[e.cls]} ${txt}`;
   }
@@ -1764,7 +1797,7 @@ export class CastleScene extends MiniGame {
     }
     if (this.state !== 'intro') {
       const phase = this.phase === 'build' ? `${t('castle.build')} ${clock(this.buildLeft)}` : `${t('castle.battle')} ${clock(this.timeLeft)}`;
-      const help = this.phase === 'build' ? `<div class="pill" style="font-weight:700;font-size:.9em">${GLYPH.builder} ${esc(t('castle.buildPill'))}</div>` : '';
+      const help = this.phase === 'build' ? `<div class="pill" style="font-weight:700;font-size:.9em">${GLYPH.builder} ${esc(t(this.ents.some((e) => e.cls === 'hero') ? 'castle.buildPillSolo' : 'castle.buildPill'))}</div>` : '';
       this.game.ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div><div class="pill"><b>${phase}</b></div>${help}`);
     }
     this.game.ui.bar(this.players, (p) => {
