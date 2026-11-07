@@ -125,16 +125,17 @@ lots of mana; Magic). It plays with mouse and keyboard like Diablo (the gamepad 
 | Mouse and keyboard | |
 |---|---|
 | Left click the floor (hold to keep walking) | walk there, on a path around walls |
-| Left click a grumble, nest or boss (hold to keep going) | walk up and attack it |
+| Left click a grumble, nest or boss (hold to keep going) | walk up and attack it; held, it stays your target even when the pointer slides off it (the whole grumble and a little around it is clickable) |
 | Left click an item name, chest, locked door, portal, person or shop | walk there and use it |
-| Shift + left click | attack in place toward the pointer |
-| Right click | the skill on the right button, cast at the pointer |
+| Shift + left click | attack in place toward the pointer (at the grumble under it) |
+| Right click | the skill on the right button, cast at the pointer (at the grumble under it; shots lead a walking grumble) |
 | 1 2 3 4 | the four hotbar skills, cast at the pointer |
+| Walking with the keys and clicking a grumble | it stays your target: the attack comes as soon as it is in reach |
 | 5 6 7 8 | drink / read from the belt column (a belt worn gives a second row) |
 | Alt (hold) | names of everything on the floor (rare and better always show) |
 | I / C / T | bag / hero page (stat points) / skill tree; Esc closes |
 | Mouse wheel | zoom out a little (never closer than the normal view) |
-| The keyboard player's own keys (WASD, Space, E, Q) | still walk, attack, class move and skill like the gamepad |
+| The keyboard player's own keys (WASD, Space, E, Q) | still walk, attack, class move and skill like the gamepad; with the mouse in use, Space attacks toward the grumble under the pointer |
 
 | Gamepad | |
 |---|---|
@@ -355,6 +356,10 @@ suction-cup arrows, C shoots a rope arrow to climb). The first 45 seconds are a 
 magic wall. Then grab the other team's flag and carry it to yours. Foam hits only push and wobble;
 three hits (or one big slash) floats you home in a bubble for 3 seconds. Helper bots even out the
 teams. A builder sees a preview of the piece in their color where it will go; name tags show each player's own keys until they get the hang of it.
+**Playing alone** (one player and bots) there is no class to pick: you are the **Knight-Builder** and fight
+and build at the same time: B swings the foam sword (hold for a big slash), C builds where you aim (hold C to
+keep building, or on a block to take it down), stick down + B picks the next piece (no shield). With two or
+more players the classes stay as above.
 
 **Knights & Builders: The Golden Bean** (co-op campaign; vote Campaign on the Knights & Builders pad).
 All players on one team, each with a class. Bean troopers march toward the Golden Bean Princess on
@@ -365,6 +370,8 @@ level map, each introducing something new: Bridge Meadow, Ladder Cliffs, The Gat
 Towers, Busy Builders, The Grand Siege and Castle Grumblegrump, where the princess waits. Up to 3
 stars per level (goal, every trooper home, within par time); progress is saved. Bonked grumbles
 float home and, after a few times, turn friendly; in the end everyone goes to the princess's party.
+Alone you are the Knight-Builder here too (B sword, C build, stick down + B next piece; no class pick, the
+sword smashes grumble doors and the hammer still bonks); a tent turns you into the archer and back.
 
 **Pillow Keep** (co-op dungeon crawl on the shared island, Gauntlet and Diablo style, five random
 floors; the solo island's keep tower starts Pillow Keep Solo instead). Everyone picks
@@ -500,7 +507,8 @@ night match yours and crops grow while you are away.
   Zip-Zap from spare rocket parts and gives it to you, then Hazel gives seeds and her farming tutorial
   teaches it (zap the soil, plant, zap the seeds with water, harvest, ship). It works by what it points
   at, with [B]; a small icon floats over the target, every action has its own beam color and sound, the
-  tip glows in that color and the gadget hums softly in the bean's hand:
+  tip glows in that color and the gadget hums softly in the bean's hand (a slim wand about half the bean's
+  height):
 
   | Target | Action | Needs |
   | --- | --- | --- |
@@ -516,8 +524,8 @@ night match yours and crops grow while you are away.
   Things to break, cut or chop look different from the scenery: ore rocks are round warm sandstone
   chunks with dark cracks and glowing colored ore gems (the scenery rocks are flat grey ones), big
   boulders are purple with big crystals, and the rockfall has the same cracks and gems. While you hold
-  the Zip-Zap, everything it can break, cut or chop within about 11 m glows softly (a colored ring and
-  dome: pink rocks, green grass, yellow trees). There are 12 ore rocks, 14 tall grass spots, 3 big
+  the Zip-Zap, everything it can break, cut or chop within about 11 m glows faintly (a soft colored ring
+  and dome at a quarter of the first version's strength: pink rocks, green grass, yellow trees). There are 12 ore rocks, 14 tall grass spots, 3 big
   boulders and 8 choppable trees on the main island, and 3 ore rocks, 3 tall grass spots and a big
   boulder on Shell Isle; branches still give wood too. **Pip's gadget bench** stands by the path below
   her rocket: Fast Zap (150 coins, 5 wood, 5 stone: fewer zaps for rocks, boulders, trees and the
@@ -677,20 +685,30 @@ night match yours and crops grow while you are away.
   it (or falling off a hop trail) is a little splash and puts you back where that hop started. Forgiving: a
   jump still works a moment after walking off an edge, and a press just before landing jumps again. Up on a
   roof or a ledge only what is up there answers [B] (a chest, a bell), not the doors and villagers below.
+  **No invisible walls:** whatever stops the bean is drawn (the cliffs have a rocky face and stop you because
+  they are steep; benches, boards and posts block exactly where they stand; water edges; the boulders at the
+  plunge pool and the spring); the cliff tops are open land once you are up there (by the hidden steps behind
+  the waterfall or the Cliff Climb), bounded by the sea, the upper river and the spring's boulders. **Never
+  stuck:** gaps between props are either a bean wide or closed, and if the bean ever ends up wedged somewhere
+  anyway, pushing the stick for a moment pops it out to the nearest free spot. **See-through:** tall things
+  between the camera and the bean (a balloon, a house, a tree, the lighthouse, the waterfall) thin out around
+  the bean while they hide it. Nothing that spawns (a visitor's balloon, the merchant's cart, a dig spot, a leaf
+  pile) lands on a door, a path, a trail or a thing you use (`spotClear()` in `map.js`).
   - **Stepping stones:** across the river south of the bridge (they appear once the old bridge is fixed, as a
     shortcut to the west bank), and across the new pond south of the square (stones and lily
     pads).
   - **Hidden areas,** each with a treasure chest (the first find has a yard decoration, coins and seeds; the
-    chest is saved as found). **The secret grove** behind the waterfall: hop over the plunge pool, through the
-    falling water and up the wet rocks of the gorge to a glade with glowing mushrooms on the cliff top (walk off
-    its edge to get down). **Gull Rock** off the beach (east of the dock): small rocks in the sea up to a ledge,
+    chest is saved as found). **The secret grove** behind the waterfall: the upper river runs from a spring of
+    boulders on the cliff top, arcs over the lip and falls into the plunge pool; hop over the pool, through the
+    falling water into the slot behind it, up the wet rocks in there and out onto the cliff top, to a glade with
+    glowing mushrooms (walk off the cliff edge to get down). **Gull Rock** off the beach (east of the dock): small rocks in the sea up to a ledge,
     the precise one. **The game hall roof:** a stair of crates by the east wall (Pip's lost toolbox, found
     once). **The hollow tree** between the barn and the café: a root, a mushroom shelf and a branch up into the
     hollow. **The tiny islet** west of the dock: stepping stones out into the sea, a palm and a chest. The
     grove, Gull Rock, the hollow tree and the islet chests fill up again every Monday (coins and seeds of the
     season); friends drop hints in their chats about spots you have not found.
   - **Hop trails with a timer:** the **Stump Hop** (easy, the meadow east of the launch pad), the **Barrel
-    Run** (crates, barrels and a wobbly plank by the dock) and the **Cliff Climb** (tricky: rock by rock up
+    Run** (crates, barrels and a wobbly plank by the dock; its start flag stands beside the beach road) and the **Cliff Climb** (tricky: rock by rock up
     the cliff north of kite hill to the **lookout** deck). [B] at the start sign: 3, 2, 1, go; land on the
     last top to ring the bell. Best times are saved; falling off puts you back on the top you jumped from
     while the clock runs on. **Pip races you on the Stump Hop and Grumbleton on the Barrel Run** (when they are
@@ -700,17 +718,24 @@ night match yours and crops grow while you are away.
   shower** at night (20-24, not on rainy days): star bits fall near you, catch them, two at once if you
   jump and catch one in the air; **Marlo the traveling merchant** by the square (9-18) with three odd
   things a day (mystery seeds, a single sock, a golden acorn, moon cheese, a rubber duck pond, a cloud in a
-  jar, a music box, a jar of star bits); a **hot-air balloon** lands east of the square (10-17) with **Skye
-  the explorer**, whose goggles blew somewhere you have to hop to (a little balloon for the yard the first
-  time); a **bottle on the beach** (6-21) with a **treasure map**: the X shows where to dig. `surpriseOn(date)`
+  jar, a music box, a jar of star bits); a **hot-air balloon** lands on the open meadow south-east of the
+  square (10-17) with **Skye the explorer**, whose goggles blew somewhere you have to hop to (a little balloon
+  for the yard the first time); at five Skye climbs in and it lifts off and drifts away (it is never there at
+  night); a **bottle on the beach** (6-21) with a **treasure map**: the X shows where to dig. `surpriseOn(date)`
   in `src/scenes/solo/surprise.js` says which.
 - **Island mini-games:** **skipping stones** at the pile of flat stones on the beach (press [B] when the bar
-  is in the green: up to 7 skips, a record brings coins); **kite flying** at the kite stand on kite hill
+  is in the green: up to 7 skips, a record brings coins; the view follows the stone out over the water, every
+  skip leaves a ripple ring and its number, and the last skip plays in slow motion); **kite flying** at the kite stand on kite hill
   (the stick keeps the kite in the sparkly wind for 30 seconds); **hide-and-seek with Mumble** (he asks when
   you talk to him, once a day from four hearts on: count to five, then find the giggling bush at the meadow within a minute); a **snowball
   fight with Pip** in winter weeks behind two snow forts south of the square ([B] throws, with only a little
   aim help, so lead her; she ducks now and then; jump over her snowballs); **leaf piles** in autumn weeks: jump into one and it bursts, some hide coins, a golden acorn,
   seeds or a striped sock.
+- **Little spots everywhere** (the emptier parts of the island got something too): a picnic with a bench by the
+  pond, a wildflower meadow south-west of the square with a **wild berry bush** ([B]: two wild berries, once a
+  day), a fairy ring of standing stones and mushrooms, a bench with a sea view by Crab Cove, a birdbath by the
+  garage path, a woodpile under the cliffs north-east of the store and a sandcastle on the beach (`SPREAD` in
+  `map.js`).
 - **Villagers play with you:** they **wave** when you jump near them; **Pip plays tag** (from four hearts on she asks once a day; catch her, then
   she chases you; up on a stump she cannot get you); stand still at a view spot (the lookout, the bench on
   kite hill, the bench by the lighthouse, the end of the pier, the islet) **at sunset** (17:30-20:30) or **on a
