@@ -2274,7 +2274,7 @@ export class SoloIslandScene extends BaseScene {
     this.updateCamera(dt);
     // tall things between the camera and the bean turn see-through around it (seethrough.js)
     if (!this.seeThrough) this.seeThrough = new SeeThrough(this.scene, this.game.renderer);
-    if (P) this.seeThrough.update(dt, this.camera, _bean.set(P.x, P.y + (P.jy || 0) + 0.6, P.z), P.y + (P.jy || 0), !this.camView && !this.indoorsView);
+    if (P) this.seeThrough.update(dt, this.camera, _bean.set(P.x, P.y + (P.jy || 0) + 0.6, P.z), P.y + (P.jy || 0), !this.camView);
     this.updateLabels();
     this.updateHud(ia);
   }
