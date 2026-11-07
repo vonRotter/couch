@@ -196,6 +196,7 @@ export class Hops {
       c.rotation.y = id === 'roof' ? 0 : Math.atan2(-0.4, 1);
       this.group.add(c);
       this.chests[id] = { id, g: c, x: sc.chest.x, z: sc.chest.z, y, open: 0 };
+      map.addKeepOut(sc.chest.x, sc.chest.z, 1.4, `chest:${id}`);
     }
   }
 
@@ -209,6 +210,8 @@ export class Hops {
       sign.rotation.y = -0.3;
       this.statics().add(sign);
       this.host.map.circObs(T.sign.x, T.sign.z, 0.3);
+      this.host.map.addKeepOut(T.sign.x, T.sign.z, 1.6, `trail:${id}`);
+      this.host.map.addKeepOut(T.start.x, T.start.z, 1.2, `trail:${id}`);
       const plats = T.path.map((p, i) => this.piece(p, { trail: id, step: i }, i));
       const last = plats[plats.length - 1];
       const bell = makeBellPost(SIGN_COLOR[id]);

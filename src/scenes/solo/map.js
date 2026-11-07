@@ -1113,6 +1113,54 @@ export class IslandMap {
     return { y, plat, water };
   }
 
+  // ---------- spawn spots ----------
+
+  /** Doors and things you use (and where villagers stand): nothing that spawns may land on them. */
+  buildKeepOut() {
+    const K = this.keepOut = [];
+    const add = (x, z, r, why) => K.push({ x, z, r, why });
+    for (const p of this.places) add(p.door.x, p.door.z, 2.0, `door:${p.id}`);
+    for (const [id, h] of Object.entries(HOME_DOORS)) add(h.spot.x, h.spot.z, 1.8, `home:${id}`);
+    add(HOME.x, HOME.z + 2.7, 2.2, 'door:cottage');
+    add(GREENHOUSE.x, GREENHOUSE.z + GREENHOUSE.d / 2 + 0.6, 2.4, 'door:greenhouse');
+    add(MUSEUM.x, MUSEUM.z + 3.9, 2.4, 'door:museum');
+    add(STORE.x, STORE.z + 3.4, 2.4, 'door:store');
+    add(BIN.x, BIN.z, 1.6, 'bin'); add(MAILBOX.x, MAILBOX.z, 1.4, 'mailbox'); add(WELL.x, WELL.z, 1.8, 'well');
+    for (const [id, p] of Object.entries(SPOTS)) add(p.x, p.z, 1.2, `spot:${id}`);
+    add(CRAB_COVE.x, CRAB_COVE.z, 2.5, 'crab cove');
+    add(PIER.x, PIER.z0, 2.0, 'pier');
+  }
+
+  /** Something else you use, added by the module that builds it (trail signs, chests, benches...). */
+  addKeepOut(x, z, r, why) { (this.keepOut || (this.buildKeepOut(), this.keepOut)).push({ x, z, r, why }); }
+
+  /**
+   * Can something of radius r spawn at (x, z) (a visitor's balloon, a cart, a dig spot)? null when it can,
+   * else why not: in the water, on a slope, on a path, in something, or on a door or a thing you use.
+   */
+  spotClear(x, z, r = 1) {
+    if (!this.keepOut) this.buildKeepOut();
+    const h = heightAt(x, z);
+    if (h < -0.3 || inUpperWater(x, z)) return 'water';
+    for (const [dx, dz] of [[r, 0], [-r, 0], [0, r], [0, -r]]) if (Math.abs(heightAt(x + dx, z + dz) - h) > 0.45 * r + 0.1 || heightAt(x + dx, z + dz) < -0.3) return 'slope';
+    if (this.pathDist(x, z) < 1.25 + r) return 'path';
+    if (this.overlap(x, z, r, { bridge: true }, -Infinity) > 0) return 'thing';
+    for (const k of this.keepOut) if (Math.hypot(x - k.x, z - k.z) < k.r + r) return k.why;
+    return null;
+  }
+
+  /** The nearest clear spot to (x, z) (searching outward), or the spot itself if nothing is found. */
+  findSpot(x, z, r = 1) {
+    if (!this.spotClear(x, z, r)) return { x, z };
+    for (let d = 0.5; d < 12; d += 0.5) {
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2, sx = x + Math.cos(a) * d, sz = z + Math.sin(a) * d;
+        if (!this.spotClear(sx, sz, r)) return { x: sx, z: sz };
+      }
+    }
+    return { x, z };
+  }
+
   /** Where a crab or a little critter rests at (x, z): the ground, a deck, a solid top, or the water surface. */
   restY(x, z) {
     const s = this.supportAt(x, z, 99, { bridge: true });

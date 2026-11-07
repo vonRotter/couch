@@ -21,7 +21,7 @@ import { makeBush } from '../../core/world.js';
 const PILE = { x: 25.6, z: 40.2, face: { x: 0.35, z: 1 } }; // skipping stones (throw toward the sea)
 const KITE = { x: 13.4, z: -25.6 }; // the kite stand on kite hill
 const HIDE = [[51.8, -7.6], [53.4, -11.6], [48.6, -13.6], [44.8, -9.4], [51.2, -13.0], [43.2, -12.6]]; // bushes at the meadow
-export const LEAF_PILES = [[-4.2, -13.4], [2.5, -11.6], [16.4, 4.2], [7.6, 14.6], [26.4, 12.0], [-6.2, 16.4], [36.6, -6.2], [30.4, -6.8]];
+export const LEAF_PILES = [[-3.7, -13.4], [2.5, -11.6], [16.4, 4.2], [6.2, 15.2], [26.4, 12.0], [-6.2, 16.4], [36.6, -6.2], [30.4, -6.8]];
 const ARENA = { x0: 15.5, x1: 22.5, them: 1.9, fort: 2.9, me: 9.4, myFort: 8.4 }; // the snowball fight, south of the square
 const SKIP_SWEET = [0.72, 0.9];
 const RIPPLE_GEO = new THREE.RingGeometry(0.75, 1, 28);
@@ -64,6 +64,8 @@ export class IslandGames {
     this.stand.rotation.y = -0.3;
     this.group.add(this.stand);
     map.circObs(KITE.x, KITE.z, 0.45);
+    map.addKeepOut(PILE.x, PILE.z, 1.6, 'skipping stones');
+    map.addKeepOut(KITE.x, KITE.z + 0.6, 1.6, 'kite stand');
     // Mumble's hiding bushes at the meadow
     const rnd = (() => { let s = 7; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; })();
     this.bushes = HIDE.map(([x, z], i) => {

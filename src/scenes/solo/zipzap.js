@@ -126,6 +126,7 @@ export class ZipZap {
     this.bench.rotation.y = -0.5;
     host.scene.add(this.bench);
     map.boxObs(BENCH.x, BENCH.z, 0.7, 0.45);
+    map.addKeepOut(BENCH.x, BENCH.z, 1.8, 'gadget bench');
     // the beam (one at a time) and the icon over the target
     this.beamMat = glowMat(0xffffff, 0.8);
     this.coreMat = glowMat(0xffffff, 0.9);

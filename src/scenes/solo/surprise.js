@@ -26,8 +26,12 @@ export function surpriseOn(ms = now()) {
 /** When each surprise is on (hours of the day). */
 export const SURPRISE_HOURS = { meteor: [20, 24], merchant: [9, 18], balloon: [10, 17], bottle: [6, 21] };
 
-const CART = { x: 22.6, z: -7.2 }, MERCHANT = { x: 21.1, z: -5.9 };
-const BALLOON = { x: 30.5, z: 5.5 }, SKYE = { x: 28.9, z: 6.4 };
+const CART = { x: 25.1, z: -6.8 }, MERCHANT = { x: 23.5, z: -5.7 }; // (beside the road east of the square, not on it)
+// Skye's balloon lands on the open meadow south-east of the square, away from every door, path and trail (it
+// used to come down by the museum steps, in the way); map.spotClear() checks every spawn spot (placeSpots)
+const BALLOON = { x: 22.2, z: 7.6 }, SKYE = { x: 20.3, z: 8.6 };
+const BALLOON_R = 2.2; // the basket and the ropes, with room to walk around
+const TAKEOFF = { wait: 1.4, up: 4.5 }; // in the evening: Skye climbs in, a puff of the burner, up and away
 // where Skye's goggles can land (on things you hop onto, or just in the grass)
 const GOGGLES = [{ x: 46.3, z: -4.5, on: 'log' }, { x: 23.4, z: -16.2, roof: true }, { x: -9.6, z: 26.4, hollow: true }, { x: 15.4, z: 25.4, pond: true }, { x: 34.0, z: 2.0 }];
 // beach spots where the bottle washes up, and the dig spots the maps lead to (with a landmark for the hint)
@@ -57,6 +61,7 @@ export class Surprises {
     this.skye.position.set(SKYE.x, heightAt(SKYE.x, SKYE.z), SKYE.z);
     this.skye.rotation.y = 0.3;
     this.balloonObs = host.map.circObs(1e5, BALLOON.z, 0.75, { ox: BALLOON.x });
+    this.takeoff = null;
     this.goggles = makeLostThing('goggles');
     // the bottle and the dig spot
     this.bottle = makeBottle();
@@ -95,7 +100,27 @@ export class Surprises {
     return h >= a && h < b;
   }
 
+  /**
+   * Make sure every place a visitor or a find appears is clear of doors, paths, trails and the things you use
+   * (map.spotClear); anything that is not moves to the nearest clear spot. (The goggles are meant to sit on
+   * things you hop onto, so they are not checked.)
+   */
+  placeSpots() {
+    const map = this.host.map;
+    this.placed = true;
+    this.moved = [];
+    const fix = (p, r, name) => { const why = map.spotClear(p.x, p.z, r); if (!why) return; const q = map.findSpot(p.x, p.z, r); this.moved.push({ name, why, from: [p.x, p.z], to: [+q.x.toFixed(2), +q.z.toFixed(2)] }); p.x = q.x; p.z = q.z; };
+    fix(BALLOON, BALLOON_R, 'balloon'); fix(SKYE, 0.6, 'skye'); fix(CART, 1.4, 'cart'); fix(MERCHANT, 0.4, 'merchant');
+    for (const d of DIG) fix(d, 0.6, 'dig');
+    this.balloonObs.ox = BALLOON.x; this.balloonObs.z = BALLOON.z;
+    this.cartObs.ox = CART.x; this.cartObs.z = CART.z;
+    this.cart.position.set(CART.x, heightAt(CART.x, CART.z), CART.z);
+    this.merchant.position.set(MERCHANT.x, heightAt(MERCHANT.x, MERCHANT.z), MERCHANT.z);
+    this.skye.position.set(SKYE.x, heightAt(SKYE.x, SKYE.z), SKYE.z);
+  }
+
   tick(at) {
+    if (!this.placed) this.placeSpots();
     const today = dayKey(at);
     const D = this.day();
     if (today !== this.today) {
@@ -110,7 +135,10 @@ export class Surprises {
     const merchant = this.on('merchant', at), balloon = this.on('balloon', at), bottle = this.on('bottle', at), meteor = this.on('meteor', at);
     this.cart.visible = this.merchant.visible = merchant;
     this.cartObs.x = merchant ? this.cartObs.ox : 1e5;
-    if (balloon && !this.balloon.visible) this.balloonY = this.balloonY || 14; // it comes down
+    if (balloon && !this.balloon.visible) { this.balloonY = 14; this.takeoff = null; } // it comes down
+    // the evening: it takes off (only if you are here to see it; it is never there at night)
+    if (!balloon && this.balloon.visible && !this.takeoff && this.balloonY < 0.5 && (this.host.forceHour ?? hourOf(at)) < SURPRISE_HOURS.balloon[1] + 1) this.takeoff = { t: 0, vy: 0, dx: 0 };
+    this.leaving = !balloon && !!this.takeoff;
     this.balloon.visible = balloon || this.leaving;
     this.balloonObs.x = balloon ? this.balloonObs.ox : 1e5;
     this.skye.visible = balloon && this.balloonY < 0.1;
@@ -273,11 +301,23 @@ export class Surprises {
     }
     // the balloon comes down (and goes up again in the evening)
     if (this.balloon.visible) {
-      const want = this.on('balloon') ? 0 : 16;
-      this.leaving = !this.on('balloon') && this.balloonY < 15;
-      this.balloonY += Math.sign(want - this.balloonY) * Math.min(Math.abs(want - this.balloonY), dt * 2.2);
-      if (!this.on('balloon') && this.balloonY >= 15.9) { this.balloon.visible = false; this.leaving = false; }
-      this.balloon.position.set(BALLOON.x + Math.sin(this.t * 0.4) * (this.balloonY > 0.1 ? 0.6 : 0), heightAt(BALLOON.x, BALLOON.z) + this.balloonY, BALLOON.z);
+      const T = this.takeoff;
+      if (T && !this.on('balloon')) {
+        // the take-off: Skye hops in, the burner puffs, then up (faster and faster) and away to the east
+        if (T.t === 0) { this.host.puffs.burst(new THREE.Vector3(SKYE.x, heightAt(SKYE.x, SKYE.z) + 0.6, SKYE.z), 0xffffff, { count: 10, speed: 3, size: 0.35 }); }
+        T.t += dt;
+        if (T.t > TAKEOFF.wait) {
+          T.vy = Math.min(TAKEOFF.up, T.vy + dt * 2.5);
+          this.balloonY += T.vy * dt;
+          T.dx += dt * 0.9 * Math.min(1, this.balloonY / 4);
+        }
+        if (Math.floor(T.t * 4) !== Math.floor((T.t - dt) * 4)) this.host.puffs.burst(this.balloon.position.clone().add(new THREE.Vector3(0, 2.3, 0)), 0xffb347, { count: 2, speed: 1, up: 1.5, size: 0.25, life: 0.4 });
+        if (this.balloonY > 18) { this.balloon.visible = false; this.leaving = false; this.takeoff = null; this.balloonY = 0; }
+        this.balloon.position.set(BALLOON.x + T.dx, heightAt(BALLOON.x, BALLOON.z) + this.balloonY, BALLOON.z);
+      } else {
+        this.balloonY = Math.max(0, this.balloonY - dt * 2.2); // it comes down
+        this.balloon.position.set(BALLOON.x + Math.sin(this.t * 0.4) * (this.balloonY > 0.1 ? 0.6 : 0), heightAt(BALLOON.x, BALLOON.z) + this.balloonY, BALLOON.z);
+      }
       this.balloon.userData.top.rotation.y = Math.sin(this.t * 0.3) * 0.15;
       this.skye.visible = this.on('balloon') && this.balloonY < 0.1;
     }
