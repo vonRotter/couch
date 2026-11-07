@@ -28,7 +28,8 @@ import { thumb } from './thumbs.js';
 import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
 import { DiveScene } from './dive.js';
-import { IslandMap, heightAt, riverDist, SEA_Y, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES } from './map.js';
+import { IslandMap, heightAt, riverDist, SEA_Y, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES, SPREAD } from './map.js';
+import './strings12.js';
 import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS, cropNight } from './farm.js';
 import { Homes, makeHomeMats } from './homes.js';
 import { FriendsBook } from './friends.js';
@@ -159,6 +160,7 @@ const nightOnly = (id) => !!SEA[id]?.night || (!!FISH[id] && FISH[id].hours[0] >
 
 const _sv = new THREE.Vector3();
 const _bean = new THREE.Vector3();
+const BERRIES = SPREAD.find((p) => p.id === 'berries');
 /** Screen pixels of a world point (the same math as UI.place). */
 function screenAt(pos, cam) {
   _sv.copy(pos).project(cam);
@@ -1197,6 +1199,10 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) {
       for (const s of SIGNS) if (near(s.x, s.z, 1.3)) { out.b = { text: nm('isl.h.sign'), fn: () => this.readSign(s) }; break; }
     }
+    // the wild berry bush on the meadow: a few berries once a day
+    if (!out.b && near(BERRIES.x, BERRIES.z, 1.5) && !this.isle2?.here()) {
+      out.b = S.berryDay === dayKey() ? { text: t('spr.h.picked'), fn: () => this.game.ui.toast(t('spr.h.picked'), 1400) } : { text: nm('spr.h.berries'), fn: () => this.pickBerries() };
+    }
     // the rockfall (the Zip-Zap's rock buster breaks it)
     if (!S.unlocks.mine && Math.hypot(P.x - ROCKFALL.x, P.z - ROCKFALL.z) < 3.4) {
       const zip = held?.id === 'zipzap';
@@ -1604,6 +1610,17 @@ export class SoloIslandScene extends BaseScene {
     this.game.audio.play('star');
     const txt = t('isl.t.found', { item: t(`isl.i.${id}`) });
     this.game.ui.toast(txt, 2200);
+    this.markDirty();
+  }
+
+  /** The wild berry bush (map.js SPREAD): two berries, once a day. */
+  pickBerries() {
+    this.save.berryDay = dayKey();
+    give(this.save, 'wildBerry', 2);
+    this.swingTool();
+    this.puffs.burst(new THREE.Vector3(BERRIES.x, 0.9, BERRIES.z), 0xd94a6a, { count: 10, speed: 2.5, size: 0.18, life: 0.5 });
+    this.game.audio.play('pop');
+    this.game.ui.toast(t('spr.t.berries'), 2000);
     this.markDirty();
   }
 

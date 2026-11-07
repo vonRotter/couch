@@ -120,8 +120,20 @@ export const SPOTS = {
   ...ISLE2_SPOTS,
 };
 
-// Branch spots (wood for the bridge), quest finds and dive/fish spots for later.
-export const BRANCHES = [[-2, -32], [16, -30], [34, -28], [-14, -26], [44, -10], [52, 14], [24, 26], [-16, 22], [-6, 18], [16, 30], [30, -2], [-18, 30]];
+// Branch spots (wood for the bridge), quest finds and dive/fish spots for later. (One branch moved from the
+// crowded kite hill to the emptier meadow south-west of the square; the save keeps branches by number.)
+export const BRANCHES = [[-2, -32], [5.8, 12.4], [34, -28], [-14, -26], [44, -10], [52, 14], [24, 26], [-16, 22], [-6, 18], [16, 30], [30, -2], [-18, 30]];
+/** Little spots for the emptier parts of the island (buildSpread); r: kept clear of spawns around them. */
+export const SPREAD = [
+  { id: 'picnic', x: 10.8, z: 29.8, r: 2.2 },
+  { id: 'meadow', x: 3.6, z: 7.2, r: 2.6 },
+  { id: 'berries', x: 1.6, z: 9.6, r: 1.2 }, // a wild berry bush: [B] picks a few berries once a day (island.js)
+  { id: 'ring', x: 13.0, z: 16.8, r: 2.2 },
+  { id: 'seaview', x: 33.4, z: 33.4, r: 1.4 },
+  { id: 'birdbath', x: 42.5, z: 14.5, r: 1.6 },
+  { id: 'woodpile', x: 29.6, z: -28.6, r: 2.0 },
+  { id: 'sandcastle', x: 13.2, z: 37.6, r: 1.6 },
+];
 export const FINDS = { feather: { x: 37, z: -27 }, starmap: { x: 3.5, z: -29 }, lens: { x: -18, z: 41.5 } };
 export const DIVE_SPOT = { x: -4, z: 55 };
 export const DIVE_BOAT = { x: 0, z: 56.2 };
@@ -956,6 +968,79 @@ export class IslandMap {
       g.add(mesh(cyl(0.06, 0.06, 0.25, 6), 0x8a5a32, 0, 0.8, 0, false));
       this.put(g, x, z, r() * 3, heightAt(x, z) - 0.2);
     }
+    this.buildSpread();
+  }
+
+  /**
+   * Little spots for the emptier parts of the island (the owner's playtest: some parts were crowded, some empty;
+   * see SPREAD): a picnic with a bench by the pond, a wildflower meadow with a wild berry bush, a fairy ring, a
+   * bench with a sea view, a birdbath, a woodpile under the cliffs and a sandcastle on the beach. Their own
+   * random numbers, so the island's trees stay where they were.
+   */
+  buildSpread() {
+    const rr = seeded(505);
+    this.extras = [];
+    const note = (id, x, z) => this.extras.push({ id, x, z });
+    const flowers = (x, z, n, rad) => { for (let i = 0; i < n; i++) { const a = rr() * Math.PI * 2, d = Math.sqrt(rr()) * rad; const f = makeFlower(rr); f.scale.setScalar(1.3 + rr() * 0.4); this.put(f, x + Math.cos(a) * d, z + Math.sin(a) * d, rr() * 6); } };
+    const tree = (x, z, s = 1) => { this.put(makeTree(rr, s), x, z, rr() * 6); this.circObs(x, z, 0.45 * s); };
+    const bench = (x, z, rot) => { this.put(makeBench(), x, z, rot); this.longObs(x, z, rot, 0.62, 0.32); };
+    for (const p of SPREAD) this.addKeepOut(p.x, p.z, p.r, `spread:${p.id}`);
+    const S = Object.fromEntries(SPREAD.map((p) => [p.id, p]));
+    // a picnic by the pond: a checked blanket, a basket and a bench looking at the water
+    { const { x, z } = S.picnic;
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) this.put(mesh(box(0.4, 0.03, 0.4), (i + j) % 2 ? 0xff5d73 : 0xffffff, 0, 0.02, 0, false), x - 0.6 + i * 0.4, z - 0.6 + j * 0.4, 0, heightAt(x, z) + 0.01);
+      const basket = new THREE.Group();
+      basket.add(mesh(box(0.42, 0.26, 0.3), 0xc68a52, 0, 0.13, 0), mesh(new THREE.TorusGeometry(0.16, 0.025, 5, 12, Math.PI), 0x8a5a32, 0, 0.26, 0, false), mesh(sph(0.07, 8, 6), 0xff5d73, -0.1, 0.3, 0, false));
+      this.put(basket, x + 0.35, z - 0.3, 0.4);
+      bench(x + 0.6, z - 1.7, 0.75);
+      flowers(x - 1.5, z + 1.2, 6, 0.9);
+      note('picnic', x, z); }
+    // a wildflower meadow with a wild berry bush (a few berries every day: island.js) and two trees
+    { const { x, z } = S.meadow;
+      flowers(x, z, 22, 2.4);
+      tree(x - 3.0, z + 3.4, 1.05); tree(x + 3.2, z - 3.0, 0.95);
+      const bb = S.berries;
+      this.put(makeBush(rr, 1.25), bb.x, bb.z, rr() * 6);
+      this.circObs(bb.x, bb.z, 0.55);
+      note('meadow', x, z); note('berries', bb.x, bb.z); }
+    // a fairy ring: little standing stones in a circle, mushrooms inside
+    { const { x, z } = S.ring;
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + 0.3, sx = x + Math.cos(a) * 1.7, sz = z + Math.sin(a) * 1.7;
+        const st = makeRock(rr, 0.42); st.scale.y *= 2.4; this.put(st, sx, sz, 0, heightAt(sx, sz) + 0.35); this.circObs(sx, sz, 0.32);
+      }
+      for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2, m = makeMushroom(i % 2 ? 0xff5d73 : 0xffc93c); m.scale.setScalar(0.42); this.put(m, x + Math.cos(a) * 0.9, z + Math.sin(a) * 0.9, rr() * 6); }
+      note('ring', x, z); }
+    // a bench with a view of the sea, and a birdbath with flowers by the garage path
+    { const { x, z } = S.seaview; bench(x, z, 0.1); flowers(x - 1.4, z - 0.8, 4, 0.6); note('seaview', x, z); }
+    { const { x, z } = S.birdbath;
+      const bath = new THREE.Group();
+      bath.add(mesh(cyl(0.14, 0.2, 0.8, 8), 0xd9d4ee, 0, 0.4, 0), mesh(cyl(0.5, 0.3, 0.16, 12), 0xd9d4ee, 0, 0.86, 0), mesh(cyl(0.42, 0.42, 0.03, 12), 0x8fe0ff, 0, 0.94, 0, false));
+      this.put(bath, x, z);
+      this.circObs(x, z, 0.45);
+      flowers(x, z, 10, 1.6);
+      note('birdbath', x, z); }
+    // a woodpile and a stump under the cliffs north-east of the store
+    { const { x, z } = S.woodpile;
+      const pile = new THREE.Group();
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3 - i; j++) pile.add(mesh(cyl(0.16, 0.16, 1.3, 7), WOOD, (j - (2 - i) / 2) * 0.34, 0.16 + i * 0.29, 0).rotateX(Math.PI / 2));
+      this.put(pile, x, z, 0.2);
+      this.boxObs(x, z, 0.6, 0.7);
+      this.put(mesh(cyl(0.32, 0.38, 0.4, 9), WOOD, 0, 0.2, 0), x + 1.4, z + 0.6);
+      this.circObs(x + 1.4, z + 0.6, 0.38);
+      tree(x - 2.4, z - 1.2, 1.1); tree(x + 2.6, z - 2.0, 0.9);
+      note('woodpile', x, z); }
+    // a sandcastle and a starfish on the beach
+    { const { x, z } = S.sandcastle;
+      const c = new THREE.Group();
+      c.add(mesh(cyl(0.6, 0.7, 0.5, 8), 0xf0d48a, 0, 0.25, 0), mesh(cone(0.4, 0.55, 8), 0xf0d48a, 0, 0.78, 0));
+      for (const [dx, dz] of [[0.75, 0.2], [-0.7, 0.3]]) c.add(mesh(cyl(0.22, 0.27, 0.42, 6), 0xf0d48a, dx, 0.21, dz), mesh(cone(0.18, 0.3, 6), 0xff5d73, dx, 0.57, dz, false));
+      this.put(c, x, z, 0.3);
+      this.circObs(x, z, 0.85);
+      const star = new THREE.Group();
+      for (let i = 0; i < 5; i++) star.add(mesh(box(0.08, 0.04, 0.3), 0xff8c42, Math.sin((i / 5) * Math.PI * 2) * 0.12, 0.03, Math.cos((i / 5) * Math.PI * 2) * 0.12, false).rotateY((i / 5) * Math.PI * 2));
+      this.put(star, x + 1.4, z + 0.9, 0.5);
+      note('sandcastle', x, z); }
   }
 
   /** One random flower, bush, rock, mushroom or grass tuft (k picks which; uses r like before). */
