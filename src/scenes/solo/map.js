@@ -335,6 +335,12 @@ export class IslandMap {
     return obj;
   }
 
+  /** A long thing turned by rotY (a bench, a board): a segment along its length, so its ends are not air. */
+  longObs(x, z, rotY, half, r) {
+    const c = Math.cos(rotY), sn = -Math.sin(rotY);
+    this.segObs({ x: x - c * half, z: z - sn * half }, { x: x + c * half, z: z + sn * half }, r);
+  }
+
   boxObs(x, z, hw, hd, extra = {}) { const o = { x, z, hw, hd, ...extra }; this.obstacles.push(o); return o; }
   circObs(x, z, r, extra = {}) { const o = { x, z, r, ...extra }; this.obstacles.push(o); return o; }
   segObs(a, b, r = 0.25) { this.obstacles.push({ ax: a.x, az: a.z, bx: b.x, bz: b.z, r }); }
@@ -535,11 +541,14 @@ export class IslandMap {
     }
     // the plunge pool's west rim: big rocks (the west bank stays across the river until the bridge is fixed)
     for (let z = -26.4; z >= -31.4; z -= 1.0) {
-      const x = -26.6 + Math.sin(z * 2.1) * 0.15;
+      const x = -26.3 + Math.sin(z * 2.1) * 0.15;
       const rk = makeRock(rr, 0.95);
       this.put(rk, x, z, 0, heightAt(x, z) + 0.15);
       this.circObs(x, z, 0.75);
     }
+    // and one in the corner of the slot behind the falls (no sliver of land to get stuck on)
+    this.put(makeRock(rr, 0.7), -25.25, -31.9, 0, heightAt(-25.25, -31.9) + 0.1);
+    this.circObs(-25.25, -31.9, 0.6);
   }
 
   /** The water of the falls slides down (called every frame from life.js). */
@@ -618,10 +627,10 @@ export class IslandMap {
     this.circObs(PLAZA.x, PLAZA.z, 2.2);
     for (const [x, z, r] of [[7.2, -2.2, 0.9], [12, 1.6, Math.PI], [17.6, -1.2, -0.9]]) {
       this.put(makeBench(), x, z, r + Math.PI, 0.05);
-      this.circObs(x, z, 0.8);
+      this.longObs(x, z, r + Math.PI, 0.62, 0.32);
     }
     this.put(makeNoticeBoard(), 17.8, -9.8, -0.6, 0.05);
-    this.boxObs(17.8, -9.8, 1.0, 0.4);
+    this.longObs(17.8, -9.8, -0.6, 0.8, 0.22);
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2 + 0.5;
       const x = PLAZA.x + Math.cos(a) * (PLAZA.r - 0.3), z = PLAZA.z + Math.sin(a) * (PLAZA.r - 0.3);
@@ -682,7 +691,7 @@ export class IslandMap {
     for (const sx of [-1, 1]) this.boxObs(HALL.x + sx * 5.5, HALL.z, 0.35, 2.7, { top: 4.0 });
     for (const c of hall.userData.cabinets) this.boxObs(HALL.x + c.x, HALL.z - 1.2, 0.7, 0.55);
     this.lamp(HALL.x - 6.6, HALL.z + 3.2);
-    this.lamp(HALL.x + 6.6, HALL.z + 3.2);
+    this.lamp(HALL.x + 5.6, HALL.z + 3.4); // (not closing the gap between the hall and the crates up to its roof)
     // Pip's launch pad
     const pad = makeLaunchPad();
     this.live(pad, PAD.x, PAD.z, 0, heightAt(PAD.x, PAD.z));
@@ -730,7 +739,7 @@ export class IslandMap {
       this.circObs(P.lighthouse.x + Math.cos(a) * 4.2, P.lighthouse.z + Math.sin(a) * 4.0, 0.9);
     }
     this.put(makeBench(), 48.5, 30.5, -0.5);
-    this.circObs(48.5, 30.5, 0.8);
+    this.longObs(48.5, 30.5, -0.5, 0.62, 0.32);
     this.sign(46.6, 31.2, 0x1f7f8f);
     this.lamp(41.4, 30.6);
     // fairground tent
@@ -751,17 +760,18 @@ export class IslandMap {
     this.put(makeTelescope(), 11.2, -27.4, -0.6);
     this.circObs(11.2, -27.4, 0.4);
     this.put(makeBench(), 4.8, -27.4, 0.4);
-    this.circObs(4.8, -27.4, 0.8);
+    this.longObs(4.8, -27.4, 0.4, 0.62, 0.32);
     this.sign(10.4, -22.6, 0x4cc9f0);
     this.lamp(5.4, -22.4);
     // the mine in the cliff and its rockfall
     const mine = makeMine();
     this.put(mine, P.mine.x, P.mine.z, 0, 0);
-    this.boxObs(P.mine.x - 2.0, P.mine.z + 0.2, 0.3, 0.4);
-    this.boxObs(P.mine.x + 2.0, P.mine.z + 0.2, 0.3, 0.4);
+    // the frame posts end below the cliff top (up there you walk over them)
+    this.boxObs(P.mine.x - 2.0, P.mine.z + 0.2, 0.3, 0.4, { top: 3.4 });
+    this.boxObs(P.mine.x + 2.0, P.mine.z + 0.2, 0.3, 0.4, { top: 3.4 });
     this.circObs(P.mine.x + 2.6, P.mine.z + 2.6, 0.7);
     this.rockfall = this.live(makeRockfall(), P.mine.x, P.mine.z, 0, 0);
-    this.rockObs = this.boxObs(ROCKFALL.x, ROCKFALL.z - 0.6, 1.9, 1.0, { rockfall: true });
+    this.rockObs = this.boxObs(ROCKFALL.x, ROCKFALL.z - 0.8, 1.6, 0.8, { rockfall: true }); // (the size of the rock pile)
     this.sign(29.4, -30.6, 0x565c8c);
     // west bank: castle gate and Pillow Keep
     this.put(makeCastleGate(), P.castle.x, P.castle.z);
@@ -777,7 +787,8 @@ export class IslandMap {
     this.garage = gar;
     this.boxObs(P.garage.x, P.garage.z - 0.1, 2.6, 2.4);
     this.circObs(P.garage.x + 3.4, P.garage.z - 0.6, 0.9);
-    this.boxObs(P.garage.x - 3.3, P.garage.z + 1.6, 0.95, 0.95);
+    // the practice board is a flat checker on the ground: you can walk onto it (it was a wall of air)
+    this.platform({ x: P.garage.x - 3.3, z: P.garage.z + 1.6, hw: 0.9, hd: 0.9, top: heightAt(P.garage.x - 3.3, P.garage.z + 1.6) + 0.12 });
     this.sign(P.garage.x + 2.6, P.garage.z + 3.9, 0xff5d73);
     // the burrow (hidden until Mumble trusts you)
     this.burrow = this.live(makeBurrow(), P.burrow.x, P.burrow.z);
@@ -828,8 +839,8 @@ export class IslandMap {
     const sc = new THREE.Group();
     sc.add(mesh(cyl(0.06, 0.06, 2.2, 5), WOOD_DARK, 0, 1.1, 0), mesh(cyl(0.04, 0.04, 1.6, 5), WOOD_DARK, 0, 1.5, 0).rotateZ(Math.PI / 2));
     sc.add(mesh(box(0.7, 0.8, 0.3), 0x4c8bd6, 0, 1.4, 0), mesh(ico(0.3, 1), 0xf3d9a4, 0, 2.1, 0), mesh(cyl(0.5, 0.5, 0.06, 12), 0xe2b06a, 0, 2.35, 0), mesh(cyl(0.25, 0.3, 0.3, 12), 0xe2b06a, 0, 2.5, 0));
-    this.put(sc, x1 + 1.2, z1 - 1.0, -0.3);
-    this.circObs(x1 + 1.2, z1 - 1.0, 0.4);
+    this.put(sc, x1 + 1.6, z1 - 1.0, -0.3); // (a bean's width from the fence end)
+    this.circObs(x1 + 1.6, z1 - 1.0, 0.4);
     this.put(makeBarrel(0x4cc9f0), WELL.x + 1.4, WELL.z + 0.6);
     this.circObs(WELL.x + 1.4, WELL.z + 0.6, 0.45);
     // the old paddock and barn (animals come later)
@@ -842,7 +853,7 @@ export class IslandMap {
     // home yard: flower beds and a bench
     this.flowerBed(HOME.x - 4.3, HOME.z + 1.0);
     this.put(makeBench(), HOME.x + 4.6, HOME.z + 0.4, -Math.PI / 2 + 0.3);
-    this.circObs(HOME.x + 4.6, HOME.z + 0.4, 0.8);
+    this.longObs(HOME.x + 4.6, HOME.z + 0.4, -Math.PI / 2 + 0.3, 0.62, 0.32);
   }
 
   buildBeach() {

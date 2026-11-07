@@ -1959,7 +1959,7 @@ export class SoloIslandScene extends BaseScene {
     // and the safety net: pushing the stick for a while without moving an inch while inside something
     // (a gap between props that is narrower than the bean): out to the nearest free spot
     const pushed = len > 0.5 && !P.air && !this.indoors && Math.hypot(P.x - (P.lx ?? P.x), P.z - (P.lz ?? P.z)) < 0.002;
-    P.stuckT = pushed && this.map.overlap(P.x, P.z, PR, st, P.fy) > 0 ? (P.stuckT || 0) + dt : 0;
+    P.stuckT = pushed && (this.map.overlap(P.x, P.z, PR, st, P.fy) > 0 || ((P.stuckT || 0) > 0.3 ? this.boxedIn(P, st) : true)) ? (P.stuckT || 0) + dt : 0;
     if (P.stuckT > 0.6) { P.stuckT = 0; this.unstick(P, st); this.puffs.burst(new THREE.Vector3(P.x, P.fy + 0.4, P.z), 0xffffff, { count: 6, speed: 2, size: 0.25, life: 0.4 }); }
     if (this.indoors) this.builder.clampInside(P);
     this.updateVertical(P, dt, st);
@@ -2000,6 +2000,15 @@ export class SoloIslandScene extends BaseScene {
     P.takeoff = null;
     if (s.water && !this.indoors) this.unstick(P, st); // (never left standing in the water)
     P.lx = P.x; P.lz = P.z;
+  }
+
+  /** Wedged in a spot smaller than a step (between a fence end and a post, say): no way to walk at all. */
+  boxedIn(P, st) {
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      if (this.canMove(P, P.x + Math.cos(a) * 0.15, P.z + Math.sin(a) * 0.15, st)) return false;
+    }
+    return true;
   }
 
   /** Step out of anything we ended up inside (an unlock or a teleport): the nearest free spot. */

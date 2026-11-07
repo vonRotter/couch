@@ -81,7 +81,7 @@ export const SECRETS = {
     chest: { x: -12, z: 27 }, area: { x: -12, z: 27 }, tree: { x: -12, z: 27, r: 1.5, top: 3.1 },
     path: [
       { kind: 'root', x: -9.9, z: 28.2, r: 0.5, top: 0.6 },
-      { kind: 'shelf', x: -9.6, z: 26.4, r: 0.55, top: 1.35 },
+      { kind: 'shelf', x: -9.5, z: 26.7, r: 0.55, top: 1.35 },
       { kind: 'branch', x: -10.4, z: 24.9, hw: 0.75, hd: 0.3, top: 2.15 },
     ],
   },
@@ -128,8 +128,8 @@ export const TRAILS = {
     path: [
       { kind: 'rock', x: 14.0, z: -32.6, r: 0.6, abs: 0.85 },
       { kind: 'rock', x: 15.9, z: -33.5, r: 0.55, abs: 1.65 },
-      { kind: 'rock', x: 17.9, z: -32.9, r: 0.55, abs: 2.45 },
-      { kind: 'rock', x: 19.6, z: -33.8, r: 0.55, abs: 3.25 },
+      { kind: 'rock', x: 17.75, z: -32.8, r: 0.55, abs: 2.45 },
+      { kind: 'rock', x: 19.6, z: -33.8, r: 0.45, abs: 3.25 }, // (a bean's width and more from the one before: no pocket under the trail)
       { kind: 'rock', x: 18.0, z: -34.7, r: 0.6, abs: 4.0 },
       { kind: 'deck', x: 16.8, z: -37.4, hw: 1.6, hd: 1.2, abs: 4.85, bell: true },
     ],
