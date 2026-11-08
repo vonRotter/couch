@@ -212,7 +212,7 @@ to spend. Progress is saved per profile.
 **Story** (the co-op campaign): the big book on the meadow south-west of the playground on the shared
 island (or Story in the C menu); leaving the Story returns to the shared island at the book.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
-- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound.
+- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound (on your own island `M` is the map; Sound is in its menu).
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
 - `G` shows or hides the learning games, or jump on the green book button.
 
@@ -620,11 +620,41 @@ night match yours and crops grow while you are away.
   and they come to the door to chat. The store and the museum are closed with a sign while their owner
   is home. Quests and story steps say who is asleep and until when; friends come to the café only while
   they are up during opening hours; story scenes and the Lamp Festival bring everyone out.
-- **The journal** (F on a keyboard, the D-pad down on a gamepad) is one book with tabs: **Friends**,
-  **Tasks** (everything on your list, not just the first five), **Calendar** (the calendar board opens it
-  here), **Fish log** (the fish log book opens it here) and **Museum** (the collection to look at; you
-  still donate at Curator Hoot's board). LB/RB (L1/R1, L/R) or the keys 1–5 (also `[` and `]`) switch
-  tabs, the stick looks through a page, B or Q (also F, Tab) closes it; the mouse can click a tab.
+- **The journal** (F on a keyboard, the D-pad down on a gamepad) is one book with tabs: the **Map**
+  (below), **Friends**, **Tasks** (everything on your list, not just the first five), **Calendar** (the
+  calendar board opens it here), **Fish log** (the fish log book opens it here) and **Museum** (the
+  collection to look at; you still donate at Curator Hoot's board). LB/RB (L1/R1, L/R) or the keys 1–6
+  (also `[` and `]`) switch tabs, the stick looks through a page, B or Q (also F, Tab) closes it; the mouse
+  can click a tab. F and the D-pad open it at the last book page (Friends at first), never at the Map,
+  which has its own button.
+- **The map** (the journal's first tab, and its own button: **M** on a keyboard, the **View** button on
+  an Xbox pad, Create on a PlayStation pad, − on a Nintendo pad; the same button or B / Q closes it). A
+  drawing of the island from above (the land, the river, the paths, the pier) with pictures on it, and a
+  legend beside it: **you** (an arrow in your color, pointing the way you face); every **place**: the games
+  (a ✨ on the ones you have not tried yet, a 🔒 and the reason on locked ones; the burrow only once
+  Mumble has shown it), the game hall, the island's mini-games (skipping stones, the kite stand, the three
+  hop trails, the dive boat once you have the suit), your home, Rosa's store, the museum, the café, the
+  school house, the Party Pier ferry, the boat to Shell Isle (once you know the way), the barn and the
+  greenhouse once they are fixed, and the homes of Aunt Hazel, Pip and Mumble; every **villager where they
+  are right now** (a face in their color; a red "!" for those who want to talk or have a quest, 💤 at
+  their home when they sleep); and **today's activities** with a yellow glow: the festival, the day's
+  surprise (Marlo's cart, Skye's balloon, the bottle on the beach, the dig spot from its map), crabs that
+  need a hand, the crab dance, ripe crops on the field and in the greenhouse, animals waiting (hungry,
+  eggs, milk or a pet today), letters in the mailbox, leaf piles in autumn. A **Today** list sums them up
+  (also things without a place: a meteor shower anywhere tonight, a chest you found that has filled up
+  again). On **Shell Isle** the map is Shell Isle's own: the boat home, Shelby's shell house, the palms
+  with coconuts, the berry bushes, tide pools with a find and treasure spots for the week, crabs, and who
+  is there. **Secrets are never shown**: the five hidden areas and their chests (also after you found
+  them), Shell Isle's hidden cove (drawn as beach), Skye's lost goggles and quest finds you are looking
+  for. The stick (or the D-pad, or the mouse) moves a ring; it snaps to the nearest picture, whose name
+  and a short line ("not tried yet", "asleep at home", the lock's reason) show in a card beside the map,
+  and the name is read aloud once the ring rests there (read-aloud on: the map is help). **[OK] (A, E or
+  Space, or a click) picks it as the target**: the map closes and a small **arrow** at the edge of the
+  screen points toward it (with its picture), sitting over it once it is on screen, until you get there
+  (a fanfare and "You are there!") or turn it off ([OK] on the same picture again). It follows villagers
+  and crabs as they move, it is kept when you come back from a game, and a target on the other island
+  points to the boat first. No mini-map. On the island, M opens the map instead of switching the sound:
+  the island's menu has **Sound** on/off.
 - **Friends book** (the journal's first tab): a page per villager: picture, hearts, birthday, the
   gifts they love, like and dislike (filled in when you give that gift, or when a friend mentions a
   favorite while chatting, one per heart), where they are right now and what comes next with them
@@ -815,7 +845,7 @@ night match yours and crops grow while you are away.
   is free. The keyboard stays Space / E / Q: Space jumps, E uses, Q opens the menu (and is back in
   panels), Tab the bag, F the journal, 1–9 the hotbar, `Esc` help. A new controller pressing jump takes
   over. The menu has Keep playing, Play together (the shared island, like the ferry), Change player (the profile picker), Read aloud
-  on/off, Characters (speak or babble), Language and Help, so a gamepad reaches every setting. The
+  on/off, Characters (speak or babble), Sound, Language and Help, so a gamepad reaches every setting. The
   Friends book is in the journal now, not in the menu.
 
   | Solo island | Gamepad (Xbox / PlayStation) | Keyboard 1 |
@@ -827,7 +857,8 @@ night match yours and crops grow while you are away.
   | hotbar slot | D-pad ← → | 1–9 |
   | bag | D-pad ↑ | Tab |
   | journal | D-pad ↓ | F |
-  | journal tabs | LB / RB (L1 / R1) | 1–5, `[` `]` |
+  | journal tabs | LB / RB (L1 / R1) | 1–6, `[` `]` |
+  | map | View (Create, −) | M |
   | menu | Start (Options) | Q |
   | help | the menu's Help | `Esc` |
   | (free) | Y / △ | – |
@@ -860,6 +891,7 @@ night match yours and crops grow while you are away.
   | Dialog | next / pick the highlighted answer | next / pick the highlighted answer | keyboard: answer "no"; gamepad: next on a plain line, nothing on a question |
   | Bag (see the table above) | move across | pick up / put down | close |
   | Journal | – | keyboard: close | close |
+  | Map (journal) | pick the target (A; Space on a keyboard) | keyboard: pick the target | close (M / View too) |
   | Letters, album, treasure map | close | close | close |
   | Menu | pick (left/right switches a setting) | pick | close (Start too) |
   | Pip's gadget bench | gamepad: build | build the upgrade | close |
@@ -956,7 +988,8 @@ src/
     start.js         the start screen: Who is playing? over a little island
     ferry-model.js   the Party Pier ferry (shared by both islands)
     solo/            the solo island (island.js, map.js, ...; ferry.js: the Party Pier and badge board;
-                     school.js: the School House and its picker)
+                     school.js: the School House and its picker; atlas.js: the island map and its arrow;
+                     journal.js: the journal's tabs)
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     spacefall.js  spacefall/  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js
