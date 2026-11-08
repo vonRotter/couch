@@ -11,7 +11,7 @@ import {
 } from './models.js';
 import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
 import { makeGarage } from './models5.js';
-import { POND, inKeepClear } from './hopdata.js';
+import { POND, inKeepClear, CLIFF_WALLS, WALL_R } from './hopdata.js';
 
 // The hand-made island town. North is -z (the cliffs), south is +z (the beach and the dock), the camera
 // looks north. A river runs from the waterfall in the cliffs down to the sea and cuts off the west bank
@@ -182,6 +182,12 @@ export const UPPER = { y: 4.2, bed: 3.6, w: 2.55, zLip: -32.7, zFill: -32.5, zEn
 export function inUpperWater(x, z) {
   if (z > UPPER.zLip || z < UPPER.zEnd || x < -30 || x > -16) return false;
   return riverDist(x, z) < UPPER.w - 0.1;
+}
+
+/** How steep the ground is at (x, z) (rise per meter; a cliff face is about 5, the hills are under 0.5). */
+export function slopeAt(x, z) {
+  const e = 0.12;
+  return Math.hypot(heightAt(x + e, z) - heightAt(x - e, z), heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e);
 }
 
 /** Ground height (without bridges or the pier). */
@@ -410,6 +416,52 @@ export class IslandMap {
     }
     this.buildFalls(wmat);
     this.buildCliffFace();
+    this.buildCliffWalls();
+  }
+
+  /**
+   * The rock walls that close the cliff tops round the grove and the lookout (hopdata.js CLIFF_WALLS): tall
+   * boulders shoulder to shoulder, from the foot of the cliff up the face and along the top. On the top they
+   * stand two bean heights tall (a hop is one); on the face they are stacked up past the edge, so the line
+   * reads as one wall from below and from above. The last boulder of a wall out to the sea sits on the edge and
+   * hangs out over the water. They block along the whole line at any height (nothing to land on).
+   */
+  buildCliffWalls() {
+    const rr = seeded(919); // (their own random numbers: the island's trees stay where they were)
+    const boulder = (x, z, y0, y1, s) => {
+      const rk = makeRock(rr, 1);
+      const half = (y1 - y0) / 2;
+      rk.scale.set(s * (0.95 + rr() * 0.2), half / 0.92, s * (0.95 + rr() * 0.2));
+      rk.rotation.set((rr() - 0.5) * 0.3, rr() * 6, (rr() - 0.5) * 0.3); // (upright: a lying rock looks hoppable)
+      this.put(rk, x, z, 0, y0 + half);
+    };
+    for (const w of CLIFF_WALLS) {
+      let landY = 0;
+      for (let i = 1; i < w.pts.length; i++) {
+        const [ax, az] = w.pts[i - 1], [bx, bz] = w.pts[i];
+        this.segObs({ x: ax, z: az }, { x: bx, z: bz }, WALL_R);
+        const n = Math.max(1, Math.round(Math.hypot(bx - ax, bz - az) / 0.9));
+        for (let k = i === 1 ? 0 : 1; k <= n; k++) {
+          const x = ax + ((bx - ax) * k) / n + (rr() - 0.5) * 0.16, z = az + ((bz - az) * k) / n + (rr() - 0.5) * 0.16;
+          const h = heightAt(x, z);
+          if (h < SEA_Y + 0.2) {
+            // out over the sea: one big boulder perched on the edge, hanging out over the water
+            if (w.sea && i === w.pts.length - 1 && k === n) { const [ex, ez] = w.pts[i - 1]; boulder((ex + x) / 2, (ez + z) / 2, landY - 0.6, landY + 2.3, 1.25); }
+            continue;
+          }
+          landY = h;
+          const cz = cliffZ(x);
+          const top = z > cz - 0.75 ? heightAt(x, cz - 0.9) : h; // (on the cliff face: the top of the cliff here)
+          const y1 = Math.max(h, top) + 1.95 + rr() * 0.4;
+          // stacked when tall (on the face): a boulder for every two meters or so
+          const m = Math.max(1, Math.round((y1 - h + 0.3) / 2.3));
+          for (let j = 0; j < m; j++) {
+            const a = h - 0.3 + ((y1 - h + 0.3) * j) / m, b = h - 0.3 + ((y1 - h + 0.3) * (j + 1)) / m;
+            boulder(x, z, a - (j ? 0.25 : 0), b, (j ? 0.78 : 0.92) + rr() * 0.14);
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -931,7 +983,7 @@ export class IslandMap {
       trees.push({ x, z });
       if (inKeepClear(x, z)) return; // (made all the same, so the random trees after it stay where they were)
       this.put(tr, x, z, rot);
-      this.circObs(x, z, 0.45 * s); // (also up on the cliff tops: you can walk there now)
+      this.circObs(x, z, 0.45 * s); // (the trees on the cliff tops too: scenery round the grove and the lookout)
     };
     // dense forest on the west bank, light woods elsewhere, trees on the cliff tops
     for (let i = 0; i < 900; i++) {
@@ -1156,7 +1208,8 @@ export class IslandMap {
   /**
    * How deep a walker of radius r at (x, z) is inside something (0 or less: free; 9: a wall of terrain).
    * With feet (a height): terrain higher than a step is a wall (a cliff face, a steep bank: you see it), the
-   * cliff tops are open land, and things with a top you are above (feet over top - STEP) are not in the way.
+   * cliff tops are land (rock walls you can see close them round the grove and the lookout), and things with a
+   * top you are above (feet over top - STEP) are not in the way.
    * Water is not a wall here (the bean decides: never walk into it, but you can jump over it).
    */
   overlap(x, z, r, state, feet = -Infinity) {
@@ -1166,7 +1219,7 @@ export class IslandMap {
       if (flat) {
         if (h < -0.3) return 9;
         if (z < cliffZ(x) + 1.0) return 9;
-      } else if (h > feet + STEP) return 9; // a steep bank or a cliff face (the cliff tops are open: no invisible walls)
+      } else if (h > feet + STEP) return 9; // a steep bank or a cliff face (on the cliff tops: the rock walls, no invisible walls)
     }
     let worst = 0;
     for (const o of this.obstacles) {

@@ -685,10 +685,13 @@ night match yours and crops grow while you are away.
   it (or falling off a hop trail) is a little splash and puts you back where that hop started. Forgiving: a
   jump still works a moment after walking off an edge, and a press just before landing jumps again. Up on a
   roof or a ledge only what is up there answers [B] (a chest, a bell), not the doors and villagers below.
-  **No invisible walls:** whatever stops the bean is drawn (the cliffs have a rocky face and stop you because
-  they are steep; benches, boards and posts block exactly where they stand; water edges; the boulders at the
-  plunge pool and the spring); the cliff tops are open land once you are up there (by the hidden steps behind
-  the waterfall or the Cliff Climb), bounded by the sea, the upper river and the spring's boulders. **Never
+  **No invisible walls:** whatever stops the bean is drawn (the cliffs have a rocky face and no foothold: land
+  on it and you slide down, so no hopping or creeping up them; benches, boards and posts block exactly where
+  they stand; water edges; the boulders at the plunge pool and the spring). Up on the cliff tops there are only
+  the grove (by the hidden steps behind the waterfall) and the lookout (by the Cliff Climb), each closed in by
+  walls of tall boulders, twice a bean's height and taller than any jump, that come up the cliff face and run
+  along the top (`CLIFF_WALLS` in `hopdata.js`): the grove between the upper river's bank and a wall out to the
+  sea, the lookout in a U behind the deck. You get down by walking off the edge. **Never
   stuck:** gaps between props are either a bean wide or closed, and if the bean ever ends up wedged somewhere
   anyway, pushing the stick for a moment pops it out to the nearest free spot. **See-through:** tall things
   between the camera and the bean (a balloon, a house, a tree, the lighthouse, the waterfall) thin out around

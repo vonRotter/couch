@@ -7,8 +7,38 @@
 /** A small pond south of the square with stepping stones across (map.js digs it into the terrain). */
 export const POND = { x: 14.5, z: 25, r: 3.4 };
 
-// The cliff tops are open land (no invisible walls): the cliff faces are walls because they are steep, and you
-// get up there by the hidden steps behind the waterfall or by the cliff path to the lookout (map.js).
+// Up on the cliff tops there are only two places: the grove (by the hidden steps behind the waterfall) and
+// the lookout (by the Cliff Climb). Rock walls you can see close them in (the owner's call: no invisible walls,
+// and nothing else up there to wander off to). The cliff faces are steep: no foothold, you slide down them
+// (island.js), so walking off the edge always takes you back down.
+
+/**
+ * The rock walls on the cliff tops (map.js builds them): lines of boulders twice a bean's height, taller than any
+ * jump, that block along the whole line at any height. Each line starts at the foot of the cliff and climbs the
+ * face, so there is no way round its end. The grove: the upper river's bank (to the spring's boulders) in the
+ * west, a wall out to the sea in the east, the sea in the north. The lookout: a U from the cliff edge round
+ * behind the deck and back to the edge.
+ */
+export const CLIFF_WALLS = [
+  { id: 'groveW', pts: [[-20.45, -33.75], [-20.2, -36.7], [-20.0, -39.6]] }, // along the bank, into the spring's boulders
+  { id: 'groveE', pts: [[-9.2, -31.05], [-9.0, -36.5], [-9.3, -41.75], [-9.3, -42.45]], sea: 1 }, // the last 0.7 out over the sea
+  { id: 'lookout', pts: [[11.2, -34.2], [11.0, -41.3], [16.8, -41.7], [22.4, -41.3], [22.4, -34.3]] },
+];
+export const WALL_R = 0.62; // the walls block this far either side of their line (the boulders are wider)
+
+/** How far (x, z) is from the nearest cliff wall's line. */
+export function cliffWallDist(x, z) {
+  let best = Infinity;
+  for (const w of CLIFF_WALLS) {
+    for (let i = 1; i < w.pts.length; i++) {
+      const [ax, az] = w.pts[i - 1], [bx, bz] = w.pts[i];
+      const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz || 1;
+      const k = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L));
+      best = Math.min(best, Math.hypot(x - ax - dx * k, z - az - dz * k));
+    }
+  }
+  return best;
+}
 
 /** Spots kept free of the random trees, bushes and flowers (the random sequence itself is kept). */
 export const KEEP_CLEAR = [
@@ -23,7 +53,7 @@ export const KEEP_CLEAR = [
   { x0: -29.6, x1: -20.6, z0: 0.4, z1: 3.8 }, // the river stepping stones
 ];
 
-export const inKeepClear = (x, z) => KEEP_CLEAR.some((k) => (k.r !== undefined ? Math.hypot(x - k.x, z - k.z) < k.r : x > k.x0 && x < k.x1 && z > k.z0 && z < k.z1));
+export const inKeepClear = (x, z) => KEEP_CLEAR.some((k) => (k.r !== undefined ? Math.hypot(x - k.x, z - k.z) < k.r : x > k.x0 && x < k.x1 && z > k.z0 && z < k.z1)) || cliffWallDist(x, z) < 3;
 
 // ---------- stepping stones and ledges (not timed) ----------
 // kind: stone (round, flat top), rock (a lumpy ledge rock), stump, crate, barrel, log, plank, pad (lily pad)

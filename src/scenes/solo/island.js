@@ -28,7 +28,7 @@ import { thumb } from './thumbs.js';
 import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
 import { DiveScene } from './dive.js';
-import { IslandMap, heightAt, riverDist, SEA_Y, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES, SPREAD } from './map.js';
+import { IslandMap, heightAt, slopeAt, riverDist, SEA_Y, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES, SPREAD } from './map.js';
 import './strings12.js';
 import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS, cropNight } from './farm.js';
 import { Homes, makeHomeMats } from './homes.js';
@@ -85,6 +85,7 @@ const DOOR_R = 1.9;
 const JUMP_V = 7.4, GRAVITY = 26; // a bean hop: about a meter high, 0.57 s and 3.5 m in the air
 const ZZ_SCALE = 0.8; // the Zip-Zap in the hand: about half the bean's height (it was 1.55, longer than the bean)
 const SNAP = 0.3; // walking down a slope or a small step keeps your feet on the ground (more: you fall)
+const SLIDE = 1.6, SLIDE_V = 5; // ground steeper than this (a cliff face) has no foothold: you slide down it, this fast
 
 // The trophy garden between the farm and the square: 3 rows of 5 spots for decorations.
 const DECO_ORDER = ['lhLamp', 'lhTrophy', 'duckTrophy', 'kite', 'hopTrophy', 'banner', 'statue', 'gnome', 'pumpkinLamp', 'bottle', 'lantern', 'spyglass', 'rocket', 'moonrock', 'castleTrophy'];
@@ -1337,6 +1338,7 @@ export class SoloIslandScene extends BaseScene {
     const P = this.player;
     if (!P) return;
     if (P.air && !(P.coyote > 0)) { P.buffer = 0.14; return; }
+    if (!P.air && this.slideDir(P, this.walkState)) return; // no foothold on a cliff face: no hopping up it
     // the hop starts here (a jump just after walking off an edge keeps the edge as its start)
     if (!P.air) P.takeoff = P.safe ? { ...P.safe } : { x: P.x, z: P.z, fy: P.fy };
     P.air = true;
@@ -1373,10 +1375,10 @@ export class SoloIslandScene extends BaseScene {
         P.on = s.plat;
         if (!s.water) P.safe = { x: P.x, z: P.z, fy: s.y, plat: s.plat };
       } else {
-        // walked off an edge: fall (a jump still works for a moment)
+        // walked off an edge: fall (a jump still works for a moment, not when sliding down a cliff face)
         P.air = true;
         P.vy = 0;
-        P.coyote = 0.12;
+        P.coyote = P.slid ? 0 : 0.12;
         P.peak = P.fy;
         P.takeoff = P.safe ? { ...P.safe } : { x: P.x, z: P.z, fy: P.fy };
       }
@@ -1979,6 +1981,13 @@ export class SoloIslandScene extends BaseScene {
     P.stuckT = pushed && (this.map.overlap(P.x, P.z, PR, st, P.fy) > 0 || ((P.stuckT || 0) > 0.3 ? this.boxedIn(P, st) : true)) ? (P.stuckT || 0) + dt : 0;
     if (P.stuckT > 0.6) { P.stuckT = 0; this.unstick(P, st); this.puffs.burst(new THREE.Vector3(P.x, P.fy + 0.4, P.z), 0xffffff, { count: 6, speed: 2, size: 0.25, life: 0.4 }); }
     if (this.indoors) this.builder.clampInside(P);
+    // a cliff face has no foothold: you slide down it (so the cliffs cannot be hopped or crept up)
+    const sd = P.air ? null : this.slideDir(P, st);
+    P.slid = false;
+    if (sd) {
+      const nx = P.x + sd.x * SLIDE_V * dt, nz = P.z + sd.z * SLIDE_V * dt;
+      if (this.canMove(P, nx, nz, st)) { P.x = nx; P.z = nz; P.slid = true; }
+    }
     this.updateVertical(P, dt, st);
     P.lx = P.x; P.lz = P.z;
     P.moving = Math.min(1, len);
@@ -2001,6 +2010,12 @@ export class SoloIslandScene extends BaseScene {
     if (!P.air && map.supportAt(x, z, P.fy, st).water) return false;
     // on foot, no climbing up steep banks and cliff faces (whatever the frame rate): jump instead
     if (!P.air && !map.deckAt(x, z, st.bridge) && heightAt(x, z) - P.fy > Math.max(0.06, 1.1 * Math.hypot(x - P.x, z - P.z))) return false;
+    // and in the air, never onto a cliff face higher than your feet (you would land on it a little higher each
+    // time and hop up it): you fall down along it. (On foot the slide down it beats any creeping up.)
+    if (P.air) {
+      const h = heightAt(x, z);
+      if (h > P.fy && h > heightAt(P.x, P.z) && !map.deckAt(x, z, st.bridge) && slopeAt(x, z) > SLIDE) return false;
+    }
     return true;
   }
 
@@ -2019,6 +2034,20 @@ export class SoloIslandScene extends BaseScene {
     P.lx = P.x; P.lz = P.z;
   }
 
+  /**
+   * Standing on ground too steep to stand on (a cliff face; not on a deck or a top): the way down it, or null
+   * (also when that way is blocked, by the water's edge say: then you just stand there).
+   */
+  slideDir(P, st) {
+    if (this.indoors || P.on || this.map.deckAt(P.x, P.z, st.bridge) || P.fy - heightAt(P.x, P.z) > 0.05) return null;
+    if (slopeAt(P.x, P.z) <= SLIDE) return null;
+    const e = 0.12;
+    let gx = heightAt(P.x - e, P.z) - heightAt(P.x + e, P.z), gz = heightAt(P.x, P.z - e) - heightAt(P.x, P.z + e);
+    const L = Math.hypot(gx, gz) || 1;
+    gx /= L; gz /= L;
+    return this.canMove(P, P.x + gx * 0.1, P.z + gz * 0.1, st) ? { x: gx, z: gz } : null;
+  }
+
   /** Wedged in a spot smaller than a step (between a fence end and a post, say): no way to walk at all. */
   boxedIn(P, st) {
     for (let k = 0; k < 8; k++) {
@@ -2030,12 +2059,16 @@ export class SoloIslandScene extends BaseScene {
 
   /** Step out of anything we ended up inside (an unlock or a teleport): the nearest free spot. */
   unstick(P, st) {
-    for (let r = 0.3; r < 6; r += 0.3) {
-      for (let k = 0; k < 16; k++) {
-        const a = (k / 16) * Math.PI * 2;
-        const x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
-        const feet = Math.max(P.fy ?? -9, this.map.floorAt(x, z, st.bridge));
-        if (this.map.walkable(x, z, PR, st, feet) && !this.map.supportAt(x, z, feet, st).water) { P.x = x; P.z = z; P.lx = x; P.lz = z; return; }
+    // (first no higher than a hop up: never popped up a cliff onto the top)
+    for (const up of [1.2, Infinity]) {
+      for (let r = 0.3; r < 6; r += 0.3) {
+        for (let k = 0; k < 16; k++) {
+          const a = (k / 16) * Math.PI * 2;
+          const x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
+          const floor = this.map.floorAt(x, z, st.bridge), feet = Math.max(P.fy ?? -9, floor);
+          if (P.fy !== undefined && floor > P.fy + up) continue;
+          if (this.map.walkable(x, z, PR, st, feet) && !this.map.supportAt(x, z, feet, st).water) { P.x = x; P.z = z; P.lx = x; P.lz = z; return; }
+        }
       }
     }
   }
