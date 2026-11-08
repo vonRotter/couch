@@ -280,10 +280,11 @@ class Game {
    */
   coopFinished(scene) {
     if (this.solo || !scene.key) return;
+    const key = this.campaign ? 'story' : scene.key; // the story's stages and bosses count as the Story
     const got = [];
     for (const p of this.roster.players) {
       if (!p.profileId || !getProfile(p.profileId)) continue;
-      if (coopReward(this.roster, p.profileId, scene.key)) got.push(p.name);
+      if (coopReward(this.roster, p.profileId, key)) got.push(p.name);
     }
     if (got.length) this.ui.toast(t('coop.toast', { names: nameList(got) }), 3200);
   }

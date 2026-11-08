@@ -1,8 +1,27 @@
 # Couch Party Island
 
-Couch co-op party games for 1–6 players on one screen, built with three.js.
-Players roam a little island, collect stars to unlock hats, and walk onto a game
-pad together to start a game. Everything is forgiving: nobody is ever knocked out.
+A game that teaches children to play video games, built with three.js: platformers, adventures,
+tactics, action RPGs, racing, puzzles, party games and more, each a small game of its genre with
+real challenges. Accessible, not necessarily easy: everything is forgiving (nobody is ever knocked
+out), but there are learning curves and opposition to beat.
+
+- **Your own island is the main game.** Each child has a profile and an island of their own (a
+  small farming town where every game is a place you walk into, see Solo island). Progress, coins,
+  rewards and read-aloud settings are saved per profile in this browser.
+- **Play together is the extra.** The Party Pier ferry (or *Play together* in the menu) goes to the
+  shared island, where 1–6 players on one screen join with their own controllers or keyboards, roam
+  a little island, collect stars for hats, and walk onto a game pad together to start a game. Players
+  who join as their profile get rewards back on their own island.
+
+### How it starts
+
+Opening the game shows **Who is playing?**: the player picker, with the last player already chosen.
+Any keyboard or gamepad steers it: [A] on a player goes straight to that player's own island, **New
+player** makes a profile (name on a letter grid with the stick, then a color), [C] switches a
+profile's read-aloud (on, babble, off). **Play together** goes straight to the shared island for a
+group, without a profile: the device that chose it picks who it is there (a profile or Guest).
+Links: `#solo` (the guest games link back with it) opens the picker with that profile chosen;
+`#together` opens the shared island directly.
 
 ## Run it
 
@@ -37,7 +56,7 @@ Each game shows its own controls before it starts.
 | Keyboard 4 | Numpad 8 4 5 6 | Numpad 0 | Numpad . | Numpad Enter |
 
 **Menus (every game):** A picks, B goes back. A gamepad's B never picks anything: not in the pause
-menu, the start menu, the profile picker, shops, questions in dialogs, item and skill panels, quest
+menu, the shared island's menu, the player picker, the join card, the School House, shops, questions in dialogs, item and skill panels, quest
 boards, the gate, map, level, squad and difficulty pickers, votes or result screens (it closes or goes
 back, or does nothing where there is nowhere to go back to). Start opens and closes the pause menu.
 Keyboards pick as before: the jump key, and in most menus also the use key (E), which is how the pause
@@ -49,12 +68,19 @@ Nintendo B/A/Y/X, L/R, +).
 | Menu | Gamepad | Keyboard 1 |
 | --- | --- | --- |
 | move | stick or D-pad | W A S D |
-| pick | A (✕) | Space, or E where it picked before (pause menu, start menu) |
+| pick | A (✕) | Space, or E where it picked before (pause menu, the shared island's menu) |
 | back / close | B (○) | the menu's back key (E in game menus that already went back with E, Q on the solo island, `Esc` for the pause menu) |
 | pause menu | Start (Options / +) | `Esc` |
 
-- Press A on any device to join (up to 6 players). The first player picks a mode in the start
-  menu: **Island** (roam and pick games on the pads) or **Paint Pilots** (side-view biplane dogfight, inspired by Triplane Turmoil and Luftrausers). Vote
+- On the shared island, press A on any device to join (up to 6 players). With profiles in this
+  browser a small card asks **Who are you?** next to the others: a profile (each profile only once at a
+  time; taken ones are marked *playing*) or **Guest**; A picks, B goes back. Profiles bring their name,
+  hat and color (if nobody has that color yet, else a free one); guests get a free color. Without any
+  profiles, A joins as a guest right away. Color pots, swap pads and the hat stand work for everyone and
+  last for the visit (a profile's own look is kept on its island). Press C for the menu: **Keep
+  playing**, **Story** or **Home** (the ferry home, below).
+
+**Paint Pilots** (side-view biplane dogfight, inspired by Triplane Turmoil and Luftrausers). Vote
 on Free for all, Teams or Co-op against waves of grumble planes and blimps ending with the King Blimp.
 The stick points the nose, A boosts, B fires paint pellets and C does a barrel roll that dodges
 paint. Climb too steeply or too slowly and you stall: the engine sputters and the nose drops until
@@ -183,8 +209,8 @@ you fainted until you walk over it, and only the newest dropped bag is kept. Old
 new bag (what does not fit goes to the stash, then a lost-and-found chest in town) with their points
 to spend. Progress is saved per profile.
 
-**Story** (the co-op campaign). Press C on
-  the island to open the start menu again; leaving the Story also returns to it.
+**Story** (the co-op campaign): the big book on the meadow south-west of the playground on the shared
+island (or Story in the C menu); leaving the Story returns to the shared island at the book.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
 - In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound.
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
@@ -202,9 +228,12 @@ presses when many keys are held at once (ghosting).
 
 ## The games
 
-**Island hub.** The game pads sit in a ring along the shore, each with a floating 3D icon
-of its game. A game starts when at least half the players stand on its pad. The middle of
-the island is a playground:
+**Island hub** (the shared island). The game pads sit in a ring along the shore, each with a floating 3D icon
+of its game. A game starts when at least half the players stand on its pad. Two more pads stand
+off the ring: the **Story** (a golden book pad on the meadow) and the **Ferry home** on the south
+beach, with the Party Pier ferry waiting at its dock: it takes player 1 (who joined first) home to
+their own island, landing at the Party Pier, or back to the player picker when player 1 is a guest.
+Arriving by ferry, you appear just up the beach from it. The middle of the island is a playground:
 
 - four throwable balls, a basketball hoop (baskets are counted and saved) and a bowling lane
   with six pins (knock them all down within 3 seconds for a strike);
@@ -408,7 +437,7 @@ the lost puppy on your head to the exit for a team bonus. Hazards are soft: boun
 sticky honey and rolling snowballs; a long fall only makes you dizzy. Stragglers float to the leader
 in a bubble, sparkles show the way after a while, and nobody is ever out. Dangers: spikes, hot goo (icy water in the frost cave), crumbly floors, falling stalactites (they shake first), swooping bats, patrolling grumbles, pea plants and rolling boulders. Each player has 3 hearts; jumping on a bat or grumble makes it dizzy instead. At zero hearts you become a ghost who floats along with the others until the next depth, where you come back with 3 hearts. If everyone becomes a ghost, the depth restarts with a new layout.
 
-**Story** (co-op campaign, chosen in the start menu instead of the island). A map of four floating lands
+**Story** (co-op campaign, a place on the shared island: the golden book pad). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
 the island games with a co-op goal (for example "together, paint a share of the floor" or "everyone reaches the flag") and
 one to three stars, then a Grumble King boss: bounce on him when he is dizzy, ring the bells on his
@@ -459,7 +488,8 @@ number). Nobody is ever knocked out of a round.
 ## Learning games (LÆRING)
 
 Three educational games in Norwegian (bokmål), marked with a green **LÆRING** badge on the
-island. Jump on the green book button in the settings corner (or press `G`) to show or hide them;
+shared island, and all of them (plus the quiz) in the **School House** on every child's own island
+(see Solo island), where each child keeps their own level and progress. Jump on the green book button in the settings corner (or press `G`) to show or hide them;
 the choice is saved. Before each round every player picks their own level (Lett, Middels,
 Vanskelig), so younger and older kids can play together. Mistakes never cost anything.
 
@@ -486,15 +516,45 @@ simply the newest thing to appear.
 
 ## Solo island
 
-Choose **Solo** in the start menu (or open the site with `#solo`) for a separate island for one
-player. Each child picks or creates a **profile** (name typed with the stick on a letter grid, and a
-color); everything on the solo island is saved per profile in this browser.
+The main game: every child's own island, opened by choosing their profile in the player picker (see
+How it starts; *Change player* in the island's menu switches). Each child picks or creates a
+**profile** (name typed with the stick on a letter grid, and a color); everything on the solo island
+is saved per profile in this browser.
+
+**Play together: the Party Pier.** A short jetty off the east side of the pier, near the beach, with a
+red-and-white party ferry at its end (the dive boat, Grumbleton's sailboat to Shell Isle and the pirate
+ship keep their places). On the jetty, [B] (X on a gamepad) asks *Go now?* and the ferry takes you to
+the shared island, already joined as player 1 with your name, color and hat; friends join there with
+their own devices. *Play together* in the island's menu ([MENU]) does the same. The shared island uses
+the shared saves; the solo games there are the co-op versions (Pillow Keep, Knights & Builders, Crystal
+Caves, Grumble Guides): the versions on your own island stay the main ones, with your own saves and
+progress, and the co-op versions never write to them. The ferry home lands you back on the jetty.
+
+**Rewards for playing together.** Every player who joined the shared island as a profile (not guests)
+gets something back on their own island when a co-op game is finished (its results screen; ending a
+game from the pause menu does not count): 15 coins for each game, once per game per real day, and the
+first time a game is finished together a **badge** for it. Badges show as discs in the game's color on
+the **badge board** on the beach by the Party Pier ([B] reads it: the list of games); at 3 badges the
+mail brings **party pennants** and at 10 a **play-together trophy** for the yard. A toast on the results
+screen says who gets a gift. Gifts arrive as one letter a day from Grumbleton (the harbor master) in
+the mailbox, the next time that child is on their island; reading it pays the coins. They are written
+to each profile's own save (`progress.coop`) without switching to it.
+
+**School House** (the white schoolhouse with the bell tower on the meadow south-west of the square, by
+the path to the beach). Its door opens a picker of the learning games: Bokstavballonger, Mattejakt,
+Klokka, Pengebutikken, Rimord (each round on its own), Læringsmiks (all three) and Quizløpet (the quiz,
+with its picture mode). Stick up/down picks a game, left/right sets its level (Lett, Middels,
+Vanskelig), [B] or A plays and [C] or B closes. Each game's level, times played and best score are
+saved per profile (`progress.school`); the game's own level card starts on that level, and the sign
+says how many of the games you have played. The highlighted game is read aloud when read-aloud is on,
+and the learning games keep reading their words and puzzles (they rely on it). The learning games
+stay on the shared island too, unchanged (levels for that visit only).
 
 The solo island is a small farming town (inspired by Stardew Valley and Dave the Diver) and also the
 menu to the solo games: every game is a place you walk into. Time follows the real clock, so day and
 night match yours and crops grow while you are away.
 
-- **Places:** Lighthouse Caves (the lighthouse), The Secret of Pudding Island (the pirate ship at
+- **Places:** the School House (learning games), the Party Pier (the ferry to play together), Lighthouse Caves (the lighthouse), The Secret of Pudding Island (the pirate ship at
   the dock), Laser Ducks (the fairground tent), Bean Brigade (the mech garage on the east hill),
   Sky Hop (the hot-air balloon on kite hill) and the
   Game Hall with cabinets for the guest games (Tachyon, Starlite, Foothold, Starhop). Repair the
@@ -754,7 +814,7 @@ night match yours and crops grow while you are away.
   **opens the bag (up)** and **the journal (down)** (it does not walk), **Start opens the menu**, and Y
   is free. The keyboard stays Space / E / Q: Space jumps, E uses, Q opens the menu (and is back in
   panels), Tab the bag, F the journal, 1–9 the hotbar, `Esc` help. A new controller pressing jump takes
-  over. The menu has Keep playing, Shared island, Story, Change player (the profile picker), Read aloud
+  over. The menu has Keep playing, Play together (the shared island, like the ferry), Change player (the profile picker), Read aloud
   on/off, Characters (speak or babble), Language and Help, so a gamepad reaches every setting. The
   Friends book is in the journal now, not in the menu.
 
@@ -866,9 +926,12 @@ its own save keys and show a button back to the `return` link.
 
 ```
 src/
-  main.js            renderer, game loop, scene switching
+  main.js            renderer, game loop, scene switching; the start flow (enterSolo, goTogether, goHome,
+                     openStart) and co-op rewards (coopFinished)
   core/
-    profiles.js      solo profiles (storage, picker) and the guest-game contract
+    profiles.js      solo profiles (storage, picker incl. the start screen's cards), the shared island's
+                     join card (JoinPicker) and the guest-game contract
+    coop.js          rewards for playing together: coins, badges, decorations, letters (progress.coop)
     voice.js         read-aloud: say(text, speaker), the narrator, voice types or babble (B)
     voices.js        speaker -> voice type table, types, choosing the device's voices per type
     babble.js        WebAudio babble syllables per voice type
@@ -890,6 +953,10 @@ src/
     vote.js          pre-game vote picker (laps, match length, rounds, holes)
     minigame.js      shared intro -> countdown -> results -> back flow
   scenes/
+    start.js         the start screen: Who is playing? over a little island
+    ferry-model.js   the Party Pier ferry (shared by both islands)
+    solo/            the solo island (island.js, map.js, ...; ferry.js: the Party Pier and badge board;
+                     school.js: the School House and its picker)
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     spacefall.js  spacefall/  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js
