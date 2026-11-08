@@ -129,7 +129,7 @@ const CSS = `
 .isl-compass .ar { position: absolute; left: -26px; top: -26px; width: 52px; height: 52px; border-radius: 50%; background: rgba(255,250,240,.95);
   box-shadow: 0 3px 0 rgba(43,35,64,.25), 0 0 0 3px #ff4f6d; display: grid; place-items: center; }
 .isl-compass .ar svg { width: 36px; height: 36px; }
-.isl-compass .ic { position: absolute; left: -14px; top: 22px; width: 28px; text-align: center; font-size: 22px; filter: drop-shadow(0 1px 0 #fff); }
+.isl-compass .ic { position: absolute; left: -17px; top: 20px; width: 34px; height: 34px; line-height: 34px; border-radius: 50%; background: rgba(255,250,240,.92); text-align: center; font-size: 24px; box-shadow: 0 2px 0 rgba(43,35,64,.2); }
 `;
 function injectStyle() {
   if (document.getElementById('isl-map-style')) return;
@@ -545,6 +545,7 @@ export class IslandAtlas {
     el.style.display = 'block';
     el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
     this.arEl.style.transform = `rotate(${ang.toFixed(3)}rad)`;
+    this.icEl.style.top = ang === Math.PI ? '-56px' : '20px'; // over the target: its picture above the arrow, not on the sign
     const ic = here === there ? T.icon : `⛵`;
     if (this.icEl.textContent !== ic) this.icEl.textContent = ic;
     this.compassAt = { x, y, ang, onScreen: ang === Math.PI };
