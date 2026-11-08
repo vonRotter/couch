@@ -60,6 +60,7 @@ import { Play } from './play.js';
 import { SeeThrough } from './seethrough.js';
 import { Ferry, deliverCoopMail, coopMailVars, coopBadgeGifts } from './ferry.js';
 import { School } from './school.js';
+import { IslandAtlas } from './atlas.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
 // One player (with the profile's name, color and hat). Games are PLACES you walk to; some open through
@@ -72,7 +73,7 @@ const PR = 0.42;
 const CAM_UP = 14.8, CAM_BACK = 13; // a little higher up (a more top-down view) and never closer than before (12.5 / 13)
 // the menu ([MENU]: Q or Start): keep playing, the other ways to play, and the settings a gamepad has no key for
 // 'island' is "Play together" (the shared island, like the Party Pier ferry); the story is a place there now
-const MENU = ['resume', 'island', 'solo', 'voice', 'chars', 'lang', 'help'];
+const MENU = ['resume', 'island', 'solo', 'voice', 'chars', 'sound', 'lang', 'help']; // (sound: M is the map here)
 const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];
 const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
@@ -252,6 +253,8 @@ export class SoloIslandScene extends BaseScene {
     this.play = new Play(this); // villagers play: tag, waves, sunset and stars together, little tasks
     this.story = new Story(this); // milestone B4: the lighthouse story and the lighthouse top
     this.lightTop = new LightTop(this);
+    this.atlas = new IslandAtlas(this); // the map (the journal's first tab, M / View) and the arrow that shows the way
+    this.mapKey = true; // main.js: M opens the map here instead of switching the sound (the menu has Sound)
     this.checkRewards();
 
     // the player
@@ -1899,6 +1902,7 @@ export class SoloIslandScene extends BaseScene {
     if (k === 'voice') return `${t('isl.mn.voice')}: ${t(voiceOn() ? 'isl.mn.on' : 'isl.mn.off')}`;
     if (k === 'chars') return `${t('pause.chars')}: ${t(babbleMode() ? 'pause.charsBabble' : 'pause.charsVoices')}`;
     if (k === 'lang') return `${t('isl.mn.lang')}: ${t('isl.mn.langName')}`;
+    if (k === 'sound') return `${t('isl.mn.sound')}: ${t(this.game.audio.muted ? 'isl.mn.off' : 'isl.mn.on')}`;
     return t(`isl.mn.${k}`);
   }
 
@@ -1919,7 +1923,7 @@ export class SoloIslandScene extends BaseScene {
     const start = !!(this.playerDevice?.btnPressed?.start || this.playerDevice?.btnPressed?.view);
     if (inp.cPressed || start) { this.closeMode(); return; }
     // settings switch with left/right too, and the menu stays open
-    const setting = k === 'voice' || k === 'chars' || k === 'lang';
+    const setting = k === 'voice' || k === 'chars' || k === 'sound' || k === 'lang';
     if (setting && inp.stepX) { this.menuSetting(k); return; }
     if (!(inp.aPressed || inp.bPressed)) return;
     if (setting) { this.menuSetting(k); return; }
@@ -1942,6 +1946,7 @@ export class SoloIslandScene extends BaseScene {
   menuSetting(k) {
     if (k === 'voice') this.game.toggleVoice();
     else if (k === 'chars') this.game.toggleBabble();
+    else if (k === 'sound') this.game.audio.toggleMute();
     else this.game.toggleLanguage();
     this.renderMode();
   }
@@ -2275,6 +2280,7 @@ export class SoloIslandScene extends BaseScene {
       for (let k = 1; k <= 9; k++) if (this.game.input.pressed.has(`Digit${k}`) && this.mode === 'walk') { this.save.sel = k - 1; this.game.audio.play('select'); }
       // the journal's tabs only on its own pages
       if (this.mode !== 'journal' && this.hud.panelPrefix) this.hud.panelPrefix = this.hud.panelSuffix = '';
+      if (this.mode !== 'journal' || this.journal.tab !== 'map') this.hud.panel.classList.remove('isl-map-wide');
       // Panels and mini-modes keep their own code: "do it" arrives as their [A] and "close/back" as
       // their [B], so here the island's [B] (use: E / X) becomes their do-it and [C] (Q / B) their back
       // (see README). On a gamepad A picks too, so A picks and B goes back everywhere.
@@ -2317,7 +2323,9 @@ export class SoloIslandScene extends BaseScene {
           const keys = this.game.input.pressed;
           const pb = this.playerDevice?.btnPressed || {}; // a gamepad's D-pad and Start (input.js)
           // the menu: Q, or Start (a gamepad's B is back: it does nothing out here)
-          if ((!pad && inp.cPressed) || pb.start || pb.view) { this.openMode(0); break; }
+          if ((!pad && inp.cPressed) || pb.start) { this.openMode(0); break; }
+          // the map: M, or View (Create / −) on a gamepad
+          if (keys.has('KeyM') || pb.view) { this.journal.open('map'); break; }
           if (keys.has('KeyF') || pb.down) { this.journal.open(); break; }
           if (keys.has('Tab') || pb.up) { this.openBag(); break; }
           // D-pad left/right: the hotbar slot (what you hold)
@@ -2349,6 +2357,7 @@ export class SoloIslandScene extends BaseScene {
     this.life.update(dt, this.night || 0, P || { x: 0, z: 0 });
     for (const f of Object.values(this.finds)) if (f.g.visible) { f.g.userData.glint.rotation.y += dt * 3; f.g.userData.glint.scale.y = 0.6 + Math.sin(this.time * 5) * 0.4; }
     this.updateCamera(dt);
+    this.atlas.updateCompass(dt); // the arrow to the place picked on the map
     // tall things between the camera and the bean turn see-through around it (seethrough.js)
     if (!this.seeThrough) this.seeThrough = new SeeThrough(this.scene, this.game.renderer);
     if (P) this.seeThrough.update(dt, this.camera, _bean.set(P.x, P.y + (P.jy || 0) + 0.6, P.z), P.y + (P.jy || 0), !this.camView);
@@ -2367,6 +2376,7 @@ export class SoloIslandScene extends BaseScene {
     this.seeThrough?.dispose();
     window.removeEventListener('keydown', this.onTabKey);
     this.journal?.dispose();
+    this.atlas?.dispose();
     this.toasts.dispose();
     this.cafe?.dispose();
     this.fishing?.dispose();

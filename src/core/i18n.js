@@ -345,8 +345,8 @@ export function t(key, vars) {
 // Button names in text: strings write [A], [B] or [C], and t() swaps in what the current players
 // actually press ("E", "R-Shift", "B", "○"...). main.js supplies the list for the joined players.
 // Also: [OK] (what picks in a menu: E / A), [BACK] (Esc / B), [MENU] (Q / Start), [BAG] (Tab / D-pad up), [JOURNAL]
-// (F / D-pad down), [ITEMS] (1-9 / D-pad left/right) and [TABS] ([ ] / LB/RB): see input.js buttonLabel.
-const BUTTON_TOKEN = /\[(A|B|C|OK|BACK|MENU|BAG|JOURNAL|ITEMS|TABS)\]/g;
+// (F / D-pad down), [ITEMS] (1-9 / D-pad left/right), [TABS] ([ ] / LB/RB) and [MAP] (M / View): see input.js buttonLabel.
+const BUTTON_TOKEN = /\[(A|B|C|OK|BACK|MENU|BAG|JOURNAL|ITEMS|TABS|MAP)\]/g;
 let buttonSource = null;
 export function setButtonSource(fn) { buttonSource = fn; }
 

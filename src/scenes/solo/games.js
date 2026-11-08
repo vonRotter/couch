@@ -18,8 +18,8 @@ import { makeBush } from '../../core/world.js';
 // - Leaf piles in autumn weeks: jump into one (from a hop) and it bursts; some hide a little something.
 // Rewards are small (coins, a seed, friendship); nothing is ever lost.
 
-const PILE = { x: 25.6, z: 40.2, face: { x: 0.35, z: 1 } }; // skipping stones (throw toward the sea)
-const KITE = { x: 13.4, z: -25.6 }; // the kite stand on kite hill
+export const PILE = { x: 25.6, z: 40.2, face: { x: 0.35, z: 1 } }; // skipping stones (throw toward the sea)
+export const KITE = { x: 13.4, z: -25.6 }; // the kite stand on kite hill
 const HIDE = [[51.8, -7.6], [53.4, -11.6], [48.6, -13.6], [44.8, -9.4], [51.2, -13.0], [43.2, -12.6]]; // bushes at the meadow
 export const LEAF_PILES = [[-3.7, -13.4], [2.5, -11.6], [16.4, 4.2], [6.2, 15.2], [26.4, 12.0], [-6.2, 16.4], [36.6, -6.2], [30.4, -6.8]];
 const ARENA = { x0: 15.5, x1: 22.5, them: 1.9, fort: 2.9, me: 9.4, myFort: 8.4 }; // the snowball fight, south of the square

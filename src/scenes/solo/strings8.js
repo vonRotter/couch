@@ -7,7 +7,7 @@ import { addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'isl.key.bagKb': 'Tab', 'isl.key.bagPad': '[BAG]',
-    'isl.keysPad': '[A] jump · [B] use, talk, go in · [BAG]: bag · [ITEMS]: hotbar · [JOURNAL]: journal · [MENU]: menu',
+    'isl.keysPad': '[A] jump · [B] use, talk, go in · [BAG]: bag · [ITEMS]: hotbar · [JOURNAL]: journal · [MAP]: map · [MENU]: menu',
     'isl.bagHow.kb': 'Tab opens your bag', 'isl.bagHow.pad': '[BAG] opens your bag',
     'isl.h.growingNight': '{item}: about {m} min (sleeping until morning)', 'isl.grow.night': 'slower at night',
     // homes and knocking
@@ -33,7 +33,7 @@ addStrings({
     'isl.knock.shelby.2': 'Mmm... coconut... coconut... zzz... Tell the tide to come back in the morning!',
     // the menu (Q / Start, island.js) and the Friends book (the journal's first tab)
     'isl.mn.title': 'Menu', 'isl.mn.resume': 'Keep playing', 'isl.mn.island': 'Play together', 'isl.mn.story': 'Story',
-    'isl.mn.solo': 'Change player', 'isl.mn.voice': 'Read aloud', 'isl.mn.on': 'on', 'isl.mn.off': 'off', 'isl.mn.lang': 'Language', 'isl.mn.langName': 'English',
+    'isl.mn.solo': 'Change player', 'isl.mn.voice': 'Read aloud', 'isl.mn.on': 'on', 'isl.mn.off': 'off', 'isl.mn.lang': 'Language', 'isl.mn.sound': 'Sound', 'isl.mn.langName': 'English',
     'isl.mn.help': 'Help', 'isl.mn.hint': 'Stick up/down · [OK]: choose (left/right: switch) · [C]: close',
     'isl.fb.title': 'Friends book', 'isl.fb.hint': 'Stick or arrow keys: turn the page',
     'isl.fb.bdayLabel': 'Birthday', 'isl.fb.bday': '{m} {d}', 'isl.fb.noBday': 'A secret! 🤫',
@@ -61,7 +61,7 @@ addStrings({
   },
   no: {
     'isl.key.bagKb': 'Tab', 'isl.key.bagPad': '[BAG]',
-    'isl.keysPad': '[A] hopp · [B] bruk, snakk, gå inn · [BAG]: sekk · [ITEMS]: verktøylinja · [JOURNAL]: dagbok · [MENU]: meny',
+    'isl.keysPad': '[A] hopp · [B] bruk, snakk, gå inn · [BAG]: sekk · [ITEMS]: verktøylinja · [JOURNAL]: dagbok · [MAP]: kart · [MENU]: meny',
     'isl.bagHow.kb': 'Tab åpner sekken', 'isl.bagHow.pad': '[BAG] åpner sekken',
     'isl.h.growingNight': '{item}: omtrent {m} min (sover til i morgen)', 'isl.grow.night': 'saktere om natta',
     'isl.h.knock': '[B] bank på døra til {name}',
@@ -85,7 +85,7 @@ addStrings({
     'isl.knock.shelby.1': 'Zzz ... jeg ligger krøllet sammen i skjellet mitt ... hysj ... bølgene synger meg i søvn ...',
     'isl.knock.shelby.2': 'Mmm ... kokosnøtt ... kokosnøtt ... zzz ... Si til tidevannet at det kan komme tilbake i morgen!',
     'isl.mn.title': 'Meny', 'isl.mn.resume': 'Spill videre', 'isl.mn.island': 'Spill sammen', 'isl.mn.story': 'Historie',
-    'isl.mn.solo': 'Bytt spiller', 'isl.mn.voice': 'Opplesing', 'isl.mn.on': 'på', 'isl.mn.off': 'av', 'isl.mn.lang': 'Språk', 'isl.mn.langName': 'norsk',
+    'isl.mn.solo': 'Bytt spiller', 'isl.mn.voice': 'Opplesing', 'isl.mn.on': 'på', 'isl.mn.off': 'av', 'isl.mn.lang': 'Språk', 'isl.mn.sound': 'Lyd', 'isl.mn.langName': 'norsk',
     'isl.mn.help': 'Hjelp', 'isl.mn.hint': 'Pinne opp/ned · [OK]: velg (venstre/høyre: bytt) · [C]: lukk',
     'isl.fb.title': 'Venneboka', 'isl.fb.hint': 'Pinne eller piltaster: bla om',
     'isl.fb.bdayLabel': 'Bursdag', 'isl.fb.bday': '{d}. {m}', 'isl.fb.noBday': 'En hemmelighet! 🤫',

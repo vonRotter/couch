@@ -270,6 +270,11 @@ function colorAt(x, z, h, out) {
   return out;
 }
 
+/** The ground's color at a point (as the island's ground mesh draws it), for the island map (atlas.js). */
+export function groundColor(x, z, out = new THREE.Color()) {
+  return colorAt(x, z, heightAt(x, z), out);
+}
+
 /** A villager's house gets its own window material (M.home[id], see homes.js) before it is baked. */
 export function ownWindows(g, M, id) {
   const mat = M.home?.[id];

@@ -2,15 +2,17 @@ import { t, tFor, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 
-// The journal: one book with tabs for Friends (villagers, crab friends, the farm animals: friends.js), Tasks,
-// the Calendar (seasons.js), the Fish log (island.js) and the Museum list (museum.js, to look at; donating
-// stays at Curator Hoot's board). F or the D-pad down opens it; LB/RB on a gamepad or 1-5 (also [ and ])
-// on a keyboard switch tabs; [C] (Q / gamepad B) closes it (F and Tab too; on a keyboard Space and E as
-// before). The calendar board and the fish log book open it at their tab.
+// The journal: one book with tabs for the Map (atlas.js), Friends (villagers, crab friends, the farm animals:
+// friends.js), Tasks, the Calendar (seasons.js), the Fish log (island.js) and the Museum list (museum.js, to
+// look at; donating stays at Curator Hoot's board). F or the D-pad down opens it (at the last tab, Friends at
+// first); M or a gamepad's View opens it at the Map (and closes the Map again); LB/RB on a gamepad or 1-6
+// (also [ and ]) on a keyboard switch tabs; [C] (Q / gamepad B) closes it (F and Tab too; on a keyboard Space
+// and E as before, except on the Map, where they pick). The calendar board and the fish log book open it at
+// their tab.
 // Read-aloud: the Friends pages (a book you open) and the Tasks (help) are read; the lists are not.
 
-export const TABS = ['friends', 'tasks', 'cal', 'fish', 'museum'];
-const ICONS = { friends: '💛', tasks: '📝', cal: '📅', fish: '🐟', museum: '🏛️' };
+export const TABS = ['map', 'friends', 'tasks', 'cal', 'fish', 'museum'];
+const ICONS = { map: '🗺️', friends: '💛', tasks: '📝', cal: '📅', fish: '🐟', museum: '🏛️' };
 
 addStrings({
   en: {
@@ -71,6 +73,7 @@ export class Journal {
   close() {
     const hud = this.host.hud;
     hud.panelPrefix = hud.panelSuffix = '';
+    hud.panel.classList.remove('isl-map-wide');
     hud.setPanel(null);
     this.host.mode = 'walk';
   }
@@ -85,11 +88,14 @@ export class Journal {
   /** Draw the current tab (read: read it aloud when it is a page that is read). */
   show(read = false) {
     const host = this.host, hud = host.hud;
-    const num = (i) => (host.onPad ? '' : `<small style="opacity:.5"> ${i + 1}</small>`); // the keys 1-5 on a keyboard
+    const num = (i) => (host.onPad ? '' : `<small style="opacity:.5"> ${i + 1}</small>`); // the keys 1-6 on a keyboard
     hud.panelPrefix = `<div class="isl-jtabs">${TABS.map((k, i) => `<span data-tab="${k}" class="${k === this.tab ? 'on' : ''}">${ICONS[k]} ${esc(t(`isl.jn.${k}`))}${num(i)}</span>`).join('')}</div>`;
-    hud.panelSuffix = `<div class="isl-foot">${esc(tFor(host.player?.p, 'isl.jn.hint'))}</div>`;
+    const map = this.tab === 'map';
+    hud.panelSuffix = `<div class="isl-foot">${esc(tFor(host.player?.p, map ? (host.onPad ? 'map.hint' : 'map.hintKb') : 'isl.jn.hint'))}</div>`;
+    hud.panel.classList.toggle('isl-map-wide', map); // the map gets a wider page
     hud.cache.panel = null;
     switch (this.tab) {
+      case 'map': host.atlas.render(); break;
       case 'friends': host.friends.render(read); break;
       case 'tasks': this.renderTasks(read); break;
       case 'cal': host.seasons.renderCalendar(); break;
@@ -113,15 +119,19 @@ export class Journal {
     const keys = host.game.input.pressed;
     const dev = host.playerDevice;
     const P = dev?.btnPressed || {};
-    // tabs: LB/RB, [ and ], or 1-5
+    // tabs: LB/RB, [ and ], or 1-6
     let step = (P.rb || keys.has('BracketRight') ? 1 : 0) - (P.lb || keys.has('BracketLeft') ? 1 : 0);
     for (let k = 1; k <= TABS.length; k++) if (keys.has(`Digit${k}`)) { this.setTab(TABS[k - 1]); step = 0; }
     if (step) this.setTab(TABS[(TABS.indexOf(this.tab) + step + TABS.length) % TABS.length]);
-    // close: [C] (Q / gamepad B), F, Tab; on a keyboard Space and E close as before (a gamepad's A and X do nothing)
-    const kb = !host.onPad;
-    if (this.t > 0.25 && (inp.cPressed || keys.has('KeyF') || keys.has('Tab') || (kb && (inp.aPressed || inp.bPressed)))) { this.close(); return; }
+    // M / View: the Map (and on the Map, they close it)
+    if (this.t > 0.25 && (keys.has('KeyM') || P.view)) { if (this.tab === 'map') this.close(); else this.setTab('map'); return; }
+    // close: [C] (Q / gamepad B), F, Tab; on a keyboard Space and E close as before (a gamepad's A and X do nothing),
+    // but on the Map they pick
+    const kb = !host.onPad, map = this.tab === 'map';
+    if (this.t > 0.25 && (inp.cPressed || keys.has('KeyF') || keys.has('Tab') || (kb && !map && (inp.aPressed || inp.bPressed)))) { this.close(); return; }
     // the page itself: turn pages, look through the lists
     switch (this.tab) {
+      case 'map': if (this.t > 0.25) host.atlas.update(inp, dt); break;
       case 'friends': host.friends.flip(inp); break;
       case 'fish': host.logStep(inp); break;
       case 'museum': host.museum.listStep(inp); break;

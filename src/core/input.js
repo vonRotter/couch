@@ -37,9 +37,9 @@ export const KEYBOARD_SCHEMES = [
 // Nintendo pads swap the letters: the bottom button is B, the right one A, the left one Y, the top one X.
 export const PAD_BUTTONS = { a: 0, b: 1, x: 2, y: 3, lb: 4, rb: 5, lt: 6, rt: 7, view: 8, start: 9, up: 12, down: 13, left: 14, right: 15 };
 export const PAD_LABELS = {
-  xbox: { a: 'A', b: 'B', x: 'X', y: 'Y', lb: 'LB', rb: 'RB', lt: 'LT', rt: 'RT', start: 'Start' },
-  ps: { a: '✕', b: '○', x: '□', y: '△', lb: 'L1', rb: 'R1', lt: 'L2', rt: 'R2', start: 'Options' },
-  nintendo: { a: 'B', b: 'A', x: 'Y', y: 'X', lb: 'L', rb: 'R', lt: 'ZL', rt: 'ZR', start: '+' },
+  xbox: { a: 'A', b: 'B', x: 'X', y: 'Y', lb: 'LB', rb: 'RB', lt: 'LT', rt: 'RT', start: 'Start', view: 'View' },
+  ps: { a: '✕', b: '○', x: '□', y: '△', lb: 'L1', rb: 'R1', lt: 'L2', rt: 'R2', start: 'Options', view: 'Create' },
+  nintendo: { a: 'B', b: 'A', x: 'Y', y: 'X', lb: 'L', rb: 'R', lt: 'ZL', rt: 'ZR', start: '+', view: '−' },
 };
 
 /**
@@ -57,11 +57,12 @@ let layoutNow = 'default';
 export function setPadLayout(name) { layoutNow = PAD_LAYOUTS[name] ? name : 'default'; }
 export function padLayout() { return layoutNow; }
 
-// Extra things a hint can name ([OK], [BACK], [MENU], [BAG], [JOURNAL], [ITEMS], [TABS] in text, see i18n.js).
+// Extra things a hint can name ([OK], [BACK], [MENU], [BAG], [JOURNAL], [ITEMS], [TABS], [MAP] in text, see i18n.js).
 // [OK] is what picks in a menu: the use key on a keyboard (Space works too), A on a gamepad.
 // [BACK] closes the pause menu: Esc on a keyboard, B on a gamepad. [MENU] is the solo island's menu (Q / Start).
-const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–5', back: 'Esc' };
-const PAD_EXTRA = { ok: 'a', back: 'b', menu: 'start', tabs: ['lb', 'rb'] };
+// [MAP] is the solo island's map (M / the View button: Create on a PlayStation pad, − on a Nintendo one).
+const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–6', back: 'Esc', map: 'M' };
+const PAD_EXTRA = { ok: 'a', back: 'b', menu: 'start', tabs: ['lb', 'rb'], map: 'view' };
 const DPAD = { bag: 'pad.up', journal: 'pad.down', items: 'pad.leftRight' };
 
 /** What a player presses for 'a' | 'b' | 'c' (or 'ok', 'menu', 'bag', 'journal', 'items', 'tabs') on this device. */

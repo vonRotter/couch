@@ -419,7 +419,8 @@ class Game {
     // the solo island and its dive have their own gamepad layout (A jump, X use, B back; input.js)
     setPadLayout(this.current?.padLayout || 'default');
     this.input.update();
-    if (this.input.mutePressed) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
+    // M switches the sound (on the solo island it opens the map: its menu has Sound)
+    if (this.input.mutePressed && !this.current?.mapKey) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
     if (this.input.pressed.has('KeyN')) this.toggleLanguage();
     if (this.input.pressed.has('KeyV')) this.toggleVoice();
     if (this.input.pressed.has('KeyB')) this.toggleBabble();
