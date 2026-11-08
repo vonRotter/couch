@@ -60,10 +60,12 @@ export class Journal {
     host.hud.panel.addEventListener('click', this.onClick);
   }
 
-  /** Open at a tab (default: the last one). */
+  /** Open at a tab (default: the last one; F / D-pad down never lands on the Map, which has its own button). */
   open(tab = null) {
     const host = this.host;
     if (tab && TABS.includes(tab)) this.tab = tab;
+    else if (this.tab === 'map') this.tab = this.book || 'friends';
+    if (this.tab !== 'map') this.book = this.tab;
     host.mode = 'journal';
     this.t = 0;
     this.show(true);
@@ -81,6 +83,7 @@ export class Journal {
   setTab(tab) {
     if (tab === this.tab || !TABS.includes(tab)) return;
     this.tab = tab;
+    if (tab !== 'map') this.book = tab;
     this.host.game.audio.play('select');
     this.show(true);
   }

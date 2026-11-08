@@ -4,7 +4,7 @@ import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { dayKey, weekIndex } from './calendar.js';
 import { heightAt, groundColor, inUpperWater, SEA_Y, HOME, STORE, CAFE, MUSEUM, HALL, MAILBOX, PIER, PLAZA, FERRY, DIVE_BOAT, CRAB_COVE, FIELD, GREEN, GREENHOUSE, HOME_DOORS, HAZEL_HOME, DEN, BRIDGE } from './map.js';
-import { ISLE2_DOCK, HUT, POOLS, PALMS, BERRIES, DIGS, isle2Height } from './isle2geo.js';
+import { ISLE2, ISLE2_DOCK, HUT, POOLS, PALMS, BERRIES, DIGS, COVE, isle2Height } from './isle2geo.js';
 import { TRAILS } from './hopdata.js';
 import { PILE, KITE, LEAF_PILES } from './games.js';
 import { MAIN_BOARD } from './isle2.js';
@@ -102,7 +102,7 @@ const CSS = `
 .isl-mk i.nw { right: -.55em; top: -.55em; }
 .isl-mk i.lk { right: -.5em; bottom: -.4em; }
 .isl-mk i.ex { right: -.45em; top: -.75em; background: #ff4f6d; color: #fff; border-radius: 999px; padding: 1px 5px; font-weight: 800; font-size: .6em; }
-.isl-mk i.zz { right: -.9em; top: -.7em; font-size: .55em; font-weight: 800; color: #6a5acd; }
+.isl-mk i.zz { right: -.6em; top: -.6em; }
 .isl-mk.npc b { display: grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; background: #fff; border: 3px solid var(--c); font-size: .8em; }
 .isl-mk.today { font-size: clamp(16px, 2.5vh, 25px); }
 .isl-mk.today::after, .isl-map-legend .tdy::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; background: radial-gradient(rgba(255,216,74,.95) 35%, rgba(255,216,74,0) 70%); z-index: -1; }
@@ -158,7 +158,9 @@ function drawTerrain(region, map) {
   for (let j = 0; j < H; j++) {
     for (let i = 0; i < W; i++) {
       const x = R.x0 + (i + 0.5) / R.res, z = R.z0 + (j + 0.5) / R.res;
-      const h = region === 'isle' ? isle2Height(x, z) : heightAt(x, z);
+      let h = region === 'isle' ? isle2Height(x, z) : heightAt(x, z);
+      // Shell Isle's hidden cove is a secret: the map draws the beach over it
+      if (region === 'isle' && Math.hypot(x - COVE.x, z - COVE.z) < COVE.r + 1.8 && Math.hypot((x - ISLE2.x) / ISLE2.rx, (z - ISLE2.z) / ISLE2.rz) < 1.0) h = Math.max(h, 0.1);
       if (h < SEA_Y || (region === 'main' && inUpperWater(x, z))) col.copy(sea.copy(shallow).lerp(deep, Math.min(1, (SEA_Y - h) / 2.2)));
       else if (region === 'isle') col.copy(h < 0.15 ? sand : sand.clone().lerp(grass, Math.min(1, (h - 0.15) * 3)));
       else {
@@ -340,14 +342,16 @@ export class IslandAtlas {
     const host = this.host, hud = host.hud, region = this.region, R = REGIONS[region];
     const P = host.player;
     this.list = this.markers(region);
-    if (!this.cur) this.cur = P ? { x: P.x, z: P.z } : { x: (R.x0 + R.x1) / 2, z: (R.z0 + R.z1) / 2 };
+    // the cursor starts where you are (and again on the other island's map)
+    if (!this.cur || this.curRegion !== region) this.cur = P ? { x: P.x, z: P.z } : { x: (R.x0 + R.x1) / 2, z: (R.z0 + R.z1) / 2 };
+    this.curRegion = region;
     this.cur.x = THREE.MathUtils.clamp(this.cur.x, R.x0, R.x1);
     this.cur.z = THREE.MathUtils.clamp(this.cur.z, R.z0, R.z1);
     const pos = (x, z) => `left:${(((x - R.x0) / (R.x1 - R.x0)) * 100).toFixed(2)}%;top:${(((z - R.z0) / (R.z1 - R.z0)) * 100).toFixed(2)}%`;
     const tk = this.target?.key;
     const mk = this.list.map((m, i) => {
       const cls = ['isl-mk', m.kind, m.locked ? 'dim' : '', m.key === tk ? 'tgt' : ''].join(' ');
-      const badge = (m.isNew ? '<i class="nw">✨</i>' : '') + (m.locked ? '<i class="lk">🔒</i>' : '') + (m.talk ? '<i class="ex">!</i>' : '') + (m.asleep ? '<i class="zz">Zzz</i>' : '');
+      const badge = (m.isNew ? '<i class="nw">✨</i>' : '') + (m.locked ? '<i class="lk">🔒</i>' : '') + (m.talk ? '<i class="ex">!</i>' : '') + (m.asleep ? '<i class="zz">💤</i>' : '');
       const body = m.kind === 'npc' ? `<b style="--c:${m.css}">${m.icon}</b>` : m.icon;
       return `<div class="${cls}" data-i="${i}" style="${pos(m.x, m.z)}">${body}${badge}</div>`;
     }).join('');
