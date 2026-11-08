@@ -29,6 +29,7 @@ function load(key = STORE_KEY) {
 export class Roster {
   constructor() {
     this.players = [];
+    this.seq = 0; // join order: player 1 is the one who joined first (see first())
     this.storeKey = STORE_KEY;
     const saved = load();
     this.stars = saved.stars || 0;
@@ -58,6 +59,22 @@ export class Roster {
     if (lang) this.progress.lang = lang;
   }
 
+  /**
+   * Change another save slot without switching to it (co-op rewards for a profile's own island).
+   * The active slot is changed in place, so nothing the game holds is overwritten.
+   */
+  editSave(key, fn) {
+    if (key === this.storeKey) { fn(this.progress); this.save(); return; }
+    const saved = load(key);
+    const progress = saved.progress || {};
+    fn(progress);
+    try {
+      localStorage.setItem(key, JSON.stringify({ stars: saved.stars || 0, progress }));
+    } catch {
+      /* storage unavailable */
+    }
+  }
+
   addStars(n) {
     this.stars += n;
     this.save();
@@ -83,6 +100,7 @@ export class Roster {
       colorIndex: 0,
       deviceId: device.id,
       hat: 1,
+      seq: ++this.seq,
       // A solo profile's name wins over the color name.
       get name() { return this.profileName || t(`color.${this.colorIndex}`); },
       get deviceLabel() { return deviceLabel(this.deviceId); },
@@ -118,6 +136,11 @@ export class Roster {
     this.applyColor(a, b.colorIndex);
     this.applyColor(b, ca);
     this.players.sort((x, y) => x.colorIndex - y.colorIndex);
+  }
+
+  /** Player 1: the player who joined first (the one a ferry home belongs to). */
+  first() {
+    return this.players.reduce((a, b) => (!a || b.seq < a.seq ? b : a), null);
   }
 
   leave(player) {

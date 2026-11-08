@@ -53,7 +53,7 @@ const CSS = `
 // (their save keys start at 100, so the main island's keys stay as they were).
 // (one stone and one tree moved from the crowded north to the emptier south: the save keeps them by number)
 const STONES = [[18, -28], [32, -24], [42, -27], [-6, -30], [50, 4], [20, 25], [-32, -8], [-40, 20], [30, 30], [-19, 28], [1.5, 25.5], [-46, -14]];
-const GRASS = [[-21, 6], [-21.5, 10.5], [-6.5, 6], [-5.5, 10], [-8, 15], [40, -6], [44, -1], [36, -2], [-36, -12], [-42, -2], [12, 14], [16, 18], [24, 6], [-2, 16]];
+const GRASS = [[-21, 6], [-21.5, 10.5], [-6.5, 6], [-5.5, 10], [-8, 15], [40, -6], [44, -1], [36, -2], [-36, -12], [-42, -2], [12, 14], [16, 18], [24, 6], [3.2, 14.2]]; // (the last moved from the school house's spot; saved by index)
 const BIG = [[47, -22], [-38, 17], [36, 22]];
 const TREES = [[-32, -3.5], [9.5, 20], [29, 13], [46.5, 9.5], [35, -19], [-10, -24], [-19, -16.5], [24.5, 19.5]];
 const ISLE_STONES = [[-13.5, 191], [12, 188], [-1.5, 186.5]];

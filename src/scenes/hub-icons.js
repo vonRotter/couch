@@ -4,6 +4,7 @@ import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { makeGrumble } from '../core/critters.js';
 import { soccerBallTexture } from '../core/world.js';
 import { glyphMaterial } from '../core/edu.js';
+import { makeFerry } from './ferry-model.js';
 
 // Small floating 3D icons, one per game, shown above each pad on the island.
 
@@ -458,6 +459,13 @@ const ICONS = {
       cube.add(f);
     }
     g.add(cube);
+  },
+  ferry(g) {
+    const f = makeFerry();
+    f.scale.setScalar(0.36);
+    f.position.y = -0.45;
+    f.rotation.y = -0.5;
+    g.add(f);
   },
   story(g) {
     // A big Party Star wearing the Grumble King's crown.

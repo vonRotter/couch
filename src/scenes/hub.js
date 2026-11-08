@@ -10,7 +10,9 @@ import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { glyphMaterial } from '../core/edu.js';
 import { makeGameIcon } from './hub-icons.js';
-import { ProfilePicker, getProfile, activeProfileId } from '../core/profiles.js';
+import { makeFerry } from './ferry-model.js';
+import { ProfilePicker, JoinPicker, listProfiles } from '../core/profiles.js';
+import { MAX_PLAYERS } from '../core/roster.js';
 
 const ISLAND_R = 45;
 const RING_R = 38;
@@ -23,7 +25,7 @@ const MODES = ['island', 'story', 'solo'];
 
 // Game pads sit in a ring along the shore; angle 0 is north, clockwise.
 // The shared island and the solo island each have their own list.
-const COOP_PADS = [
+export const COOP_PADS = [
   { key: 'platformer', color: 0x4cc9f0, css: '#1aa7d8' },
   { key: 'paint', color: 0xff8c42, css: '#f26b1d' },
   { key: 'brawl', color: 0xff5d73, css: '#f0364f' },
@@ -77,6 +79,14 @@ function layoutPads(list) {
   });
 }
 
+// Two places off the ring on the shared island: the Story (the co-op campaign's map) on the meadow
+// south-west of the playground, and the ferry home at the south shore (back to player 1's own island,
+// or to the player picker when player 1 is a guest). They start like the game pads (half the players).
+const EXTRA_PADS = [
+  { key: 'story', color: 0xffc93c, css: '#d99a00', x: -15.4, z: 18.4 },
+  { key: 'ferry', color: 0xff5d73, css: '#e0364f', x: 0, z: 42.4, home: true },
+];
+
 // The "settings corner": colors, hats, learning switch and language flag together.
 const CORNER = { x: 0, z: 13 };
 const POT_SPOTS = [-5, -3, -1, 1, 3, 5].map((x) => ({ x, z: CORNER.z - 3 }));
@@ -101,7 +111,7 @@ const STAR_SPOTS = [
 ];
 
 export class HubScene extends BaseScene {
-  constructor(game, { fromGame = null, chooseMode = false, solo = false } = {}) {
+  constructor(game, { fromGame = null, solo = false, joinDevice = null } = {}) {
     super(game);
     this.key = null;
     this.camera.fov = 45;
@@ -109,6 +119,7 @@ export class HubScene extends BaseScene {
     this.camera.updateProjectionMatrix();
     this.solo = solo;
     this.pads = layoutPads(solo ? SOLO_PADS : COOP_PADS);
+    if (!solo) this.pads.push(...EXTRA_PADS.map((p) => ({ ...p, extra: true, angle: Math.atan2(p.x, -p.z) })));
     // The solo island sits under an evening sky so it never feels like the shared one.
     this.scene.background = solo ? skyTexture('#ff9f7a', '#ffe6c7') : skyTexture('#6fd0ff', '#d9f6ff');
     this.scene.fog = new THREE.Fog(solo ? 0xffd9bd : 0xbfeeff, 90, 190);
@@ -132,21 +143,27 @@ export class HubScene extends BaseScene {
     this.buildStars();
 
     const pad = this.pads.find((d) => d.key === fromGame);
+    // off the ferry: just up the beach from the ferry pad, with the view already there
+    const ferry = fromGame === 'ferry' && pad;
     for (const [i, p] of this.players.entries()) {
       const a = (i / Math.max(1, this.players.length)) * Math.PI * 2;
-      const bx = pad ? pad.x * 0.78 : 0, bz = pad ? pad.z * 0.78 : 0;
+      const bx = ferry ? pad.x : pad ? pad.x * 0.78 : 0, bz = ferry ? pad.z - 4.4 : pad ? pad.z * 0.78 : 0;
       this.spawn(p, bx + Math.cos(a) * 1.4, bz + Math.sin(a) * 1.4);
     }
+    if (ferry) { this.camTarget.set(pad.x, 0, pad.z - 4.4); this.camPos.set(pad.x, 13 * 0.8, pad.z - 4.4 + 13 * 0.8); }
 
+    // Joining: a device that presses jump picks who it is (a profile or a guest) on a small card in the tray.
+    this.joinPickers = new Map(); // deviceId -> JoinPicker
+    this.joinTray = this.game.ui.label('join-tray');
     this.titleEl = null;
     this.refreshTitle();
-    // Start menu: Island or Story. Asked when the first player joins, after leaving the story,
-    // and whenever someone presses C on the island.
+    // The menu ([C]): keep playing, the story, or home. Never opens by itself.
     this.modeEl = null;
     this.modeIndex = 0;
-    this.modeAsked = !!fromGame || this.players.length > 0 || solo;
-    if (chooseMode && this.players.length) this.openMode(1);
     this.profilePicker = null;
+    // "Play together" on the start screen: the device that chose it picks who it is right away
+    const jd = joinDevice && game.input.get(joinDevice);
+    if (jd) this.requestJoin(jd);
     game.audio.playMusic('hub');
   }
 
@@ -224,6 +241,7 @@ export class HubScene extends BaseScene {
     // A few stepping stones leading up to every pad.
     const stoneGeo = sharedGeo('stone', () => new THREE.CylinderGeometry(0.55, 0.6, 0.12, 10));
     for (const pad of this.pads) {
+      if (pad.extra) continue;
       for (let r = RING_R - 9.6; r < RING_R - 3; r += 2.4) {
         const st = new THREE.Mesh(stoneGeo, toon(COLORS.sand));
         const wob = Math.sin(r * 1.7 + pad.angle * 3) * 0.35;
@@ -265,7 +283,31 @@ export class HubScene extends BaseScene {
       pad.label = this.game.ui.label('label');
       pad.label.style.color = pad.css;
       pad.labelPos = new THREE.Vector3(pad.x, 5.6, pad.z);
+      if (pad.home) this.buildFerry(pad);
     }
+  }
+
+  /** The ferry home: a little dock out from the south beach with the Party Pier ferry waiting at its end. */
+  buildFerry(pad) {
+    const s = this.scene;
+    const dock = new THREE.Group();
+    for (let i = 0; i < 6; i++) {
+      const plank = new THREE.Mesh(sharedGeo('hubDockPlank', () => new THREE.BoxGeometry(2.4, 0.14, 0.62)), toon(i % 3 === 1 ? 0xb87a48 : 0xc68a52));
+      plank.position.set(0, 0, i * 0.7);
+      plank.receiveShadow = true;
+      dock.add(plank);
+    }
+    for (let i = 0; i < 3; i++) for (const sx of [-1.1, 1.1]) {
+      const post = new THREE.Mesh(sharedGeo('hubDockPost', () => new THREE.CylinderGeometry(0.13, 0.15, 1.6, 8)), toon(0x8a5a32));
+      post.position.set(sx, -0.5, i * 2);
+      dock.add(post);
+    }
+    dock.position.set(pad.x, -0.12, pad.z + 2.4);
+    s.add(dock);
+    this.ferry = makeFerry();
+    this.ferry.position.set(pad.x + 1.0, -0.72, pad.z + 8.2);
+    this.ferry.rotation.y = 0.08;
+    s.add(this.ferry);
   }
 
   // ---------- settings corner ----------
@@ -537,6 +579,7 @@ export class HubScene extends BaseScene {
     const s = this.scene;
     const rand = seeded(42);
     const nearPath = (x, z, d) => this.pads.some((p) => {
+      if (p.extra) return false;
       // Distance to the radial stone path from the plaza to this pad.
       const ux = Math.sin(p.angle), uz = -Math.cos(p.angle);
       const along = x * ux + z * uz;
@@ -635,34 +678,49 @@ export class HubScene extends BaseScene {
   handleJoins() {
     const roster = this.game.roster;
     for (const d of this.game.input.joinRequests()) {
-      if (roster.has(d.id)) continue;
+      if (roster.has(d.id) || this.joinPickers.has(d.id)) continue;
       if (this.solo && roster.players.length) {
         // Solo island: one player at a time; a new controller takes over.
         roster.players[0].deviceId = d.id;
         this.game.ui.toast(t('solo.takeover'));
         continue;
       }
-      const p = roster.join(d);
-      if (!p) continue;
-      if (this.solo) this.game.applyProfile(p);
-      const a = Math.random() * Math.PI * 2;
-      this.spawn(p, Math.cos(a) * 1.6, Math.sin(a) * 1.6);
-      this.game.audio.play('join');
-      this.game.ui.toast(t('hub.joined', { name: p.name }));
+      this.requestJoin(d);
     }
-    if (this.game.input.escPressed) this.toggleHelp();
-    if (!this.modeAsked && this.players.length) {
-      this.modeAsked = true;
-      // Coming back from a guest game (#solo link): straight back to that profile's island.
-      if (this.game.bootSolo) {
-        this.game.bootSolo = false;
-        const prof = getProfile(activeProfileId());
-        if (prof) { this.launching = true; this.game.enterSolo(prof, this.players[0].deviceId); } else this.openProfiles();
-      } else this.openMode(0);
-    }
+    for (const jp of [...this.joinPickers.values()]) jp.update(this.dt || 1 / 60);
+    if (this.game.input.escPressed && !this.modeEl) this.toggleHelp();
   }
 
-  // ---------- start menu (Island, Story or Solo) ----------
+  /** A device wants to play: with profiles in this browser it picks who it is first, else it joins as a guest. */
+  requestJoin(d) {
+    const roster = this.game.roster;
+    if (roster.players.length + this.joinPickers.size >= MAX_PLAYERS) return;
+    if (this.solo || !listProfiles().length) { this.joinAs(d, null); return; }
+    const jp = new JoinPicker(this, d, {
+      tray: this.joinTray,
+      taken: () => new Set(roster.players.map((p) => p.profileId).filter(Boolean)),
+      onDone: (prof) => { this.joinPickers.delete(d.id); this.joinAs(d, prof); },
+      onCancel: () => this.joinPickers.delete(d.id),
+    });
+    this.joinPickers.set(d.id, jp);
+    this.game.audio.play('select');
+  }
+
+  /** Join a device as a profile (its name, color if free, and hat) or as a guest (prof null: a free color). */
+  joinAs(d, prof) {
+    const roster = this.game.roster;
+    if (prof && roster.players.some((p) => p.profileId === prof.id)) return;
+    const p = roster.join(d);
+    if (!p) return;
+    if (this.solo) this.game.applyProfile(p);
+    else if (prof) this.game.applyProfile(p, prof, { shared: true });
+    const a = Math.random() * Math.PI * 2;
+    this.spawn(p, Math.cos(a) * 1.6, Math.sin(a) * 1.6);
+    this.game.audio.play('join');
+    this.game.ui.toast(t('hub.joined', { name: p.name }));
+  }
+
+  // ---------- the menu ([C]): keep playing, the story, or home ----------
 
   openMode(index = 0) {
     if (this.helpEl) this.toggleHelp();
@@ -674,9 +732,10 @@ export class HubScene extends BaseScene {
   }
 
   renderMode() {
-    const icons = { island: '🏝️', story: '📖', solo: '🗺️' };
+    const icons = { island: '🏝️', story: '📖', solo: '⛴️' };
+    const first = this.game.roster.first();
     const opts = MODES.map((k, i) => `<div class="vote-opt mode-opt ${i === this.modeIndex ? 'on' : ''}">
-      <div class="mode-icon">${icons[k]}</div><b>${t(`mode.${k}`)}</b><small>${t(`mode.${k}.sub`)}</small></div>`).join('');
+      <div class="mode-icon">${icons[k]}</div><b>${t(`mode.${k}`)}</b><small>${esc(t(k === 'solo' && !first?.profileId ? 'mode.solo.subGuest' : `mode.${k}.sub`, { name: first?.name || '' }))}</small></div>`).join('');
     this.modeEl.innerHTML = `<div class="results-title">${t('mode.title')}</div>
       <div class="vote-row">${opts}</div>
       <div class="results-footer">${t('mode.hint')}</div>`;
@@ -709,7 +768,7 @@ export class HubScene extends BaseScene {
         this.renderMode();
       }
       // a gamepad's B goes back (closes the menu: you stay on the island); it never picks
-      if (d.backPressed && this.modeT > 0.25) {
+      if ((d.backPressed || this.game.input.escPressed) && this.modeT > 0.25) {
         this.modeEl.remove();
         this.modeEl = null;
         this.game.audio.play('select');
@@ -721,8 +780,7 @@ export class HubScene extends BaseScene {
         this.modeEl = null;
         this.game.audio.play('join');
         const mode = MODES[this.modeIndex];
-        if (mode === 'solo') this.openProfiles();
-        else if (this.solo) { this.launching = true; this.game.leaveSolo(mode); }
+        if (mode === 'solo') { this.launching = true; this.game.goHome(); }
         else if (mode === 'story') { this.launching = true; this.game.startGame('story'); }
         return true;
       }
@@ -1376,13 +1434,16 @@ export class HubScene extends BaseScene {
       pad.fill.scale.set(k, 1, k);
       pad.icon.rotation.y += dt * (0.8 + pad.progress * 6);
       pad.icon.position.y = 3.3 + Math.sin(this.time * 1.8 + pad.angle * 3) * 0.2 + pad.progress * 0.6;
-      const sub = n === 0 ? t('hub.padJoin') : pad.guest ? t('solo.guestSub') : this.solo ? t('solo.padSub') : on > 0 ? t('hub.padReady', { on, need }) : t('hub.padNeed', { need });
+      const first = pad.home ? this.game.roster.first() : null;
+      const where = pad.home ? `${first?.profileId ? t('hub.ferryTo', { name: first.name }) : t('hub.ferryStart')} · ` : '';
+      const sub = n === 0 ? t('hub.padJoin') : pad.guest ? t('solo.guestSub') : this.solo ? t('solo.padSub') : where + (on > 0 ? t('hub.padReady', { on, need }) : t('hub.padNeed', { need }));
       const html = `${pad.edu ? `<span class="edu-badge small">${t('badge.edu')}</span>` : ''}${esc(t(`game.${pad.key}`))}<small>${esc(sub)}</small>`;
       if (pad.label.innerHTML !== html) pad.label.innerHTML = html;
       this.game.ui.place(pad.label, pad.labelPos, this.camera);
       if (pad.progress >= 1 && !this.launching) {
         this.launching = true;
         if (pad.guest) this.game.launchGuest(pad.guest);
+        else if (pad.home) this.game.goHome();
         else this.game.startGame(pad.key, pad.opts);
       }
     }
@@ -1417,6 +1478,11 @@ export class HubScene extends BaseScene {
 
   animateWorld(dt) {
     if (this.lampPivot) this.lampPivot.rotation.y += dt * 0.8;
+    if (this.ferry) {
+      this.ferry.position.y = -0.72 + Math.sin(this.time * 1.6) * 0.06;
+      this.ferry.rotation.z = Math.sin(this.time * 1.1) * 0.03;
+      this.ferry.userData.star.rotation.y += dt * 2;
+    }
     const t2 = this.time;
     this.foam.scale.setScalar(1 + Math.sin(t2 * 1.3) * 0.006);
     for (const s of this.sparkles) s.scale.setScalar(0.3 + ((Math.sin(t2 * 2 + s.userData.phase) + 1) / 2) * 0.8);
@@ -1438,7 +1504,7 @@ export class HubScene extends BaseScene {
   // ---------- panels ----------
 
   refreshTitle() {
-    const has = this.players.length > 0;
+    const has = this.players.length > 0 || this.joinPickers.size > 0;
     if (!has && !this.titleEl) {
       const keys = KEYBOARD_SCHEMES.map((s) => `<div class="join-key"><b>${t(`akey.${s.id}`)}</b>${t(`hint.${s.id}`)}</div>`).join('');
       this.titleEl = this.game.ui.panel(`
@@ -1468,6 +1534,7 @@ export class HubScene extends BaseScene {
   }
 
   update(dt) {
+    this.dt = dt;
     this.handleJoins();
     this.refreshTitle();
     const menu = this.updateMode(dt);
@@ -1483,7 +1550,8 @@ export class HubScene extends BaseScene {
     this.animateWorld(dt);
     this.updateCamera(dt);
     for (const e of this.entities.values()) {
-      if (e.tag.textContent !== e.p.deviceLabel) e.tag.textContent = e.p.deviceLabel;
+      const tag = e.p.profileId ? `${e.p.name} · ${e.p.deviceLabel}` : e.p.deviceLabel;
+      if (e.tag.textContent !== tag) e.tag.textContent = tag;
       if (e.tag.style.color !== e.p.css) e.tag.style.color = e.p.css;
       e.tagPos.set(e.x, e.y + 2, e.z);
       this.game.ui.place(e.tag, e.tagPos, this.camera);

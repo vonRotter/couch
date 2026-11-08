@@ -69,13 +69,43 @@ export function speak(text) {
 }
 
 /**
+ * The school house on a profile's own island (solo island) keeps each learning game's level and progress
+ * in the profile's save: progress.school = { levels: { id: 0..2 }, plays: { id: n }, best: { id: n } }.
+ * id is the school's game id (spelling, math, klokka, penger, rimord, learnmix, quiz). On the shared island
+ * nothing is saved (levels are remembered on the roster player for the session, as before).
+ */
+export function schoolSave(roster) {
+  const p = roster.progress;
+  if (!p.school || typeof p.school !== 'object') p.school = {};
+  const s = p.school;
+  s.levels ||= {};
+  s.plays ||= {};
+  s.best ||= {};
+  return s;
+}
+
+/** A finished learning game from the school house: one more play, and the best score. */
+export function recordSchool(roster, id, score) {
+  const s = schoolSave(roster);
+  s.plays[id] = (s.plays[id] || 0) + 1;
+  if (Number.isFinite(score) && score > (s.best[id] ?? -1)) s.best[id] = score;
+  roster.save();
+}
+
+/** The school game id of a scene started from the school house on a profile's island, else null. */
+const schoolIdOf = (scene) => (scene.schoolId && scene.game.solo ? scene.schoolId : null);
+
+/**
  * Per-player difficulty picker. Resolves once every player has confirmed.
- * Each player's choice is remembered on the roster player for the session.
+ * Each player's choice is remembered on the roster player for the session (and, from the school house,
+ * in the profile's save).
  */
 export function chooseLevels(scene, title) {
   const ui = scene.game.ui;
   const players = scene.players;
-  const state = new Map(players.map((p) => [p, { level: p.eduLevel ?? 0, done: false }]));
+  const sid = schoolIdOf(scene);
+  const saved = sid ? schoolSave(scene.game.roster).levels[sid] : undefined;
+  const state = new Map(players.map((p) => [p, { level: saved ?? p.eduLevel ?? 0, done: false }]));
   const el = ui.panel('', 'panel picker');
   const render = () => {
     const cards = players.map((p) => {
@@ -113,6 +143,7 @@ export function chooseLevels(scene, title) {
         scene.pickLevels = null;
         el.remove();
         for (const p of players) p.eduLevel = state.get(p).level;
+        if (sid && players[0]) { schoolSave(scene.game.roster).levels[sid] = state.get(players[0]).level; scene.game.roster.save(); }
         resolve();
       }
     };

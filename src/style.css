@@ -324,3 +324,27 @@ html, body {
 .kbd-key.on { border-color: #ff8c42; background: #fff3e6; }
 .prof-swatch { width: 54px; height: 54px; border-radius: 50%; background: var(--c); border: 5px solid transparent; }
 .prof-swatch.on { border-color: #2b2340; transform: scale(1.12); }
+
+/* Start screen: the player picker over the little island (scenes/start.js) */
+.prof-panel.start-panel { margin-bottom: 18vh; padding-top: clamp(12px, 2vw, 26px); padding-bottom: clamp(12px, 2vw, 26px); }
+.start-logo { font-size: clamp(34px, 5.2vw, 84px); }
+.start-sub { font-weight: 600; font-size: clamp(13px, 1.4vw, 21px); opacity: 0.75; margin: 4px 0 6px; }
+.prof-card.together { background: #fff3e6; }
+.prof-card.together.on { border-color: #ff8c42; }
+.prof-group { height: 58px; display: flex; align-items: flex-end; justify-content: center; }
+.prof-group i { width: 30px; height: 40px; margin: 0 -4px; border-radius: 50% 50% 44% 44%; background: var(--c); box-shadow: inset -4px -4px 0 rgba(0,0,0,0.12), 0 0 0 3px #fff3e6; }
+.prof-group i:nth-child(2) { height: 48px; z-index: 1; }
+
+/* Joining on the shared island: who are you? (core/profiles.js JoinPicker) */
+.join-tray { position: absolute; left: 0; right: 0; bottom: clamp(64px, 9vh, 96px); display: flex; gap: 12px; justify-content: center; align-items: flex-end; flex-wrap: wrap; }
+.join-card { background: rgba(255, 255, 255, 0.96); border-radius: 20px; padding: 10px 14px; box-shadow: 0 6px 0 rgba(43, 35, 64, 0.2); min-width: clamp(150px, 14vw, 210px); animation: pop-in 0.3s cubic-bezier(.2,1.5,.4,1); }
+.join-title { font-weight: 700; font-size: clamp(15px, 1.5vw, 22px); text-align: center; }
+.join-title small { display: block; font-weight: 600; opacity: 0.6; font-size: 0.7em; }
+.join-list { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 6px; }
+.join-opt { display: flex; align-items: center; gap: 8px; padding: 3px 10px; border-radius: 999px; border: 3px solid transparent; font-size: clamp(13px, 1.25vw, 19px); }
+.join-opt .dot { width: 0.9em; height: 0.9em; border-radius: 50%; background: var(--c, #bdb8cf); flex: none; }
+.join-opt small { margin-left: auto; opacity: 0.65; font-size: 0.78em; font-weight: 600; }
+.join-opt.on { border-color: var(--c, #8a45e0); background: #fff3e6; }
+.join-opt.taken { opacity: 0.45; }
+.join-opt.guest { --c: #bdb8cf; }
+.join-hint { font-size: clamp(11px, 1vw, 15px); opacity: 0.75; text-align: center; font-weight: 600; }

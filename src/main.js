@@ -5,6 +5,7 @@ import '@fontsource/fredoka/700.css';
 import './style.css';
 
 import { Input, buttonLabel, setPadLayout } from './core/input.js';
+import { PLAYER_COLORS } from './core/palette.js';
 import { Roster } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
@@ -45,7 +46,9 @@ import { LighthouseScene } from './scenes/lighthouse.js';
 import { BreachScene } from './scenes/breach.js';
 import { KeepSoloScene } from './scenes/keepsolo.js';
 import { StoryScene, STORY_GAMES } from './scenes/story.js';
-import { activateProfile, updateProfile, soloSaveKey } from './core/profiles.js';
+import { activateProfile, updateProfile, soloSaveKey, getProfile } from './core/profiles.js';
+import { StartScene } from './scenes/start.js';
+import { coopReward, nameList } from './core/coop.js';
 import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './core/voice.js';
 import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
 
@@ -99,11 +102,12 @@ class Game {
     setLang(this.roster.progress.lang || 'en');
     setVoice(this.roster.progress.voice === true);
     setBabble(this.roster.progress.babble === true);
-    // Solo island state: { profile } while a solo profile is playing, else null.
+    // Solo island state: { profile } while a profile plays on its own island, else null.
     this.solo = null;
-    // Guest games link back with #solo: go straight to the profiles after the first join.
-    this.bootSolo = location.hash === '#solo';
-    if (this.bootSolo) history.replaceState(null, '', location.pathname + location.search);
+    // Deep links: #solo (guest games link back with it: the player picker, that profile chosen) and
+    // #together (straight to the shared island, "Play together").
+    const hash = location.hash;
+    if (hash === '#solo' || hash === '#together') history.replaceState(null, '', location.pathname + location.search);
     setButtonSource((b, only) => {
       let devs = only ? [this.input.get(only)].filter(Boolean) : this.roster.players.map((p) => this.input.get(p.deviceId)).filter(Boolean);
       if (!devs.length) devs = [this.input.get('kb0'), ...[0, 1, 2, 3].map((i) => this.input.get(`gp${i}`)).filter((d) => d.connected)];
@@ -121,7 +125,8 @@ class Game {
     this.last = performance.now();
 
     window.addEventListener('resize', () => this.resize());
-    this.goHub();
+    // The game starts with the player picker (the last player chosen), then that player's own island.
+    this.setScene(() => (hash === '#together' ? new HubScene(this, {}) : new StartScene(this)));
     this.loop();
   }
 
@@ -146,12 +151,12 @@ class Game {
     this.ui.wipe(() => this.setScene(make)).then(() => { this.switching = false; });
   }
 
+  /** Back from a game: to the player's own island (solo) or to the shared island (the story is a place there). */
   goHub(fromGame = null) {
     if (this.campaign) { this.backToStory(); return; }
-    // Leaving the story goes back to the start menu (Island or Story). Solo games return to the solo island.
     const make = this.solo
       ? () => new SoloIslandScene(this, { fromGame })
-      : () => new HubScene(this, { fromGame: fromGame === 'story' ? null : fromGame, chooseMode: fromGame === 'story' });
+      : () => new HubScene(this, { fromGame });
     if (!this.current) this.setScene(make);
     else this.transition(make);
   }
@@ -181,40 +186,106 @@ class Game {
     this.transition(() => new StoryScene(this, { key: 'story', result }));
   }
 
-  // ---------- solo island ----------
+  // ---------- solo island, the start screen and playing together ----------
 
-  /** Start playing as a solo profile: one player, the profile's own saves, the solo island. */
-  enterSolo(profile, deviceId) {
-    const keep = this.roster.players.find((p) => p.deviceId === deviceId) || this.roster.players[0];
+  /**
+   * Play on a profile's own island: one player (the device that chose it, joined if needed), the profile's
+   * own saves. opts.fromGame: where to appear ('ferry': at the Party Pier, back from the shared island).
+   */
+  enterSolo(profile, deviceId, { fromGame = null } = {}) {
+    let keep = this.roster.players.find((p) => p.deviceId === deviceId) || null;
+    if (!keep && !deviceId) keep = this.roster.players.find((p) => p.profileId === profile.id) || this.roster.players[0] || null;
     for (const p of [...this.roster.players]) if (p !== keep) this.roster.leave(p);
+    const dev = deviceId && this.input.get(deviceId);
+    if (!keep && dev) keep = this.roster.join(dev);
     activateProfile(profile);
     this.roster.useSave(soloSaveKey(profile.id));
     this.solo = { profile };
-    if (keep) this.applyProfile(keep);
+    if (keep) this.applyProfile(keep, profile);
     setVoice(profile.voice);
     setBabble(profile.babble === true);
     if (profile.voice) say(t('solo.welcome', { name: profile.name }), 'narrator');
-    this.transition(() => new SoloIslandScene(this, {}));
+    this.transition(() => new SoloIslandScene(this, { fromGame }));
   }
 
-  /** Give a player the solo profile's name, color and hat. */
-  applyProfile(player) {
-    const prof = this.solo?.profile;
+  /**
+   * Give a player a profile's name, color and hat (default: the solo profile). On the shared island
+   * (shared = true) the profile's color is used only if nobody else has it (else the free color stays).
+   */
+  applyProfile(player, prof = this.solo?.profile, { shared = false } = {}) {
     if (!prof) return;
     player.profileName = prof.name;
-    this.roster.applyColor(player, prof.colorIndex);
+    player.profileId = prof.id;
+    if (!shared) this.roster.applyColor(player, prof.colorIndex);
+    else if (PLAYER_COLORS[prof.colorIndex]) this.roster.setColor(player, prof.colorIndex);
     player.hat = prof.hat ?? 1;
   }
 
-  /** Back to the shared island (or the story), with the shared saves. */
-  leaveSolo(mode = 'island') {
+  /**
+   * "Play together": from a profile's island (the Party Pier ferry or the menu) to the shared island, with
+   * that player already joined as player 1. The shared island uses the shared saves.
+   */
+  goTogether() {
+    const prof = this.solo?.profile || null;
+    this.leaveSolo('ferry', prof);
+  }
+
+  /** The start screen's "Play together": the shared island, and the device that chose it picks who it is. */
+  openTogether(deviceId = null) {
+    for (const p of [...this.roster.players]) this.roster.leave(p);
     this.solo = null;
     this.roster.useSave();
-    for (const p of this.roster.players) delete p.profileName;
+    setVoice(this.roster.progress.voice === true);
+    setBabble(this.roster.progress.babble === true);
+    this.transition(() => new HubScene(this, { joinDevice: deviceId }));
+  }
+
+  /**
+   * Back to the shared island (mode 'island', or 'ferry': arriving by the ferry; 'story' starts the story),
+   * with the shared saves. Players who keep a profile (prof) stay that profile there.
+   */
+  leaveSolo(mode = 'island', prof = null) {
+    this.solo = null;
+    this.roster.useSave();
+    for (const p of this.roster.players) {
+      if (prof && p.profileId === prof.id) continue;
+      delete p.profileName;
+      delete p.profileId;
+    }
     setVoice(this.roster.progress.voice === true);
     setBabble(this.roster.progress.babble === true);
     if (mode === 'story') this.startGame('story');
-    else this.transition(() => new HubScene(this, {}));
+    else this.transition(() => new HubScene(this, { fromGame: mode === 'ferry' ? 'ferry' : null }));
+  }
+
+  /** The shared island's ferry home: player 1's own island, or the player picker if player 1 is a guest. */
+  goHome() {
+    const first = this.roster.first();
+    const prof = first?.profileId ? getProfile(first.profileId) : null;
+    if (prof) this.enterSolo(prof, first.deviceId, { fromGame: 'ferry' });
+    else this.openStart();
+  }
+
+  /** The player picker (the start screen). */
+  openStart() {
+    for (const p of [...this.roster.players]) this.roster.leave(p);
+    this.solo = null;
+    this.roster.useSave();
+    this.transition(() => new StartScene(this));
+  }
+
+  /**
+   * A co-op game on the shared island was finished (MiniGame.finish): every player who joined as a profile
+   * gets coins and maybe a badge on their own island (core/coop.js). Games on a profile's island do not count.
+   */
+  coopFinished(scene) {
+    if (this.solo || !scene.key) return;
+    const got = [];
+    for (const p of this.roster.players) {
+      if (!p.profileId || !getProfile(p.profileId)) continue;
+      if (coopReward(this.roster, p.profileId, scene.key)) got.push(p.name);
+    }
+    if (got.length) this.ui.toast(t('coop.toast', { names: nameList(got) }), 3200);
   }
 
   /** Keep the solo profile in step with the player's hat and color. */

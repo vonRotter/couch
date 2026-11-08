@@ -914,8 +914,8 @@ export function makeDeco(id, M) {
       g.add(mesh(cone(0.22, 0.25, 10), 0xff5d73, 0, 1.8, 0));
       break;
     }
-    case 'lhTrophy': case 'duckTrophy': case 'duckGold': case 'hopTrophy': case 'castleTrophy': case 'guidesTrophy': {
-      const col = { lhTrophy: 0x8ff0ff, duckTrophy: 0xc0c0d0, duckGold: COLORS.gold, hopTrophy: 0x4cc9f0, castleTrophy: COLORS.gold, guidesTrophy: 0x9a6a44 }[id];
+    case 'lhTrophy': case 'duckTrophy': case 'duckGold': case 'hopTrophy': case 'castleTrophy': case 'guidesTrophy': case 'coopTrophy': {
+      const col = { lhTrophy: 0x8ff0ff, duckTrophy: 0xc0c0d0, duckGold: COLORS.gold, hopTrophy: 0x4cc9f0, castleTrophy: COLORS.gold, guidesTrophy: 0x9a6a44, coopTrophy: 0xff7eb6 }[id];
       g.add(mesh(box(0.7, 0.5, 0.7), 0x5a4d7a, 0, 0.25, 0));
       g.add(mesh(cyl(0.08, 0.15, 0.3, 8), COLORS.gold, 0, 0.65, 0));
       g.add(mesh(cyl(0.3, 0.12, 0.45, 12), COLORS.gold, 0, 1.0, 0));
@@ -923,6 +923,11 @@ export function makeDeco(id, M) {
       const top = id === 'duckTrophy' || id === 'duckGold' ? mesh(sph(0.16, 10, 8), 0xffd23f, 0, 1.4, 0) : mesh(sharedGeo('isl-crys', () => new THREE.OctahedronGeometry(0.22, 0)), toon(col, { emissive: 0x222222 }), 0, 1.45, 0);
       g.add(top);
       if (id !== 'duckTrophy' && id !== 'duckGold') g.userData.spin = top;
+      break;
+    }
+    case 'coopPennants': { // party pennants between two poles (playing together on the Party Island)
+      for (const x of [-0.9, 0.9]) g.add(mesh(cyl(0.05, 0.05, 2.0, 6), 0xffffff, x, 1.0, 0), mesh(sph(0.09, 8, 6), COLORS.gold, x, 2.05, 0, false));
+      g.add(makeBunting({ x: -0.9, y: 1.95, z: 0 }, { x: 0.9, y: 1.95, z: 0 }, 0.3));
       break;
     }
     case 'flag': { // pirate flag on a pole (Pudding Island)

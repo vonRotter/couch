@@ -2,6 +2,7 @@ import { BaseScene } from './scene.js';
 import { PLAYER_COLORS, COLORS } from './palette.js';
 import { t } from './i18n.js';
 import { say } from './voice.js';
+import { recordSchool } from './edu.js';
 
 /** Shared flow for every game: intro -> countdown -> play -> results -> back to the island. */
 export class MiniGame extends BaseScene {
@@ -11,6 +12,8 @@ export class MiniGame extends BaseScene {
     // Story campaign stage (scenes/story.js): the game skips its votes/pickers via opts and
     // reports campaignStats() when it finishes.
     this.campaign = !!opts.campaign;
+    // Started from the school house on a profile's island: the school game id (progress saved per profile).
+    this.schoolId = opts.school || null;
     this.state = 'intro';
     this.resultsDelay = 0;
   }
@@ -33,7 +36,9 @@ export class MiniGame extends BaseScene {
     this.resultsDelay = 1.6;
     this.playTime = this.time - (this.playStart ?? 0);
     if (this.campaign) this.game.reportStage?.(this);
+    if (this.schoolId && this.game.solo) recordSchool(this.game.roster, this.schoolId, this.schoolScore?.() ?? parseInt(rows[0]?.value, 10));
     this.game.roster.addStars(stars);
+    this.game.coopFinished?.(this); // the shared island: rewards on the players' own islands (main.js)
     this.game.audio.playMusic('results');
     this.game.audio.play('fanfare');
     this.game.ui.setTop('');
@@ -61,7 +66,7 @@ export class MiniGame extends BaseScene {
 
   /** Options for restarting this exact game from the pause menu. */
   retryOptions() {
-    return { key: this.key };
+    return { key: this.key, ...(this.schoolId ? { school: this.schoolId } : {}) };
   }
 
   /** Call from update(); returns true while the results screen is up. */

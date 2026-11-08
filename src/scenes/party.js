@@ -80,7 +80,12 @@ export class PartyScene extends MiniGame {
   }
 
   retryOptions() {
-    return { key: this.key, size: this.mixSize };
+    return { ...super.retryOptions(), size: this.mixSize, ...(this.schoolId ? { rounds: this.order.map((R) => R.key) } : {}) };
+  }
+
+  /** The school house's Quiz Run: the first player's own round scores (right answers), not place points. */
+  schoolScore() {
+    return this.raw?.get(this.players[0]) ?? 0;
   }
 
   nextRound() {
@@ -150,6 +155,8 @@ export class PartyScene extends MiniGame {
     if (this.campaign) (this.teamResults ||= []).push(r.campaignStats?.().team ?? null);
     const vals = this.players.map((p) => r.score(p));
     const best = Math.max(...vals);
+    this.raw ||= new Map();
+    this.players.forEach((p, i) => this.raw.set(p, (this.raw.get(p) || 0) + vals[i]));
     this.lastPoints = new Map();
     this.players.forEach((p, i) => {
       const rank = vals.filter((v) => v > vals[i]).length;

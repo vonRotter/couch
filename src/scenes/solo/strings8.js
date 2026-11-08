@@ -32,7 +32,7 @@ addStrings({
     'isl.knock.shelby.1': 'Zzz... I am curled up in my shell... shhh... the waves are singing me to sleep...',
     'isl.knock.shelby.2': 'Mmm... coconut... coconut... zzz... Tell the tide to come back in the morning!',
     // the menu (Q / Start, island.js) and the Friends book (the journal's first tab)
-    'isl.mn.title': 'Menu', 'isl.mn.resume': 'Keep playing', 'isl.mn.island': 'Shared island', 'isl.mn.story': 'Story',
+    'isl.mn.title': 'Menu', 'isl.mn.resume': 'Keep playing', 'isl.mn.island': 'Play together', 'isl.mn.story': 'Story',
     'isl.mn.solo': 'Change player', 'isl.mn.voice': 'Read aloud', 'isl.mn.on': 'on', 'isl.mn.off': 'off', 'isl.mn.lang': 'Language', 'isl.mn.langName': 'English',
     'isl.mn.help': 'Help', 'isl.mn.hint': 'Stick up/down · [OK]: choose (left/right: switch) · [C]: close',
     'isl.fb.title': 'Friends book', 'isl.fb.hint': 'Stick or arrow keys: turn the page',
@@ -84,7 +84,7 @@ addStrings({
     'isl.knock.hoot.2': 'Zzz ... utstilling nummer førtito ... den snorkende fisken ... hu ... kom tilbake i morgen, unge venn.',
     'isl.knock.shelby.1': 'Zzz ... jeg ligger krøllet sammen i skjellet mitt ... hysj ... bølgene synger meg i søvn ...',
     'isl.knock.shelby.2': 'Mmm ... kokosnøtt ... kokosnøtt ... zzz ... Si til tidevannet at det kan komme tilbake i morgen!',
-    'isl.mn.title': 'Meny', 'isl.mn.resume': 'Spill videre', 'isl.mn.island': 'Felles øy', 'isl.mn.story': 'Historie',
+    'isl.mn.title': 'Meny', 'isl.mn.resume': 'Spill videre', 'isl.mn.island': 'Spill sammen', 'isl.mn.story': 'Historie',
     'isl.mn.solo': 'Bytt spiller', 'isl.mn.voice': 'Opplesing', 'isl.mn.on': 'på', 'isl.mn.off': 'av', 'isl.mn.lang': 'Språk', 'isl.mn.langName': 'norsk',
     'isl.mn.help': 'Hjelp', 'isl.mn.hint': 'Pinne opp/ned · [OK]: velg (venstre/høyre: bytt) · [C]: lukk',
     'isl.fb.title': 'Venneboka', 'isl.fb.hint': 'Pinne eller piltaster: bla om',

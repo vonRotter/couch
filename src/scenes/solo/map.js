@@ -7,11 +7,13 @@ import {
   mesh, box, cyl, ico, cone, WOOD, WOOD_DARK, makeCottage, makeStore, makeLighthouse, makeTent, makeBalloon, makeMine, makeRockfall,
   makeKeepTower, makeBurrow, makeCastleGate, makeHall, makeLaunchPad, makeBridge, makeFence, makeLamp, makeSign, makeBench, makeBarrel,
   makeCrate, makeMailbox, makeShippingBin, makeWell, makeFountain, makeNoticeBoard, makeBunting, makeCafe, makeBarn, makePier, makeBuoy, makeDiveBoat,
-  makeRowboat, makeTelescope, makeCrop, sph,
+  makeRowboat, makeTelescope, makeCrop, sph, roofGeo,
 } from './models.js';
 import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
 import { makeGarage } from './models5.js';
 import { POND, inKeepClear, CLIFF_WALLS, WALL_R } from './hopdata.js';
+import { makeSchool } from './school.js';
+import { makeFerry } from '../ferry-model.js';
 
 // The hand-made island town. North is -z (the cliffs), south is +z (the beach and the dock), the camera
 // looks north. A river runs from the waterfall in the cliffs down to the sea and cuts off the west bank
@@ -51,6 +53,10 @@ export const PAD = { x: 40, z: -16 };
 export const BRIDGE = { x: -24.2, z: -19, len: 11.5 };
 export const ROCKFALL = { x: 26, z: -32.4 };
 export const PIER = { x: 4, z0: 40.5, len: 19 };
+// The Party Pier (ferry.js): a short jetty off the east side of the pier, near the beach, with the ferry to
+// the shared island at its end (clear of the dive boat on the west side, the pirate ship and its gangplank
+// further out, and Grumbleton's sailboat at the pier's end); the badge board stands on the beach by it.
+export const FERRY = { x: 10.9, z: 47.2, y: -0.72, jetty: { x0: PIER.x + 1.45, x1: 8.4, z: 47.2, hw: 0.7 }, board: { x: 8.9, z: 42.1 } };
 export const HILLS_LIST = HILLS;
 
 /**
@@ -67,6 +73,8 @@ export const PLACES = [
   { id: 'castle', key: 'castle', opts: { mode: 'campaign' }, x: -44, z: -25, door: { x: -44, z: -22.6 }, lock: 'bridge' },
   { id: 'burrow', key: 'guides', x: 47, z: -23, door: { x: 47, z: -19.6 }, lock: 'burrow' },
   { id: 'garage', key: 'breach', x: 46, z: 3.2, door: { x: 46, z: 6.8 } }, // Bean Brigade's mech garage on the east hill
+  // the school house on the meadow south-west of the square: its door opens the learning games' picker (school.js)
+  { id: 'school', key: 'school', school: true, x: -1.5, z: 16.2, door: { x: -1.5, z: 19.6 } },
   // the four arcade cabinets in the game hall (filled in by build)
   ...['tachyon', 'starlite', 'foothold', 'starhop'].map((g, i) => ({ id: g, key: g, guest: g, x: HALL.x - 3.9 + i * 2.6, z: HALL.z - 1.2, door: { x: HALL.x - 3.9 + i * 2.6, z: HALL.z + 0.2 }, cabinet: i })),
 ];
@@ -89,6 +97,7 @@ const PATHS = [
   [[33, -10.5], [41, -14.5], [47, -19.6]],
   [[4.5, 38.5], [-4, 39], [-10, 39.4]],
   [[34, 15.6], [39.5, 11.8], [44, 8.4], [46, 6.8]], // to the mech garage
+  [[-1.5, 19.8], [2.4, 20.9], [7.0, 20.4]], // to the school house
 ];
 
 // Where each villager lives (milestone C): the door they walk to at bedtime (`spot` is the doorstep
@@ -854,6 +863,11 @@ export class IslandMap {
     // the practice board is a flat checker on the ground: you can walk onto it (it was a wall of air)
     this.platform({ x: P.garage.x - 3.3, z: P.garage.z + 1.6, hw: 0.9, hd: 0.9, top: heightAt(P.garage.x - 3.3, P.garage.z + 1.6) + 0.12 });
     this.sign(P.garage.x + 2.6, P.garage.z + 3.9, 0xff5d73);
+    // the school house (school.js): live, so its bell can swing
+    this.school = this.live(makeSchool(this.M), P.school.x, P.school.z, 0);
+    this.boxObs(P.school.x, P.school.z, 3.2, 2.3);
+    this.circObs(P.school.x + 3.8, P.school.z + 1.8, 0.2); // the flag pole
+    this.circObs(P.school.x + 2.1, P.school.z + 3.0, 0.5); // the chalkboard easel
     // the burrow (hidden until Mumble trusts you)
     this.burrow = this.live(makeBurrow(), P.burrow.x, P.burrow.z);
     this.burrowObs = this.circObs(P.burrow.x, P.burrow.z, 2.4, { burrow: true });
@@ -941,6 +955,7 @@ export class IslandMap {
     this.circObs(DIVE_BOAT.x - 1.9, DIVE_BOAT.z - 1.1, 0.45);
     this.circObs(DIVE_BOAT.x + 2.2, DIVE_BOAT.z + 1.3, 0.15);
     this.buoys = this.scene.children.slice(-3);
+    this.buildFerry();
     // the Driftwood Café (closed, a restaurant for later) and the dive spot sign
     this.put(makeCafe(M), -10, 37.4);
     this.boxObs(-10, 37.4, 2.5, 1.9);
@@ -957,6 +972,38 @@ export class IslandMap {
     this.circObs(27, 38.5, 0.6);
   }
 
+  /** The Party Pier: the jetty, the ferry at its end and the badge board on the beach (ferry.js). */
+  buildFerry() {
+    const J = FERRY.jetty, len = J.x1 - J.x0;
+    const jetty = new THREE.Group();
+    const n = Math.round(len / 0.6);
+    for (let i = 0; i < n; i++) jetty.add(mesh(box(0.54, 0.14, J.hw * 2), i % 3 === 1 ? 0xb87a48 : WOOD, 0.3 + i * (len / n), 0, 0));
+    for (const sz of [-1, 1]) jetty.add(mesh(cyl(0.13, 0.15, 2.4, 8), WOOD_DARK, len - 0.2, -0.9, sz * (J.hw - 0.08)));
+    for (const sz of [-1, 1]) jetty.add(mesh(cyl(0.1, 0.12, 0.5, 8), 0xff5d73, len - 0.2, 0.3, sz * (J.hw - 0.08)));
+    this.put(jetty, J.x0, J.z, 0, 0.05);
+    this.decks.push({ x0: J.x0 - 0.1, x1: J.x1, z0: J.z - J.hw, z1: J.z + J.hw, y: 0.12 });
+    this.ferry = this.live(makeFerry(), FERRY.x, FERRY.z, 0, FERRY.y);
+    // the badge board: a notice board with room for a colored disc per badge (ferry.js shows them)
+    const board = new THREE.Group();
+    for (const sx of [-0.88, 0.88]) board.add(mesh(box(0.14, 2.1, 0.14), WOOD_DARK, sx, 1.05, 0));
+    board.add(mesh(box(1.9, 1.2, 0.1), 0x4c8bd6, 0, 1.45, 0.03), mesh(box(1.76, 1.06, 0.04), 0xfff3dc, 0, 1.45, 0.09, false));
+    board.add(mesh(roofGeo(2.2, 0.6, 0.35), 0xff5d73, 0, 2.08, 0));
+    const mats = new Map();
+    board.userData.mat = (c) => { if (!mats.has(c)) mats.set(c, toon(c)); return mats.get(c); };
+    board.userData.discs = [];
+    for (let i = 0; i < 28; i++) {
+      const m = mesh(cyl(0.09, 0.09, 0.04, 12), 0xffffff, -0.75 + (i % 7) * 0.25, 1.81 - Math.floor(i / 7) * 0.24, 0.12, false);
+      m.rotation.x = Math.PI / 2;
+      m.visible = false;
+      board.add(m);
+      board.userData.discs.push(m);
+    }
+    this.ferryBoard = this.live(board, FERRY.board.x, FERRY.board.z, -0.25);
+    this.circObs(FERRY.board.x - 0.78, FERRY.board.z + 0.2, 0.15);
+    this.circObs(FERRY.board.x + 0.78, FERRY.board.z - 0.2, 0.15);
+    this.put(makeBunting({ x: J.x0 + 0.2, y: 1.6, z: J.z - 0.8 }, { x: J.x1 - 0.2, y: 1.9, z: J.z - 0.8 }, 0.25), 0, 0, 0, 0);
+  }
+
   buildNature() {
     const r = this.rand;
     const clear = [
@@ -964,6 +1011,7 @@ export class IslandMap {
       { x: STORE.x, z: STORE.z, r: 6.5 }, { x: HALL.x, z: HALL.z, r: 8 }, { x: PAD.x, z: PAD.z, r: 5 }, { x: HAZEL_HOME.x + 2, z: HAZEL_HOME.z + 1, r: 7.5 },
       { x: 8, z: -25.5, r: 5 }, { x: -14, z: 7, r: 8 }, { x: -10, z: 38, r: 6 },
       ...this.places.map((p) => ({ x: p.x, z: p.z, r: 5.5 })),
+      ...this.places.filter((p) => p.school).map((p) => ({ x: p.door.x, z: p.door.z + 3, r: 4 })), // a clear view of the school's door
     ];
     const ok = (x, z, pad = 0) => {
       const h = baseHeight(x, z);
@@ -1278,6 +1326,8 @@ export class IslandMap {
     for (const [id, p] of Object.entries(SPOTS)) add(p.x, p.z, 1.2, `spot:${id}`);
     add(CRAB_COVE.x, CRAB_COVE.z, 2.5, 'crab cove');
     add(PIER.x, PIER.z0, 2.0, 'pier');
+    add(FERRY.jetty.x1 - 0.8, FERRY.jetty.z, 1.6, 'ferry');
+    add(FERRY.board.x, FERRY.board.z + 0.9, 1.4, 'ferry board');
   }
 
   /** Something else you use, added by the module that builds it (trail signs, chests, benches...). */

@@ -60,6 +60,7 @@ export class LearnMixScene extends MiniGame {
     const byKey = Object.fromEntries(LEARN_ROUNDS.map((R) => [R.key, R]));
     // opts.rounds lets tests (or a future menu) run a subset in a given order.
     this.order = (opts.rounds || LEARN_ROUNDS.map((R) => R.key)).map((k) => byKey[k]).filter(Boolean);
+    this.roundKeys = opts.rounds || null; // the school house plays one round on its own (Klokka, Pengebutikken, Rimord)
     this.scores = new Map(this.players.map((p) => [p, []]));
     this.index = 0;
     this.round = null;
@@ -79,7 +80,7 @@ export class LearnMixScene extends MiniGame {
   }
 
   retryOptions() {
-    return { key: this.key };
+    return { ...super.retryOptions(), ...(this.roundKeys ? { rounds: this.roundKeys } : {}) };
   }
 
   nextRound() {

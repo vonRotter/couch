@@ -28,7 +28,7 @@ import { thumb } from './thumbs.js';
 import { Fishing } from './fishing.js';
 import { Cafe } from './cafe.js';
 import { DiveScene } from './dive.js';
-import { IslandMap, heightAt, slopeAt, riverDist, SEA_Y, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES, SPREAD } from './map.js';
+import { IslandMap, heightAt, slopeAt, riverDist, SEA_Y, DIVE_BOAT, CAFE, HOME, FIELD, BIN, MAILBOX, STORE, HALL, BRIDGE, ROCKFALL, BRANCHES, FINDS, PLACES, SPREAD, FERRY } from './map.js';
 import './strings12.js';
 import { Farm, tileAt, tileCenter, stageOf, minutesLeft, FIELDS, cropNight } from './farm.js';
 import { Homes, makeHomeMats } from './homes.js';
@@ -58,6 +58,8 @@ import { Surprises } from './surprise.js';
 import { IslandGames } from './games.js';
 import { Play } from './play.js';
 import { SeeThrough } from './seethrough.js';
+import { Ferry, deliverCoopMail, coopMailVars, coopBadgeGifts } from './ferry.js';
+import { School } from './school.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
 // One player (with the profile's name, color and hat). Games are PLACES you walk to; some open through
@@ -69,7 +71,8 @@ const SPEED = 6.2;
 const PR = 0.42;
 const CAM_UP = 14.8, CAM_BACK = 13; // a little higher up (a more top-down view) and never closer than before (12.5 / 13)
 // the menu ([MENU]: Q or Start): keep playing, the other ways to play, and the settings a gamepad has no key for
-const MENU = ['resume', 'island', 'story', 'solo', 'voice', 'chars', 'lang', 'help'];
+// 'island' is "Play together" (the shared island, like the Party Pier ferry); the story is a place there now
+const MENU = ['resume', 'island', 'solo', 'voice', 'chars', 'lang', 'help'];
 const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];
 const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
@@ -225,6 +228,8 @@ export class SoloIslandScene extends BaseScene {
     this.camTarget = new THREE.Vector3();
 
     this.buildDynamic();
+    this.ferry = new Ferry(this); // the Party Pier: the ferry to play together, and the badge board
+    this.school = new School(this); // the school house: the learning games, saved per profile
     this.ranch = new Ranch(this);
     this.builder = new Builder(this);
     this.greenhouse = new Greenhouse(this);
@@ -254,6 +259,7 @@ export class SoloIslandScene extends BaseScene {
     const place = this.map.places.find((p) => p.key === fromGame) || (S.last.place && !since(S.last.at, 6 * HOUR) && this.map.places.find((p) => p.id === S.last.place));
     this.spawnAt = place ? { x: place.door.x, z: place.door.z + (place.cabinet !== undefined ? 1.6 : 1.2) } : { x: HOME.x + 0.8, z: HOME.z + 4.2 };
     if (fromGame === 'dive') this.spawnAt = { x: DIVE_BOAT.x - 1.0, z: DIVE_BOAT.z + 1.0 };
+    if (fromGame === 'ferry') this.spawnAt = { x: FERRY.jetty.x0 + 1.2, z: FERRY.jetty.z }; // home from playing together
     if (this.players.length) this.spawn(this.players[0]);
     S.last.place = null;
     this.photo.check();
@@ -805,7 +811,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map', 'school', 'pier'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   /** The usual spot of a decoration (the trophy garden), or null. */
@@ -875,6 +881,7 @@ export class SoloIslandScene extends BaseScene {
       S.rewards[r.id] = true;
       S.mail.push(r);
     }
+    deliverCoopMail(this.game.roster.progress, S); // gifts for playing together on the shared island (core/coop.js)
     this.markDirty();
   }
 
@@ -1075,6 +1082,7 @@ export class SoloIslandScene extends BaseScene {
       case 'castle': { const w = (p.castleCampaign?.won || []).filter(Boolean).length; return w ? t('isl.best.castle', { n: w }) : t('isl.best.new'); }
       case 'guides': { const s = (p.guides?.stars || []).reduce((a, b) => a + (b || 0), 0); return s ? t('isl.best.guides', { n: s }) : t('isl.best.new'); }
       case 'breach': return p.breach?.done ? t('isl.best.breachDone') : p.breach?.bestBattles ? t('isl.best.breach', { n: p.breach.bestBattles, m: BATTLE_COUNT }) : t('isl.best.new');
+      case 'school': return this.school.info();
       case 'keepsolo': { const k = p.keepSolo?.summary; return k?.deep ? t('isl.best.ksDeep', { n: k.deep, lv: k.best }) : k && (k.best > 1 || k.acts) ? t('isl.best.ks', { lv: k.best, n: k.acts }) : t('isl.best.new'); }
       default: return S_VISITED(this.save, pl.id) ? '' : t('isl.best.new');
     }
@@ -1084,8 +1092,10 @@ export class SoloIslandScene extends BaseScene {
     return !pl.lock || !!this.save.unlocks[pl.lock];
   }
 
-  enterPlace(pl) {
+  /** Go in: start the place's game (launch: { key, opts } instead, e.g. a game picked in the school house). */
+  enterPlace(pl, launch = null) {
     if (this.launching) return;
+    if (pl.school && !launch) { this.school.open(); return; } // the school house: pick a learning game first
     this.launching = true;
     const S = this.save;
     S.last = { place: pl.id, at: now() };
@@ -1093,6 +1103,7 @@ export class SoloIslandScene extends BaseScene {
     this.dirty = true;
     this.flush();
     if (pl.guest) this.game.launchGuest(pl.guest);
+    else if (launch) this.game.startGame(launch.key, launch.opts || {});
     else this.game.startGame(pl.key, pl.opts || {});
   }
 
@@ -1172,6 +1183,8 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.surprise.interactions(P, out, nm); // the day's surprise (surprise.js)
     if (!out.b) this.games.interactions(P, out, nm); // island mini-games (games.js)
     if (!out.b) this.play.interactions(P, out, nm); // villagers at play (play.js)
+    // the Party Pier: the ferry to play together, and the badge board (ferry.js)
+    if (!out.b) this.ferry.interactions(P, out, nm);
     // Shell Isle: the boat trip, and the palms, pools and treasure there
     if (!out.b) this.isle2.boatAction(P, out, nm);
     this.isle2.interactions(P, out, nm);
@@ -1733,8 +1746,8 @@ export class SoloIslandScene extends BaseScene {
     this.mode = 'letter';
     this.letterT = 0;
     const gifts = [...(r.items || []).map(([id, n]) => `<div>${icon(id)}${n > 1 ? `${n} ` : ''}${esc(itemName(id))}</div>`),
-      ...(r.deco ? [`<div>${icon('deco')}${esc(t(`isl.d.${r.deco}`))}</div>`] : []), ...(r.coins ? [`<div>${icon('coin')}${r.coins}</div>`] : [])].join('');
-    const body = t(`isl.mail.${r.id}`, { name: this.playerName });
+      ...(r.deco ? [`<div>${icon('deco')}${esc(t(`isl.d.${r.deco}`))}</div>`] : []), ...(r.coins ? [`<div>${icon('coin')}${r.coins}</div>`] : [])].join('') + coopBadgeGifts(r);
+    const body = t(`isl.mail.${r.id}`, { name: this.playerName, ...(r.games || r.badges ? coopMailVars(r) : {}) });
     const card = r.id === 'postcard' ? this.photo.letterHtml(r) : '';
     this.hud.setPanel(`<h2>${esc(t(r.id === 'postcard' ? 'isl.photo.title' : 'isl.mail.title', { name: this.playerName }))}</h2>
       ${card}<div class="isl-letter">${esc(body)}<div class="from">${esc(t('isl.mail.from', { name: t(`isl.from.${r.from}`) }))}</div></div>
@@ -1868,7 +1881,7 @@ export class SoloIslandScene extends BaseScene {
   }
 
   // ---------- the menu ([MENU]: Q on a keyboard, Start on a gamepad) ----------
-  // Keep playing, the other ways to play (the shared island, the story, another solo player) and the
+  // Keep playing, the other ways to play (play together on the shared island, another player) and the
   // settings a gamepad has no key for (read-aloud, characters, language, help). [OK] or [B] picks
   // (A or X on a gamepad, E or Space on a keyboard), [C] or Start closes it: a gamepad's B never picks.
 
@@ -1916,13 +1929,14 @@ export class SoloIslandScene extends BaseScene {
     this.modeEl = null;
     this.game.audio.play('join');
     this.flush();
+    if (k === 'island') { this.launching = true; this.game.goTogether(); return; } // play together (as the ferry)
     if (k === 'solo') {
       setPadLayout('default'); // the profile picker is a shared menu: A picks, B goes back, X voice
       this.profilePicker = new ProfilePicker(this, {
         onDone: (profile, deviceId) => { this.profilePicker = null; this.launching = true; this.game.enterSolo(profile, deviceId); },
         onCancel: () => { this.profilePicker = null; setPadLayout('island'); this.openMode(MENU.indexOf('solo')); },
       });
-    } else { this.launching = true; this.game.leaveSolo(k); }
+    }
   }
 
   menuSetting(k) {
@@ -2293,6 +2307,8 @@ export class SoloIslandScene extends BaseScene {
         case 'hopgo': this.hops.updateCount(dt); break; // 3, 2, 1 before a hop trail
         case 'map': break; // the treasure map from a bottle (surprise.js closes it)
         case 'game': this.games.updateMode(inp, dt); break; // a mini-game with its own controls (games.js)
+        case 'school': this.school.update(panel, dt); break; // the school house's game picker (school.js)
+        case 'pier': this.ferry.updateBoard(inp, dt); break; // the Party Pier's badge board (ferry.js)
         default: {
           this.movePlayer(inp, dt);
           ia = this.interactions();
@@ -2326,6 +2342,8 @@ export class SoloIslandScene extends BaseScene {
     this.bagUi.tick();
     this.tour.update(dt);
     this.story.update(dt);
+    this.ferry.update(dt);
+    this.school.update3d(dt);
     this.updatePlayerLook(dt);
     this.farm.animate(dt, this.time);
     this.life.update(dt, this.night || 0, P || { x: 0, z: 0 });
