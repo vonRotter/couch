@@ -1,3 +1,4 @@
+import { aimLevel, homeToward } from '../../core/assist.js';
 import { DIRS, TALL, ARROW_RANGE, tileX, tileZ, colOf, rowOf, inGrid, pegUp } from './tiles.js';
 import { makeBomb, makeArrow } from './models.js';
 
@@ -78,7 +79,15 @@ export const ToolsMixin = {
   updateArrows(dt) {
     const room = this.room;
     if (this.arrowCool > 0) this.arrowCool -= dt;
+    // Aim help ("Help me play"): arrows curve toward an enemy ahead (never toward switches or eyes: puzzles stay
+    // puzzles) and hit a little wider (arrowStep).
+    const lvl = aimLevel();
+    const foes = lvl ? room.enemies.filter((en) => !en.dead && !(en.fly && en.y > (en.arrowReach || 2.6))).map((en) => ({ x: en.x, y: en.z })) : null;
     for (const a of room.arrows) {
+      if (lvl && foes.length) {
+        const v = { x: a.dx, y: a.dz };
+        if (homeToward({ x: a.x, y: a.z }, v, foes, lvl, dt, { range: lvl === 2 ? 6 : 3.5 })) { a.dx = v.x; a.dz = v.y; a.mesh.rotation.y = Math.atan2(a.dx, a.dz); }
+      }
       // small steps, so an arrow never skips a tile or an enemy
       let left = ARROW_SPEED * dt;
       while (left > 0 && !a.dead) {
@@ -134,7 +143,7 @@ export const ToolsMixin = {
     }
     for (const en of room.enemies) {
       if (en.dead || (en.fly && en.y > (en.arrowReach || 2.6))) continue;
-      const part = en.parts().find((pt) => Math.hypot(pt.x - a.x, pt.z - a.z) < pt.r + 0.15);
+      const part = en.parts().find((pt) => Math.hypot(pt.x - a.x, pt.z - a.z) < pt.r + 0.15 + [0, 0.15, 0.35][aimLevel()]);
       if (part) {
         a.dead = true;
         const res = en.hurt(1, a.x - a.dx, a.z - a.dz, a.fire ? 'fire' : 'arrow', part.part);

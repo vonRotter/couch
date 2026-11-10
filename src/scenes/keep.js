@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { aimLevel, homeToward } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
@@ -918,6 +919,14 @@ export class KeepScene extends MiniGame {
           const k = Math.min(1, dt * 5);
           sh.vx += (tx - sh.vx) * k; sh.vz += (tz - sh.vz) * k;
         }
+      }
+      // Aim help ("Help me play"): a player's arrows, bubbles and bolts curve toward a grumble (or the boss) ahead.
+      const lvl = !sh.homing && sh.kind !== 'feather' && sh.owner?.p ? aimLevel(sh.owner.p) : 0;
+      if (lvl) {
+        const tgs = this.grumbles.filter((g) => g.state !== 'bubble' && !g.dead).map((g) => ({ x: g.x, y: g.z }));
+        if (b && !b.dead && b.state === 'fight') tgs.push({ x: b.x, y: b.z });
+        const v = { x: sh.vx, y: sh.vz };
+        if (homeToward({ x: sh.x, y: sh.z }, v, tgs, lvl, dt, { range: lvl === 2 ? 7 : 4 })) { sh.vx = v.x; sh.vz = v.y; }
       }
       sh.x += sh.vx * dt;
       sh.z += sh.vz * dt;

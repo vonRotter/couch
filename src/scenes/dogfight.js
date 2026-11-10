@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { aimLevel } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { COLORS, PLAYER_COLORS, toon } from '../core/palette.js';
 import { addLights, skyTexture } from '../core/world.js';
@@ -529,8 +530,10 @@ export class DogfightScene extends MiniGame {
     const enemy = e.kind === 'enemy';
     const speed = enemy ? 24 : PELLET_SPEED;
     // A gentle aim assist for players: pellets bend toward a foe that is nearly lined up.
+    // Aim help ("Help me play"): off is this gentle assist; a little and a lot look wider and bend further.
     if (e.p) {
-      let best = null, bestErr = 0.15;
+      const lvl = aimLevel(e.p);
+      let best = null, bestErr = [0.15, 0.3, 0.5][lvl];
       for (const o of this.targetsFor(e.team)) {
         const d = Math.hypot(o.x - f.x, o.y - f.y);
         if (d > 30) continue;
@@ -539,7 +542,7 @@ export class DogfightScene extends MiniGame {
         const err = Math.abs(Math.atan2(Math.sin(a - f.ang), Math.cos(a - f.ang)));
         if (err < bestErr * (o.big ? 2 : 1)) { bestErr = err; best = a; }
       }
-      if (best !== null) ang += Math.atan2(Math.sin(best - ang), Math.cos(best - ang)) * 0.6;
+      if (best !== null) ang += Math.atan2(Math.sin(best - ang), Math.cos(best - ang)) * [0.6, 0.8, 0.95][lvl];
     }
     const color = enemy ? GOO : e.kind === 'bot' && this.mode === 'teams' ? TEAM_COLORS[e.team] : e.color;
     const mesh = makePellet(color);

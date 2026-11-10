@@ -1,4 +1,5 @@
 import { SHIP, GRAV, ZERO } from './config.js';
+import { aimLevel } from '../../core/assist.js';
 import { makeShip, makeAmmoRack } from './models.js';
 import { angleDiff, clamp, damp, rand } from './util.js';
 import { t } from '../../core/i18n.js';
@@ -121,7 +122,9 @@ export class Ship {
     if (raw === null) raw = this.match.world.gravity ? (this.facing > 0 ? 0 : Math.PI) : this.aim;
     // Keyboards aim in 8 directions, with a little more help.
     if (snapped) raw = Math.round(raw / OCT) * OCT;
-    this.aim = this.assist(raw, snapped ? 13 : SHIP.aimAssistDeg);
+    // aim help ("Help me play"): the snap onto a lined-up target reaches further
+    const help = this.pl.p ? [1, 2, 3.2][aimLevel(this.pl.p)] : 1;
+    this.aim = this.assist(raw, (snapped ? 13 : SHIP.aimAssistDeg) * help);
   }
 
   /** Nudge the aim onto a nearby target that is almost lined up. */

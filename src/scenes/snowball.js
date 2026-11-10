@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { aimLevel, struggle, overcame } from '../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
@@ -34,6 +35,13 @@ const THROW_CD = 0.35;
 const G = 14; // snowball gravity
 const HAND_Y = 1.2;
 const AIM_CONE = THREE.MathUtils.degToRad(40);
+// Aim help ("Help me play", core/assist.js) for players: how wide the auto-aim looks around where you face and
+// how much a throw scatters. Off: face the target (it still finds the distance); a little: the old help; a lot.
+const AIM_HELP = [
+  { cone: THREE.MathUtils.degToRad(14), spread: (d) => 0.16 + d * 0.03 },
+  { cone: AIM_CONE, spread: (d) => 0.12 + d * 0.022 },
+  { cone: THREE.MathUtils.degToRad(65), spread: (d) => 0.05 + d * 0.008 },
+];
 const AIM_RANGE = 10.5; // auto-aim reach for players; +3 from high ground
 const THROW_RANGE = 13; // landing distance when nothing is in the aim cone
 const TARGET_RESPAWN = 5;
@@ -1068,7 +1076,7 @@ export class SnowballScene extends MiniGame {
   /** Auto-aim: the enemy (player or target) closest to where you face, or a spot on the ground ahead. */
   aimFor(e) {
     const range = AIM_RANGE + (e.y > 0.5 ? 3 : 0);
-    let best = null, bestAng = AIM_CONE;
+    let best = null, bestAng = e.bot ? AIM_CONE : AIM_HELP[aimLevel(e.p)].cone;
     const consider = (x, y, z, d, ent, target) => {
       if (d < 0.6) return;
       const ang = Math.acos(clamp(((x - e.x) * e.dirX + (z - e.z) * e.dirZ) / d, -1, 1)) + d * 0.004;
@@ -1103,7 +1111,7 @@ export class SnowballScene extends MiniGame {
       if (this.terrain.inTunnel(e.x, e.z)) { this.say(e, 'snowball.noRoom'); e.throwCd = 0.5; return false; }
     }
     const d = Math.hypot(aim.x - e.x, aim.z - e.z);
-    const spread = (e.bot ? 0.5 + d * 0.04 : 0.12 + d * 0.022) * (kind === 'normal' ? 1 : 0.5);
+    const spread = (e.bot ? 0.5 + d * 0.04 : AIM_HELP[aimLevel(e.p)].spread(d)) * (kind === 'normal' ? 1 : 0.5);
     // Triple throw: two extra balls fanned out to the sides.
     const angles = kind === 'normal' && e.triple > 0 ? [0, 0.28, -0.28] : [0];
     for (const off of angles) {
@@ -1160,7 +1168,7 @@ export class SnowballScene extends MiniGame {
         if (b.dead) break;
         const hit = T.ballHit(b.x, b.y, b.z, b.r);
         if (hit) this.impact(b, hit);
-        else if (b.life <= 0 || Math.abs(b.x) > HX + 4 || Math.abs(b.z) > HZ + 4) b.dead = true;
+        else if (b.life <= 0 || Math.abs(b.x) > HX + 4 || Math.abs(b.z) > HZ + 4) { b.dead = true; this.aimResult(b, null); }
       }
       b.mesh.position.set(b.x, b.y, b.z);
       const gy = T.groundY(b.x, b.z);
@@ -1173,9 +1181,18 @@ export class SnowballScene extends MiniGame {
     }
   }
 
+  /** Aim help offers: a player's snowball that splats on the ground counts as a miss, one that hits clears them. */
+  aimResult(b, hit) {
+    if (b.owner.bot || b.kind !== 'normal' || !b.owner.p) return;
+    const hitSomething = hit && (hit.ent || hit.target || hit.wall || hit.cover); // (a cover in the way is not a miss)
+    if (hitSomething) overcame(this, `aim.${b.owner.p.deviceId}`);
+    else struggle(this, b.owner.p, 'aim', `aim.${b.owner.p.deviceId}`);
+  }
+
   /** A snowball meets something. Giant balls splash, freeze bombs leave an ice patch. */
   impact(b, hit) {
     b.dead = true;
+    this.aimResult(b, hit);
     const at = new THREE.Vector3(b.x, b.y, b.z);
     if (b.kind === 'giant') {
       this.game.audio.play('splat');

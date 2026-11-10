@@ -1,4 +1,5 @@
 import { MISSILE } from './config.js';
+import { aimLevel, homeToward } from '../../core/assist.js';
 import { makeMissile, makeCrate, makeBolt, makeRift } from './models.js';
 import { rand } from './util.js';
 
@@ -40,6 +41,13 @@ export class Missile {
   updateFly(dt) {
     const m = this.match, world = m.world;
     if (world.gravity) this.vy -= MISSILE.gravity * dt;
+    // aim help ("Help me play"): a player's missile curves toward a target ahead
+    const lvl = this.owner?.pl?.p ? aimLevel(this.owner.pl.p) : 0;
+    if (lvl && this.age < 1.2) {
+      const tgs = m.aimTargets(this.owner).filter((tg) => tg !== this.owner);
+      const v = { x: this.vx, y: this.vy };
+      if (homeToward(this, v, tgs, lvl, dt, { range: lvl === 2 ? 7 : 4 })) { this.vx = v.x; this.vy = v.y; }
+    }
     const speed = Math.hypot(this.vx, this.vy);
     const steps = Math.max(1, Math.ceil((speed * dt) / 0.12));
     const sx = (this.vx * dt) / steps, sy = (this.vy * dt) / steps;

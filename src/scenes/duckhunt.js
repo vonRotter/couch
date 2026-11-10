@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { aimLevel, struggle, overcame } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { COLORS, PLAYER_COLORS } from '../core/palette.js';
 import { addLights, skyTexture } from '../core/world.js';
@@ -8,6 +9,8 @@ import { esc } from '../core/ui.js';
 import {
   DUCK_TYPES, makeDuck, zapTint, makeClay, makeDog, makePopDog, makeCrosshair, makeBeam, buildStage,
 } from './duckhunt/models.js';
+// crosshair pull per aim-help level (0: the game's own gentle assist)
+const AIM_PULL = [{ reach: 1.4, pull: 1.6, follow: 0.25 }, { reach: 2.2, pull: 3.2, follow: 0.5 }, { reach: 3.2, pull: 6, follow: 0.8 }];
 
 // Laser Ducks: the classic NES duck hunt, with laser guns. Ducks fly up out of the tall grass,
 // zigzag and bounce at the screen edges, and fly away after a few seconds. Every player aims a
@@ -462,13 +465,13 @@ export class DuckHuntScene extends MiniGame {
   // ---------- shooting ----------
 
   /** The live target under (x, y) on the duck plane, if any (closest relative to its size). */
-  findTarget(x, y) {
+  findTarget(x, y, tol = AIM_TOL) {
     let best = null, bestD = Infinity;
     for (const tg of this.targets) {
       if (tg.state !== 'fly' && tg.state !== 'escape') continue;
       if (tg.state === 'escape' && !this.clay) continue;
       if (tg.pos.y < HIT_Y && tg.kind === 'duck') continue;
-      const d = Math.hypot(tg.sx - x, tg.sy - y) / (tg.r * tg.ss + AIM_TOL);
+      const d = Math.hypot(tg.sx - x, tg.sy - y) / (tg.r * tg.ss + tol);
       if (d < 1 && d < bestD) { best = tg; bestD = d; }
     }
     return best;
@@ -483,7 +486,10 @@ export class DuckHuntScene extends MiniGame {
     s.ammo--;
     s.kick = 1;
     this.game.audio.play('dash');
-    const tg = this.findTarget(s.x, s.y);
+    // aim help ("Help me play"): a wider hit around the crosshair
+    const tg = this.findTarget(s.x, s.y, AIM_TOL + [0, 0.25, 0.55][aimLevel(s.p)]);
+    if (tg) overcame(this, `aim.${s.p.deviceId}`);
+    else struggle(this, s.p, 'aim', `aim.${s.p.deviceId}`);
     const end = tg ? tg.pos.clone() : new THREE.Vector3(s.x, s.y, 0);
     const from = this.gunPos(s);
     s.beam.aim(from, end, tg && tg.kind === 'clay' ? 0.07 : 0.09);
@@ -579,8 +585,10 @@ export class DuckHuntScene extends MiniGame {
         s.holdT = mag > 0.2 ? s.holdT + dt : 0;
         let speed = 7 + 15 * Math.min(1, s.holdT / 0.5);
         let near = null, nearD = Infinity;
+        // aim help ("Help me play"): off is the game's own gentle pull; a little and a lot pull harder and wider
+        const help = AIM_PULL[aimLevel(s.p)];
         for (const tg of live) {
-          const R = tg.r * tg.ss + 1.4;
+          const R = tg.r * tg.ss + help.reach;
           const dd = Math.hypot(tg.sx - s.x, tg.sy - s.y);
           if (dd < R && dd / R < nearD) { near = tg; nearD = dd / R; }
         }
@@ -593,9 +601,9 @@ export class DuckHuntScene extends MiniGame {
         if (near && canFire) {
           // Aim assist: a gentle pull toward the nearest duck and a little follow of its motion.
           const w = 1 - nearD;
-          const pull = Math.min(1, 1.6 * w * dt);
-          s.x += (near.sx - s.x) * pull + near.svx * dt * 0.25 * w;
-          s.y += (near.sy - s.y) * pull + near.svy * dt * 0.25 * w;
+          const pull = Math.min(1, help.pull * w * dt);
+          s.x += (near.sx - s.x) * pull + near.svx * dt * help.follow * w;
+          s.y += (near.sy - s.y) * pull + near.svy * dt * help.follow * w;
         }
       }
       s.x = clamp(s.x, -this.halfW + 0.5, this.halfW - 0.5);
