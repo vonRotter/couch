@@ -1,4 +1,6 @@
 import { t, addStrings } from './i18n.js';
+import { say } from './voice.js';
+import { timingScale } from './assist.js';
 import { esc } from './ui.js';
 
 addStrings({
@@ -67,6 +69,8 @@ export class VotePicker {
     this.time = 0;
     this.el = scene.game.ui.panel('', 'panel picker');
     this.render();
+    // read aloud (accessibility audit): the question and the choices
+    say(`${this.title()}. ${this.question()} ${this.options.map((o) => o.label()).join(', ')}.`, 'narrator');
   }
 
   render() {
@@ -95,6 +99,7 @@ export class VotePicker {
       if (!c.locked && d.stepX) {
         c.i = Math.min(this.options.length - 1, Math.max(0, c.i + d.stepX));
         scene.game.audio.play('select');
+        say(this.options[c.i].label(), 'narrator');
         changed = true;
       }
       if (d.aPressed) {
@@ -105,7 +110,7 @@ export class VotePicker {
     }
     if (changed) this.render();
     const all = [...this.choice.values()].every((c) => c.locked);
-    if (all || this.time > 25) this.finish();
+    if (all || this.time > 25 * timingScale()) this.finish(); // (forgiving timing: more time to vote)
   }
 
   finish() {

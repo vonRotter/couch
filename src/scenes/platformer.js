@@ -11,6 +11,7 @@ import { SKYHOP_LEVELS } from './skyhop-levels.js';
 import { esc } from '../core/ui.js';
 import { addStrings } from '../core/i18n.js';
 import { timingScale, struggle, overcame, markSkipped, isSkipped } from '../core/assist.js';
+import { say } from '../core/voice.js';
 
 addStrings({
   en: { 'sky.checkpoint': 'Checkpoint!' },
@@ -133,6 +134,7 @@ export class PlatformerScene extends MiniGame {
           this.selection = next;
           this.game.audio.play('select');
           this.renderPicker();
+          say(`${next + 1}: ${next > this.unlocked ? t('sky.locked') : this.levelName(next)}${isSkipped(this.game.roster.progress, 'skyhop', next) ? `, ${t('assist.skipped')}` : ''}`, 'narrator');
         }
       }
       if (d.aPressed) {

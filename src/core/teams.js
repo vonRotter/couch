@@ -1,4 +1,5 @@
 import { t } from './i18n.js';
+import { say } from './voice.js';
 import { esc } from './ui.js';
 
 export const TEAM_COLORS = [0xffc93c, 0x4cc9f0];
@@ -20,6 +21,7 @@ export class TeamPicker {
     this.ready = new Map(ents.map((e) => [e, false]));
     this.el = scene.game.ui.panel('', 'panel picker');
     this.render();
+    say(`${this.title()}. ${t('ball.teams')}`, 'narrator'); // read aloud (accessibility audit)
   }
 
   render() {

@@ -45,7 +45,7 @@ html, body {
   will-change: transform;
 }
 .label small { display: block; font-size: 0.65em; font-weight: 600; }
-.label.player-tag { font-size: clamp(11px, 1vw, 16px); -webkit-text-stroke: 0.25em #fff; }
+.label.player-tag { font-size: clamp(12px, 1vw, 16px); -webkit-text-stroke: 0.25em #fff; }
 
 .ui-top {
   top: 14px; left: 0; right: 0; padding: 0 4vw;
@@ -147,7 +147,7 @@ html, body {
 .bean .eye::after { content: ''; position: absolute; width: 7px; height: 8px; background: var(--ink); border-radius: 50%; left: 3px; top: 5px; }
 .result-name { font-weight: 700; font-size: clamp(15px, 1.5vw, 24px); }
 .result-value { font-weight: 700; font-size: clamp(22px, 2.6vw, 40px); color: var(--c); paint-order: stroke fill; -webkit-text-stroke: 0.1em var(--ink); }
-.result-detail { font-size: clamp(11px, 1vw, 16px); font-weight: 500; opacity: 0.8; }
+.result-detail { font-size: clamp(13px, 1vw, 16px); font-weight: 600; opacity: 0.85; }
 .crown-badge {
   position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
   background: var(--sun); color: #fff; width: 40px; height: 40px; border-radius: 50%;
@@ -245,13 +245,13 @@ html, body {
   transition: transform 0.15s;
 }
 .edu-card.win { transform: scale(1.06); background: color-mix(in srgb, var(--c) 18%, white); }
-.edu-card-head { font-weight: 700; color: var(--c); font-size: clamp(11px, 1vw, 16px); }
+.edu-card-head { font-weight: 700; color: var(--c); font-size: clamp(12px, 1vw, 16px); }
 .edu-word { font-weight: 700; font-size: clamp(20px, 2.4vw, 40px); letter-spacing: 0.05em; line-height: 1.2; }
 .edu-word.math { white-space: nowrap; }
 .edu-word .slot { display: inline-block; min-width: 0.85em; border-bottom: 4px solid #d8d2ea; margin: 0 1px; }
 .edu-word .slot.open { color: transparent; }
 .edu-word .slot.next { border-color: var(--c); background: color-mix(in srgb, var(--c) 20%, white); border-radius: 6px 6px 0 0; animation: blink 1s infinite; }
-.edu-clue { font-size: clamp(10px, 0.9vw, 14px); opacity: 0.75; max-width: 220px; margin: 0 auto; }
+.edu-clue { font-size: clamp(12px, 0.9vw, 14px); opacity: 0.85; max-width: 220px; margin: 0 auto; }
 .label.edu-tag { font-size: clamp(16px, 1.8vw, 30px); }
 
 /* Mega Ball team picker and score */
@@ -294,7 +294,7 @@ html, body {
 .space-tank span { display: block; height: 100%; background: #7dffcf; }
 .space-tank.locked span { background: #ff9fb0; }
 .space-tank.flash { box-shadow: 0 0 14px #7dffcf; }
-.space-gate { position: absolute; right: 12px; top: 40px; background: #fff; border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: clamp(11px, 1vw, 16px); }
+.space-gate { position: absolute; right: 12px; top: 40px; background: #fff; border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: clamp(12px, 1vw, 16px); }
 
 /* Pre-game vote */
 .vote-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 16px 0 8px; }
@@ -313,7 +313,7 @@ html, body {
 .prof-card { width: clamp(110px, 12vw, 170px); border-radius: 20px; background: #f4efff; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; border: 4px solid transparent; transition: transform 0.15s; }
 .prof-card.on { border-color: var(--c, #ff8c42); background: #fff; transform: scale(1.07); }
 .prof-card b { font-size: clamp(16px, 1.6vw, 24px); }
-.prof-card small { font-size: clamp(11px, 1vw, 15px); opacity: 0.75; }
+.prof-card small { font-size: clamp(12px, 1vw, 15px); opacity: 0.85; }
 .prof-bean { width: 46px; height: 58px; border-radius: 50% 50% 44% 44%; background: var(--c); box-shadow: inset -6px -6px 0 rgba(0,0,0,0.12); }
 .prof-plus { width: 52px; height: 52px; border-radius: 50%; background: #e3dbff; font-size: 38px; line-height: 52px; font-weight: 700; color: #8a45e0; }
 .prof-card.new.on { border-color: #8a45e0; }
@@ -347,7 +347,7 @@ html, body {
 .join-opt.on { border-color: var(--c, #8a45e0); background: #fff3e6; }
 .join-opt.taken { opacity: 0.45; }
 .join-opt.guest { --c: #bdb8cf; }
-.join-hint { font-size: clamp(11px, 1vw, 15px); opacity: 0.75; text-align: center; font-weight: 600; }
+.join-hint { font-size: clamp(12px, 1vw, 15px); opacity: 0.85; text-align: center; font-weight: 600; }
 
 /* "Help me play" (core/assistmenu.js) */
 .panel.assist-panel { min-width: min(620px, 92vw); }
@@ -375,7 +375,7 @@ html, body {
 .a11y-contrast .panel, .a11y-contrast .pill, .a11y-contrast .chip, .a11y-contrast .toast { outline: 3px solid var(--ink); }
 .a11y-contrast .pause-item.on, .a11y-contrast .vote-opt.on, .a11y-contrast .prof-card.on, .a11y-contrast .level-card.on { outline: 4px dashed var(--ink); outline-offset: 3px; }
 .a11y-contrast .pause-item.on::before { content: '▶ '; }
-.level-skip { font-weight: 700; font-size: clamp(11px, 1vw, 16px); background: var(--ink); color: #fff; border-radius: 999px; padding: 1px 10px; margin-top: 4px; }
+.level-skip { font-weight: 700; font-size: clamp(12px, 1vw, 16px); background: var(--ink); color: #fff; border-radius: 999px; padding: 1px 10px; margin-top: 4px; }
 /* hold to toggle: which buttons are held for whom */
 .ui-holds { left: 50%; top: clamp(62px, 10vh, 96px); transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .hold-chip { background: #fff; border: 3px solid var(--c); border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: clamp(12px, 1.1vw, 18px); box-shadow: 0 3px 0 rgba(43,35,64,.18); }

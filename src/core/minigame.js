@@ -47,6 +47,7 @@ export class MiniGame extends BaseScene {
     this.game.audio.playMusic('results');
     this.game.audio.play('fanfare');
     this.game.ui.setTop('');
+    say(`${title}. ${subtitle || ''}`, 'narrator'); // read aloud (accessibility audit): how it went
     this.game.ui.results({
       title,
       subtitle,

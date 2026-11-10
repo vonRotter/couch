@@ -1,12 +1,33 @@
 import * as THREE from 'three';
 import { Round, clock } from './common.js';
 import { makeGrumble } from '../../core/critters.js';
-import { COLORS, toon } from '../../core/palette.js';
+import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeTree, makeBush, makeFlower, seeded } from '../../core/world.js';
-import { t } from '../../core/i18n.js';
+import { t, addStrings } from '../../core/i18n.js';
 
 // Count the Critters: grumbles scurry past; count only one color, then guess.
 const COLORS3 = [0x9b5de5, 0xff8c42, 0x3ddc97];
+// Never colour alone (accessibility audit): each colour also has its own shape on top (ball, horn, cube).
+addStrings({
+  en: { 'count.shape.0': 'ball on top', 'count.shape.1': 'horn on top', 'count.shape.2': 'cube on top' },
+  no: { 'count.shape.0': 'kule på toppen', 'count.shape.1': 'horn på toppen', 'count.shape.2': 'kloss på toppen' },
+});
+const TOPS = [
+  () => new THREE.SphereGeometry(0.14, 12, 10),
+  () => new THREE.ConeGeometry(0.12, 0.34, 10),
+  () => new THREE.BoxGeometry(0.24, 0.24, 0.24),
+];
+/** A grumble of colour group i, with its shape on top. */
+function critter(i) {
+  const m = makeGrumble(COLORS3[i]);
+  const top = new THREE.Mesh(sharedGeo(`countTop${i}`, TOPS[i]), toon(COLORS3[i]));
+  top.position.y = 0.98;
+  if (i === 2) top.rotation.y = 0.6;
+  m.add(top);
+  return m;
+}
+/** "purple (ball on top)" */
+const colorName = (i) => `${t(`count.c.${i}`)} (${t(`count.shape.${i}`)})`;
 const WATCH = 14;
 const GUESS = 15;
 
@@ -49,7 +70,7 @@ export class CountRound extends Round {
   }
 
   get title() { return t('count.title'); }
-  get hint() { return t('count.hint', { c: t(`count.c.${this.target}`) }); }
+  get hint() { return t('count.hint', { c: colorName(this.target) }); }
 
   build() {
     const g = this.group;
@@ -83,7 +104,7 @@ export class CountRound extends Round {
     post.position.y = 1.2;
     const board = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 0.12), toon(COLORS.cream));
     board.position.y = 2.4;
-    const sample = makeGrumble(COLORS3[this.target]);
+    const sample = critter(this.target);
     sample.scale.setScalar(0.9);
     sample.position.set(0, 1.95, 0.1);
     sign.add(post, board, sample);
@@ -100,7 +121,7 @@ export class CountRound extends Round {
   }
 
   spawn(s) {
-    const m = makeGrumble(s.color);
+    const m = critter(Math.max(0, COLORS3.indexOf(s.color)));
     m.position.set(-s.dir * 20, 0, (Math.random() - 0.5) * 1.6);
     m.rotation.y = s.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
     this.group.add(m);
@@ -152,7 +173,7 @@ export class CountRound extends Round {
       const shown = Math.min(this.answer, Math.floor(this.t / 0.28));
       while (this.revealed.length < shown) {
         const i = this.revealed.length;
-        const m = makeGrumble(COLORS3[this.target]);
+        const m = critter(this.target);
         const cols = Math.min(this.answer, 10);
         m.position.set((i % cols - (cols - 1) / 2) * 1.2, 0, Math.floor(i / cols) * -1.4);
         this.group.add(m);
@@ -190,7 +211,7 @@ export class CountRound extends Round {
   }
 
   hud() {
-    if (this.phase === 'watch') return `<div class="pill">${t('count.watch', { c: t(`count.c.${this.target}`) })}</div>`;
+    if (this.phase === 'watch') return `<div class="pill">${t('count.watch', { c: colorName(this.target) })}</div>`;
     if (this.phase === 'guess') return `<div class="pill">${t('count.ask')}</div>${clock(GUESS - this.t)}`;
     return '';
   }
