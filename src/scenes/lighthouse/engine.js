@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { struggle } from '../../core/assist.js';
 import { t } from '../../core/i18n.js';
 import { stopVoice } from '../../core/voice.js';
 import { W, H, DIRS, tileX, tileZ, colOf, rowOf, inGrid } from './tiles.js';
@@ -418,12 +419,18 @@ export class LighthouseEngine {
       this.heroChar.group.scale.setScalar(HERO_SCALE);
       this.hud.setBig(null);
       this.hud.setDark(false);
-      const sp = s.savePoint || { room: START.room, at: START.at, face: 's' };
+      // Instant retry ("Help me play" step): back at the door of the room you fainted in, hearts full (the
+      // save lamp is only where a new visit starts). Many faints in one room offer forgiving timing and speed.
       this.lastPlace = '';
-      this.loadRoom(sp.room, sp.at, sp.face);
+      if (this.room?.entry) this.restartRoom();
+      else {
+        const sp = s.savePoint || { room: START.room, at: START.at, face: 's' };
+        this.loadRoom(sp.room, sp.at, sp.face);
+        this.mode = 'play';
+        this.onEnterRoom('respawn');
+      }
       this.hero.inv = 1.5;
-      this.mode = 'play';
-      this.onEnterRoom('respawn');
+      struggle(this.host, this.host.players[0], 'timing', `lh.${this.room.id}`);
     }
   }
 
