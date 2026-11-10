@@ -54,6 +54,7 @@ import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './
 import * as assist from './core/assist.js';
 import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES } from './core/assist.js';
 import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
+import { refreshOutlines } from './core/outline.js';
 import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
 
 // The pause menu in every game (chars is a setting that switches in place).
@@ -210,8 +211,10 @@ class Game {
     root.classList.toggle('a11y-text', s.text > 0);
     root.classList.toggle('a11y-contrast', !!s.contrast);
     this.ui.textScale = TEXT_SIZES[s.text] || 1;
-    if (this.contrastOn !== !!s.contrast) {
+    if (this.contrastOn !== !!s.contrast || this.outlinedScene !== this.current) {
       this.contrastOn = !!s.contrast;
+      this.outlinedScene = this.current;
+      refreshOutlines(this.current?.scene, this.contrastOn);
       this.current?.onContrast?.(this.contrastOn);
     }
   }
@@ -522,6 +525,8 @@ class Game {
     this.applyDeviceSettings();
     this.input.update();
     this.updateHoldChips();
+    // strong outlines: now and then outline what spawned since (cheap: only marked models get hulls)
+    if (this.contrastOn && (this.outlineT = (this.outlineT || 0) + dt) > 0.5) { this.outlineT = 0; refreshOutlines(this.current?.scene, true); }
     // "Help me play" and its offers wait in front of everything (the game is frozen behind them)
     if (this.assistMenu || this.offer) {
       (this.assistMenu || this.offer).update(dt);

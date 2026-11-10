@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { COLORS, toon, sharedGeo } from './palette.js';
+import { markA11y } from './outline.js';
 
 const BODY_R = 0.42;
 const BODY_LEN = 0.36;
@@ -105,6 +106,7 @@ export class Character {
     this.body = mesh(bodyGeo, toon(color), 0, CHAR_HEIGHT / 2, 0);
     this.body.castShadow = true;
     this.pivot.add(this.body);
+    markA11y(this.group, 'player', [this.body]); // "Strong outlines" (core/outline.js)
 
     const belly = mesh(sphere(0.3), toon(0xffffff, { transparent: true, opacity: 0.35 }), 0, 0.42, 0.2);
     belly.scale.set(1, 0.9, 0.7);

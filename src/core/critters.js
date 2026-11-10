@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { COLORS, toon, sharedGeo, faceted } from './palette.js';
+import { markA11y } from './outline.js';
 
 /** Grumbles: grumpy-but-harmless fuzzballs used as the "enemies" in the games. */
 export function makeGrumble(color = 0x7b6cf6) {
@@ -22,5 +23,5 @@ export function makeGrumble(color = 0x7b6cf6) {
     g.add(eye, pupil, brow, foot);
   }
   g.userData.body = body;
-  return g;
+  return markA11y(g, 'enemy'); // "Strong outlines": a thick dark outline
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { markA11y } from '../../core/outline.js'; // "Strong outlines" on the aliens
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { COLORS, toon, basic, sharedGeo, faceted } from '../../core/palette.js';
 import { Character, darken } from '../../core/character.js';
@@ -198,7 +199,7 @@ export function makeCrawler() {
   }
   addEyes(g, { x: 0.2, y: 0.18, gap: 0.1, r: 0.08, z: 0.24 });
   g.userData = { legs, body };
-  return g;
+  return markA11y(g, 'enemy');
 }
 
 export function makeSpore() {
@@ -216,7 +217,7 @@ export function makeSpore() {
   addEyes(face, { x: 0, y: 0.06, gap: 0.1, r: 0.075, z: 0.26 });
   g.add(face);
   g.userData = { core, face };
-  return g;
+  return markA11y(g, 'enemy');
 }
 
 export function makeWisp() {
@@ -231,7 +232,7 @@ export function makeWisp() {
   pupil.position.set(0.08, 0.01, 0.29);
   g.add(eye, pupil);
   g.userData = { core, ring };
-  return g;
+  return markA11y(g, 'enemy');
 }
 
 export function makeSpitter() {
@@ -257,7 +258,7 @@ export function makeSpitter() {
   glow.scale.setScalar(0.01);
   g.add(glow);
   g.userData = { sac, tentacles, glow };
-  return g;
+  return markA11y(g, 'enemy');
 }
 
 export function makeBrute() {
@@ -277,7 +278,7 @@ export function makeBrute() {
   glow.scale.setScalar(0.01);
   g.add(glow);
   g.userData = { body, glow };
-  return g;
+  return markA11y(g, 'enemy');
 }
 
 /** The co-op finale: a big wobbly Hive Queen with a crown and orbiting pods. */
@@ -316,7 +317,7 @@ export function makeQueen() {
   glow.scale.setScalar(0.01);
   g.add(glow);
   g.userData = { body, pods, glow };
-  return g;
+  return markA11y(g, 'enemy');
 }
 
 export function makeBolt() {

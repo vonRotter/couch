@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { COLORS, toon, basic, sharedGeo, faceted } from '../../core/palette.js';
 import { makeTree, makeBush, makeCloud, makeRock, seeded } from '../../core/world.js';
+import { markA11y } from '../../core/outline.js';
 
 // Models for Laser Ducks (scenes/duckhunt.js): the classic duck hunt staging, the ducks, the
 // hound, clay discs, crosshairs and laser beams. Everything is built from primitives.
@@ -60,7 +61,7 @@ export function makeDuck(type) {
   const parts = [];
   g.traverse((o) => { if (o.isMesh) { o.userData.mat = o.material; parts.push(o); } });
   g.userData = { wings, parts, head };
-  return g;
+  return markA11y(g, 'target', [body, skull]); // "Strong outlines"
 }
 
 /** Zap flicker: swap every part to a bright material (or back with on = false). */
