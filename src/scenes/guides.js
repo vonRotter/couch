@@ -319,6 +319,7 @@ const cyl = (key, rt, rb, h, seg = 12) => sharedGeo(`gd-${key}`, () => new THREE
 export class GuidesScene extends MiniGame {
   constructor(game, opts = {}) {
     super(game, opts);
+    this.holdButtons = ['b']; // hold to toggle ("Help me play", input.js): fast-forward
     const saved = game.roster.progress.guides || {};
     this.unlocked = Math.min(LEVELS.length - 1, saved.unlocked || 0);
     this.bestStars = saved.stars || [];

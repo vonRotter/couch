@@ -376,3 +376,7 @@ html, body {
 .a11y-contrast .pause-item.on, .a11y-contrast .vote-opt.on, .a11y-contrast .prof-card.on, .a11y-contrast .level-card.on { outline: 4px dashed var(--ink); outline-offset: 3px; }
 .a11y-contrast .pause-item.on::before { content: '▶ '; }
 .level-skip { font-weight: 700; font-size: clamp(11px, 1vw, 16px); background: var(--ink); color: #fff; border-radius: 999px; padding: 1px 10px; margin-top: 4px; }
+/* hold to toggle: which buttons are held for whom */
+.ui-holds { left: 50%; top: clamp(62px, 10vh, 96px); transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.hold-chip { background: #fff; border: 3px solid var(--c); border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: clamp(12px, 1.1vw, 18px); box-shadow: 0 3px 0 rgba(43,35,64,.18); }
+.a11y-text .ui-holds { zoom: var(--ts); }

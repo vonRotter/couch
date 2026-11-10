@@ -9,7 +9,8 @@ import { PLAYER_COLORS } from './core/palette.js';
 import { Roster } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
-import { t, setLang, getLang, setButtonSource } from './core/i18n.js';
+import { t, tFor, setLang, getLang, setButtonSource } from './core/i18n.js';
+import { esc } from './core/ui.js';
 import { HubScene } from './scenes/hub.js';
 import { SoloIslandScene } from './scenes/solo/island.js';
 import './scenes/solo/devtime.js'; // playtest time machine, hidden unless ?dev (F9)
@@ -50,6 +51,7 @@ import { activateProfile, updateProfile, soloSaveKey, getProfile } from './core/
 import { StartScene } from './scenes/start.js';
 import { coopReward, nameList } from './core/coop.js';
 import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './core/voice.js';
+import * as assist from './core/assist.js';
 import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES } from './core/assist.js';
 import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
 import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
@@ -123,6 +125,7 @@ class Game {
     this.ui = new UI(document.getElementById('ui'));
     this.input.onActivity = () => this.audio.ensure();
 
+    this.assist = assist; // "Help me play" settings (core/assist.js), also for tests
     this.current = null;
     this.switching = false;
     // Story campaign: the stage being played ({ id, opts, stats }), or null in free play.
@@ -177,6 +180,26 @@ class Game {
       this.applyScreenSettings(); // someone joined or left, or settings changed: text size and outlines follow
     }
     for (const d of this.input.devices.values()) d.holdKeys = holds;
+  }
+
+  /** Hold to toggle: a small chip per held button ("Coral: E held · tap to let go"), so a latched hold is never a surprise. */
+  updateHoldChips() {
+    if (!this.holdEl) {
+      this.holdEl = document.createElement('div');
+      this.holdEl.className = 'ui-holds';
+      this.ui.root.appendChild(this.holdEl);
+    }
+    let html = '';
+    if (!this.pause && this.current?.holdButtons) {
+      for (const p of this.roster.players) {
+        const d = this.input.get(p.deviceId);
+        if (!d?.toggle) continue;
+        for (const k of d.holdKeys) {
+          if (d.latch[k]) html += `<div class="hold-chip" style="--c:${p.css}">🔒 ${esc(tFor(p, 'assist.held', { name: p.name, b: `[${k.toUpperCase()}]` }))}</div>`;
+        }
+      }
+    }
+    if (html !== this.holdHtml) { this.holdHtml = html; this.holdEl.innerHTML = html; }
   }
 
   /** Text size and outlines for what is on screen (the solo profile's, or the most anyone playing asked for). */
@@ -498,6 +521,7 @@ class Game {
     setPadLayout(this.current?.padLayout || 'default');
     this.applyDeviceSettings();
     this.input.update();
+    this.updateHoldChips();
     // "Help me play" and its offers wait in front of everything (the game is frozen behind them)
     if (this.assistMenu || this.offer) {
       (this.assistMenu || this.offer).update(dt);

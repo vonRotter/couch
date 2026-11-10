@@ -30,6 +30,7 @@ const GRUMBLE = 0x7b6cf6;
 export class SpacefallScene extends MiniGame {
   constructor(game, opts = {}) {
     super(game, opts);
+    this.holdButtons = ['a']; // hold to toggle ("Help me play", input.js): thrust
     this.camera.fov = VIEW.fov;
     this.camera.far = 1000;
     this.camera.updateProjectionMatrix();

@@ -114,6 +114,7 @@ const arrow = '<span style="opacity:.45;font-size:.8em;margin:0 1px">▸</span>'
 export class CookScene extends MiniGame {
   constructor(game, opts = {}) {
     super(game, opts);
+    this.holdButtons = ['b']; // hold to toggle ("Help me play", input.js): chopping
     this.camera.fov = 38;
     this.scene.background = skyTexture('#bfe8ff', '#fff1d6');
     const n = Math.max(1, this.players.length);
@@ -981,6 +982,7 @@ export class CookScene extends MiniGame {
         st.chopping = true;
         const it = st.item;
         it.chop += dt / this.chopTime;
+        if (it.chop >= 1) { const dv = this.input(e.p); if (dv?.latch) dv.latch.b = false; } // hold to toggle: done chopping lets go
         e.chopSfx -= dt;
         if (e.chopSfx <= 0) { e.chopSfx = 0.22; audio.play('land'); e.ch.squash(0.88); }
         if (it.chop >= 1) {

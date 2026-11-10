@@ -90,6 +90,7 @@ function makeRocket(p) {
 export class SpaceScene extends MiniGame {
   constructor(game, opts) {
     super(game, opts);
+    this.holdButtons = ['a', 'b']; // hold to toggle ("Help me play", input.js): boost and slide
     this.scene.background = skyTexture('#1d1450', '#5b3d9e');
     const hemi = new THREE.HemisphereLight(0xe8e0ff, 0x6a4fb0, 1.6);
     const sun = new THREE.DirectionalLight(0xfff2dd, 2.0);

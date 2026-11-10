@@ -77,6 +77,7 @@ const ROOF_COLORS = [0xff9fd0, 0x8fd8ff, 0xffe47a, 0x9ff0c8, 0xc9a8ff, 0xffb38a]
 export class RunnerScene extends MiniGame {
   constructor(game, opts) {
     super(game, opts);
+    this.holdButtons = ['c']; // hold to toggle ("Help me play", input.js): the balloon swing
     this.scene.background = skyTexture('#ffb7d5', '#ffe9c2');
     this.sun = addLights(this.scene, { size: 26 }).sun;
     this.course = buildCourse();

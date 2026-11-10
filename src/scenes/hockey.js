@@ -80,6 +80,7 @@ function goalWalls(side) {
 export class HockeyScene extends MiniGame {
   constructor(game, opts) {
     super(game, opts);
+    this.holdButtons = ['b']; // hold to toggle ("Help me play", input.js): charging a shot: tap to charge, tap again to shoot
     this.camera.fov = 40;
     this.scene.background = skyTexture('#9fd8ff', '#f2fbff');
     addLights(this.scene, { size: 26, dir: new THREE.Vector3(-0.3, 1, 0.45) });
