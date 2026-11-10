@@ -31,6 +31,7 @@ export class MiniGame extends BaseScene {
     await this.game.ui.countdown(this.game.audio, this.quickStart ? 300 : 600);
     if (this.game.current !== this) return;
     this.state = 'play';
+    this.game.input.clearLatches?.(); // hold to toggle: taps in votes and pickers do not leave a hold on
     this.playStart = this.time;
     this.onStart?.();
   }
