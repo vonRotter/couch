@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale } from '../../core/assist.js';
 import { BaseScene } from '../../core/scene.js';
 import { Character } from '../../core/character.js';
 import { toon, basic } from '../../core/palette.js';
@@ -1335,6 +1336,14 @@ export class SoloIslandScene extends BaseScene {
     return p ? this.game.input.get(p.deviceId) : null;
   }
 
+  /**
+   * Game speed ("Help me play", main.js) slows the island's activities, not walking about or its menus:
+   * a hop trail run, fishing, the mini-games, sledding.
+   */
+  get speedable() {
+    return !!(this.hops?.run && !this.hops.run.done) || ['fish', 'game', 'sled', 'hopgo'].includes(this.mode);
+  }
+
   /** Gamepad layout (input.js): the island's own, except while the profile picker (a shared menu) is up. */
   get padLayout() {
     return this.profilePicker ? 'default' : 'island';
@@ -1353,7 +1362,7 @@ export class SoloIslandScene extends BaseScene {
   jump() {
     const P = this.player;
     if (!P) return;
-    if (P.air && !(P.coyote > 0)) { P.buffer = 0.14; return; }
+    if (P.air && !(P.coyote > 0)) { P.buffer = 0.14 * timingScale(P.p); return; }
     if (!P.air && this.slideDir(P, this.walkState)) return; // no foothold on a cliff face: no hopping up it
     // the hop starts here (a jump just after walking off an edge keeps the edge as its start)
     if (!P.air) P.takeoff = P.safe ? { ...P.safe } : { x: P.x, z: P.z, fy: P.fy };
@@ -1394,7 +1403,7 @@ export class SoloIslandScene extends BaseScene {
         // walked off an edge: fall (a jump still works for a moment, not when sliding down a cliff face)
         P.air = true;
         P.vy = 0;
-        P.coyote = P.slid ? 0 : 0.12;
+        P.coyote = P.slid ? 0 : 0.12 * timingScale(P.p); // forgiving timing ("Help me play") makes it longer
         P.peak = P.fy;
         P.takeoff = P.safe ? { ...P.safe } : { x: P.x, z: P.z, fy: P.fy };
       }

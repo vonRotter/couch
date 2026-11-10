@@ -195,9 +195,10 @@ export function homeToward(pos, vel, targets, level, dt, { range = 8 } = {}) {
 //   OFFER_AT.assist tries in a row at one part: the matching assist (timing / aim) if it is off;
 //   OFFER_AT.speed tries: a slower game (75 %) if it is still at full speed;
 //   OFFER_AT.skip tries (only where the game can skip that part, opts.skip): skip it (marked as skipped).
-// Each offer comes once per game visit; "No thanks" waits for the next threshold, "Don't ask again" is saved.
+// At least OFFER_AT.gap tries between two offers. Each offer comes once per game visit (a skip once per part);
+// "No thanks" waits for the next threshold, "Don't ask again" is saved in the settings.
 
-export const OFFER_AT = { assist: 3, speed: 5, skip: 6 };
+export const OFFER_AT = { assist: 3, speed: 5, skip: 7, gap: 2 };
 
 export function struggle(scene, player, kind, part = 'all', { skip = null } = {}) {
   const game = scene?.game;
@@ -206,6 +207,7 @@ export function struggle(scene, player, kind, part = 'all', { skip = null } = {}
   const n = (st.counts[part] = (st.counts[part] || 0) + 1);
   const s = player ? settingsFor(player) : deviceSettings();
   if (!s.offers) return null;
+  if (st.last && n - st.last < OFFER_AT.gap) return null;
   const can = (k) => !s.never.includes(k) && !st.offered.has(`${k}:${part}`) && !st.offered.has(k);
   let offer = null;
   if (n >= OFFER_AT.skip && skip && can('skip')) offer = 'skip';
@@ -214,14 +216,15 @@ export function struggle(scene, player, kind, part = 'all', { skip = null } = {}
   else if (n >= OFFER_AT.assist && kind === 'aim' && can('aim') && s.aim < 2) offer = 'aim';
   if (!offer) return null;
   // skip can come again at another part; an assist is offered once per visit
+  if (game.offerAssist?.({ kind: offer, player, part, skip, scene }) === false) return null; // a menu is up: later
   st.offered.add(offer === 'skip' ? `skip:${part}` : offer);
-  game.offerAssist?.({ kind: offer, player, part, skip, scene });
+  st.last = n;
   return offer;
 }
 
 /** The part was done: the count starts again (a later struggle there offers again only past new thresholds). */
 export function overcame(scene, part = 'all') {
-  if (scene?._struggle) delete scene._struggle.counts[part];
+  if (scene?._struggle) { delete scene._struggle.counts[part]; scene._struggle.last = 0; }
 }
 
 /** How many tries in a row at this part (tests, or a game's own hint). */

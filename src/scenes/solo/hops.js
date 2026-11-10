@@ -13,6 +13,7 @@ import {
   makeTrailSign, makeHollowTree, makeShelf, makeBranchStep, makeIslet, makeGroveBits, makeGroveTree,
 } from './models9.js';
 import './strings11.js';
+import { struggle, overcame } from '../../core/assist.js';
 
 // Jumping on the solo island (the owner's "Jumping" list): stepping stones over the river and the pond,
 // five hidden areas with a treasure chest each, three hop trails with a timer and a bell, and races
@@ -387,7 +388,7 @@ export class Hops {
     if (!r || r.done || this.host.mode === 'hopgo') return;
     if (plat?.trail === r.id) {
       r.reached = Math.max(r.reached, plat.step);
-      if (plat === r.tr.last) this.finish();
+      if (plat === r.tr.last) { overcame(this.host, `hop.${r.id}`); this.finish(); }
       return;
     }
     // fell off the trail (onto lower ground): back to the start of that hop
@@ -398,7 +399,27 @@ export class Hops {
   }
 
   onPutBack() {
-    if (this.run && !this.run.done) this.host.game.ui.toast(t('hop.t.back'), 1000, { group: 'hopback' });
+    if (!this.run || this.run.done) return;
+    this.host.game.ui.toast(t('hop.t.back'), 1000, { group: 'hopback' });
+    // many falls on this trail: offer forgiving timing, then a slower game ("Help me play")
+    struggle(this.host, this.host.player?.p, 'timing', `hop.${this.run.id}`);
+  }
+
+  /**
+   * Checkpoints: every top you reach on a trail is one. A fall from a hop already puts you back on the top you
+   * jumped from; if you end up off the trail any other way (slid down the cliff face, walked off onto lower
+   * ground) you pop back onto the last top you reached after a moment, instead of walking back to the start.
+   */
+  updateCheckpoint(r, P, dt) {
+    if (r.done || r.reached < 0 || P.air || this.host.mode !== 'walk') { r.offT = 0; return; }
+    const top = r.tr.plats[r.reached];
+    const off = P.on?.trail !== r.id && P.fy < top.top - 0.6;
+    r.offT = off ? (r.offT || 0) + dt : 0;
+    if (r.offT < 1.2) return;
+    r.offT = 0;
+    r.falls++;
+    P.takeoff = { x: top.x, z: top.z, fy: top.top };
+    this.host.putBack(P);
   }
 
   finish() {
@@ -508,6 +529,7 @@ export class Hops {
     const r = this.run;
     if (r) {
       if (host.mode !== 'hopgo' && !r.done) r.t += dt;
+      if (P) this.updateCheckpoint(r, P, dt);
       if (r.racer && host.mode !== 'hopgo') this.updateRacer(r.racer, dt);
       // walked far away: the run stops
       if (!r.done && P && Math.hypot(P.x - r.tr.T.start.x, P.z - r.tr.T.start.z) > 30) this.stop();
