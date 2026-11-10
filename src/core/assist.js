@@ -200,20 +200,33 @@ export function homeToward(pos, vel, targets, level, dt, { range = 8 } = {}) {
 
 export const OFFER_AT = { assist: 3, speed: 5, skip: 7, gap: 2 };
 
-export function struggle(scene, player, kind, part = 'all', { skip = null } = {}) {
+/** The tries of this game visit: kept on the game, so a level that restarts as a new scene keeps counting. */
+function struggles(scene) {
+  const game = scene.game;
+  const key = scene.key || scene.constructor?.name || 'scene';
+  if (!game._struggle || game._struggle.key !== key) game._struggle = { key, counts: {}, offered: new Set(), last: 0 };
+  return game._struggle;
+}
+
+/**
+ * at: thresholds for this game ({ assist, speed, skip, gap }), for parts that take long to try (a whole level).
+ * speed: false where a slower game does not help (turn-based games).
+ */
+export function struggle(scene, player, kind, part = 'all', { skip = null, at = null, speed = true } = {}) {
   const game = scene?.game;
   if (!game) return null;
-  const st = (scene._struggle ||= { counts: {}, offered: new Set() });
+  const st = struggles(scene);
   const n = (st.counts[part] = (st.counts[part] || 0) + 1);
   const s = player ? settingsFor(player) : deviceSettings();
   if (!s.offers) return null;
-  if (st.last && n - st.last < OFFER_AT.gap) return null;
+  const A = { ...OFFER_AT, ...(at || {}) };
+  if (st.last && n - st.last < A.gap) return null;
   const can = (k) => !s.never.includes(k) && !st.offered.has(`${k}:${part}`) && !st.offered.has(k);
   let offer = null;
-  if (n >= OFFER_AT.skip && skip && can('skip')) offer = 'skip';
-  else if (n >= OFFER_AT.speed && can('speed') && screenSettings(game).speed === 1) offer = 'speed';
-  else if (n >= OFFER_AT.assist && kind === 'timing' && can('timing') && !s.timing) offer = 'timing';
-  else if (n >= OFFER_AT.assist && kind === 'aim' && can('aim') && s.aim < 2) offer = 'aim';
+  if (n >= A.skip && skip && can('skip')) offer = 'skip';
+  else if (speed && n >= A.speed && can('speed') && screenSettings(game).speed === 1) offer = 'speed';
+  else if (n >= A.assist && kind === 'timing' && can('timing') && !s.timing) offer = 'timing';
+  else if (n >= A.assist && kind === 'aim' && can('aim') && s.aim < 2) offer = 'aim';
   if (!offer) return null;
   // skip can come again at another part; an assist is offered once per visit
   if (game.offerAssist?.({ kind: offer, player, part, skip, scene }) === false) return null; // a menu is up: later
@@ -224,12 +237,15 @@ export function struggle(scene, player, kind, part = 'all', { skip = null } = {}
 
 /** The part was done: the count starts again (a later struggle there offers again only past new thresholds). */
 export function overcame(scene, part = 'all') {
-  if (scene?._struggle) { delete scene._struggle.counts[part]; scene._struggle.last = 0; }
+  if (!scene?.game) return;
+  const st = struggles(scene);
+  delete st.counts[part];
+  st.last = 0;
 }
 
 /** How many tries in a row at this part (tests, or a game's own hint). */
 export function tries(scene, part = 'all') {
-  return scene?._struggle?.counts[part] || 0;
+  return scene?.game ? struggles(scene).counts[part] || 0 : 0;
 }
 
 // ---------- skipped parts ----------

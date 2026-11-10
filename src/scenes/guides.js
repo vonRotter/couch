@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { struggle, overcame, markSkipped, isSkipped, clearSkipped } from '../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
 import { t, addStrings } from '../core/i18n.js';
@@ -1488,7 +1489,7 @@ export class GuidesScene extends MiniGame {
       const jobs = JOBS.filter((j) => lv.jobs[j]).map((j) => `<span style="font-size:0.7em">${ICONS[j]}</span>`).join('');
       return `<div class="level-card ${i === this.selection ? 'selected' : ''} ${locked ? 'locked' : ''}" style="background:linear-gradient(${top}, ${bottom})">
         <div class="level-num">${i + 1}</div><div class="level-name">${locked ? t('guides.locked') : esc(this.levelName(i))}</div>
-        <div style="display:flex;gap:2px">${stars}</div><div style="display:flex;gap:2px">${jobs}</div></div>`;
+        <div style="display:flex;gap:2px">${stars}</div><div style="display:flex;gap:2px">${jobs}</div>${isSkipped(this.game.roster.progress, 'guides', i) ? `<div class="level-skip">↷ ${t('assist.skipped')}</div>` : ''}</div>`;
     }).join('');
     this.pickerEl.innerHTML = `<div class="results-title">${t('game.guides')}</div>
       <div class="results-sub">${t('guides.pick')}</div>
@@ -1555,8 +1556,16 @@ export class GuidesScene extends MiniGame {
     saved.stars[this.levelIndex] = Math.max(saved.stars[this.levelIndex] || 0, stars);
     if (won) saved.unlocked = Math.max(saved.unlocked || 0, Math.min(LEVELS.length - 1, this.levelIndex + 1));
     roster.progress.guides = saved;
+    if (won) clearSkipped(roster.progress, 'guides', this.levelIndex); // done after all
     roster.save();
     this.won = won;
+    // "Help me play": lost this level a few times? offer a slower game, then to skip it (marked, playable later)
+    const part = `guides.${this.levelIndex}`;
+    if (won) overcame(this, part);
+    else if (!this.campaign) {
+      const canSkip = this.levelIndex + 1 < LEVELS.length;
+      this.later(1.2, () => struggle(this, this.players[0], 'any', part, { skip: canSkip ? () => this.skipLevel() : null, at: { speed: 2, skip: 3, gap: 1 } }));
+    }
     this.hasNext = !this.campaign && won && this.levelIndex + 1 < LEVELS.length;
     const best = Math.max(...this.ents.map((e) => e.total));
     this.game.ui.barEl.innerHTML = '';
@@ -1576,6 +1585,19 @@ export class GuidesScene extends MiniGame {
       stars: Math.max(1, stars),
       action: this.campaign ? t('footer.continue') : this.hasNext ? t('guides.next') : won ? t('guides.again') : t('guides.retry'),
     });
+  }
+
+  /** Skip this level (the offer after a few lost tries): marked as skipped, the next one opens and starts. */
+  skipLevel() {
+    const roster = this.game.roster;
+    const saved = roster.progress.guides || { unlocked: 0, stars: [] };
+    saved.unlocked = Math.max(saved.unlocked || 0, Math.min(LEVELS.length - 1, this.levelIndex + 1));
+    roster.progress.guides = saved;
+    markSkipped(roster.progress, 'guides', this.levelIndex);
+    roster.save();
+    this.state = 'leaving';
+    const level = this.levelIndex + 1;
+    this.game.transition(() => new GuidesScene(this.game, { key: this.key, level }));
   }
 
   updateResults(dt) {

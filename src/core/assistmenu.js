@@ -43,6 +43,7 @@ addStrings({
     'offer.skip': 'Want to skip this part for now? It is marked as skipped, so you can play it later.',
     'offer.hint': 'Stick up/down · [OK]: choose · [BACK]: no thanks',
     'offer.on': '{what} is on. Change it any time in Help me play.', 'offer.skipped': 'Skipped. You can play it later.',
+    'assist.skipped': 'skipped',
   },
   no: {
     'mode.assist': 'Hjelp meg å spille', 'mode.assist.sub': 'Fart, timing, siktehjelp, tekst, knapper…',
@@ -75,6 +76,7 @@ addStrings({
     'offer.skip': 'Vil du hoppe over dette stedet nå? Det blir merket som hoppet over, så du kan spille det senere.',
     'offer.hint': 'Pinne opp/ned · [OK]: velg · [BACK]: nei takk',
     'offer.on': '{what} er på. Du kan endre det når som helst i Hjelp meg å spille.', 'offer.skipped': 'Hoppet over. Du kan spille det senere.',
+    'assist.skipped': 'hoppet over',
   },
 });
 

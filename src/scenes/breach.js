@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { struggle, markSkipped } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { t, tFor } from '../core/i18n.js';
 import { say } from '../core/voice.js';
@@ -1153,6 +1154,10 @@ export class BreachScene extends MiniGame {
     this.resultT = 0;
     if (this.easy) {
       this.hud.setCard(`<h2>${esc(t('breach.lost'))}</h2><div class="sub">${esc(why)}</div><div class="foot">${esc(tFor(this.player, 'breach.retry'))}</div>`);
+      // "Help me play": lost this battle three times? offer to skip it (not the last one: the Queen)
+      const run = this.save.run;
+      const canSkip = !!ORDER[run.step + 1];
+      this.later(1.0, () => struggle(this, this.player, 'any', `breach.${run.step}`, { skip: canSkip ? () => this.skipBattle() : null, at: { skip: 3, gap: 1 }, speed: false }));
     } else {
       // Hard: the campaign is over; the medals stay
       this.save.run = null;
@@ -1161,6 +1166,22 @@ export class BreachScene extends MiniGame {
       this.hud.setCard(`<h2>${esc(t('breach.lost'))}</h2><div class="sub">${esc(why)}</div><div class="sub">${esc(t('breach.hardOver'))}</div><div class="foot">${esc(tFor(this.player, 'breach.hardOk'))}</div>`);
     }
     this.game.audio.play('leave');
+  }
+
+  /** Skip a battle (Easy, the offer after three lost tries): marked as skipped, no stars or power, on to the next. */
+  skipBattle() {
+    const run = this.save.run;
+    if (!run || !ORDER[run.step + 1]) return;
+    run.skipped = [...new Set([...(run.skipped || []), run.step])];
+    markSkipped(this.game.roster.progress, 'breach', `${ORDER[run.step].island}.${ORDER[run.step].battle}`);
+    this.game.roster.save();
+    run.tries = 0;
+    run.power = Math.max(run.power, 3);
+    if (ORDER[run.step + 1].island !== ORDER[run.step].island) run.shop = true;
+    run.step++;
+    this.persist();
+    this.hud.setCard(null);
+    this.showMap();
   }
 
   updateResult(inp, dt) {

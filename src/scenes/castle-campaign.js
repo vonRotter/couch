@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { struggle, overcame, markSkipped } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
@@ -1395,6 +1396,12 @@ export class CastleCampaignScene extends MiniGame {
     P.stars[this.levelIndex] = Math.max(P.stars[this.levelIndex] || 0, stars);
     if (won) P.won[this.levelIndex] = true;
     saveProgress(this.game, P);
+    // "Help me play": lost this level three times? offer a slower game, then to skip it (marked, playable later)
+    const part = `kc.${this.levelIndex}`;
+    if (won) overcame(this, part);
+    else if (this.levelIndex + 1 < LEVELS.length) {
+      this.later(2.2, () => struggle(this, this.players[0], 'any', part, { skip: () => this.skipLevel(), at: { speed: 2, skip: 3, gap: 1 } }));
+    }
     if (won) {
       for (const g of this.grumbles.list) this.grumbles.befriend(g, true);
       this.later(0.5, () => this.confetti.burst(new THREE.Vector3(this.flagPos.x, this.flagPos.y + 4, 0.5), 0, { count: 90, speed: 10, up: 5, colors: [GOLD, COLORS.white, 0xff7eb6, 0x4cc9f0], life: 2 }));
@@ -1421,6 +1428,17 @@ export class CastleCampaignScene extends MiniGame {
     const footer = this.game.ui.center.querySelector('.results .results-footer');
     footer?.insertAdjacentHTML('beforebegin', `<div class="kc-stars">${[0, 1, 2].map((i) => `<span class="${i < stars ? 'on' : ''}" style="animation-delay:${0.4 + i * 0.25}s">★</span>`).join('')}</div>
       <div class="kc-tiers"><span class="${won ? 'on' : ''}">★ ${esc(t('kc.tier.goal'))}</span><span class="${all ? 'on' : ''}">★ ${esc(t('kc.tier.all'))}</span><span class="${fast ? 'on' : ''}">★ ${esc(t('kc.tier.fast', { t: clock(this.level.par) }))}</span></div>`);
+  }
+
+  /** Skip this level (the offer after three lost tries): marked as skipped, the next level opens, back to the map. */
+  skipLevel() {
+    const P = this.prog;
+    P.skipped = { ...(P.skipped || {}), [this.levelIndex]: true };
+    saveProgress(this.game, P);
+    markSkipped(this.game.roster.progress, 'castle', this.levelIndex);
+    this.game.roster.save();
+    this.leaving = true;
+    this.backToMap(this.result);
   }
 
   /** Results: [A] back to the campaign map, [C] try the level again (a gamepad's B goes back to the map

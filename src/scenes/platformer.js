@@ -13,8 +13,8 @@ import { addStrings } from '../core/i18n.js';
 import { timingScale, struggle, overcame, markSkipped, isSkipped } from '../core/assist.js';
 
 addStrings({
-  en: { 'sky.checkpoint': 'Checkpoint!', 'sky.skipped': 'skipped' },
-  no: { 'sky.checkpoint': 'Sjekkpunkt!', 'sky.skipped': 'hoppet over' },
+  en: { 'sky.checkpoint': 'Checkpoint!' },
+  no: { 'sky.checkpoint': 'Sjekkpunkt!' },
 });
 
 const PHYS = {
@@ -114,7 +114,7 @@ export class PlatformerScene extends MiniGame {
       const locked = i > this.unlocked;
       const [top, bottom] = lv.theme.sky;
       return `<div class="level-card ${i === this.selection ? 'selected' : ''} ${locked ? 'locked' : ''}" style="background:linear-gradient(${top}, ${bottom})">
-        <div class="level-num">${i + 1}</div><div class="level-name">${locked ? t('sky.locked') : esc(this.levelName(i))}</div>${isSkipped(this.game.roster.progress, 'skyhop', i) ? `<div class="level-skip">↷ ${t('sky.skipped')}</div>` : ''}</div>`;
+        <div class="level-num">${i + 1}</div><div class="level-name">${locked ? t('sky.locked') : esc(this.levelName(i))}</div>${isSkipped(this.game.roster.progress, 'skyhop', i) ? `<div class="level-skip">↷ ${t('assist.skipped')}</div>` : ''}</div>`;
     }).join('');
     this.pickerEl.innerHTML = `<div class="results-title">${t('game.platformer')}</div>
       <div class="results-sub">${t('sky.pick')}</div>

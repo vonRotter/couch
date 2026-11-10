@@ -80,7 +80,7 @@ export class CampaignMap {
 
   later(s, fn) { this.s.later(s, fn); }
 
-  unlocked(i) { return i === 0 || !!this.prog.won[i - 1]; }
+  unlocked(i) { return i === 0 || !!this.prog.won[i - 1] || !!this.prog.skipped?.[i - 1]; } // (skipped: "Help me play")
 
   maxUnlocked() {
     let i = 0;
@@ -485,7 +485,8 @@ export class CampaignMap {
     this.nodeLabel.style.display = show ? '' : 'none';
     if (show) {
       const got = this.prog.stars[n.i] || 0;
-      const html = `${esc(t('kc.levelN', { n: n.i + 1 }))}: ${esc(t(`kc.level.${n.lv.id}`))}<small>${'★'.repeat(got)}${'☆'.repeat(3 - got)}</small>`;
+      const skip = this.prog.skipped?.[n.i] && !this.prog.won[n.i] ? ` · ↷ ${esc(t('assist.skipped'))}` : '';
+      const html = `${esc(t('kc.levelN', { n: n.i + 1 }))}: ${esc(t(`kc.level.${n.lv.id}`))}<small>${'★'.repeat(got)}${'☆'.repeat(3 - got)}${skip}</small>`;
       if (this.nodeLabel.innerHTML !== html) this.nodeLabel.innerHTML = html;
       this.game.ui.place(this.nodeLabel, n.pos.clone().setY(n.lv.finale ? 8.6 : 5.2).setZ(n.pos.z - 3), this.s.camera);
     }
