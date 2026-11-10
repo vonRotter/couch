@@ -113,7 +113,7 @@ island. Each dungeon has keys, a map, a compass, a big key, a mini-boss and a bo
 phases; the finale is a fight against the Gloom at the top of the lighthouse, then an ending and
 credits, and the island stays open: 12 heart pieces and 10 golden shells to find. Stick to walk, A
 sword (hold for a spin), B talk/lift/throw/open, C use the item (hold C for the item and map screen,
-with "restart room"). Beacon stones save; fainting sends you back to the last one with your items.
+with "restart room"). Beacon stones save; fainting puts you back at the door of the room you fainted in, hearts full.
 Progress is saved per profile (part-1 saves carry over).
 
 **Bean Brigade** (solo island; an Into the Breach-style tactics game, the mech garage on the east hill).
@@ -212,9 +212,60 @@ to spend. Progress is saved per profile.
 **Story** (the co-op campaign): the big book on the meadow south-west of the playground on the shared
 island (or Story in the C menu); leaving the Story returns to the shared island at the book.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
-- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level) or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound (on your own island `M` is the map; Sound is in its menu).
+- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level, with a quick title and countdown), Help me play or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound (on your own island `M` is the map; Sound is in its menu).
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
 - `G` shows or hides the learning games, or jump on the green book button.
+
+### Help me play (accessibility)
+
+The game teaches children to play games: accessible, not necessarily easy. The assists widen access and
+leave the challenge alone; they are separate from any game's difficulty. All are off by default.
+
+- **Where:** "Help me play" in every game's pause menu, in your own island's menu and in the shared
+  island's menu (C). Stick up/down picks a row, left/right or OK changes it, Back (Esc / B) closes it.
+  Every row is read aloud with what it does.
+- **Whose settings:** saved per profile (`profile.assist`, the same in every game; old profiles get the
+  defaults). Guests, the start screen and the shared island use the device default ("Everyone (guests)",
+  editable from the shared island's menu; its first row switches between the device default and every
+  profile playing). Per player: forgiving timing, aim help, hold to toggle, buttons. For the whole screen
+  (one shared screen): game speed, text size and outlines, which on the shared island take the most help
+  anyone playing asked for (the slowest speed, the biggest text).
+- **Game speed:** 100 / 90 / 75 / 60 / 50 %. Slows every game's time and the island's activities (hop trail
+  runs, fishing, the island mini-games, sledding), not menus, banners, music or voices.
+- **Forgiving timing:** later jumps after an edge and earlier presses before landing (Sky Hop, the island),
+  wider green zones (fishing, skipping stones) and a longer bite, more time to answer (Mattejakt,
+  Bokstavballonger, the learning rounds, the quiz, Spot the Difference, votes), longer floor warnings
+  (Pillow Keep and Pillow Keep Solo) and slime wind-ups (Lighthouse Caves).
+- **Aim help:** off / a little / a lot. The snowball fight's auto-aim (off: face the target, it finds the
+  distance; a little: the old help; a lot: wide and tight), Laser Ducks (crosshair pull and hit size),
+  Spacefall (aim snap, curving missiles), Paint Pilots (pellets bend), Pillow Keep (both) and Lighthouse
+  Caves (shots curve toward enemies, never toward switches).
+- **Hold to toggle:** a held button becomes tap on, tap off where a game marks it as a hold (Space Race
+  boost and slide, Spacefall thrust, Hockey charge, Rooftop Rush swing, Grumble Guides fast-forward, Kitchen
+  chopping). A chip under the top bar says who holds what. Bean Brigade's "hold C to end the turn" is also in
+  its battle menu (tap C).
+- **Buttons:** remap the three buttons per keyboard scheme (keys other schemes, the stick and the game's
+  shortcuts M, N, V, B, G, F, Tab, 1-9, Esc stay free; picking another of your keys swaps them) and the pad
+  buttons (A, B, X, Y, LB, RB swap with each other). Every on-screen [A] / [B] / [C] / [OK] follows.
+- **Text size:** normal / big / huge for every overlay, label and panel. **Strong outlines:** thick dark
+  outlines on enemies and targets (grumbles everywhere, ducks, aliens), white ones on players, and menus
+  mark the picked item with an arrow and a dashed ring as well as colour.
+- **Offers:** after a few tries at the same part (`struggle()` in `core/assist.js`) the game gently offers
+  the matching help on a small card, read aloud: 3 tries: forgiving timing (falls, missed windows) or aim
+  help (missed throws and shots); 5 tries: a slower game (75 %); 7 tries: skip this part (where the game
+  can). At least 2 tries between offers, each offer once per game visit; level games that take long to try
+  ask sooner (Grumble Guides and the Golden Bean campaign: speed after 2 lost tries, skip after 3; Bean
+  Brigade Easy: skip after 3). "Yes please" turns it on for that player's profile (or the device default),
+  "No thanks" closes the card, "Don't ask again" is saved; "Offer help" in the page turns it all off (and
+  on again resets every "don't ask").
+- **Skip a hard part:** Sky Hop levels, Grumble Guides levels, the Golden Bean campaign's levels and Bean
+  Brigade Easy battles (not the Queen) can be skipped from the offer: marked as skipped (↷ on the level
+  picker or the map, `progress.skipped`), the next one opens, and the skipped one stays playable.
+- **Checkpoints and instant retry:** Sky Hop levels have three checkpoint posts (a fall never floats you
+  back behind the last one); on a hop trail every top you reach is a checkpoint (land off the trail any way
+  and you pop back on the last top); Lighthouse Caves puts you back at the door of the room you fainted in.
+- The audit against the Game Accessibility Guidelines and the Xbox Accessibility Guidelines, with its
+  findings for the owner: `ACCESSIBILITY.md`.
 
 ### Colors
 
@@ -265,7 +316,7 @@ fall asleep.
 Sunset Castle, picked from a level select (finish one to unlock the next). Double jump,
 springy mushrooms, moving platforms, lifts, crumbling blocks and clouds you can jump up
 through (down + A drops through). Stand on friends' heads. If you fall or get left behind,
-you float back to the group in a bubble. Bump into a grumble and you are only pushed back;
+you float back to the group in a bubble (never behind the last of the level's three checkpoint posts). Bump into a grumble and you are only pushed back;
 stomp it for gems. Once someone reaches the flag, everyone else has 12 seconds. After a
 level: A for the next level, B for the island.
 
@@ -364,7 +415,7 @@ team's bells, flags and snowman heads; a gold target is worth 3), King of the Hi
 your team stands in the ring; on some maps the hill moves) and Capture the Flag (carry their flag
 to your home pad; first to 3). Maps: Fort Meadow (a gentle hill, rocks and ice blocks), Frosty Creek
 (a creek with two bridges and a see-through ice tunnel) and Glacier Peaks (a central peak, ice walls
-and slippery lanes). Tap B to throw (gentle auto-aim), hold B to scoop snow, A builds a snow wall,
+and slippery lanes). Tap B to throw (auto-aim as wide as each player's aim help), hold B to scoop snow, A builds a snow wall,
 and C uses a gift: giant snowball, triple throw, speed boots, instant fort or freeze bomb. A hit
 makes a player slip for a moment and drop a flag they carry; nobody is knocked out. Helper bots
 even out the teams and play each objective.
@@ -804,7 +855,8 @@ night match yours and crops grow while you are away.
     Run** (crates, barrels and a wobbly plank by the dock; its start flag stands beside the beach road) and the **Cliff Climb** (tricky: rock by rock up
     the cliff north of kite hill to the **lookout** deck). [B] at the start sign: 3, 2, 1, go; land on the
     last top to ring the bell. Best times are saved; falling off puts you back on the top you jumped from
-    while the clock runs on. **Pip races you on the Stump Hop and Grumbleton on the Barrel Run** (when they are
+    while the clock runs on, and every top you reach is a checkpoint (off the trail any other way, you pop
+    back on the last one). **Pip races you on the Stump Hop and Grumbleton on the Barrel Run** (when they are
     up and about): they hop the trail beside you, and every time you beat them they get a little faster.
     Ringing all three bells brings a golden bell for the yard.
 - **Daily surprises** (by date, the same for everyone; about two days in three have one): a **meteor
@@ -969,7 +1021,12 @@ src/
     babble.js        WebAudio babble syllables per voice type
     devvoices.js     ?dev voice panel (F10): the device's voices, play every type
     input.js         keyboard schemes + gamepads -> one controller shape; gamepad layouts ('default',
-                     'island'), menu pick/back (okPressed/backPressed), button names per pad kind
+                     'island'), menu pick/back (okPressed/backPressed), button names per pad kind,
+                     remapped keys / pad buttons and hold to toggle (scene.holdButtons, held())
+    assist.js        "Help me play" settings per profile / device default, game speed, timingScale,
+                     aimLevel / aimAt / homeToward, struggle() / overcame() (the offers), skipped parts
+    assistmenu.js    the Help me play page, the buttons (remap) page and the offer card
+    outline.js       strong outlines: markA11y(model, kind), refreshOutlines(scene, on)
     roster.js        joined players, colors, hats, saved star count
     character.js     the shared bean buddy (squash/stretch, blink, hats)
     palette.js       colors, cached toon materials and geometry
