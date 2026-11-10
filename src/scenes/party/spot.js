@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale } from '../../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Round, clock } from './common.js';
 import { makeGrumble } from '../../core/critters.js';
@@ -526,7 +527,7 @@ export class SpotRound extends Round {
 
   start() {
     this.phase = 'look';
-    this.phaseT = PIC_TIME;
+    this.phaseT = PIC_TIME * timingScale(); // forgiving timing: more time to look
   }
 
   mark(e) {
@@ -599,7 +600,7 @@ export class SpotRound extends Round {
         else {
           this.newPicture();
           this.phase = 'look';
-          this.phaseT = PIC_TIME;
+          this.phaseT = PIC_TIME * timingScale(); // forgiving timing: more time to look
           this.game.audio.play('whoosh');
         }
       }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale } from '../../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Round } from '../party/common.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
@@ -125,7 +126,7 @@ export class FieldRound extends Round {
   constructor(mix, theme = {}) {
     super(mix);
     this.mix = mix;
-    this.timeLeft = ROUND_TIME;
+    this.timeLeft = ROUND_TIME * timingScale(); // forgiving timing ("Help me play"): more time to answer
     this.tiles = [];
     this.ensureT = 0;
     this.churnT = 4;

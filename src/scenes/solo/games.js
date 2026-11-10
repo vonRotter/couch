@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale, struggle, overcame } from '../../core/assist.js';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
@@ -24,6 +25,8 @@ const HIDE = [[51.8, -7.6], [53.4, -11.6], [48.6, -13.6], [44.8, -9.4], [51.2, -
 export const LEAF_PILES = [[-3.7, -13.4], [2.5, -11.6], [16.4, 4.2], [6.2, 15.2], [26.4, 12.0], [-6.2, 16.4], [36.6, -6.2], [30.4, -6.8]];
 const ARENA = { x0: 15.5, x1: 22.5, them: 1.9, fort: 2.9, me: 9.4, myFort: 8.4 }; // the snowball fight, south of the square
 const SKIP_SWEET = [0.72, 0.9];
+/** The green part of the skipping meter: wider with forgiving timing ("Help me play"), around the same middle. */
+const sweetFor = (p) => { const k = timingScale(p), mid = 0.81, h = 0.09 * k; return [mid - h, Math.min(0.99, mid + h)]; };
 const RIPPLE_GEO = new THREE.RingGeometry(0.75, 1, 28);
 const CSS = `.isl-meter { left: 50%; bottom: 24vh; transform: translateX(-50%); width: min(420px, 60vw); height: 26px; border-radius: 999px; background: rgba(255,255,255,.9);
   box-shadow: 0 3px 0 rgba(43,35,64,.2); overflow: hidden; }
@@ -143,7 +146,9 @@ export class IslandGames {
     P.fx = f.x / L; P.fz = f.z / L;
     P.ch.face(P.fx, P.fz);
     host.mode = 'game';
-    this.cur = { kind: 'skip', throws: 3, t: 0, phase: 'aim', best: 0, wait: 0.3 };
+    this.cur = { kind: 'skip', throws: 3, t: 0, phase: 'aim', best: 0, wait: 0.3, sweet: sweetFor(P.p) };
+    const sw = this.cur.sweet;
+    this.meter.querySelector('.sweet').style.cssText = `left:${sw[0] * 100}%;width:${(sw[1] - sw[0]) * 100}%`;
     this.meter.style.display = '';
     this.say('gm.skip.how', {}, true);
   }
@@ -157,8 +162,10 @@ export class IslandGames {
       c.wait -= dt;
       if (inp.cPressed) { this.endSkip(); return; }
       if (c.wait <= 0 && inp.bPressed) {
-        const sweet = power >= SKIP_SWEET[0] && power <= SKIP_SWEET[1];
-        const skips = sweet ? 5 + Math.round((1 - Math.abs(power - 0.81) / 0.09) * 2) : Math.max(0, Math.floor(power * 5) - (power > SKIP_SWEET[1] ? 1 : 0));
+        const SW = c.sweet || SKIP_SWEET, half = (SW[1] - SW[0]) / 2;
+        const sweet = power >= SW[0] && power <= SW[1];
+        const skips = sweet ? 5 + Math.round(Math.max(0, 1 - Math.abs(power - 0.81) / half) * 2) : Math.max(0, Math.floor(power * 5) - (power > SW[1] ? 1 : 0));
+        if (!sweet) struggle(host, P.p, 'timing', 'skipstones'); else overcame(host, 'skipstones');
         const stone = makeFlatStone();
         stone.scale.multiplyScalar(2.2); // (big enough to follow from the island camera)
         this.group.add(stone);

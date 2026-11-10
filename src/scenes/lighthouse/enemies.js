@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale } from '../../core/assist.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeGrumble } from '../../core/critters.js';
 import { box, cyl, sph, cone, mesh } from './models.js';
@@ -174,7 +175,7 @@ class Blob extends Enemy {
   think(dt) {
     if (this.state === 'wait') {
       this.wait -= dt;
-      const telegraph = this.size === 3 ? 0.55 : 0.3;
+      const telegraph = (this.size === 3 ? 0.55 : 0.3) * timingScale(); // forgiving timing: a longer wind-up
       const sq = this.wait < telegraph ? 1 - 0.35 * (1 - this.wait / telegraph) : 1;
       this.body.scale.y = this.body.scale.x * sq;
       if (this.wait < telegraph && this.mark && !this.mark.visible) {

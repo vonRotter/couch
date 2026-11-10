@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale, struggle, overcame } from '../../core/assist.js';
 import { toon } from '../../core/palette.js';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
@@ -145,13 +146,15 @@ export class Fishing {
         this.prompt(`❗ ${nm('isl.fish.bite')}`);
         if (inp.aPressed) {
           const f = FISH[this.fish];
-          this.reel = { p: 0, dir: 1, zc: 0.3 + Math.random() * 0.4, w: f.zone + (host.save.unlocks.goldRod ? 0.08 : 0), speed: f.speed * 0.8, need: f.hits, hits: 0, misses: 0 };
+          // forgiving timing ("Help me play"): a wider green zone
+          const w = (f.zone + (host.save.unlocks.goldRod ? 0.08 : 0)) * timingScale(host.player?.p);
+          this.reel = { p: 0, dir: 1, zc: 0.3 + Math.random() * 0.4, w: Math.min(0.6, w), speed: f.speed * 0.8, need: f.hits, hits: 0, misses: 0 };
           this.state = 'reel';
           this.t = 0;
           host.game.audio.play('dash');
           this.renderMeter();
           host.hud.setPrompt('');
-        } else if (this.t > 1.1) this.result(false, 'isl.fish.late');
+        } else if (this.t > 1.1 * timingScale(host.player?.p)) { struggle(host, host.player?.p, 'timing', 'fish'); this.result(false, 'isl.fish.late'); }
         break;
       case 'reel': {
         const R = this.reel;
@@ -165,13 +168,13 @@ export class Fishing {
             R.hits++;
             host.game.audio.play('pop');
             host.puffs.burst(this.bobber.position.clone(), 0xffffff, { count: 10, speed: 3, up: 2, size: 0.3, life: 0.5 });
-            if (R.hits >= R.need) { this.result(true); break; }
+            if (R.hits >= R.need) { overcame(host, 'fish'); this.result(true); break; }
             R.zc = R.w / 2 + Math.random() * (1 - R.w);
             this.renderMeter();
           } else {
             R.misses++;
             host.game.audio.play('bump');
-            if (R.misses >= 3) { this.result(false, 'isl.fish.escaped'); break; }
+            if (R.misses >= 3) { struggle(host, host.player?.p, 'timing', 'fish'); this.result(false, 'isl.fish.escaped'); break; }
             this.renderMeter(true);
           }
         } else if (inp.bPressed) this.result(false, 'isl.fish.letGo');

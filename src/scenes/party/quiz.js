@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale } from '../../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Round, clock } from './common.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
@@ -430,7 +431,7 @@ export class QuizRound extends Round {
       return;
     }
     this.phase = 'ask';
-    this.phaseT = { pic: PIC_TIME, kid: KID_TIME, grown: GROWN_TIME }[this.q.kind];
+    this.phaseT = { pic: PIC_TIME, kid: KID_TIME, grown: GROWN_TIME }[this.q.kind] * timingScale(); // forgiving timing: more time
     this.askT = 0;
     for (const z of this.zones) { z.mesh.material = toon(z.color); z.mesh.scale.y = 1; }
     for (const e of this.ents) e.locked = false;

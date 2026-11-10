@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale } from '../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
@@ -49,7 +50,7 @@ export class MathScene extends MiniGame {
     this.camera.fov = 38;
     this.scene.background = skyTexture('#9fe0ff', '#fff6dc');
     addLights(this.scene, { size: 20, dir: new THREE.Vector3(-0.4, 1, 0.5) });
-    this.timeLeft = ROUND_TIME;
+    this.timeLeft = ROUND_TIME * timingScale(); // forgiving timing ("Help me play"): more time to answer
     this.coins = [];
     this.teamScore = 0;
     this.buildWorld();

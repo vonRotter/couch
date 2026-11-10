@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale } from '../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
@@ -34,7 +35,7 @@ export class SpellingScene extends MiniGame {
     addLights(this.scene, { size: 20, target: new THREE.Vector3(0, 6, 0), dir: new THREE.Vector3(-0.4, 0.8, 1) });
     this.solids = [];
     this.balloons = [];
-    this.timeLeft = ROUND_TIME;
+    this.timeLeft = ROUND_TIME * timingScale(); // forgiving timing ("Help me play"): more time to answer
     this.spawnT = 0;
     this.ensureT = 0;
     this.teamWords = 0;

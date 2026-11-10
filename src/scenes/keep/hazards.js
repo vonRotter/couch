@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { timingScale } from '../../core/assist.js';
 import { COLORS, toon } from '../../core/palette.js';
 import { t } from '../../core/i18n.js';
 import { PR, angDiff, mesh, rbox, bx, fadeMat } from './common.js';
@@ -40,6 +41,7 @@ export class Hazards {
   /** Queue an attack. Returns the hazard (its `done` flag turns true when it is over). */
   add(o) {
     const h = { warn: 1, life: 0.25, yawn: 0.3, t: 0, fired: false, hit: new Set(), objs: [], mats: [], geos: [], ...o };
+    h.warn *= timingScale(); // forgiving timing ("Help me play"): every floor warning stays up longer
     h.y = FLOOR_Y + (this.layer = (this.layer + 1) % 6) * 0.004;
     h.root = new THREE.Group();
     h.root.position.set(h.x ?? 0, 0, h.z ?? 0);
