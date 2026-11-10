@@ -9,6 +9,13 @@ import { addLights, skyTexture, makeCloud, makeTree, makeFlower, makeBush, makeG
 import { moveBody, platformerControl, solidAt, boxesTouch, overlaps } from '../core/physics2d.js';
 import { SKYHOP_LEVELS } from './skyhop-levels.js';
 import { esc } from '../core/ui.js';
+import { addStrings } from '../core/i18n.js';
+import { timingScale, struggle, overcame, markSkipped, isSkipped } from '../core/assist.js';
+
+addStrings({
+  en: { 'sky.checkpoint': 'Checkpoint!', 'sky.skipped': 'skipped' },
+  no: { 'sky.checkpoint': 'Sjekkpunkt!', 'sky.skipped': 'hoppet over' },
+});
 
 const PHYS = {
   speed: 7.5, accel: 60, airAccel: 40, jump: 15.5, jump2: 12.5, doubleJump: true,
@@ -65,8 +72,11 @@ export class PlatformerScene extends MiniGame {
         body: { x, y: this.spawn.y, w: 0.7, h: 1.1, vx: 0, vy: 0, grounded: true },
         facing: 1, state: 'play', t: 0, stun: 0, invuln: 0,
         lastSafe: { x, y: this.spawn.y }, gems: 0, stomps: 0, place: 0,
+        // forgiving timing ("Help me play"): a later jump after leaving an edge, an earlier press before landing
+        phys: { ...PHYS, coyote: PHYS.coyote * timingScale(p), buffer: PHYS.buffer * timingScale(p) },
       };
     });
+    this.addCheckpoints();
 
     this.camX = this.spawn.x + 6;
     this.updateCamera(1);
@@ -104,7 +114,7 @@ export class PlatformerScene extends MiniGame {
       const locked = i > this.unlocked;
       const [top, bottom] = lv.theme.sky;
       return `<div class="level-card ${i === this.selection ? 'selected' : ''} ${locked ? 'locked' : ''}" style="background:linear-gradient(${top}, ${bottom})">
-        <div class="level-num">${i + 1}</div><div class="level-name">${locked ? t('sky.locked') : esc(this.levelName(i))}</div></div>`;
+        <div class="level-num">${i + 1}</div><div class="level-name">${locked ? t('sky.locked') : esc(this.levelName(i))}</div>${isSkipped(this.game.roster.progress, 'skyhop', i) ? `<div class="level-skip">↷ ${t('sky.skipped')}</div>` : ''}</div>`;
     }).join('');
     this.pickerEl.innerHTML = `<div class="results-title">${t('game.platformer')}</div>
       <div class="results-sub">${t('sky.pick')}</div>
@@ -302,6 +312,68 @@ export class PlatformerScene extends MiniGame {
     this.enemies.push({ mesh, dir: -1, body: { x, y, w: 0.8, h: 0.85, vx: 0, vy: 0 }, alive: true, squash: 0 });
   }
 
+  /**
+   * Checkpoints: three little posts along the level (a quarter, half and three quarters of the way) on solid
+   * ground. Passing one lights it up; after a fall your bubble brings you back no further back than it.
+   */
+  addCheckpoints() {
+    this.checkpoints = [];
+    for (const f of [0.25, 0.5, 0.75]) {
+      const want = Math.round(this.width * f);
+      let spot = null;
+      for (let k = 0; k < 14 && !spot; k++) {
+        for (const c of [want + k, want - k]) {
+          if (c < 2 || c >= this.width - 2) continue;
+          for (let r = 2; r < ROWS; r++) {
+            if (this.cell(c, r) === '#' && this.cell(c, r - 1) === '.' && this.cell(c, r - 2) === '.') { spot = { x: c + 0.5, y: ROWS - r }; break; }
+          }
+          if (spot) break;
+        }
+      }
+      if (!spot || this.checkpoints.some((cp) => Math.abs(cp.x - spot.x) < 6)) continue;
+      const g = new THREE.Group();
+      g.position.set(spot.x, spot.y, -0.6);
+      const pole = new THREE.Mesh(sharedGeo('cppole', () => new THREE.CylinderGeometry(0.07, 0.07, 2.2, 8)), toon(COLORS.white));
+      pole.position.y = 1.1;
+      const cloth = new THREE.Mesh(sharedGeo('cpcloth', () => new THREE.BoxGeometry(0.8, 0.5, 0.06)), toon(0xb8b0c8));
+      cloth.position.set(0.42, 1.9, 0);
+      // a star on the flag when it is lit (a shape, not just a colour)
+      const star = makeStar(0xffffff);
+      star.scale.setScalar(0.4);
+      star.position.set(0.42, 1.9, 0.08);
+      star.visible = false;
+      g.add(pole, cloth, star);
+      this.scene.add(g);
+      this.checkpoints.push({ ...spot, g, cloth, star, on: false });
+    }
+  }
+
+  /** Light up checkpoints the player passes. */
+  updateCheckpoints(ent) {
+    for (const cp of this.checkpoints) {
+      if (cp.on || ent.body.x < cp.x - 0.3 || Math.abs(ent.body.y - cp.y) > 4) continue;
+      cp.on = true;
+      cp.cloth.material = toon(COLORS.gold);
+      cp.star.visible = true;
+      this.checkpoint = cp;
+      this.game.audio.play('coin');
+      this.puffs.burst(new THREE.Vector3(cp.x, cp.y + 1.9, 0), 0xffffff, { count: 10, size: 0.3 });
+      this.game.ui.toast(t('sky.checkpoint'), 1200);
+    }
+  }
+
+  /** Skip this level ("Help me play" offer after many falls): marked as skipped, the next one opens. */
+  skipLevel() {
+    const roster = this.game.roster;
+    markSkipped(roster.progress, 'skyhop', this.levelIndex);
+    if ((roster.progress.skyhop || 0) < this.levelIndex + 1) roster.progress.skyhop = this.levelIndex + 1;
+    roster.save();
+    this.state = 'leaving';
+    const level = this.levelIndex + 1;
+    if (level < SKYHOP_LEVELS.length) this.game.transition(() => new PlatformerScene(this.game, { key: this.key, level }));
+    else this.game.goHub(this.key);
+  }
+
   addFlag(x, y) {
     const g = new THREE.Group();
     g.position.set(x, y, 0);
@@ -409,7 +481,10 @@ export class PlatformerScene extends MiniGame {
 
       if (ent.state === 'bubble') {
         ent.t += dt;
-        const target = lead ? { x: lead.lastSafe.x - 0.8, y: lead.lastSafe.y + 2.4 } : { x: ent.lastSafe.x, y: ent.lastSafe.y + 2 };
+        // back to the leader, or (alone) to where you last stood, but never behind the last checkpoint
+        const cp = this.checkpoint;
+        const back = cp && ent.lastSafe.x < cp.x ? { x: cp.x, y: cp.y } : ent.lastSafe;
+        const target = lead ? { x: lead.lastSafe.x - 0.8, y: lead.lastSafe.y + 2.4 } : { x: back.x, y: back.y + 2 };
         const dx = target.x - b.x, dy = target.y - b.y;
         const d = Math.hypot(dx, dy);
         const sp = Math.min(d / dt, 6 + d * 1.5);
@@ -436,7 +511,7 @@ export class PlatformerScene extends MiniGame {
         ent.ch.spin = 0;
         const ctrl = this.state === 'play' && ent.stun <= 0 ? inp : { x: 0, y: 0, a: false, aPressed: false };
         ent.stun -= dt;
-        const j = platformerControl(b, ctrl, dt, PHYS);
+        const j = platformerControl(b, ctrl, dt, ent.phys);
         if (j) { ent.ch.squash(1.3); this.game.audio.play(j === 2 ? 'doubleJump' : 'jump'); }
         if (Math.abs(ctrl.x) > 0.2) ent.facing = Math.sign(ctrl.x);
         moveBody(b, dt, this.solids.concat(this.headTops(ent)));
@@ -455,7 +530,13 @@ export class PlatformerScene extends MiniGame {
         }
         if (g && !g.oneWay && !g.head && !g.spring && !g.crumble) ent.lastSafe = { x: b.x, y: b.y };
         b.x = THREE.MathUtils.clamp(b.x, 0.4, this.width - 0.4);
-        if (b.y < -3) this.bubbleUp(ent);
+        if (b.y < -3) {
+          this.bubbleUp(ent);
+          // many falls in this level: offer forgiving timing, a slower game, then (not in the story) a skip
+          const canSkip = !this.campaign && this.levelIndex + 1 <= SKYHOP_LEVELS.length;
+          struggle(this, ent.p, 'timing', `sky.${this.levelIndex}`, { skip: canSkip ? () => this.skipLevel() : null });
+        }
+        this.updateCheckpoints(ent);
         if (b.x < this.camX - half - 0.5 || b.x > this.camX + half + 0.5) this.bubbleUp(ent);
 
         if (this.flag && ent.state === 'play' && Math.abs(b.x - this.flag.x) < 0.8 && b.y < this.flag.y + 6) this.reachFlag(ent);
@@ -481,6 +562,7 @@ export class PlatformerScene extends MiniGame {
 
   reachFlag(ent) {
     ent.state = 'done';
+    overcame(this, `sky.${this.levelIndex}`);
     this.finishOrder = (this.finishOrder || 0) + 1;
     ent.place = this.finishOrder;
     this.game.audio.play('star');
@@ -638,6 +720,10 @@ export class PlatformerScene extends MiniGame {
     const roster = this.game.roster;
     if (finished > 0 && (roster.progress.skyhop || 0) < this.levelIndex + 1) {
       roster.progress.skyhop = this.levelIndex + 1;
+      roster.save();
+    }
+    if (finished > 0 && isSkipped(roster.progress, 'skyhop', this.levelIndex)) {
+      roster.progress.skipped.skyhop = roster.progress.skipped.skyhop.filter((i) => i !== this.levelIndex); // done after all
       roster.save();
     }
     this.hasNext = !this.campaign && finished > 0 && this.levelIndex + 1 < SKYHOP_LEVELS.length;

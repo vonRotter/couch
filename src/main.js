@@ -174,6 +174,7 @@ class Game {
         } else d.padMap = s.pad || null;
       }
       this.input.extraCodes = extra;
+      this.applyScreenSettings(); // someone joined or left, or settings changed: text size and outlines follow
     }
     for (const d of this.input.devices.values()) d.holdKeys = holds;
   }

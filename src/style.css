@@ -375,3 +375,4 @@ html, body {
 .a11y-contrast .panel, .a11y-contrast .pill, .a11y-contrast .chip, .a11y-contrast .toast { outline: 3px solid var(--ink); }
 .a11y-contrast .pause-item.on, .a11y-contrast .vote-opt.on, .a11y-contrast .prof-card.on, .a11y-contrast .level-card.on { outline: 4px dashed var(--ink); outline-offset: 3px; }
 .a11y-contrast .pause-item.on::before { content: '▶ '; }
+.level-skip { font-weight: 700; font-size: clamp(11px, 1vw, 16px); background: var(--ink); color: #fff; border-radius: 999px; padding: 1px 10px; margin-top: 4px; }
