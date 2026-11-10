@@ -16,6 +16,8 @@ export class MiniGame extends BaseScene {
     this.schoolId = opts.school || null;
     this.state = 'intro';
     this.resultsDelay = 0;
+    // Retry from the pause menu: a quick title and countdown, so a retry is instant (main.js passes retry)
+    this.quickStart = !!opts.retry;
   }
 
   /** Game speed ("Help me play", main.js) slows every game's time; menus and banners keep real time. */
@@ -23,10 +25,10 @@ export class MiniGame extends BaseScene {
 
   async intro(title, sub) {
     this.state = 'intro';
-    say(`${title}. ${sub || ''}`, 'narrator');
-    await this.game.ui.banner(title, sub, 2300);
+    if (!this.quickStart) say(`${title}. ${sub || ''}`, 'narrator');
+    await this.game.ui.banner(title, sub, this.quickStart ? 700 : 2300);
     if (this.game.current !== this) return;
-    await this.game.ui.countdown(this.game.audio);
+    await this.game.ui.countdown(this.game.audio, this.quickStart ? 300 : 600);
     if (this.game.current !== this) return;
     this.state = 'play';
     this.playStart = this.time;

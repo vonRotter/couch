@@ -62,10 +62,10 @@ export class UI {
     return new Promise((res) => setTimeout(() => { el.remove(); res(); }, ms));
   }
 
-  async countdown(audio) {
+  async countdown(audio, ms = 600) {
     for (const n of ['3', '2', '1']) {
       audio.play('beep');
-      await this.banner(n, '', 600);
+      await this.banner(n, '', ms);
     }
     audio.play('go');
     this.banner(t('go'), '', 700);

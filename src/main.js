@@ -493,7 +493,7 @@ class Game {
             this.campaign.stats = null;
           }
           const def = GAMES[opts.key];
-          this.transition(() => new def.Scene(this, opts));
+          this.transition(() => new def.Scene(this, { ...opts, retry: true })); // retry: a quick intro (MiniGame)
         } else if (choice === 2) {
           this.goHub(this.current.key);
         }
