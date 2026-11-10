@@ -18,6 +18,9 @@ export class MiniGame extends BaseScene {
     this.resultsDelay = 0;
   }
 
+  /** Game speed ("Help me play", main.js) slows every game's time; menus and banners keep real time. */
+  get speedable() { return true; }
+
   async intro(title, sub) {
     this.state = 'intro';
     say(`${title}. ${sub || ''}`, 'narrator');

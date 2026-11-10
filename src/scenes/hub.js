@@ -21,7 +21,7 @@ const PR = 0.42; // player radius
 const SPEED = 7.5;
 const GRAVITY = 32;
 const JUMP = 11.5;
-const MODES = ['island', 'story', 'solo'];
+const MODES = ['island', 'story', 'solo', 'assist']; // assist: "Help me play" (core/assistmenu.js)
 
 // Game pads sit in a ring along the shore; angle 0 is north, clockwise.
 // The shared island and the solo island each have their own list.
@@ -732,7 +732,7 @@ export class HubScene extends BaseScene {
   }
 
   renderMode() {
-    const icons = { island: '🏝️', story: '📖', solo: '⛴️' };
+    const icons = { island: '🏝️', story: '📖', solo: '⛴️', assist: '🙌' };
     const first = this.game.roster.first();
     const opts = MODES.map((k, i) => `<div class="vote-opt mode-opt ${i === this.modeIndex ? 'on' : ''}">
       <div class="mode-icon">${icons[k]}</div><b>${t(`mode.${k}`)}</b><small>${esc(t(k === 'solo' && !first?.profileId ? 'mode.solo.subGuest' : `mode.${k}.sub`, { name: first?.name || '' }))}</small></div>`).join('');
@@ -780,6 +780,7 @@ export class HubScene extends BaseScene {
         this.modeEl = null;
         this.game.audio.play('join');
         const mode = MODES[this.modeIndex];
+        if (mode === 'assist') { this.game.openAssist(() => this.openMode(MODES.indexOf('assist'))); return true; }
         if (mode === 'solo') { this.launching = true; this.game.goHome(); }
         else if (mode === 'story') { this.launching = true; this.game.startGame('story'); }
         return true;

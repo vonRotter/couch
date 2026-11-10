@@ -73,7 +73,7 @@ const PR = 0.42;
 const CAM_UP = 14.8, CAM_BACK = 13; // a little higher up (a more top-down view) and never closer than before (12.5 / 13)
 // the menu ([MENU]: Q or Start): keep playing, the other ways to play, and the settings a gamepad has no key for
 // 'island' is "Play together" (the shared island, like the Party Pier ferry); the story is a place there now
-const MENU = ['resume', 'island', 'solo', 'voice', 'chars', 'sound', 'lang', 'help']; // (sound: M is the map here)
+const MENU = ['resume', 'island', 'solo', 'assist', 'voice', 'chars', 'sound', 'lang', 'help']; // assist: Help me play // (sound: M is the map here)
 const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];
 const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
@@ -1902,6 +1902,7 @@ export class SoloIslandScene extends BaseScene {
     if (k === 'voice') return `${t('isl.mn.voice')}: ${t(voiceOn() ? 'isl.mn.on' : 'isl.mn.off')}`;
     if (k === 'chars') return `${t('pause.chars')}: ${t(babbleMode() ? 'pause.charsBabble' : 'pause.charsVoices')}`;
     if (k === 'lang') return `${t('isl.mn.lang')}: ${t('isl.mn.langName')}`;
+    if (k === 'assist') return t('assist.title');
     if (k === 'sound') return `${t('isl.mn.sound')}: ${t(this.game.audio.muted ? 'isl.mn.off' : 'isl.mn.on')}`;
     return t(`isl.mn.${k}`);
   }
@@ -1929,6 +1930,7 @@ export class SoloIslandScene extends BaseScene {
     if (setting) { this.menuSetting(k); return; }
     if (k === 'resume') { this.closeMode(); return; }
     if (k === 'help') { this.closeMode(); this.toggleHelp(); return; }
+    if (k === 'assist') { this.closeMode(); this.mode = 'menu'; this.game.openAssist(() => { this.mode = 'walk'; this.openMode(MENU.indexOf('assist')); }); return; }
     this.modeEl.remove();
     this.modeEl = null;
     this.game.audio.play('join');

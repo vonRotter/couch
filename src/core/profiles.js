@@ -62,11 +62,20 @@ export function activeProfileId() {
   return read(ACTIVE_KEY, null);
 }
 
-/** Save changes to a profile (name, colorIndex, hat, voice, babble). */
+/** Save changes to a profile (name, colorIndex, hat, voice, babble). Its "Help me play" settings are kept. */
 export function updateProfile(profile) {
   const list = listProfiles();
   const i = list.findIndex((p) => p.id === profile.id);
-  if (i >= 0) list[i] = { ...list[i], ...profile };
+  if (i >= 0) list[i] = { ...list[i], ...profile, assist: list[i].assist };
+  write(LIST_KEY, list);
+}
+
+/** Save a profile's "Help me play" settings (core/assist.js). Older profiles have none: defaults. */
+export function setProfileAssist(id, assist) {
+  const list = listProfiles();
+  const i = list.findIndex((p) => p.id === id);
+  if (i < 0) return;
+  list[i] = { ...list[i], assist };
   write(LIST_KEY, list);
 }
 

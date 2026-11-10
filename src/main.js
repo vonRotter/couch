@@ -4,7 +4,7 @@ import '@fontsource/fredoka/600.css';
 import '@fontsource/fredoka/700.css';
 import './style.css';
 
-import { Input, buttonLabel, setPadLayout } from './core/input.js';
+import { Input, buttonLabel, setPadLayout, KEYBOARD_SCHEMES } from './core/input.js';
 import { PLAYER_COLORS } from './core/palette.js';
 import { Roster } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
@@ -50,7 +50,12 @@ import { activateProfile, updateProfile, soloSaveKey, getProfile } from './core/
 import { StartScene } from './scenes/start.js';
 import { coopReward, nameList } from './core/coop.js';
 import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './core/voice.js';
+import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES } from './core/assist.js';
+import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
 import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
+
+// The pause menu in every game (chars is a setting that switches in place).
+const PAUSE_ITEMS = ['resume', 'retry', 'assist', 'end', 'chars'];
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -139,8 +144,72 @@ class Game {
   setScene(make) {
     if (this.current) this.current.dispose();
     this.ui.clear();
+    this.input.clearLatches(); // hold to toggle: every hold starts off in a new scene
     this.current = make();
     this.current.resize(window.innerWidth, window.innerHeight);
+    this.applyScreenSettings();
+  }
+
+  // ---------- "Help me play" (core/assist.js) ----------
+
+  /**
+   * Give every device its player's settings: keyboard and pad remaps, hold to toggle and the scene's hold
+   * buttons. A device nobody plays with (the start screen, joining) uses the device default.
+   */
+  applyDeviceSettings(force = false) {
+    const sig = `${assistVersion()}|${this.roster.players.map((p) => `${p.deviceId}:${p.profileId || ''}`).join(',')}`;
+    const holds = this.current?.holdButtons || [];
+    if (force || sig !== this.deviceSig) {
+      this.deviceSig = sig;
+      const extra = new Set();
+      for (const d of this.input.devices.values()) {
+        const p = this.roster.players.find((q) => q.deviceId === d.id);
+        const s = p ? settingsFor(p) : deviceSettings();
+        d.toggle = !!s.toggle;
+        if (d.type === 'keyboard') {
+          const k = schemeKeys(s, d.scheme);
+          const same = ['a', 'b', 'c'].every((b) => k[b][0] === d.scheme[b][0]);
+          d.keys = same ? null : k;
+          if (d.keys) for (const b of ['a', 'b', 'c']) extra.add(d.keys[b][0]);
+        } else d.padMap = s.pad || null;
+      }
+      this.input.extraCodes = extra;
+    }
+    for (const d of this.input.devices.values()) d.holdKeys = holds;
+  }
+
+  /** Text size and outlines for what is on screen (the solo profile's, or the most anyone playing asked for). */
+  applyScreenSettings() {
+    const s = screenSettings(this);
+    const root = document.documentElement;
+    root.style.setProperty('--ts', String(TEXT_SIZES[s.text] || 1));
+    root.classList.toggle('a11y-text', s.text > 0);
+    root.classList.toggle('a11y-contrast', !!s.contrast);
+    this.ui.textScale = TEXT_SIZES[s.text] || 1;
+    if (this.contrastOn !== !!s.contrast) {
+      this.contrastOn = !!s.contrast;
+      this.current?.onContrast?.(this.contrastOn);
+    }
+  }
+
+  /**
+   * The "Help me play" page. On a profile's own island: that profile's settings. Elsewhere: the device default
+   * (guests and the shared island) and every profile playing. onClose: where to go back to.
+   */
+  openAssist(onClose = null) {
+    if (this.assistMenu) return;
+    const targets = this.solo?.profile
+      ? [{ id: this.solo.profile.id, name: this.solo.profile.name }]
+      : [{ id: '', name: t('assist.everyone') }, ...this.roster.players.filter((p) => p.profileId).map((p) => ({ id: p.profileId, name: p.name }))];
+    this.audio.play('select');
+    this.assistMenu = new AssistMenu(this, { targets, onClose: () => { this.assistMenu = null; this.applyDeviceSettings(true); onClose?.(); } });
+  }
+
+  /** A game noticed repeated tries (assist.js struggle()): offer the matching help, unless a menu is up. */
+  offerAssist({ kind, player, skip = null }) {
+    if (this.offer || this.assistMenu || this.pause || this.switching) return false;
+    this.offer = new OfferCard(this, { kind, player, skip, onClose: () => { this.offer = null; } });
+    return true;
   }
 
   /** Switch scenes behind the circle wipe. */
@@ -349,8 +418,8 @@ class Game {
   }
 
   renderPause() {
-    const items = ['resume', 'retry', 'end', 'chars'];
-    const label = (k) => (k === 'chars' ? `${t('pause.chars')}: ${t(babbleMode() ? 'pause.charsBabble' : 'pause.charsVoices')}` : t(`pause.${k}`));
+    const items = PAUSE_ITEMS;
+    const label = (k) => (k === 'chars' ? `${t('pause.chars')}: ${t(babbleMode() ? 'pause.charsBabble' : 'pause.charsVoices')}` : k === 'assist' ? t('assist.title') : t(`pause.${k}`));
     const html = `<div class="results-title">${t('pause.title')}</div>
       <div class="pause-list">${items.map((k, i) => `<div class="pause-item ${i === this.pause.index ? 'on' : ''}">${label(k)}</div>`).join('')}</div>
       <div class="results-footer">${t('pause.hint')}</div>`;
@@ -369,17 +438,25 @@ class Game {
       const d = this.input.get(p.deviceId);
       if (!d) continue;
       const dir = -d.stepY;
+      const n = PAUSE_ITEMS.length;
       if (dir) {
-        P.index = (P.index + dir + 4) % 4;
+        P.index = (P.index + dir + n) % n;
         this.audio.play('select');
         this.renderPause();
       }
       // a gamepad's B goes back (resumes); it never picks (keyboards pick with Space or E, Esc resumes)
       if (d.backPressed) { this.closePause(); this.audio.play('select'); return; }
+      const k = PAUSE_ITEMS[P.index];
       // the last item is a setting: pick or left/right switches it, the menu stays open
-      if (P.index === 3 && (d.okPressed || d.stepX)) { this.toggleBabble(); this.renderPause(); continue; }
+      if (k === 'chars' && (d.okPressed || d.stepX)) { this.toggleBabble(); this.renderPause(); continue; }
+      // Help me play: its page, then back to this menu
+      if (k === 'assist' && d.okPressed) {
+        this.closePause();
+        this.openAssist(() => { this.openPause(); this.pause.index = PAUSE_ITEMS.indexOf('assist'); this.renderPause(); });
+        return;
+      }
       if (d.okPressed) {
-        const choice = P.index;
+        const choice = ['resume', 'retry', 'end'].indexOf(k);
         this.closePause();
         if (choice === 1) {
           let opts = this.current.retryOptions();
@@ -418,7 +495,14 @@ class Game {
   tick(dt) {
     // the solo island and its dive have their own gamepad layout (A jump, X use, B back; input.js)
     setPadLayout(this.current?.padLayout || 'default');
+    this.applyDeviceSettings();
     this.input.update();
+    // "Help me play" and its offers wait in front of everything (the game is frozen behind them)
+    if (this.assistMenu || this.offer) {
+      (this.assistMenu || this.offer).update(dt);
+      this.input.endFrame();
+      return;
+    }
     // M switches the sound (on the solo island it opens the map: its menu has Sound)
     if (this.input.mutePressed && !this.current?.mapKey) this.ui.toast(this.audio.toggleMute() ? t('sound.off') : t('sound.on'));
     if (this.input.pressed.has('KeyN')) this.toggleLanguage();
@@ -434,9 +518,12 @@ class Game {
       return;
     }
     if (this.current) {
-      this.current.baseUpdate(dt);
-      if (!this.switching) this.current.update(dt);
-      else this.current.idle?.(dt);
+      // game speed ("Help me play"): game time runs slower in games and the island's activities, not in menus
+      const sp = this.current.speedable ? screenSettings(this).speed : 1;
+      const gdt = dt * sp;
+      this.current.baseUpdate(gdt);
+      if (!this.switching) this.current.update(gdt);
+      else this.current.idle?.(gdt);
     }
     this.input.endFrame();
   }

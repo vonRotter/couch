@@ -68,14 +68,33 @@ const DPAD = { bag: 'pad.up', journal: 'pad.down', items: 'pad.leftRight' };
 /** What a player presses for 'a' | 'b' | 'c' (or 'ok', 'menu', 'bag', 'journal', 'items', 'tabs') on this device. */
 export function buttonLabel(device, btn) {
   if (device.type === 'keyboard') {
-    if (btn === 'ok') return keyName(device.scheme.b[0]);
-    if (btn === 'menu') return keyName(device.scheme.c[0]);
-    return KEY_EXTRA[btn] ?? keyName(device.scheme[btn][0]);
+    const k = device.keys || device.scheme; // remapped keys ("Help me play"), else the scheme's
+    if (btn === 'ok') return keyName(k.b[0]);
+    if (btn === 'menu') return keyName(k.c[0]);
+    return KEY_EXTRA[btn] ?? keyName(k[btn][0]);
   }
   const names = PAD_LABELS[device.kind] || PAD_LABELS.xbox;
   if (DPAD[btn]) return t(DPAD[btn]);
   const b = PAD_EXTRA[btn] ?? PAD_LAYOUTS[layoutNow][btn]?.[0];
-  return Array.isArray(b) ? b.map((x) => names[x]).join('/') : names[b] ?? btn.toUpperCase();
+  // a remapped pad: the game's button X is done by the physical button padMap[X]
+  const phys = (x) => names[device.padMap?.[x] || x];
+  return Array.isArray(b) ? b.map(phys).join('/') : (b && names[b] ? phys(b) : btn.toUpperCase());
+}
+
+// Buttons a pad remap may move around (the D-pad, Start and View stay where they are).
+export const REMAP_PAD = ['a', 'b', 'x', 'y', 'lb', 'rb', 'lt', 'rt'];
+// Keys a keyboard remap may not take: the game's own shortcuts and menu keys.
+export const RESERVED_KEYS = new Set(['Escape', 'KeyM', 'KeyN', 'KeyV', 'KeyB', 'KeyG', 'Tab', 'KeyF', 'F9', 'F10',
+  'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'BracketLeft', 'BracketRight']);
+
+/**
+ * Hold to toggle ("Help me play"): for a button a scene marks as a hold (scene.holdButtons) a tap turns the
+ * hold on and the next tap turns it off. Presses still arrive as presses. held(d, 'b') is the held state
+ * with that applied, for games that read one hold of a button that is also tapped.
+ */
+export function held(d, k) {
+  if (!d) return false;
+  return d.toggle ? !!d.latch?.[k] : !!d[k];
 }
 
 /** Guess the controller family from the Gamepad id string. */
@@ -88,6 +107,11 @@ export function padKind(id = '') {
 const ALL_CODES = new Set(
   KEYBOARD_SCHEMES.flatMap((s) => [...s.up, ...s.down, ...s.left, ...s.right, ...s.a, ...s.b, ...s.c]),
 );
+/** Every key some scheme moves with or uses (a remap may not steal another scheme's key). */
+export function schemeKeyOwner(code) {
+  for (const s of KEYBOARD_SCHEMES) for (const k of ['up', 'down', 'left', 'right', 'a', 'b', 'c']) if (s[k].includes(code)) return { id: s.id, k };
+  return null;
+}
 
 const DEADZONE = 0.28;
 
@@ -99,6 +123,9 @@ function makeDevice(id, type, label, scheme = null) {
     okPressed: false, backPressed: false, // menus: pick / go back (see update())
     prevA: false, prevB: false, prevC: false,
     btn: {}, btnPressed: {}, // gamepads: every button by name (PAD_BUTTONS), held / pressed this frame
+    raw: {}, rawPressed: {}, // gamepads: the physical buttons before a remap (the remap page listens to these)
+    keys: null, padMap: null, // "Help me play" remaps (main.js sets them from the player's settings)
+    toggle: false, holdKeys: [], latch: {}, // hold to toggle (see held())
     connected: type === 'keyboard',
   };
 }
@@ -118,8 +145,9 @@ export class Input {
       this.devices.set(`gp${i}`, makeDevice(`gp${i}`, 'gamepad', `Pad ${i + 1}`));
     }
 
+    this.extraCodes = new Set(); // remapped keys (main.js) are the game's keys too
     window.addEventListener('keydown', (e) => {
-      if (ALL_CODES.has(e.code) || e.code === 'Escape') e.preventDefault();
+      if (ALL_CODES.has(e.code) || this.extraCodes.has(e.code) || e.code === 'Escape') e.preventDefault();
       if (e.repeat) return;
       this.down.add(e.code);
       this.pressed.add(e.code);
@@ -139,24 +167,26 @@ export class Input {
 
     for (const s of KEYBOARD_SCHEMES) {
       const d = this.devices.get(s.id);
+      const k = d.keys || s; // a remap changes only the three buttons
       d.x = (any(s.right) ? 1 : 0) - (any(s.left) ? 1 : 0);
       d.y = (any(s.up) ? 1 : 0) - (any(s.down) ? 1 : 0);
       if (d.x && d.y) { d.x *= Math.SQRT1_2; d.y *= Math.SQRT1_2; }
       // Menu steps count quick taps too, even if the key was released before this frame.
       this.step(d, (tapped(s.right) ? 1 : 0) - (tapped(s.left) ? 1 : 0), (tapped(s.up) ? 1 : 0) - (tapped(s.down) ? 1 : 0));
-      const a = any(s.a), b = any(s.b);
-      d.aPressed = tapped(s.a) || (a && !d.prevA);
-      d.bPressed = tapped(s.b) || (b && !d.prevB);
+      const a = any(k.a), b = any(k.b);
+      d.aPressed = tapped(k.a) || (a && !d.prevA);
+      d.bPressed = tapped(k.b) || (b && !d.prevB);
       d.a = a || d.aPressed;
       d.b = b || d.bPressed;
       d.prevA = a; d.prevB = b;
-      const c = any(s.c);
-      d.cPressed = tapped(s.c) || (c && !d.prevC);
+      const c = any(k.c);
+      d.cPressed = tapped(k.c) || (c && !d.prevC);
       d.c = c || d.cPressed;
       d.prevC = c;
       // keyboards keep picking with jump or use (E) in menus; going back is up to each menu
       d.okPressed = d.aPressed || d.bPressed;
       d.backPressed = false;
+      this.toggleHolds(d);
     }
 
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -166,7 +196,7 @@ export class Input {
       if (!gp || !gp.connected) {
         d.connected = false;
         d.x = d.y = 0; d.a = d.b = d.c = d.aPressed = d.bPressed = d.cPressed = d.okPressed = d.backPressed = false;
-        d.btn = {}; d.btnPressed = {};
+        d.btn = {}; d.btnPressed = {}; d.raw = {}; d.rawPressed = {};
         d.stepX = d.stepY = 0;
         continue;
       }
@@ -176,6 +206,12 @@ export class Input {
       // every button by name, and which ones went down this frame
       for (const [name, n] of Object.entries(PAD_BUTTONS)) {
         const on = !!gp.buttons[n]?.pressed;
+        d.rawPressed[name] = on && !d.raw[name];
+        d.raw[name] = on;
+      }
+      // a remap: the game's button 'name' is read from the physical button padMap[name]
+      for (const name of Object.keys(PAD_BUTTONS)) {
+        const on = d.raw[d.padMap?.[name] || name];
         d.btnPressed[name] = on && !d.btn[name];
         d.btn[name] = on;
       }
@@ -211,8 +247,21 @@ export class Input {
       // menus: A picks, B goes back (never picks), whatever the layout
       d.okPressed = !!P.a || (L.a.includes('y') && !!P.y);
       d.backPressed = !!P.b;
+      this.toggleHolds(d);
       if (a || b || c || start) this.onActivity?.();
     }
+  }
+
+  /** Hold to toggle: the scene's hold buttons (d.holdKeys) stay held from one tap to the next. */
+  toggleHolds(d) {
+    if (!d.toggle) { d.latch = {}; return; }
+    for (const k of ['a', 'b', 'c']) if (d[`${k}Pressed`]) d.latch[k] = !d.latch[k];
+    for (const k of d.holdKeys || []) d[k] = !!d.latch[k];
+  }
+
+  /** Forget held toggles (a new scene starts with every hold off). */
+  clearLatches() {
+    for (const d of this.devices.values()) d.latch = {};
   }
 
   /** stepX/stepY: -1/0/+1 on the frame a direction is first pushed (for menus and pickers). */

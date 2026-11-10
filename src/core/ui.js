@@ -25,6 +25,7 @@ export class UI {
     this.toastEl = root.querySelector('.ui-toast');
     this.wipeEl = root.querySelector('.ui-wipe');
     this.barCache = '';
+    this.textScale = 1; // "Help me play" text size (main.js)
   }
 
   clear() {
@@ -95,8 +96,10 @@ export class UI {
       return;
     }
     el.style.display = '';
-    const x = ((_v.x + 1) / 2) * window.innerWidth;
-    const y = ((1 - _v.y) / 2) * window.innerHeight;
+    // big text ("Help me play") zooms .label elements, and zoom scales their translate too: undo that here
+    const z = this.textScale > 1 && el.classList.contains('label') ? this.textScale : 1;
+    const x = (((_v.x + 1) / 2) * window.innerWidth) / z;
+    const y = (((1 - _v.y) / 2) * window.innerHeight) / z;
     el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
   }
 

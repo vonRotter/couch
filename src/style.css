@@ -348,3 +348,30 @@ html, body {
 .join-opt.taken { opacity: 0.45; }
 .join-opt.guest { --c: #bdb8cf; }
 .join-hint { font-size: clamp(11px, 1vw, 15px); opacity: 0.75; text-align: center; font-weight: 600; }
+
+/* "Help me play" (core/assistmenu.js) */
+.panel.assist-panel { min-width: min(620px, 92vw); }
+.assist-list { width: min(560px, 86vw); gap: 6px; margin: 12px auto 8px; }
+.assist-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 4px 16px; font-size: clamp(15px, 1.6vw, 24px); text-align: left; }
+.assist-row.who { background: #f4efff; }
+.assist-val { color: var(--grape); white-space: nowrap; }
+.assist-val.key { background: #f4efff; border-radius: 10px; padding: 0 10px; color: var(--ink); }
+.assist-desc { min-height: 2.6em; max-width: 46ch; margin: 0 auto 8px; font-size: clamp(13px, 1.3vw, 20px); font-weight: 600; opacity: 0.85; }
+.assist-capture { font-size: clamp(20px, 2.4vw, 36px); font-weight: 700; color: var(--pink); margin: 26px 0; }
+.panel.offer-panel { max-width: min(640px, 92vw); }
+.offer-icon { font-size: clamp(36px, 4vw, 60px); line-height: 1; }
+.offer-q { font-size: clamp(18px, 2vw, 30px); font-weight: 700; max-width: 30ch; margin: 8px auto 0; }
+
+/* Text size: the overlays grow (labels too: ui.place() keeps them on their spot), panels stay on screen */
+:root { --ts: 1; }
+.a11y-text .ui-top, .a11y-text .ui-corner, .a11y-text .ui-bar, .a11y-text .ui-toast, .a11y-text .ui-center > *,
+.a11y-text .label, .a11y-text .isl-layer > *, .a11y-text .join-tray { zoom: var(--ts); }
+.a11y-text .panel { max-width: calc(92vw / var(--ts)); }
+.a11y-text .results { min-width: min(900px, calc(92vw / var(--ts))); }
+.a11y-text .isl-panel { width: min(760px, calc(92vw / var(--ts))); max-height: calc(86vh / var(--ts)); }
+
+/* Strong outlines: darker text outlines, bold panel edges, the picked item marked by more than colour */
+.a11y-contrast .label, .a11y-contrast .banner-title, .a11y-contrast .results-title { -webkit-text-stroke: 0.22em #fff; text-shadow: 0 0 2px #000, 0 0 4px #000; }
+.a11y-contrast .panel, .a11y-contrast .pill, .a11y-contrast .chip, .a11y-contrast .toast { outline: 3px solid var(--ink); }
+.a11y-contrast .pause-item.on, .a11y-contrast .vote-opt.on, .a11y-contrast .prof-card.on, .a11y-contrast .level-card.on { outline: 4px dashed var(--ink); outline-offset: 3px; }
+.a11y-contrast .pause-item.on::before { content: '▶ '; }
