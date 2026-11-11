@@ -15,6 +15,7 @@
 
 import * as THREE from 'three';
 import { listProfiles, setProfileAssist } from './profiles.js';
+import { report as passportReport } from './passport.js';
 
 export const SPEEDS = [1, 0.9, 0.75, 0.6, 0.5];
 export const TEXT_SIZES = [1, 1.25, 1.5];
@@ -309,6 +310,7 @@ export function struggle(scene, player, kind, part = 'all', { skip = null, at = 
 /** The part was done: the count starts again (a later struggle there offers again only past new thresholds). */
 export function overcame(scene, part = 'all') {
   if (!scene?.game) return;
+  passportReport(scene, 'overcame', { part }); // the genre passport: a level or part done (core/passport.js)
   const st = struggles(scene);
   delete st.counts[part];
   st.last = 0;

@@ -392,6 +392,7 @@ export class OfferCard {
     this.el = null;
     if (k === 'yes') {
       this.game.audio.play('join');
+      this.game.passportAssist?.(this.targetId, this.kind); // the parent page lists help that was taken
       if (this.kind === 'skip') {
         this.game.ui.toast(t('offer.skipped'), 2400);
         this.skip?.();

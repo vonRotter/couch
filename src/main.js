@@ -55,6 +55,8 @@ import * as assist from './core/assist.js';
 import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES, setCalm } from './core/assist.js';
 import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
 import { refreshOutlines } from './core/outline.js';
+import * as passport from './core/passport.js';
+import { tickPlayTime, flushPlayTime, logAssist } from './core/passport.js';
 import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
 
 // The pause menu in every game (chars is a setting that switches in place).
@@ -124,7 +126,12 @@ class Game {
     this.audio = new AudioEngine();
     setVoiceAudio(this.audio); // babble plays on the game's sound bus
     this.ui = new UI(document.getElementById('ui'));
-    this.input.onActivity = () => this.audio.ensure();
+    this.lastActivity = performance.now();
+    this.input.onActivity = () => { this.audio.ensure(); this.lastActivity = performance.now(); };
+    // play time per profile per day (core/passport.js, the parent page): written now and then and when leaving
+    this.passport = passport; // also for tests
+    window.addEventListener('pagehide', () => flushPlayTime());
+    document.addEventListener('visibilitychange', () => { if (document.hidden) flushPlayTime(); });
 
     this.assist = assist; // "Help me play" settings (core/assist.js), also for tests
     this.current = null;
@@ -146,6 +153,7 @@ class Game {
   }
 
   setScene(make) {
+    flushPlayTime();
     if (this.current) this.current.dispose();
     this.ui.clear();
     this.input.clearLatches(); // hold to toggle: every hold starts off in a new scene
@@ -243,7 +251,7 @@ class Game {
 
   /** A game noticed repeated tries (assist.js struggle()): offer the matching help, unless a menu is up. */
   offerAssist({ kind, player, skip = null }) {
-    if (this.offer || this.assistMenu || this.pause || this.switching) return false;
+    if (this.offer || this.assistMenu || this.pause || this.switching || this.parentPage) return false;
     this.offer = new OfferCard(this, { kind, player, skip, onClose: () => { this.offer = null; } });
     return true;
   }
@@ -411,6 +419,8 @@ class Game {
     const prof = this.solo?.profile;
     if (!prof) return;
     this.roster.save();
+    passport.report(this, 'launch', { key: name }, { quiet: true }); // a guest game: the launch is all we see (the passport)
+    flushPlayTime();
     const base = location.hostname.endsWith('github.io') ? location.origin : 'https://vonrotter.github.io';
     const back = location.origin + location.pathname + '#solo';
     const q = new URLSearchParams({ profile: prof.id, name: prof.name, return: back, lang: getLang() });
@@ -528,7 +538,23 @@ class Game {
     else this.renderer.render(this.current.scene, this.current.camera);
   }
 
+  /** What a profile is playing now, for the play-time log (the scene's key; the solo island is 'island'). */
+  get playKey() {
+    const cur = this.current;
+    if (!cur) return null;
+    if (cur.schoolId) return 'school';
+    if (this.campaign) return 'story';
+    return cur.key || (cur.mapKey ? 'island' : cur instanceof HubScene ? 'hub' : null);
+  }
+
+  /** A help offer was taken (assistmenu.js OfferCard): the parent page lists them. */
+  passportAssist(profileId, kind) {
+    logAssist(profileId, kind, this.playKey);
+  }
+
   tick(dt) {
+    // play time (real seconds; not while idle for a few minutes, nor on the start screen where nobody plays)
+    tickPlayTime(this, dt, { key: this.playKey, idle: (performance.now() - this.lastActivity) / 1000 });
     // the solo island and its dive have their own gamepad layout (A jump, X use, B back; input.js)
     setPadLayout(this.current?.padLayout || 'default');
     this.applyDeviceSettings();

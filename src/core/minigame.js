@@ -3,6 +3,7 @@ import { PLAYER_COLORS, COLORS } from './palette.js';
 import { t } from './i18n.js';
 import { say } from './voice.js';
 import { recordSchool } from './edu.js';
+import { report as passportReport } from './passport.js';
 
 /** Shared flow for every game: intro -> countdown -> play -> results -> back to the island. */
 export class MiniGame extends BaseScene {
@@ -45,6 +46,9 @@ export class MiniGame extends BaseScene {
     if (this.schoolId && this.game.solo) recordSchool(this.game.roster, this.schoolId, this.schoolScore?.() ?? parseInt(rows[0]?.value, 10));
     this.game.roster.addStars(stars);
     this.game.coopFinished?.(this); // the shared island: rewards on the players' own islands (main.js)
+    // the genre passport (core/passport.js): a finished game counts as played properly (passportStats() can say
+    // more: a level cleared or not, falls, stars...); school games count as the School House
+    passportReport(this, 'finish', { key: this.schoolId && this.game.solo ? 'school' : this.key, n: this.players.length, ...(this.passportStats?.() || {}) });
     this.game.audio.playMusic('results');
     this.game.audio.play('fanfare');
     this.game.ui.setTop('');
