@@ -288,6 +288,7 @@ export const MAX_STARS = NODES.length * 3;
 export function stageStars(node, result) {
   if (!result || result.quit || !result.stats) return 1;
   const s = result.stats;
+  if (s.skipped) return 1; // skipped (Help me play): one star, play it again for more
   const n = s.n || 1;
   let v = 1;
   try { v = node.stars(s, n); } catch { v = 1; }
@@ -296,6 +297,7 @@ export function stageStars(node, result) {
 
 export function stageValue(node, result) {
   if (!result || result.quit || !result.stats) return '';
+  if (result.stats.skipped) return `↷ ${t('assist.skipped')}`;
   try { return node.value(result.stats); } catch { return ''; }
 }
 

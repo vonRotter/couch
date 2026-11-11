@@ -5,7 +5,7 @@ import { PLAYER_COLORS, COLORS, toon, basic, sharedGeo } from '../../core/palett
 import { t, addStrings } from '../../core/i18n.js';
 import { makeKing } from './king.js';
 import { BOSS_GOALS, BOSS_TIME } from './stages.js';
-import { invulnBlink } from '../../core/assist.js';
+import { invulnBlink, struggle, overcame } from '../../core/assist.js';
 
 // Shared flow for the four Grumble King encounters: a co-op goal counter, a time limit and a
 // happy ending either way (he ends up dizzy and giggling, never hurt).
@@ -29,6 +29,7 @@ addStrings({
     'boss.sub': '{n} of {m} together',
     'boss.n': '{n}',
     'boss.unit.0': 'head bounces', 'boss.unit.1': 'bells rung', 'boss.unit.2': 'cakes served', 'boss.unit.3': 'rings',
+    'boss.giveUp': 'He gives up!', 'boss.giveUpSub': 'The Grumble King lets you pass. Skipped: play it again any time',
   },
   no: {
     'boss.0': 'Svimle-kongen', 'boss.1': 'Bjellefestningen', 'boss.2': 'Kakefesten', 'boss.3': 'Bobleringene',
@@ -39,6 +40,7 @@ addStrings({
     'boss.sub': '{n} av {m} sammen',
     'boss.n': '{n}',
     'boss.unit.0': 'hopp på hodet', 'boss.unit.1': 'bjelleklang', 'boss.unit.2': 'kaker servert', 'boss.unit.3': 'ringer',
+    'boss.giveUp': 'Han gir seg!', 'boss.giveUpSub': 'Grumle-kongen slipper dere forbi. Hoppet over: spill det igjen når dere vil',
   },
 });
 
@@ -61,6 +63,7 @@ export class BossScene extends MiniGame {
    */
   constructor(game, opts, { chapter, kingSize = 2.4 }) {
     super(game, opts);
+    this.struggleKey = 'story'; // Help me play: tries count across the Story map and its stages
     this.chapter = chapter;
     this.n = Math.max(1, this.players.length);
     this.goal = BOSS_GOALS[chapter](this.n);
@@ -304,6 +307,7 @@ export class BossScene extends MiniGame {
 
   win() {
     this.won = true;
+    if (!this.skipped) overcame(this, `story.boss.${this.chapter}`);
     this.clearLobs();
     this.winTime = this.time - (this.playStart ?? 0);
     this.king.setMood('laugh');
@@ -321,6 +325,22 @@ export class BossScene extends MiniGame {
     this.game.ui.banner(t('boss.time'), t('boss.timeSub'), 2200);
     this.celebrateKing();
     this.later(3.4, () => this.end());
+    // Help me play: a try that ran out of time. After a few (counted across the Story map and retries, like
+    // other long tries: speed after 2, a skip after 3) the game offers to skip the King: he gives up.
+    struggle(this, null, 'any', `story.boss.${this.chapter}`, { skip: () => this.giveUp(), at: { speed: 2, skip: 3, gap: 1 } });
+  }
+
+  /** Skipped (from the offer): the King gives up and lets the team pass. Counts as done, marked as skipped. */
+  giveUp() {
+    if (this.state === 'results') return;
+    this.skipped = true;
+    this.over = false;
+    this.won = true;
+    this.winTime = this.time - (this.playStart ?? 0);
+    this.king.setMood('laugh');
+    this.game.audio.play('fanfare');
+    this.game.ui.banner(t('boss.giveUp'), t('boss.giveUpSub'), 2600);
+    this.celebrateKing();
   }
 
   /** Confetti around the giggling King. */
@@ -347,7 +367,7 @@ export class BossScene extends MiniGame {
     const top = ranked[0]?.score || 0;
     this.confettiOrigin = this.king.group.position.clone().setY(2);
     this.finish({
-      title: this.won ? t('boss.title') : t('boss.titleTime'),
+      title: this.skipped ? t('boss.giveUp') : this.won ? t('boss.title') : t('boss.titleTime'),
       subtitle: `${t(`boss.${this.chapter}`)} · ${t('boss.sub', { n: this.count, m: this.goal })}`,
       rows: ranked.map((e) => ({
         css: e.p.css, name: e.p.name, value: String(e.score), detail: t(`boss.unit.${this.chapter}`), crown: top > 0 && e.score === top,
@@ -358,7 +378,7 @@ export class BossScene extends MiniGame {
 
   /** Story campaign: did the team cheer him up, and how fast. */
   campaignStats() {
-    return { done: this.won, progress: Math.min(1, this.count / this.goal), count: this.count, goal: this.goal, time: this.winTime ?? this.timeLimit, slips: this.ents.reduce((s, e) => s + (e.slips || 0), 0) };
+    return { done: this.won, skipped: !!this.skipped, progress: Math.min(1, this.count / this.goal), count: this.count, goal: this.goal, time: this.winTime ?? this.timeLimit, slips: this.ents.reduce((s, e) => s + (e.slips || 0), 0) };
   }
 
   hud() {

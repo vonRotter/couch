@@ -274,7 +274,7 @@ export const OFFER_AT = { assist: 3, speed: 5, skip: 7, gap: 2 };
 /** The tries of this game visit: kept on the game, so a level that restarts as a new scene keeps counting. */
 function struggles(scene) {
   const game = scene.game;
-  const key = scene.key || scene.constructor?.name || 'scene';
+  const key = scene.struggleKey || scene.key || scene.constructor?.name || 'scene'; // struggleKey: scenes that share one count (the Story map and its stages)
   if (!game._struggle || game._struggle.key !== key) game._struggle = { key, counts: {}, offered: new Set(), last: 0 };
   return game._struggle;
 }

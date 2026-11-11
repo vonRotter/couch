@@ -6,6 +6,7 @@ import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.j
 import { addLights, makeTree, makeFlower, makeBush, makeMushroom, makeCloud, makeStar, makeRock, seeded } from '../core/world.js';
 import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
+import { markSkipped, clearSkipped, isSkipped } from '../core/assist.js';
 import { makeGameIcon } from './hub-icons.js';
 import { CHAPTERS, NODES, MAX_STARS, stageStars, stageValue, nodeTitle } from './story/stages.js';
 import { CARDS } from './story/text.js';
@@ -45,6 +46,7 @@ const landX = (c) => c * LAND_STEP;
 export class StoryScene extends BaseScene {
   constructor(game, opts = {}) {
     super(game);
+    this.struggleKey = 'story'; // Help me play: tries count across the Story map and its stages
     this.tapHoldButtons = ['b', 'c']; // hold to toggle ("Help me play", input.js): hold [B] (back to the menu) and hold [C] (leave): a double tap holds
     this.key = 'story';
     this.camera.fov = 40;
@@ -802,6 +804,10 @@ export class StoryScene extends BaseScene {
     const before = this.starsOf(node);
     const wasMax = this.maxUnlocked();
     this.prog.stars[node.id] = Math.max(before, stars);
+    // Help me play: a skipped boss is marked (↷ on the map) until the team beats it for real
+    const prog = this.game.roster.progress;
+    if (result?.stats?.skipped) markSkipped(prog, 'story', node.id);
+    else if (result?.stats?.done) clearSkipped(prog, 'story', node.id);
     this.save();
     this.refreshNodes();
     const unlocked = this.maxUnlocked() > wasMax && this.maxUnlocked() > node.i;
@@ -922,7 +928,7 @@ export class StoryScene extends BaseScene {
     this.nodeLabel.style.display = showNode ? '' : 'none';
     if (showNode) {
       const got = this.starsOf(n);
-      const stars = got ? ` ${'★'.repeat(got)}${'☆'.repeat(3 - got)}` : '';
+      const stars = (got ? ` ${'★'.repeat(got)}${'☆'.repeat(3 - got)}` : '') + (isSkipped(this.game.roster.progress, 'story', n.id) ? ` ↷ ${t('assist.skipped')}` : '');
       const html = `${esc(nodeTitle(n))}<small>${esc(n.goal(Math.max(1, this.players.length)).main)}${stars}</small>`;
       if (this.nodeLabel.innerHTML !== html) this.nodeLabel.innerHTML = html;
       this.nodeLabel.style.color = NODE_CSS[n.chapter];
