@@ -387,3 +387,8 @@ html, body {
 .ui-holds { left: 50%; top: clamp(62px, 10vh, 96px); transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .hold-chip { background: #fff; border: 3px solid var(--c); border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: clamp(12px, 1.1vw, 18px); box-shadow: 0 3px 0 rgba(43,35,64,.18); }
 .a11y-text .ui-holds { zoom: var(--ts); }
+
+/* the parent page's hold (core/parentpage.js, main.js): a ring fills while View + Start or H is held in a menu */
+.parent-hold { position: absolute; left: 50%; bottom: 16vh; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 10px;
+  background: rgba(43, 35, 64, 0.88); color: #fff; padding: 6px 16px 6px 8px; border-radius: 999px; font-weight: 700; font-size: clamp(13px, 1.3vw, 18px); pointer-events: none; }
+.parent-hold i { width: 28px; height: 28px; border-radius: 50%; background: conic-gradient(#ffd23f var(--p), rgba(255, 255, 255, 0.2) 0); }

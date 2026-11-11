@@ -57,6 +57,7 @@ import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
 import { refreshOutlines } from './core/outline.js';
 import * as passport from './core/passport.js';
 import { tickPlayTime, flushPlayTime, logAssist } from './core/passport.js';
+import { ParentPage, HOLD_SECONDS } from './core/parentpage.js';
 import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
 
 // The pause menu in every game (chars is a setting that switches in place).
@@ -552,9 +553,52 @@ class Game {
     logAssist(profileId, kind, this.playKey);
   }
 
+  // ---------- the parent page (core/parentpage.js) ----------
+
+  /** A menu is up: the start screen (player picker), the solo island's menu, or a game's pause menu. */
+  get inMenu() {
+    return !!this.pause || this.current instanceof StartScene || this.current?.mode === 'menu';
+  }
+
+  /**
+   * Hold View + Start on a gamepad or H on a keyboard for 3 seconds, starting in a menu: the parent page. A small
+   * ring fills while held (so a grown-up knows to keep holding); letting go early does nothing.
+   */
+  updateParentHold(dt) {
+    const pad = [...this.input.devices.values()].some((d) => d.type !== 'keyboard' && d.connected && d.btn?.view && d.btn?.start);
+    const held = pad || this.input.down.has('KeyH');
+    if (!held || this.parentPage || this.assistMenu) {
+      if (this.parentHold) { this.parentHold.el?.remove(); this.parentHold = null; }
+      if (!held) this.parentHoldDone = false;
+      return;
+    }
+    if (this.parentHoldDone) return;
+    if (!this.parentHold) {
+      if (!this.inMenu) return;
+      this.parentHold = { t: 0, el: document.createElement('div') };
+      this.parentHold.el.className = 'parent-hold';
+      this.ui.root.appendChild(this.parentHold.el);
+    }
+    const H = this.parentHold;
+    H.t += dt;
+    const k = Math.min(1, H.t / HOLD_SECONDS);
+    H.el.innerHTML = `<i style="--p:${(k * 100).toFixed(0)}%"></i><span>${esc(t('pg.hold'))}</span>`;
+    if (k >= 1) {
+      H.el.remove();
+      this.parentHold = null;
+      this.parentHoldDone = true; // let go before it can open again
+      this.openParentPage();
+    }
+  }
+
+  openParentPage() {
+    if (this.parentPage) return;
+    this.parentPage = new ParentPage(this, { onClose: () => { this.parentPage = null; } });
+  }
+
   tick(dt) {
     // play time (real seconds; not while idle for a few minutes, nor on the start screen where nobody plays)
-    tickPlayTime(this, dt, { key: this.playKey, idle: (performance.now() - this.lastActivity) / 1000 });
+    if (!this.parentPage) tickPlayTime(this, dt, { key: this.playKey, idle: (performance.now() - this.lastActivity) / 1000 });
     // the solo island and its dive have their own gamepad layout (A jump, X use, B back; input.js)
     setPadLayout(this.current?.padLayout || 'default');
     this.applyDeviceSettings();
@@ -562,6 +606,13 @@ class Game {
     this.updateHoldChips();
     // strong outlines: now and then outline what spawned since (cheap: only marked models get hulls)
     if (this.contrastOn && (this.outlineT = (this.outlineT || 0) + dt) > 0.5) { this.outlineT = 0; refreshOutlines(this.current?.scene, true); }
+    // the parent page (a hold in a menu) waits in front of everything too
+    this.updateParentHold(dt);
+    if (this.parentPage) {
+      this.parentPage.update(dt);
+      this.input.endFrame();
+      return;
+    }
     // "Help me play" and its offers wait in front of everything (the game is frozen behind them)
     if (this.assistMenu || this.offer) {
       (this.assistMenu || this.offer).update(dt);
