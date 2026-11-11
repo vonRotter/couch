@@ -384,6 +384,12 @@ export class GuidesScene extends MiniGame {
     return this.state === 'select' ? { key: this.key } : { key: this.key, level: this.levelIndex };
   }
 
+  /** The genre passport (core/passport.js): a level counts when it is won (one star or more). */
+  passportStats() {
+    const stars = this.won ? this.starsFor(this.home) : 0;
+    return { proper: !!this.won, stars, mastery: stars >= 2 ? [`lv${this.levelIndex}`] : [] };
+  }
+
   campaignStats() {
     return { home: this.home, total: this.level.total, goal: this.level.goal, stars: this.starsFor(this.home) };
   }

@@ -1378,6 +1378,9 @@ export class CastleCampaignScene extends MiniGame {
 
   // ---------- the end ----------
 
+  /** The genre passport (core/passport.js): a level counts when it is won. */
+  passportStats() { return this.passportResult || { proper: false }; }
+
   end(won) {
     if (this.state === 'results') return;
     for (const e of this.heroes) {
@@ -1393,6 +1396,7 @@ export class CastleCampaignScene extends MiniGame {
     const fast = this.goalTime !== null && this.goalTime <= this.level.par;
     const stars = won ? 1 + (all ? 1 : 0) + (fast ? 1 : 0) : 0;
     this.result = { level: this.levelIndex, won, stars, home, total, all, fast, time: this.goalTime ?? this.time - this.playStart };
+    this.passportResult = { proper: won, stars, mastery: won ? [`lv${this.levelIndex}`] : [] }; // the genre passport (passportStats)
     // Save right away (before the results screen), so quitting from the pause menu keeps it.
     const P = this.prog;
     P.stars[this.levelIndex] = Math.max(P.stars[this.levelIndex] || 0, stars);

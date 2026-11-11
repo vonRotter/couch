@@ -429,6 +429,7 @@ export class DuckHuntScene extends MiniGame {
       this.game.audio.play('leave');
       this.phaseT = 2.8;
     } else if (hits === 10) {
+      this.perfects = (this.perfects || 0) + 1; // the genre passport: all ten ducks of a round is a trial
       if (this.versus) for (const s of this.shooters) s.score += PERFECT;
       else this.teamBonus += PERFECT;
       this.showCallout(t('duckhunt.perfect', { n: PERFECT }), '', 2.2);
@@ -905,6 +906,11 @@ export class DuckHuntScene extends MiniGame {
   // ---------- results ----------
 
   /** Story campaign: reached round, hits and score. */
+  /** The genre passport (core/passport.js): how far you got. */
+  passportStats() {
+    return { round: this.round, perfects: this.perfects || 0, mastery: [2, 4, 6, 8].filter((r) => this.round >= r).map((r) => `round${r}`) };
+  }
+
   campaignStats() {
     return { round: this.round, score: this.teamScore(), hits: this.shooters.reduce((n, s) => n + s.hits, 0) };
   }

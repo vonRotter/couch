@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { struggle, markSkipped } from '../core/assist.js';
+import { report as passportReport } from '../core/passport.js';
 import { MiniGame } from '../core/minigame.js';
 import { t, tFor } from '../core/i18n.js';
 import { say } from '../core/voice.js';
@@ -1111,6 +1112,8 @@ export class BreachScene extends MiniGame {
     }
     const cur = ORDER[run.step];
     const next = ORDER[run.step + 1];
+    // the genre passport: a battle won (clean: no house hit, the grid power is what it was at the start)
+    passportReport(this, 'breach.win', { clean: s.power >= run.power, step: run.step });
     run.power = Math.min(POWER_MAX, s.power + power);
     run.stars += stars;
     run.starsTotal += stars;

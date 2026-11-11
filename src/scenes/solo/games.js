@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { timingScale, struggle, overcame } from '../../core/assist.js';
+import { report as passportReport } from '../../core/passport.js';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
@@ -248,6 +249,7 @@ export class IslandGames {
       this.say(first ? 'gm.skip.first' : 'gm.skip.record', { n: c.best });
       host.grant({ coins: c.best * 5 });
     }
+    if (c.best >= 5) passportReport(host, 'island', { key: 'stones', what: `skip${Math.min(7, c.best)}` }); // the genre passport
     host.markDirty();
   }
 
@@ -312,6 +314,7 @@ export class IslandGames {
     if (best) this.G.kiteBest = s;
     this.say(best ? 'gm.kite.record' : 'gm.kite.done', { n: s });
     host.grant({ coins: Math.max(5, s) });
+    passportReport(host, 'island', { key: 'kite', what: s >= 20 ? 'wind20' : null }); // the genre passport (core/passport.js)
     host.markDirty();
   }
 
@@ -375,6 +378,7 @@ export class IslandGames {
     host.puffs.burst(new THREE.Vector3(n.x, heightAt(n.x, n.z) + 0.6, n.z), 0x6fcf4a, { count: 14, speed: 3, size: 0.3 });
     if (found) {
       this.G.hide.found = (this.G.hide.found || 0) + 1;
+      passportReport(host, 'island', { key: 'islplay', what: `hide${Math.min(3, this.G.hide.found)}` }); // the genre passport
       host.confetti.burst(new THREE.Vector3(n.x, 1.6, n.z), 0, { count: 30, speed: 5, up: 4, life: 1.2, gravity: -6, colors: [0x6fcf4a, 0xffd23f, 0xffffff] });
       host.game.audio.play('fanfare');
       this.sayNpc('mumble', 'gm.hide.found');
@@ -484,6 +488,7 @@ export class IslandGames {
     s.done = true;
     const win = s.me > s.them, draw = s.me === s.them;
     if (win) this.G.snow.wins = (this.G.snow.wins || 0) + 1;
+    passportReport(host, 'island', { key: 'islplay', what: win ? `snow${Math.min(3, this.G.snow.wins)}` : null }); // the genre passport
     this.G.snow.day = dayKey();
     this.sayNpc('pip', win ? 'gm.snow.win' : draw ? 'gm.snow.draw' : 'gm.snow.lose', { n: s.me, m: s.them });
     host.game.audio.play(win ? 'fanfare' : 'star');

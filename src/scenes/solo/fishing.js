@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { timingScale, struggle, overcame } from '../../core/assist.js';
+import { report as passportReport } from '../../core/passport.js';
 import { toon } from '../../core/palette.js';
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
@@ -168,13 +169,13 @@ export class Fishing {
             R.hits++;
             host.game.audio.play('pop');
             host.puffs.burst(this.bobber.position.clone(), 0xffffff, { count: 10, speed: 3, up: 2, size: 0.3, life: 0.5 });
-            if (R.hits >= R.need) { overcame(host, 'fish'); this.result(true); break; }
+            if (R.hits >= R.need) { overcame(host, 'fish'); passportReport(host, 'fish', { ok: true, clean: R.misses === 0, species: this.fish }); this.result(true); break; }
             R.zc = R.w / 2 + Math.random() * (1 - R.w);
             this.renderMeter();
           } else {
             R.misses++;
             host.game.audio.play('bump');
-            if (R.misses >= 3) { struggle(host, host.player?.p, 'timing', 'fish'); this.result(false, 'isl.fish.escaped'); break; }
+            if (R.misses >= 3) { struggle(host, host.player?.p, 'timing', 'fish'); passportReport(host, 'fish', { ok: false }); this.result(false, 'isl.fish.escaped'); break; }
             this.renderMeter(true);
           }
         } else if (inp.bPressed) this.result(false, 'isl.fish.letGo');

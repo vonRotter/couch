@@ -7,6 +7,7 @@ import { dayRand, weekIndex, seasonOf } from './calendar.js';
 import { CROP_IDS, inSeason } from './items.js';
 import { heightAt, SEA_Y, HALL, bake } from './map.js';
 import { npcState } from './npcs.js';
+import { report as passportReport } from '../../core/passport.js';
 import { RIVER_STONES, POND_STONES, SECRETS, SECRET_IDS, TRAILS, TRAIL_IDS } from './hopdata.js';
 import {
   makeStepStone, makeLilyPad, makeLedgeRock, makeStump, makeLog, makePlank, makeCrateStack, makeTallBarrel, makeDeck, makeTreasure, makeBellPost,
@@ -442,6 +443,7 @@ export class Hops {
       const won = !R.done || R.time > time;
       R.result = won ? 'win' : 'lose';
       if (won) {
+        r.won = true;
         S.hops.wins[r.id] = (S.hops.wins[r.id] || 0) + 1;
         coins += 40;
         host.addPts(R.id, 6);
@@ -450,6 +452,7 @@ export class Hops {
     }
     this.sayT(null, lines.join(' '));
     if (coins) host.grant({ coins });
+    passportReport(host, 'hop', { id: r.id, falls: r.falls || 0, won: !!r.won }); // the genre passport (core/passport.js)
     // all three bells rung: the golden bell for the yard
     if (!S.deco.goldBell && TRAIL_IDS.every((id) => S.hops.best[id] != null)) this.later(1.6, () => host.addDeco('goldBell'));
     this.endT = 3.5;

@@ -329,7 +329,8 @@ export function apply(P, ev, d = {}) {
     case 'launch': played(P, d.key, true); return;
     case 'island': {
       if (!GAMES[d.key]) return;
-      if (d.what) { playedOnce(P, d.key); master(P, d.key, d.what); } else played(P, d.key, true);
+      played(P, d.key, true);
+      if (d.what) master(P, d.key, d.what);
       return;
     }
   }

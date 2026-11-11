@@ -65,6 +65,7 @@ import { School } from './school.js';
 import { IslandAtlas } from './atlas.js';
 import { PassportBook } from './passport.js';
 import { Coach } from './coach.js';
+import { syncProfile } from '../../core/passport.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
 // One player (with the profile's name, color and hat). Games are PLACES you walk to; some open through
@@ -432,6 +433,8 @@ export class SoloIslandScene extends BaseScene {
 
   secondTick() {
     const at = now();
+    // the genre passport: what island life shows (a first harvest, yard pieces, chests found, dishes served...)
+    if ((this.ppT = (this.ppT || 0) + 1) % 5 === 0) syncProfile(this.game, { quiet: false });
     fixSlots(this.save); // every stack keeps its own slot (a full bag sends extras to the chest)
     this.farm.tick(at);
     // tutorial: a crop became ripe

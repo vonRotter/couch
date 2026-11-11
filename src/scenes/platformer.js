@@ -534,6 +534,7 @@ export class PlatformerScene extends MiniGame {
         b.x = THREE.MathUtils.clamp(b.x, 0.4, this.width - 0.4);
         if (b.y < -3) {
           this.bubbleUp(ent);
+          this.falls = (this.falls || 0) + 1; // the genre passport: a level without a fall is a trial
           // many falls in this level: offer forgiving timing, a slower game, then (not in the story) a skip
           const canSkip = !this.campaign && this.levelIndex + 1 <= SKYHOP_LEVELS.length;
           struggle(this, ent.p, 'timing', `sky.${this.levelIndex}`, { skip: canSkip ? () => this.skipLevel() : null });
@@ -740,6 +741,12 @@ export class PlatformerScene extends MiniGame {
       stars: 3,
       action: this.hasNext ? t('sky.next') : t('footer.continue'),
     });
+  }
+
+  /** The genre passport (core/passport.js): a level counts once someone reached the flag. */
+  passportStats() {
+    const cleared = this.ents.some((e) => e.state === 'done');
+    return { proper: cleared, cleared, falls: this.falls || 0, level: this.levelIndex, mastery: cleared ? [`lv${this.levelIndex}`] : [] };
   }
 
   /** Story campaign: how the team did (see scenes/story/stages.js). */
