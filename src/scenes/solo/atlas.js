@@ -10,6 +10,7 @@ import { PILE, KITE, LEAF_PILES } from './games.js';
 import { MAIN_BOARD } from './isle2.js';
 import { PADDOCK } from './animals.js';
 import { npcState } from './npcs.js';
+import { todaysCrab } from './crabdata.js';
 import { stageOf, tileCenter, parseKey } from './farm.js';
 
 // The island map (the owner's map decisions): the journal's first tab, also on its own button (M on a
@@ -330,8 +331,11 @@ export class IslandAtlas {
       POOLS.forEach((p, i) => { if (I.pools?.[i] !== today) out.push({ key: `pool:${i}`, icon: '🫧', name: t('map.a.pool'), x: p.x, z: p.z }); });
       DIGS.forEach(([x, z], i) => { if (I.digs?.[i] !== week) out.push({ key: `dig:${i}`, icon: '💰', name: t('map.a.digIsle'), x, z }); });
     }
-    // crabs that need a hand where you are (not the hidden cove's)
-    for (const o of host.crabs?.waiting?.(region) || []) out.push({ key: `crab:${o.id}`, icon: '🦀', name: t('map.a.crab'), x: o.x, z: o.z });
+    // today's crab: on the map where you are (not the hidden cove's), else only in the list (the other island, the dive)
+    const crabs = host.crabs?.waiting?.(region) || [];
+    for (const o of crabs) out.push({ key: `crab:${o.id}`, icon: '🦀', name: t('map.a.crab'), x: o.x, z: o.z });
+    const T = host.crabs && S.intro ? todaysCrab(S) : null;
+    if (T && !T.helped && !crabs.length && T.area !== region) out.push({ key: 'crab:away', icon: '🦀', name: t('map.a.crabAway', { where: t(`crab.where.${T.area}`) }) });
     return out;
   }
 

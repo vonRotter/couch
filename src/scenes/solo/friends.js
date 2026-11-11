@@ -159,6 +159,7 @@ export class FriendsBook {
     const how = t('isl.fb.crabHow', { f: b.kinds.flip || 0, r: b.kinds.free || 0, h: b.kinds.home || 0, s: b.kinds.shell || 0 });
     const herm = b.hermits.map((h) => `<span class="gift">${h.shell ? icon(h.shell) : ''}${esc(h.name)}${h.shell ? ` · ${esc(t(`isl.i.${h.shell}`))}` : ` <small class="unk">${esc(t('isl.fb.crabNeeds'))}</small>`}</span>`).join('');
     const rows = [
+      [t('isl.fb.crabToday'), esc(b.today)],
       [t('isl.fb.crabHelped'), `${esc(String(b.helped))} <small>(${esc(how)})</small>`],
       [t('isl.fb.crabCove'), esc(t(b.next ? 'isl.fb.crabLevel' : 'isl.fb.crabLevelMax', { n: b.level, m: b.next }))],
       [t('isl.fb.crabWall'), esc(t('isl.fb.crabWallN', { n: b.wall, m: b.wallMax }))],
@@ -171,7 +172,7 @@ export class FriendsBook {
         <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl></div>${dots}${foot}`);
     if (!read) return;
     const helpedH = b.hermits.filter((h) => h.shell).map((h) => t('isl.fb.crabSayHermit', { name: h.name, shell: t(`isl.i.${h.shell}`) }));
-    speak([t('isl.fb.crabs'), t('isl.fb.crabSay', { n: b.helped }), how, t(b.next ? 'isl.fb.crabLevel' : 'isl.fb.crabLevelMax', { n: b.level, m: b.next }), ...helpedH, b.follower ? t('isl.fb.crabSayFollower', { name: b.follower }) : t('isl.fb.crabNobody')].join('. '), 'narrator');
+    speak([t('isl.fb.crabs'), `${t('isl.fb.crabToday')}: ${b.today}`, t('isl.fb.crabSay', { n: b.helped }), how, t(b.next ? 'isl.fb.crabLevel' : 'isl.fb.crabLevelMax', { n: b.level, m: b.next }), ...helpedH, b.follower ? t('isl.fb.crabSayFollower', { name: b.follower }) : t('isl.fb.crabNobody')].join('. '), 'narrator');
   }
 
   picture(id) {

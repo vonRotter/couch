@@ -6,10 +6,11 @@ import { seasonOf } from './calendar.js';
 import { now } from './save.js';
 
 // Crab friends in the dive (the owner's crab update). Crabs and lobsters are never netted any more: they
-// scuttle along the sea floor, and [B] waves to them (they wave back). Each real day three of them need a
-// hand down here, the underwater versions of the beach help: a crab on its back to turn over, a crab or a
-// lobster caught in an old net to free (three tugs), and a family of lost baby crabs who swim after you to
-// their glowing family spot. There is also a big shell for the hermit crabs on the floor.
+// scuttle along the sea floor, and [B] waves to them (they wave back). On the days when the day's one crab
+// in trouble is down here (crabdata.js todaysCrab, it takes turns with the beach and Shell Isle), it is an
+// underwater version of the beach help: a crab on its back to turn over, a lobster caught in an old net to
+// free (three tugs), or a family of lost baby crabs who swim after you to their glowing family spot. There
+// is also a big shell for the hermit crabs on the floor every day.
 
 // candidate spots on the sunny shelf and the reef slope (x; y comes from the floor)
 const SPOTS_X = [-40, -34, -28, -23, 21, 26, 31, 37, 42, -15, 14];

@@ -13,15 +13,17 @@ import {
 } from './models7.js';
 import {
   crabSave, doneToday, dailyCrabs, crabHelped, hermitHelped, releaseOldCrabs, coveLevel, COVE_LEVELS, SHELL_IDS, HERMITS,
-  friendKind, isCrabNight, crabDanceNow, crabDanceKind, DANCE_HOURS, MUSEUM_CRABS,
+  friendKind, isCrabNight, crabDanceNow, crabDanceKind, DANCE_HOURS, MUSEUM_CRABS, todaysCrab,
 } from './crabdata.js';
+import './strings13.js';
 
 // Crab friends on the solo island and Shell Isle (the owner's crab update). Crabs are never caught any more;
-// they are friends who sometimes need a hand. Each real day, on the main island (beach and pier) and on
-// Shell Isle (beaches and tide pools): a crab flipped on its back ([B] turns it over), a crab tangled in
-// seaweed or an old net ([B] three times), a little family of lost babies who follow you in a parade to the
-// glowing spot where their family waits, a hermit crab who has outgrown its shell (give it a bigger one:
-// found on the sand, in tide pools and the dive, or crafted at the workbench), and shells to find.
+// they are friends who sometimes need a hand. One crab a day in all (the owner's "fewer crabs", crabdata.js
+// todaysCrab), on the main island (beach and pier), on Shell Isle (beaches and tide pools) or in the dive,
+// by turns: a crab flipped on its back ([B] turns it over), a crab tangled in seaweed or an old net ([B]
+// three times), a little family of lost babies who follow you in a parade to the glowing spot where their
+// family waits, or a hermit crab who has outgrown its shell (give it a bigger one: found on the sand, in tide
+// pools and the dive, or crafted at the workbench). Shells to find lie on the sand every day.
 // Crab Cove on the east beach grows with every crab you help (five levels with houses, flags, a dance ring,
 // lanterns and a shell palace), has crab dances on weekend evenings and full-moon nights, and Shelby looks
 // after it. Helped crabs become crab friends: choose one at the cove's sign and it scuttles after you, dances
@@ -749,12 +751,17 @@ export class CrabCare {
 
   // ---------- island hooks ----------
 
-  /** Task list: crabs that still need a hand where you are, and tonight's crab dance. */
+  /** Today's crab in words: "a crab on its back" and "on Shell Isle" (the task list, the map, the Friends book). */
+  todayWords(T = todaysCrab(this.S)) {
+    return { what: t(`crab.what.${T.area === 'dive' && T.type === 'free' ? 'freeLobster' : T.type}`), where: t(`crab.where.${T.area}`) };
+  }
+
+  /** Task list: today's crab while it still needs a hand (wherever it is), and tonight's crab dance. */
   tasks() {
     const out = [];
-    const isle = this.host.isle2?.here();
-    const n = this.waiting(isle ? 'isle' : 'main').length;
-    if (n && this.host.save.intro) out.push(t(n === 1 ? 'crab.task.help1' : 'crab.task.help', { n }));
+    const T = todaysCrab(this.S);
+    // (a crab already following you home counts as helped soon: the line stays until it is home)
+    if (!T.helped && this.host.save.intro) out.push(t('crab.task.today', this.todayWords(T)));
     const k = this.level >= 3 && crabDanceKind();
     if (k) { const [a, b] = DANCE_HOURS[k]; const h = hourOf(); if (h < b) out.push(t(k === 'moon' ? 'crab.task.danceMoon' : 'crab.task.dance', { a, b })); }
     return out;
@@ -777,7 +784,9 @@ export class CrabCare {
     const C = this.C, lv = this.level;
     const next = COVE_LEVELS[lv + 1];
     const wall = MUSEUM_CRABS.filter((id) => this.S.museum?.got?.[id]).length;
+    const T = todaysCrab(this.S);
     return {
+      today: T.helped ? t('crab.today.done') : ((w) => w.charAt(0).toUpperCase() + w.slice(1))(`${this.todayWords(T).what} ${this.todayWords(T).where}`),
       helped: C.helped, kinds: C.kinds, level: lv, next: next ? next.n - C.helped : 0, wall, wallMax: MUSEUM_CRABS.length,
       hermits: HERMITS.map((h) => ({ id: h, name: t(`crab.hermit.${h}`), shell: C.hermits[h] || null })),
       follower: C.follower ? this.friendName(C.follower) : null, friends: C.friends.map((f) => this.friendName(f)), released: C.released,
