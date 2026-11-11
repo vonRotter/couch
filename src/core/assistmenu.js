@@ -18,9 +18,9 @@ addStrings({
     'assist.hint': 'Stick up/down: choose · left/right or [OK]: change · [BACK]: done',
     'assist.speed': 'Game speed', 'assist.speed.d': 'Slows the game down. Menus, music and voices stay the same.',
     'assist.timing': 'Forgiving timing', 'assist.timing.d': 'Wider timing: late jumps still work, bigger green zones, longer warnings and more time to answer.',
-    'assist.aim': 'Aim help', 'assist.aim.d': 'Shots, throws and spells bend toward what you aim at.',
+    'assist.aim': 'Aim help', 'assist.aim.d': 'Shots, throws and spells bend toward what you aim at. Until you pick one, the snowball fight helps a little and other games not at all.',
     'assist.aim.0': 'off', 'assist.aim.1': 'a little', 'assist.aim.2': 'a lot',
-    'assist.aim.dflt': '(not chosen: snowball fight a little, other games off)',
+    'assist.aim.dflt': '· snowball: a little', 'assist.aim.here': '(this game\'s default)',
     'assist.toggle': 'Hold to toggle', 'assist.toggle.d': 'Things you must hold (charge, boost, end turn...) become: tap to start, tap again to stop. Where a button is also tapped (throw or scoop), tap it twice quickly to hold it.',
     'assist.text': 'Text size', 'assist.text.d': 'Bigger words on the screen.', 'assist.text.0': 'normal', 'assist.text.1': 'big', 'assist.text.2': 'huge',
     'assist.contrast': 'Strong outlines', 'assist.contrast.d': 'Thick outlines on players, enemies and targets, and shapes as well as colours.',
@@ -54,9 +54,9 @@ addStrings({
     'assist.hint': 'Pinne opp/ned: velg · venstre/høyre eller [OK]: endre · [BACK]: ferdig',
     'assist.speed': 'Spillfart', 'assist.speed.d': 'Gjør spillet saktere. Menyer, musikk og stemmer er som før.',
     'assist.timing': 'Snill timing', 'assist.timing.d': 'Mer tid: sene hopp virker, større grønne felt, lengre varsler og mer tid til å svare.',
-    'assist.aim': 'Siktehjelp', 'assist.aim.d': 'Skudd, kast og trylleformler svinger mot det du sikter på.',
+    'assist.aim': 'Siktehjelp', 'assist.aim.d': 'Skudd, kast og trylleformler svinger mot det du sikter på. Til du velger selv, hjelper snøballkrigen litt og andre spill ikke.',
     'assist.aim.0': 'av', 'assist.aim.1': 'litt', 'assist.aim.2': 'mye',
-    'assist.aim.dflt': '(ikke valgt: litt i snøballkrigen, av i andre spill)',
+    'assist.aim.dflt': '· snøball: litt', 'assist.aim.here': '(standard i dette spillet)',
     'assist.toggle': 'Trykk i stedet for å holde', 'assist.toggle.d': 'Ting du må holde (lade, turbo, avslutte turen...) blir: trykk for å starte, trykk igjen for å stoppe. Der knappen også trykkes (kaste eller skuffe), trykker du to ganger fort for å holde den.',
     'assist.text': 'Tekststørrelse', 'assist.text.d': 'Større ord på skjermen.', 'assist.text.0': 'vanlig', 'assist.text.1': 'stor', 'assist.text.2': 'kjempestor',
     'assist.contrast': 'Tydelige kanter', 'assist.contrast.d': 'Tykke kanter rundt spillere, fiender og mål, og former i tillegg til farger.',
@@ -134,7 +134,8 @@ export class AssistMenu {
     switch (k) {
       case 'who': return esc(this.target.name);
       case 'speed': return `${Math.round(s.speed * 100)} %`;
-      case 'aim': return s.aimChosen ? t(`assist.aim.${s.aim}`) : `${t(`assist.aim.${this.aimNow}`)} ${t('assist.aim.dflt')}`;
+      // not picked yet: each game's default (the snowball fight: a little)
+      case 'aim': return s.aimChosen ? t(`assist.aim.${s.aim}`) : `${t(`assist.aim.${this.aimNow}`)} ${t(sceneAimDefault(this.game) ? 'assist.aim.here' : 'assist.aim.dflt')}`;
       case 'text': return t(`assist.text.${s.text}`);
       case 'timing': case 'toggle': case 'contrast': case 'calm': case 'offers': return t(s[k] ? 'assist.on' : 'assist.off');
       default: return '';
