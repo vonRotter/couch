@@ -3,7 +3,7 @@ import { Round, clock } from './common.js';
 import { makeGrumble } from '../../core/critters.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeTree, makeFlower, seeded } from '../../core/world.js';
-import { TEAM_COLORS, TEAM_CSS } from '../../core/teams.js';
+import { TEAM_COLORS, TEAM_CSS, TEAM_SYMBOLS } from '../../core/teams.js';
 import { t } from '../../core/i18n.js';
 
 // Tug of War: two teams mash jump; pull the other team into the paint pool.
@@ -155,7 +155,7 @@ export class TugRound extends Round {
 
   hud() {
     const pct = THREE.MathUtils.clamp(50 - (this.offset / WIN) * 50, 0, 100);
-    return `<div class="pill"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span> <span class="tug-bar"><span style="width:${pct.toFixed(0)}%"></span></span> <span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div>${clock(TIME - this.t)}`;
+    return `<div class="pill"><span style="color:${TEAM_CSS[0]}">${TEAM_SYMBOLS[0]} ${t('ball.team.0')}</span> <span class="tug-bar"><span style="width:${pct.toFixed(0)}%"></span></span> <span style="color:${TEAM_CSS[1]}">${TEAM_SYMBOLS[1]} ${t('ball.team.1')}</span></div>${clock(TIME - this.t)}`;
   }
 
   score(p) {

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { MiniGame } from '../core/minigame.js';
 import { addLights, skyTexture } from '../core/world.js';
-import { COLORS, toon } from '../core/palette.js';
+import { COLORS, toon, symHtml } from '../core/palette.js';
 import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { shuffle } from '../core/edu.js';
@@ -115,7 +115,7 @@ export class PartyScene extends MiniGame {
   renderHowTo() {
     const chips = this.players.map((p) => {
       const ok = this.ready.get(p);
-      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${p.css}">${esc(p.name)}${ok ? ' ✓' : ''}</div>`;
+      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${p.css}">${symHtml(p)}${esc(p.name)}${ok ? ' ✓' : ''}</div>`;
     }).join('');
     this.panelEl.innerHTML = `<div class="party-round">${t('party.round', { n: this.index + 1, total: this.order.length })}</div>
       <div class="results-title">${esc(this.round.title)}</div>

@@ -4,10 +4,10 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
-import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
+import { COLORS, toon, basic, sharedGeo, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
 import { t, tFor } from '../core/i18n.js';
-import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
+import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded, TEAM_SYMBOLS } from '../core/teams.js';
 import { VotePicker, voteLength } from '../core/vote.js';
 import './snowball/strings.js';
 import { HX, HZ, STEP, MAPS, MAP_KEYS, Terrain, COVER_HP, COVER_REGROW } from './snowball/maps.js';
@@ -243,6 +243,7 @@ export class SnowballScene extends MiniGame {
     if (p) {
       // Snow counter above the head, and a dotted aim arc with a ring on the aimed spot.
       e.label = this.game.ui.label('label player-tag');
+      e.label.dataset.sym = symbolOf(p); // the player's symbol (core/palette.js)
       e.labelHtml = '';
       e.dots = [];
       for (let i = 0; i < 7; i++) {
@@ -1501,11 +1502,11 @@ export class SnowballScene extends MiniGame {
   hud() {
     const secs = Math.max(0, Math.ceil(this.timeLeft));
     const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-    let html = `<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div><div class="pill"><b>${clock}</b></div>`;
+    let html = `<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${TEAM_SYMBOLS[0]} ${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${TEAM_SYMBOLS[1]} ${t('ball.team.1')}</span></div><div class="pill"><b>${clock}</b></div>`;
     if (this.mode === 'ctf') html += `<div class="pill">${t('snowball.firstTo', { n: CAP_LIMIT })}</div>`;
     if (this.mode === 'koth') {
       const o = this.zoneOwner;
-      const who = o === 2 ? `<b style="color:#ff5d73">${t('snowball.hillContest')}</b>` : o >= 0 ? `<b style="color:${TEAM_CSS[o]}">${t(`ball.team.${o}`)}</b>` : t('snowball.hillFree');
+      const who = o === 2 ? `<b style="color:#ff5d73">${t('snowball.hillContest')}</b>` : o >= 0 ? `<b style="color:${TEAM_CSS[o]}">${TEAM_SYMBOLS[o]} ${t(`ball.team.${o}`)}</b>` : t('snowball.hillFree');
       html += `<div class="pill">${t('snowball.hill')}: ${who}</div>`;
     }
     // The controls stay up during the intro and the first 25 seconds.
@@ -1581,7 +1582,7 @@ export class SnowballScene extends MiniGame {
       const e = this.ents.find((x) => x.p === p);
       if (!e) return '';
       const gift = e.power ? ` · ${t(`snowball.pw.${e.power}`)}` : '';
-      return `<span style="color:${TEAM_CSS[e.team]}">●</span> ${this.stat(e).n}${e.carry ? ' ⚑' : ''}${gift}`;
+      return `<span style="color:${TEAM_CSS[e.team]}">${TEAM_SYMBOLS[e.team]}</span> ${this.stat(e).n}${e.carry ? ' ⚑' : ''}${gift}`;
     });
   }
 }

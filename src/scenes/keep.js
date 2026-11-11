@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { aimLevel, homeToward, invulnBlink } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
-import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
+import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo, symHtml, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture, makeStar } from '../core/world.js';
 import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
@@ -81,7 +81,7 @@ class ClassPicker {
     const cols = CLASSES.map((cls) => {
       const chips = this.ents.filter((e) => e.cls === cls).map((e) => {
         const ok = this.locked.get(e);
-        return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.p.css}">${esc(e.p.name)}${ok ? ' ✓' : ''}</div>`;
+        return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.p.css}">${symHtml(e.p)}${esc(e.p.name)}${ok ? ' ✓' : ''}</div>`;
       }).join('');
       const learns = t('keep.learns', { list: SKILLS[cls].map(([lv, k]) => `${t(`keep.skill.${k}`)} (${lv})`).join(', ') });
       return `<div class="vote-opt" style="width:clamp(130px,19vw,250px)"><div class="vote-label">${GLYPH[cls]} ${esc(t(`keep.cls.${cls}`))}</div>
@@ -212,6 +212,7 @@ export class KeepScene extends MiniGame {
     aim.position.z = 0.95;
     this.scene.add(aimPivot);
     const label = this.game.ui.label('label player-tag');
+    label.dataset.sym = symbolOf(p); // the player's symbol (core/palette.js)
     const e = {
       p, i, ch, hand, capeSlot, bubble, keyMesh, ring, aimPivot, label, labelHtml: '',
       cls: CLASSES[i % CLASSES.length], level: 1, gear: {}, st: null, best: null, found: 0,

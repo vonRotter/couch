@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { struggle, overcame, markSkipped, invulnBlink, shakeScale } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
-import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
+import { COLORS, toon, basic, sharedGeo, symHtml, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeBush, makeStar, seeded } from '../core/world.js';
 import { moveBody, platformerControl, approach } from '../core/physics2d.js';
 import { t, tFor } from '../core/i18n.js';
@@ -100,7 +100,7 @@ class ClassPicker {
     const cols = CLASSES.map((cls) => {
       const chips = this.heroes.filter((e) => e.cls === cls).map((e) => {
         const ok = this.locked.get(e);
-        return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.css}">${esc(e.name)}${ok ? ' ✓' : ''}</div>`;
+        return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.css}">${symHtml(e.p || e)}${esc(e.name)}${ok ? ' ✓' : ''}</div>`;
       }).join('');
       return `<div class="vote-opt" style="width:clamp(140px,22vw,280px)"><div class="vote-label">${GLYPH[cls]} ${esc(t(`castle.cls.${cls}`))}</div>
         <div style="font-size:clamp(11px,1vw,16px);font-weight:600;text-align:center;opacity:.75;margin-bottom:6px">${esc(t(`kc.desc.${cls}`))}</div>${chips}</div>`;
@@ -375,6 +375,7 @@ export class CastleCampaignScene extends MiniGame {
     };
     this.makeGear(e);
     e.label = this.game.ui.label('label player-tag');
+    e.label.dataset.sym = symbolOf(e.p || e); // the player's symbol (core/palette.js)
     e.labelHtml = '';
     const frame = new THREE.Group();
     const bar = sharedGeo('kbCurBar', () => new THREE.BoxGeometry(1, 0.08, 0.08));

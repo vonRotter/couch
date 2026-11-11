@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BaseScene } from '../core/scene.js';
 import { Character, makeHat } from '../core/character.js';
-import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
+import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, makeFlower, makeRock, makeBush, makeStar, makeMushroom, seeded } from '../core/world.js';
 import { KEYBOARD_SCHEMES } from '../core/input.js';
 import { hatName } from '../core/roster.js';
@@ -337,6 +337,7 @@ export class HubScene extends BaseScene {
       this.obstacles.push({ x: sp.x, z: sp.z, r: 0.55, top: 0.75, pot: i });
       const label = this.game.ui.label('label player-tag');
       label.style.color = PLAYER_COLORS[i].css;
+      label.dataset.sym = symbolOf(i); // the colour's symbol (core/palette.js)
       return { index: i, group: g, label, labelPos: new THREE.Vector3(sp.x, 1.5, sp.z), flash: 0 };
     });
 
@@ -654,6 +655,7 @@ export class HubScene extends BaseScene {
     this.scene.add(ch.group);
     const tag = this.game.ui.label('label player-tag');
     tag.style.color = p.css;
+    tag.dataset.sym = symbolOf(p); // the player's symbol next to the name tag
     tag.textContent = p.deviceLabel;
     const e = {
       p, ch, x, y: 0, z, vx: 0, vy: 0, vz: 0, grounded: true, tag, tagPos: new THREE.Vector3(),

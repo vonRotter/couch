@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { MiniGame } from '../core/minigame.js';
 import { t, addStrings } from '../core/i18n.js';
 import { Character } from '../core/character.js';
-import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
+import { COLORS, PLAYER_COLORS, toon, sharedGeo, symHtml } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, makeFlower, seeded } from '../core/world.js';
 import { makeGrumble } from '../core/critters.js';
 
@@ -689,7 +689,7 @@ export class PaintScene extends MiniGame {
     }
     if (this.state !== 'intro') {
       const bars = this.ents
-        .map((e) => `<div class="paint-bar" style="--c:${e.p.css}; height:${Math.min(100, Math.max(8, (e.count / this.paintable) * 300))}%"></div>`)
+        .map((e) => `<div class="paint-bar" style="--c:${e.p.css}; height:${Math.min(100, Math.max(8, (e.count / this.paintable) * 300))}%">${symHtml(e.p)}</div>`)
         .join('');
       const mud = this.grumbles.length
         ? `<div class="pill"><div class="paint-bars"><div class="paint-bar" style="--c:${MUD_CSS}; height:${Math.min(100, Math.max(8, (this.mudCount / this.paintable) * 300))}%"></div></div><b>${t('paint.mudHud', { n: Math.round((this.mudCount / this.paintable) * 100) })}</b></div>`

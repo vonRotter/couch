@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { aimLevel, struggle, overcame, blinkOn, calmOn } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
-import { COLORS, PLAYER_COLORS } from '../core/palette.js';
+import { COLORS, PLAYER_COLORS, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture } from '../core/world.js';
 import { t, tFor, addStrings } from '../core/i18n.js';
 import { VotePicker } from '../core/vote.js';
@@ -240,6 +240,7 @@ export class DuckHuntScene extends MiniGame {
       this.scene.add(cross, beam.group, beam.flash);
       const tag = this.game.ui.label('label player-tag');
       tag.style.color = p.css;
+      tag.dataset.sym = symbolOf(p); // the player's symbol (core/palette.js)
       const n = this.players.length;
       return {
         p, i, cross, beam, tag,

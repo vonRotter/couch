@@ -5,7 +5,7 @@ import { t, addStrings } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
-import { COLORS, toon, sharedGeo, faceted } from '../core/palette.js';
+import { COLORS, toon, sharedGeo, faceted, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeFlower, makeRock, makeStar, seeded } from '../core/world.js';
 
 // Garden Hide & Seek: prop-hunt on one shared screen.
@@ -300,6 +300,7 @@ export class HideSeekScene extends MiniGame {
     root.add(propWrap);
     this.scene.add(root);
     const label = this.game.ui.label('label player-tag');
+    if (p) label.dataset.sym = symbolOf(p); // the player's symbol (core/palette.js)
     return {
       p, bot: !p, body, root, propWrap, props, label,
       name: p ? p.name : t('hideseek.grumble'),

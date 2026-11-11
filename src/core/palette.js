@@ -10,6 +10,35 @@ export const PLAYER_COLORS = [
   { name: 'Tangerine', hex: 0xff8c42, css: '#ff8c42' },
 ];
 
+// Symbols for players and teams ("colour is never the only cue", accessibility audit): each player colour
+// has its own shape, shown next to the colour in the HUD, scores, name tags and pickers. Teams (Sun / Sea,
+// core/teams.js TEAM_CSS) have their own two. symbolOf() finds one from a player, a colour index or a css colour.
+export const PLAYER_SYMBOLS = ['●', '▲', '■', '◆', '★', '✚'];
+export const TEAM_SYMBOLS = ['☀\uFE0E', '≈'];
+const TEAM_CSS_SYM = { '#e0a100': 0, '#1aa7d8': 1 }; // = teams.js TEAM_CSS
+
+/** The symbol for a player ({ colorIndex } or { css }), a colour index, or a css colour ('' if none). */
+export function symbolOf(x) {
+  if (x == null) return '';
+  if (typeof x === 'number') return PLAYER_SYMBOLS[x] || '';
+  if (typeof x === 'object') {
+    if (Number.isInteger(x.colorIndex) && PLAYER_SYMBOLS[x.colorIndex]) return PLAYER_SYMBOLS[x.colorIndex];
+    if (Number.isInteger(x.team) && !x.css) return TEAM_SYMBOLS[x.team] || '';
+    x = x.css || x.p?.css;
+  }
+  if (typeof x !== 'string') return '';
+  const c = x.toLowerCase();
+  if (c in TEAM_CSS_SYM) return TEAM_SYMBOLS[TEAM_CSS_SYM[c]];
+  const i = PLAYER_COLORS.findIndex((pc) => pc.css === c);
+  return i >= 0 ? PLAYER_SYMBOLS[i] : '';
+}
+
+/** HTML for a symbol (empty when there is none): <span class="psym">▲</span>. */
+export function symHtml(x, cls = 'psym') {
+  const s = symbolOf(x);
+  return s ? `<span class="${cls}">${s}</span>` : '';
+}
+
 export const COLORS = {
   grass: 0x7ad65a,
   grassDark: 0x58b947,

@@ -7,7 +7,7 @@ import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
 import { t, addStrings, getLang, buttonText } from '../core/i18n.js';
 import { buttonLabel } from '../core/input.js';
 import { esc } from '../core/ui.js';
-import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
+import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded, TEAM_SYMBOLS } from '../core/teams.js';
 
 const STRINGS = {
   en: {
@@ -1587,7 +1587,7 @@ export class SplashScene extends MiniGame {
       const active = u === this.active && this.state === 'play' && (this.phase === 'aim' || this.phase === 'overview');
       const wet = Math.min(100, Math.round(u.soggy));
       const meter = active && u.charging;
-      const html = `<span style="color:${TEAM_CSS[u.team]}">●</span> <span style="color:${u.ctrl.css}">${esc(u.ctrl.name)}</span>`
+      const html = `<span style="color:${TEAM_CSS[u.team]}">${TEAM_SYMBOLS[u.team]}</span> <span style="color:${u.ctrl.css}">${esc(u.ctrl.name)}</span>`
         + `<div style="width:46px;height:8px;margin:2px auto 0;border-radius:5px;background:#fff;border:2px solid #2b2340;overflow:hidden"><div style="height:100%;width:${wet}%;background:#4cc9f0"></div></div>`
         + (meter ? `<div style="width:76px;height:14px;margin:4px auto 0;border-radius:9px;background:#fff;border:3px solid ${u.ctrl.css};overflow:hidden"><div style="height:100%;width:${Math.round(u.power * 100)}%;background:linear-gradient(90deg,#3ddc97,#ffc93c,#ff5d73)"></div></div>` : '');
       if (html !== u.labelHtml) { u.label.innerHTML = html; u.labelHtml = html; }
@@ -1611,7 +1611,7 @@ export class SplashScene extends MiniGame {
 
   updateHud() {
     if (this.state === 'teams' || this.state === 'intro') return;
-    const sc = `<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div>`;
+    const sc = `<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${TEAM_SYMBOLS[0]} ${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${TEAM_SYMBOLS[1]} ${t('ball.team.1')}</span></div>`;
     let html = sc + `<div class="pill">${t('splash.turnOf', { n: Math.max(1, this.turnNo), m: this.totalTurns })}</div>` + this.windHtml();
     const u = this.active;
     if (u) {
@@ -1633,7 +1633,7 @@ export class SplashScene extends MiniGame {
     this.game.ui.setTop(html);
     this.game.ui.bar(this.players, (p) => {
       const c = this.ctrls.find((x) => x.p === p);
-      return c ? `<span style="color:${TEAM_CSS[c.team]}">●</span> ${c.points}` : '';
+      return c ? `<span style="color:${TEAM_CSS[c.team]}">${TEAM_SYMBOLS[c.team]}</span> ${c.points}` : '';
     });
   }
 

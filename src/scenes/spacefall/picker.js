@@ -3,6 +3,7 @@ import { esc } from '../../core/ui.js';
 import { VotePicker } from '../../core/vote.js';
 import { MAPS } from './maps.js';
 import { World, SOLID, PLATFORM } from './world.js';
+import { symHtml } from '../../core/palette.js';
 
 // The map vote: a VotePicker whose columns show a little picture of each map with its tags
 // (one screen or split screen, gravity or zero-g), like Spacefall's lobby preview.
@@ -61,7 +62,7 @@ export class MapVote extends VotePicker {
     const cols = this.options.map((o, i) => {
       const chips = this.scene.players.filter((p) => this.choice.get(p).i === i).map((p) => {
         const c = this.choice.get(p);
-        return `<div class="ball-pick ${c.locked ? 'done' : ''}" style="--c:${p.css}">${esc(p.name)}${c.locked ? ' ✓' : ''}</div>`;
+        return `<div class="ball-pick ${c.locked ? 'done' : ''}" style="--c:${p.css}">${symHtml(p)}${esc(p.name)}${c.locked ? ' ✓' : ''}</div>`;
       }).join('');
       const pic = o.value === 'random'
         ? '<div style="height:64px;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700;color:#9b5de5">?</div>'

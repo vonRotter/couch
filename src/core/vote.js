@@ -2,6 +2,7 @@ import { t, addStrings } from './i18n.js';
 import { say } from './voice.js';
 import { timingScale } from './assist.js';
 import { esc } from './ui.js';
+import { symHtml } from './palette.js';
 
 addStrings({
   en: {
@@ -77,7 +78,7 @@ export class VotePicker {
     const cols = this.options.map((o, i) => {
       const chips = this.scene.players.filter((p) => this.choice.get(p).i === i).map((p) => {
         const c = this.choice.get(p);
-        return `<div class="ball-pick ${c.locked ? 'done' : ''}" style="--c:${p.css}">${esc(p.name)}${c.locked ? ' ✓' : ''}</div>`;
+        return `<div class="ball-pick ${c.locked ? 'done' : ''}" style="--c:${p.css}">${symHtml(p)}${esc(p.name)}${c.locked ? ' ✓' : ''}</div>`;
       }).join('');
       return `<div class="vote-opt"><div class="vote-label">${esc(o.label())}</div>${chips}</div>`;
     }).join('');

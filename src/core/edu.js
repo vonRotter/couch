@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { esc } from './ui.js';
 import { say } from './voice.js';
+import { symHtml } from './palette.js';
 
 // Shared pieces for the educational games (Norwegian bokmål).
 
@@ -112,7 +113,7 @@ export function chooseLevels(scene, title) {
       const st = state.get(p);
       const opts = LEVELS.map((lv, i) => `<span class="edu-opt ${i === st.level ? 'on' : ''}">${lv.name}</span>`).join('');
       return `<div class="edu-pick ${st.done ? 'done' : ''}" style="--c:${p.css}">
-        <div class="edu-pick-name">${esc(p.name)}${st.done ? ' ✓' : ''}</div><div class="edu-opts">${opts}</div></div>`;
+        <div class="edu-pick-name">${symHtml(p)}${esc(p.name)}${st.done ? ' ✓' : ''}</div><div class="edu-opts">${opts}</div></div>`;
     }).join('');
     el.innerHTML = `<div class="edu-badge">LÆRING</div><div class="results-title">${esc(title)}</div>
       <div class="results-sub">Velg nivå med pinnen · trykk hopp når du er klar</div>

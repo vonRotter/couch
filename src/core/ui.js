@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { t } from './i18n.js';
+import { symbolOf, symHtml } from './palette.js';
 
 const _v = new THREE.Vector3();
 
@@ -74,7 +75,7 @@ export class UI {
   /** Bottom chips, one per player. fmt(p) returns the value text. */
   bar(players, fmt = () => '') {
     const html = players
-      .map((p) => `<div class="chip" style="--c:${p.css}"><span class="dot"></span><span class="chip-name">${esc(p.name)}</span><span class="chip-val">${fmt(p)}</span></div>`)
+      .map((p) => `<div class="chip" style="--c:${p.css}"><span class="dot">${symbolOf(p)}</span><span class="chip-name">${esc(p.name)}</span><span class="chip-val">${fmt(p)}</span></div>`)
       .join('');
     if (html !== this.barCache) {
       this.barEl.innerHTML = html;
@@ -120,7 +121,7 @@ export class UI {
         <div class="result-card" style="--c:${r.css}; animation-delay:${0.15 + i * 0.12}s">
           ${r.crown ? '<div class="crown-badge">★</div>' : ''}
           <div class="bean"><span class="eye"></span><span class="eye"></span></div>
-          <div class="result-name">${esc(r.name)}</div>
+          <div class="result-name">${r.sym ?? symHtml(r.css)}${esc(r.name)}</div>
           <div class="result-value">${esc(r.value)}</div>
           ${r.detail ? `<div class="result-detail">${esc(r.detail)}</div>` : ''}
         </div>`)

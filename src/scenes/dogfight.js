@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { aimLevel, blinkOn } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
-import { COLORS, PLAYER_COLORS, toon } from '../core/palette.js';
+import { COLORS, PLAYER_COLORS, toon, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture } from '../core/world.js';
 import { t, addStrings } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
-import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
+import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded, TEAM_SYMBOLS } from '../core/teams.js';
 import { VotePicker, voteLength } from '../core/vote.js';
 import { makePlane, makeBlimp, makeChute, makePellet, addSplat, buildWorld, tint, XW, SEA_X, RUNWAY } from './dogfight/models.js';
 import { FLY, makeFlight, flightStep, botControl, pitchOf, clamp } from './dogfight/flight.js';
@@ -262,6 +262,7 @@ export class DogfightScene extends MiniGame {
     if (kind !== 'enemy') {
       e.tag = this.game.ui.label('label player-tag');
       e.tag.style.color = css;
+      e.tag.dataset.sym = symbolOf(p || css); // player or team symbol (core/palette.js)
       e.tagHtml = '';
       e.stallEl = this.game.ui.label('label');
       e.stallEl.style.color = '#ff3b5c';
@@ -1067,7 +1068,7 @@ export class DogfightScene extends MiniGame {
   hud() {
     const ui = this.game.ui;
     if (this.mode === 'teams') {
-      ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span><span class="big-num">${this.teamScore[0]} - ${this.teamScore[1]}</span><span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div><div class="pill"><b>${clock(this.timeLeft)}</b></div>`);
+      ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${TEAM_SYMBOLS[0]} ${t('ball.team.0')}</span><span class="big-num">${this.teamScore[0]} - ${this.teamScore[1]}</span><span style="color:${TEAM_CSS[1]}">${TEAM_SYMBOLS[1]} ${t('ball.team.1')}</span></div><div class="pill"><b>${clock(this.timeLeft)}</b></div>`);
     } else if (this.mode === 'coop') {
       const wave = Math.max(0, this.wave);
       const boss = this.blimps.find((b) => b.boss);

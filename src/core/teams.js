@@ -1,9 +1,11 @@
 import { t } from './i18n.js';
 import { say } from './voice.js';
 import { esc } from './ui.js';
+import { symHtml, TEAM_SYMBOLS } from './palette.js';
 
 export const TEAM_COLORS = [0xffc93c, 0x4cc9f0];
 export const TEAM_CSS = ['#e0a100', '#1aa7d8'];
+export { TEAM_SYMBOLS }; // Sun / Sea symbols (core/palette.js), so colour is never the only cue
 
 /**
  * Two-team picker shared by the team games. Each player pushes the stick
@@ -27,15 +29,15 @@ export class TeamPicker {
   render() {
     const col = (team) => this.ents.filter((e) => e.team === team).map((e) => {
       const ok = this.ready.get(e);
-      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.css}">${esc(e.name)}${ok ? ' ✓' : ''}</div>`;
+      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.css}">${symHtml(e.p || e)}${esc(e.name)}${ok ? ' ✓' : ''}</div>`;
     }).join('');
     const sizes = [0, 1].map((tm) => this.ents.filter((e) => e.team === tm).length);
     const helper = (team) => (sizes[team] < sizes[1 - team] || (sizes[team] === 0 && this.ents.length === 1) ? `<div class="ball-helper">${t('ball.helper')}</div>` : '');
     this.el.innerHTML = `<div class="results-title">${this.title()}</div>
       <div class="results-sub">${t('ball.teams')}</div>
       <div class="ball-teams">
-        <div class="ball-team" style="--c:${TEAM_CSS[0]}"><div class="ball-team-name">${t('ball.team.0')}</div>${col(0)}${helper(0)}</div>
-        <div class="ball-team" style="--c:${TEAM_CSS[1]}"><div class="ball-team-name">${t('ball.team.1')}</div>${col(1)}${helper(1)}</div>
+        <div class="ball-team" style="--c:${TEAM_CSS[0]}"><div class="ball-team-name"><span class="psym">${TEAM_SYMBOLS[0]}</span>${t('ball.team.0')}</div>${col(0)}${helper(0)}</div>
+        <div class="ball-team" style="--c:${TEAM_CSS[1]}"><div class="ball-team-name"><span class="psym">${TEAM_SYMBOLS[1]}</span>${t('ball.team.1')}</div>${col(1)}${helper(1)}</div>
       </div>`;
   }
 

@@ -4,7 +4,7 @@ import { MiniGame } from '../core/minigame.js';
 import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
-import { COLORS, toon, sharedGeo } from '../core/palette.js';
+import { COLORS, toon, sharedGeo, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeRock, seeded } from '../core/world.js';
 import { moveBody, approach } from '../core/physics2d.js';
 import { esc } from '../core/ui.js';
@@ -73,6 +73,7 @@ export class BrawlScene extends MiniGame {
     this.scene.add(bubble);
     const tag = this.game.ui.label('label');
     tag.style.color = p ? p.css : '#1aa79b';
+    if (p) tag.dataset.sym = symbolOf(p); // the player's symbol (core/palette.js)
     return {
       p, bot, ch, glove, bubble, tag, tagPos: new THREE.Vector3(),
       get name() { return p ? p.name : t('brawl.bot'); },

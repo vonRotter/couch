@@ -5,7 +5,7 @@ import { t, addStrings } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
-import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
+import { COLORS, toon, basic, sharedGeo, symHtml } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeBush, makeFlower, seeded } from '../core/world.js';
 import { ING, DISHES, pickMenu } from './cook/data.js';
 import { makeKitchen } from './cook/layout.js';
@@ -236,7 +236,7 @@ export class CookScene extends MiniGame {
   renderMenu() {
     const chips = this.players.map((p) => {
       const ok = this.ready.get(p);
-      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${p.css}">${esc(p.name)}${ok ? ' ✓' : ''}</div>`;
+      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${p.css}">${symHtml(p)}${esc(p.name)}${ok ? ' ✓' : ''}</div>`;
     }).join('');
     this.panelEl.innerHTML = `${this.menuStatic}
       <div class="party-ready" style="margin:10px 0 2px">${chips}</div>

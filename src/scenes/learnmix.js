@@ -7,6 +7,7 @@ import { esc } from '../core/ui.js';
 import { KlokkaRound } from './learn/klokka.js';
 import { PengerRound } from './learn/penger.js';
 import { RimordRound } from './learn/rimord.js';
+import { symHtml } from '../core/palette.js';
 
 // Læringsmiks: pick a level, then three short learning rounds in a row
 // (clock, money, rhymes) and a shared results screen. Norwegian only.
@@ -114,7 +115,7 @@ export class LearnMixScene extends MiniGame {
   renderHowTo() {
     const chips = this.players.map((p) => {
       const ok = this.ready.get(p);
-      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${p.css}">${esc(p.name)}${ok ? ' ✓' : ''}</div>`;
+      return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${p.css}">${symHtml(p)}${esc(p.name)}${ok ? ' ✓' : ''}</div>`;
     }).join('');
     this.panelEl.innerHTML = `<div class="edu-badge">${t('learnmix.badge')}</div>
       <div class="party-round">${esc(this.roundLabel())}</div>

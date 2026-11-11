@@ -4,13 +4,13 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
-import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
+import { COLORS, toon, basic, sharedGeo, symHtml, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeBush, makeStar, seeded } from '../core/world.js';
 import { moveBody, platformerControl, approach } from '../core/physics2d.js';
 import { t, addStrings, getLang, buttonText } from '../core/i18n.js';
 import { buttonLabel } from '../core/input.js';
 import { esc } from '../core/ui.js';
-import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
+import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded, TEAM_SYMBOLS } from '../core/teams.js';
 import { voteLength, VotePicker } from '../core/vote.js';
 import { invulnBlink, shakeScale } from '../core/assist.js';
 
@@ -194,7 +194,7 @@ class ClassPicker {
         const ok = this.locked.get(e);
         // Each chip also shows that player's own keys for this class.
         const keys = esc(tFor(scene.game, e.p, `castle.hint.${cls === 'builder' ? 'build' : cls}`));
-        return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.css}"><span style="color:${ok ? '#fff' : TEAM_CSS[e.team]}">●</span> ${esc(e.name)}${ok ? ' ✓' : ''}<div style="font-size:.72em;font-weight:700;opacity:.85">${keys}</div></div>`;
+        return `<div class="ball-pick ${ok ? 'done' : ''}" style="--c:${e.css}"><span style="color:${ok ? '#fff' : TEAM_CSS[e.team]}">${TEAM_SYMBOLS[e.team]}</span> ${symHtml(e.p || e)}${esc(e.name)}${ok ? ' ✓' : ''}<div style="font-size:.72em;font-weight:700;opacity:.85">${keys}</div></div>`;
       }).join('');
       const desc = t(`castle.desc.${cls}`).split(' · ').map((line) => `<div>${esc(line)}</div>`).join('');
       return `<div class="vote-opt" style="width:clamp(140px,22vw,280px)"><div class="vote-label">${GLYPH[cls]} ${esc(t(`castle.cls.${cls}`))}</div>
@@ -693,6 +693,7 @@ export class CastleScene extends MiniGame {
     this.makeGear(e);
     if (p) {
       e.label = this.game.ui.label('label player-tag');
+      e.label.dataset.sym = symbolOf(p); // the player's symbol (core/palette.js)
       e.labelHtml = '';
       // The aim cursor for building: a frame in the player's color.
       const frame = new THREE.Group();
@@ -1722,7 +1723,7 @@ export class CastleScene extends MiniGame {
     let txt = esc(t(`castle.cls.${e.cls}`));
     if (act === 'builder' || act === 'hero') txt += ` · ${esc(t('castle.wood', { n: e.wood }))}`;
     else if (act === 'archer') txt += ` · ${esc(t('castle.arrows', { n: e.arrows }))}`;
-    return `<span style="color:${TEAM_CSS[e.team]}">●</span> ${GLYPH[e.cls]} ${txt}`;
+    return `<span style="color:${TEAM_CSS[e.team]}">${TEAM_SYMBOLS[e.team]}</span> ${GLYPH[e.cls]} ${txt}`;
   }
 
   startBattle() {
@@ -1799,7 +1800,7 @@ export class CastleScene extends MiniGame {
     if (this.state !== 'intro') {
       const phase = this.phase === 'build' ? `${t('castle.build')} ${clock(this.buildLeft)}` : `${t('castle.battle')} ${clock(this.timeLeft)}`;
       const help = this.phase === 'build' ? `<div class="pill" style="font-weight:700;font-size:.9em">${GLYPH.builder} ${esc(t(this.ents.some((e) => e.cls === 'hero') ? 'castle.buildPillSolo' : 'castle.buildPill'))}</div>` : '';
-      this.game.ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div><div class="pill"><b>${phase}</b></div>${help}`);
+      this.game.ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${TEAM_SYMBOLS[0]} ${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${TEAM_SYMBOLS[1]} ${t('ball.team.1')}</span></div><div class="pill"><b>${phase}</b></div>${help}`);
     }
     this.game.ui.bar(this.players, (p) => {
       const e = this.ents.find((x) => x.p === p);

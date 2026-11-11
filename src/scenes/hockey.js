@@ -6,7 +6,7 @@ import { makeGrumble } from '../core/critters.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, seeded } from '../core/world.js';
 import { t } from '../core/i18n.js';
-import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
+import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded, TEAM_SYMBOLS } from '../core/teams.js';
 import { voteLength } from '../core/vote.js';
 import { shakeScale } from '../core/assist.js';
 
@@ -727,11 +727,11 @@ export class HockeyScene extends MiniGame {
     if (this.state !== 'intro' && this.state !== 'results') {
       const secs = Math.max(0, Math.ceil(this.timeLeft));
       const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-      this.game.ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${t('ball.team.1')}</span></div><div class="pill"><b>${clock}</b>${this.overtime ? ' +' : ''}</div>`);
+      this.game.ui.setTop(`<div class="pill ball-score"><span style="color:${TEAM_CSS[0]}">${TEAM_SYMBOLS[0]} ${t('ball.team.0')}</span><span class="big-num">${this.score[0]} - ${this.score[1]}</span><span style="color:${TEAM_CSS[1]}">${TEAM_SYMBOLS[1]} ${t('ball.team.1')}</span></div><div class="pill"><b>${clock}</b>${this.overtime ? ' +' : ''}</div>`);
     }
     this.game.ui.bar(this.players, (p) => {
       const e = this.ents.find((x) => x.p === p);
-      return e ? `<span style="color:${TEAM_CSS[e.team]}">●</span> ${e.goals}` : '';
+      return e ? `<span style="color:${TEAM_CSS[e.team]}">${TEAM_SYMBOLS[e.team]}</span> ${e.goals}` : '';
     });
   }
 }
