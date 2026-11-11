@@ -9,6 +9,7 @@ import { esc } from '../../core/ui.js';
 import { say as speak, voiceOn, babbleMode } from '../../core/voice.js';
 import { ProfilePicker } from '../../core/profiles.js';
 import { setPadLayout } from '../../core/input.js';
+import { Emotes, NO_INPUT } from '../../core/emotes.js';
 import { SKYHOP_LEVELS } from '../skyhop-levels.js';
 import './strings.js';
 import './strings2.js';
@@ -255,6 +256,8 @@ export class SoloIslandScene extends BaseScene {
     this.surprise = new Surprises(this); // daily surprises: meteor shower, merchant, balloon visitor, bottle map
     this.games = new IslandGames(this); // skipping stones, kites, hide-and-seek, snowballs, leaf piles
     this.play = new Play(this); // villagers play: tag, waves, sunset and stars together, little tasks
+    // emotes: [EMOTE] (Y / G) opens a wheel over the bean; villagers, animals and crab friends nearby react
+    this.emotes = new Emotes(this, { onEmote: (p, kind) => this.reactToEmote(kind) });
     this.story = new Story(this); // milestone B4: the lighthouse story and the lighthouse top
     this.lightTop = new LightTop(this);
     this.atlas = new IslandAtlas(this); // the map (the journal's first tab, M / View) and the arrow that shows the way
@@ -1352,6 +1355,27 @@ export class SoloIslandScene extends BaseScene {
     return this.profilePicker ? 'default' : 'island';
   }
 
+  /**
+   * You emoted (core/emotes.js): villagers near you react (play.js), and the farm animals (animals.js), your
+   * crab friend and the crabs at Crab Cove (crabs.js) and Mitten the cat. heart: little hearts, wave: a wave
+   * back, dance: they dance along, laugh: a giggle.
+   */
+  reactToEmote(kind) {
+    const P = this.player;
+    if (!P) return 0;
+    let n = this.play.onEmote(kind);
+    n += this.ranch.onEmote(kind, P);
+    n += this.crabs.onEmote(kind, P);
+    const cat = this.life?.cat?.group;
+    if (cat?.visible && Math.hypot(cat.position.x - P.x, cat.position.z - P.z) < 6) {
+      const top = cat.position.clone().setY(cat.position.y + 0.9);
+      if (kind === 'heart') this.emotes.heartsAt(top, 2); else this.emotes.floatText(top, t('emote.a.cat'), { css: '#ff9f1c', delay: 0.3 });
+      n++;
+    }
+    if (n) this.later(0.35, () => this.game.audio.play(kind === 'laugh' ? 'emoteLaugh' : 'bubble'));
+    return n;
+  }
+
   /** [B] in walk mode (E / X): use. */
   useButton(inp, dt, use) {
     if (inp.bPressed) use?.fn();
@@ -2289,9 +2313,11 @@ export class SoloIslandScene extends BaseScene {
     const dev = this.playerDevice;
     const helpOff = !!this.helpEl && dev?.type === 'gamepad' && (dev.okPressed || dev.backPressed || dev.btnPressed.start);
     if (helpOff) this.toggleHelp();
+    // the emote wheel ([EMOTE]: Y or G) while you walk: its picks never reach the island (core/emotes.js)
+    const emo = !!inp && !this.launching && !helpOff && this.emotes.handle(P.p, dev, P.ch, { keys: true, can: this.mode === 'walk' && !this.helpEl && !this.camView && !this.hud.cinemaOn });
     if (inp && !this.launching && !helpOff) {
       // hotbar keys work any time you walk
-      for (let k = 1; k <= 9; k++) if (this.game.input.pressed.has(`Digit${k}`) && this.mode === 'walk') { this.save.sel = k - 1; this.game.audio.play('select'); }
+      for (let k = 1; k <= 9; k++) if (!emo && this.game.input.pressed.has(`Digit${k}`) && this.mode === 'walk') { this.save.sel = k - 1; this.game.audio.play('select'); }
       // the journal's tabs only on its own pages
       if (this.mode !== 'journal' && this.hud.panelPrefix) this.hud.panelPrefix = this.hud.panelSuffix = '';
       if (this.mode !== 'journal' || this.journal.tab !== 'map') this.hud.panel.classList.remove('isl-map-wide');
@@ -2330,10 +2356,11 @@ export class SoloIslandScene extends BaseScene {
         case 'school': this.school.update(panel, dt); break; // the school house's game picker (school.js)
         case 'pier': this.ferry.updateBoard(inp, dt); break; // the Party Pier's badge board (ferry.js)
         default: {
-          this.movePlayer(inp, dt);
+          this.movePlayer(emo ? NO_INPUT : inp, dt);
           ia = this.interactions();
           ia.use = this.useAction(ia);
           this.farm.showHighlight(ia.tile, ia.hl ?? 0xffffff);
+          if (emo) break; // the wheel is open: the D-pad, the keys and the buttons pick an emote
           const keys = this.game.input.pressed;
           const pb = this.playerDevice?.btnPressed || {}; // a gamepad's D-pad and Start (input.js)
           // the menu: Q, or Start (a gamepad's B is back: it does nothing out here)
@@ -2367,6 +2394,8 @@ export class SoloIslandScene extends BaseScene {
     this.ferry.update(dt);
     this.school.update3d(dt);
     this.updatePlayerLook(dt);
+    if (this.mode !== 'walk' && this.emotes.anyOpen()) this.emotes.closeAll(); // (a scene or a panel took over)
+    this.emotes.update(dt); // after the beans' own update: the emote moves add to their pose
     this.farm.animate(dt, this.time);
     this.life.update(dt, this.night || 0, P || { x: 0, z: 0 });
     for (const f of Object.values(this.finds)) if (f.g.visible) { f.g.userData.glint.rotation.y += dt * 3; f.g.userData.glint.scale.y = 0.6 + Math.sin(this.time * 5) * 0.4; }
@@ -2388,6 +2417,7 @@ export class SoloIslandScene extends BaseScene {
 
   dispose() {
     this.seeThrough?.dispose();
+    this.emotes?.dispose();
     window.removeEventListener('keydown', this.onTabKey);
     this.journal?.dispose();
     this.atlas?.dispose();

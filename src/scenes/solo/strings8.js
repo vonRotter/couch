@@ -7,7 +7,7 @@ import { addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     'isl.key.bagKb': 'Tab', 'isl.key.bagPad': '[BAG]',
-    'isl.keysPad': '[A] jump · [B] use, talk, go in · [BAG]: bag · [ITEMS]: hotbar · [JOURNAL]: journal · [MAP]: map · [MENU]: menu',
+    'isl.keysPad': '[A] jump · [B] use, talk, go in · [BAG]: bag · [ITEMS]: hotbar · [JOURNAL]: journal · [MAP]: map · [EMOTE]: emotes · [MENU]: menu',
     'isl.bagHow.kb': 'Tab opens your bag', 'isl.bagHow.pad': '[BAG] opens your bag',
     'isl.h.growingNight': '{item}: about {m} min (sleeping until morning)', 'isl.grow.night': 'slower at night',
     // homes and knocking
@@ -61,7 +61,7 @@ addStrings({
   },
   no: {
     'isl.key.bagKb': 'Tab', 'isl.key.bagPad': '[BAG]',
-    'isl.keysPad': '[A] hopp · [B] bruk, snakk, gå inn · [BAG]: sekk · [ITEMS]: verktøylinja · [JOURNAL]: dagbok · [MAP]: kart · [MENU]: meny',
+    'isl.keysPad': '[A] hopp · [B] bruk, snakk, gå inn · [BAG]: sekk · [ITEMS]: verktøylinja · [JOURNAL]: dagbok · [MAP]: kart · [EMOTE]: hilsener · [MENU]: meny',
     'isl.bagHow.kb': 'Tab åpner sekken', 'isl.bagHow.pad': '[BAG] åpner sekken',
     'isl.h.growingNight': '{item}: omtrent {m} min (sover til i morgen)', 'isl.grow.night': 'saktere om natta',
     'isl.h.knock': '[B] bank på døra til {name}',

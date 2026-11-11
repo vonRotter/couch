@@ -46,11 +46,14 @@ export const PAD_LABELS = {
  * Which gamepad buttons are the game buttons A / B / C (the first one names it in text).
  * 'default' (every co-op game): A jump/confirm, B the "use" button, X the third one.
  * 'island' (the solo island and its dive, set by the scene's padLayout): A jumps, X uses, B is back;
- * the D-pad does not walk there (left/right: hotbar, up: bag, down: journal) and Y is free.
+ * the D-pad does not walk there (left/right: hotbar, up: bag, down: journal) and Y opens the emote wheel.
+ * 'walk' (the shared island and Pillow Keep Solo's town): 'default' without Y as a second A, so Y opens the
+ * emote wheel there (core/emotes.js); menus still pick with A.
  */
 export const PAD_LAYOUTS = {
   default: { a: ['a', 'y'], b: ['b', 'rb', 'rt'], c: ['x', 'lb', 'lt'], dpadMoves: true },
   island: { a: ['a'], b: ['x'], c: ['b'], dpadMoves: false },
+  walk: { a: ['a'], b: ['b', 'rb', 'rt'], c: ['x', 'lb', 'lt'], dpadMoves: true },
 };
 let layoutNow = 'default';
 /** The scene's gamepad layout ('default' | 'island'): main.js sets it every frame from scene.padLayout. */
@@ -61,8 +64,9 @@ export function padLayout() { return layoutNow; }
 // [OK] is what picks in a menu: the use key on a keyboard (Space works too), A on a gamepad.
 // [BACK] closes the pause menu: Esc on a keyboard, B on a gamepad. [MENU] is the solo island's menu (Q / Start).
 // [MAP] is the solo island's map (M / the View button: Create on a PlayStation pad, − on a Nintendo one).
-const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–6', back: 'Esc', map: 'M' };
-const PAD_EXTRA = { ok: 'a', back: 'b', menu: 'start', tabs: ['lb', 'rb'], map: 'view' };
+// [EMOTE] opens the emote wheel (G / Y: △ on a PlayStation pad, X on a Nintendo one; core/emotes.js).
+const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–6', back: 'Esc', map: 'M', emote: 'G' };
+const PAD_EXTRA = { ok: 'a', back: 'b', menu: 'start', tabs: ['lb', 'rb'], map: 'view', emote: 'y' };
 const DPAD = { bag: 'pad.up', journal: 'pad.down', items: 'pad.leftRight' };
 
 /** What a player presses for 'a' | 'b' | 'c' (or 'ok', 'menu', 'bag', 'journal', 'items', 'tabs') on this device. */

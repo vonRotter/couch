@@ -81,6 +81,27 @@ export class Play {
     }
   }
 
+  /**
+   * You played an emote (core/emotes.js): villagers near you who are out and about react with the same
+   * move, a moment later (heart: little hearts, wave: they wave back, dance: they dance along, laugh: a
+   * giggle). Returns how many reacted.
+   */
+  onEmote(kind) {
+    const host = this.host, P = host.player;
+    if (!P || host.mode !== 'walk') return 0;
+    let n = 0;
+    for (const v of host.npcs) {
+      if (v.sleep || v.inside || v.away || v.busy || v.talking || v.doorAnim || v.intro || v.playMove || !v.model.group.visible) continue;
+      if (Math.hypot(v.x - P.x, v.z - P.z) > 7 || (v.emoteAt && host.time - v.emoteAt < 2)) continue;
+      v.emoteAt = host.time;
+      v.model.face?.(P.x - v.x, P.z - v.z);
+      host.later(0.3 + n * 0.15, () => host.emotes.play(v.model, kind, { small: true, css: '#ff9f1c' }));
+      if (kind === 'wave') { v.waveAt = this.t; this.emote(v, '👋', 1.4); }
+      n++;
+    }
+    return n;
+  }
+
   /** A little picture over a villager's head for a moment. */
   emote(n, txt, s) {
     let e = this.emotes.get(n.id);

@@ -202,6 +202,29 @@ export class Ranch {
     this.host.markDirty();
   }
 
+  /**
+   * You played an emote nearby (core/emotes.js): the animals look at you and hop (heart: little hearts,
+   * dance: a few happy hops, wave and laugh: a cluck, a moo or a bleat). Returns how many reacted.
+   */
+  onEmote(kind, P) {
+    const host = this.host;
+    let n = 0;
+    for (const a of this.R.animals) {
+      const v = this.views.get(a.u);
+      if (!v || Math.hypot(P.x - v.x, P.z - v.z) > 7) continue;
+      v.tx = v.x; v.tz = v.z; v.wait = Math.max(v.wait, 1.8); // stand still and look
+      v.m.rotation.y = Math.atan2(P.x - v.x, P.z - v.z);
+      v.hop = 1;
+      v.dance = kind === 'dance' ? 1.5 : 0;
+      const top = new THREE.Vector3(v.x, heightAt(v.x, v.z) + (a.kind === 'chicken' ? 0.9 : 1.8), v.z);
+      if (kind === 'heart') host.emotes.heartsAt(top, 2);
+      else if (kind === 'dance') host.emotes.floatText(top, '♪', { kind: 'note', delay: 0.2 + n * 0.1 });
+      else if (n < 3) host.emotes.floatText(top, t(`emote.a.${a.kind}`), { css: '#8ac926', delay: 0.2 + n * 0.15 });
+      n++;
+    }
+    return n;
+  }
+
   update(dt) {
     const host = this.host, P = host.player;
     const night = (() => { const h = hourOf(); return h >= 21 || h < 6; })();
@@ -219,6 +242,7 @@ export class Ranch {
       const sp = a.kind === 'chicken' ? 1.3 : 0.8;
       if (d > 0.1) { v.x += (dx / d) * Math.min(d, sp * dt); v.z += (dz / d) * Math.min(d, sp * dt); v.m.rotation.y = Math.atan2(dx, dz); }
       v.hop = Math.max(0, v.hop - dt * 3);
+      if (v.dance > 0 && (v.dance -= dt) > 0 && v.hop <= 0) v.hop = 1; // dancing along: hop, hop, hop
       v.m.position.set(v.x, heightAt(v.x, v.z) + Math.sin(v.hop * Math.PI) * 0.4 + (d > 0.1 && a.kind === 'chicken' ? Math.abs(Math.sin(v.t * 12)) * 0.05 : 0), v.z);
       v.m.scale.setScalar(v.base * (a.baby !== undefined ? 0.55 : 1));
       if (v.m.userData.head) v.m.userData.head.rotation.x = d > 0.1 ? 0 : Math.sin(v.t * 1.5) * 0.25 + 0.2;

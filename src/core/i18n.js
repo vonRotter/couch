@@ -30,7 +30,7 @@ const en = {
   'hub.title': 'Couch Party Island',
   'hub.join': 'Press your jump button to join (up to 6 players)',
   'hub.keys': 'M: sound on/off · N: norsk · V: read aloud · B: babble · Esc: help',
-  'hub.hint': 'Stand on a pad together to play · join anytime · [C]: menu',
+  'hub.hint': 'Stand on a pad together to play · join anytime · [EMOTE]: emotes · [C]: menu',
   'mode.solo': 'Home', 'mode.solo.sub': "The ferry back to {name}'s island", 'mode.solo.subGuest': 'Back to the player picker',
   'game.ferry': 'Ferry home', 'hub.ferryTo': "to {name}'s island", 'hub.ferryStart': 'to the player picker',
   'game.tachyon': 'Tachyon', 'game.starlite': 'Starlite', 'game.foothold': 'Foothold', 'game.starhop': 'Starhop',
@@ -72,7 +72,8 @@ const en = {
   'help.3': 'Collect stars on the island to unlock hats. Stand by the hat stand and press [B] to try them on. Hold [B] to leave.',
   'help.7': 'Toys: tap [B] next to a ball to pick it up, hold [B] and let go to throw. Shoot hoops, knock down pins, bounce on the trampoline and the mushroom, or ride the swings.',
   'help.4': 'Walk into a paint pot to change color. To trade colors, stand on the two swap pads and both tap [B].',
-  'help.5': 'Jump on the book button (or press G) to show or hide the learning games. Jump on the flag (or press N) to change language.',
+  'help.5': 'Jump on the book button to show or hide the learning games. Jump on the flag (or press N) to change language.',
+  'help.9': 'Emotes: press [EMOTE] for a little wheel over your bean, then up, right, down or left (on a keyboard also the arrow keys or 1-4) for a heart, a wave, a dance or a laugh. [EMOTE] again closes it (on a gamepad also its back button).',
   'help.6': 'In a game, Esc (or Start on a gamepad) opens the menu: resume, retry or end the game. M toggles sound.',
   'pause.title': 'Paused', 'pause.resume': 'Resume', 'pause.retry': 'Retry', 'pause.end': 'End game',
   'pause.hint': 'Stick up/down · [OK]: choose · [BACK] or Start: resume',
@@ -191,7 +192,7 @@ const no = {
   'hub.title': 'Sofafest-øya',
   'hub.join': 'Trykk på hoppknappen for å bli med (opptil 6 spillere)',
   'hub.keys': 'M: lyd av/på · N: English · V: les høyt · B: babling · Esc: hjelp',
-  'hub.hint': 'Stå på en plattform sammen for å spille · bli med når som helst · [C]: meny',
+  'hub.hint': 'Stå på en plattform sammen for å spille · bli med når som helst · [EMOTE]: hilsener · [C]: meny',
   'mode.solo': 'Hjem', 'mode.solo.sub': 'Ferja tilbake til øya til {name}', 'mode.solo.subGuest': 'Tilbake til spillervalget',
   'game.ferry': 'Ferja hjem', 'hub.ferryTo': 'til øya til {name}', 'hub.ferryStart': 'til spillervalget',
   'game.tachyon': 'Tachyon', 'game.starlite': 'Starlite', 'game.foothold': 'Foothold', 'game.starhop': 'Starhop',
@@ -233,7 +234,8 @@ const no = {
   'help.3': 'Samle stjerner på øya for å låse opp hatter. Stå ved hattestativet og trykk [B] for å prøve dem. Hold [B] for å gå ut.',
   'help.7': 'Leker: trykk [B] ved en ball for å plukke den opp, hold [B] og slipp for å kaste. Kast på kurven, velt kjeglene, hopp på trampolinen og soppen, eller ta en tur på husken.',
   'help.4': 'Gå inn i en malingsbøtte for å bytte farge. For å bytte farge med noen: stå på de to bytteplatene og trykk [B] begge to.',
-  'help.5': 'Hopp på bokknappen (eller trykk G) for å vise eller skjule læringsspillene. Hopp på flagget (eller trykk N) for å bytte språk.',
+  'help.5': 'Hopp på bokknappen for å vise eller skjule læringsspillene. Hopp på flagget (eller trykk N) for å bytte språk.',
+  'help.9': 'Hilsener: trykk [EMOTE] for et lite hjul over bønna di, så opp, høyre, ned eller venstre (på tastaturet også piltastene eller 1-4) for et hjerte, et vink, en dans eller en latter. [EMOTE] igjen lukker det (på spillkontrollen også tilbake-knappen).',
   'help.6': 'I et spill åpner Esc (eller Start på spillkontrollen) menyen: fortsett, prøv igjen eller avslutt. M slår lyden av og på.',
   'pause.title': 'Pause', 'pause.resume': 'Fortsett', 'pause.retry': 'Prøv igjen', 'pause.end': 'Avslutt spillet',
   'pause.hint': 'Pinne opp/ned · [OK]: velg · [BACK] eller Start: fortsett',
@@ -345,8 +347,8 @@ export function t(key, vars) {
 // Button names in text: strings write [A], [B] or [C], and t() swaps in what the current players
 // actually press ("E", "R-Shift", "B", "○"...). main.js supplies the list for the joined players.
 // Also: [OK] (what picks in a menu: E / A), [BACK] (Esc / B), [MENU] (Q / Start), [BAG] (Tab / D-pad up), [JOURNAL]
-// (F / D-pad down), [ITEMS] (1-9 / D-pad left/right), [TABS] ([ ] / LB/RB) and [MAP] (M / View): see input.js buttonLabel.
-const BUTTON_TOKEN = /\[(A|B|C|OK|BACK|MENU|BAG|JOURNAL|ITEMS|TABS|MAP)\]/g;
+// (F / D-pad down), [ITEMS] (1-9 / D-pad left/right), [TABS] ([ ] / LB/RB), [MAP] (M / View) and [EMOTE] (G / Y): see input.js buttonLabel.
+const BUTTON_TOKEN = /\[(A|B|C|OK|BACK|MENU|BAG|JOURNAL|ITEMS|TABS|MAP|EMOTE)\]/g;
 let buttonSource = null;
 export function setButtonSource(fn) { buttonSource = fn; }
 

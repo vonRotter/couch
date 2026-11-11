@@ -471,6 +471,38 @@ export class CrabCare {
     if (P && Math.hypot(P.x - COVE.x, P.z - COVE.z) < 6) for (const c of this.coveCrabs) if (c.g.visible) c.dance = 1.2;
   }
 
+  /**
+   * You played an emote (core/emotes.js): your crab friend and the crabs around you react (wave: they wave
+   * back, dance: they dance along, heart: little hearts, laugh: a happy wiggle and a "click click").
+   * Returns how many reacted.
+   */
+  onEmote(kind, P) {
+    const em = this.host.emotes;
+    let n = 0;
+    const react = (c, x, z, setDance, look = true) => {
+      const top = new THREE.Vector3(x, this.groundY(x, z) + 0.9, z);
+      if (look) c.yaw = Math.atan2(P.x - x, P.z - z);
+      if (kind === 'wave') c.wave = 1.5;
+      else if (kind === 'dance') setDance(1.8);
+      else if (kind === 'heart') { c.wave = 0.8; if (n < 4) em.heartsAt(top, 2); }
+      else { setDance(0.7); if (n < 2) em.floatText(top, t('emote.a.crab'), { css: '#ff6a4a', delay: 0.25 + n * 0.2 }); }
+      n++;
+    };
+    const F = this.follower;
+    if (F && F.state === 'follow' && F.g.visible && Math.hypot(P.x - F.x, P.z - F.z) < 12) react(F, F.x, F.z, (s) => { this.followT.dance = s; });
+    for (const c of this.coveCrabs) {
+      if (!c.g.visible || Math.hypot(P.x - c.x, P.z - c.z) > 8) continue;
+      react(c, c.x, c.z, (s) => { c.dance = s; });
+    }
+    // today's crab: a hermit showing off its new shell waves back; a crab that still needs a hand gets hearts
+    for (const o of this.items) {
+      if (!o.g || o.type === 'find' || Math.hypot(P.x - o.x, P.z - o.z) > 7) continue;
+      if (o.state === 'happy') react(o, o.x, o.z, () => { o.wave = 1.5; }, false);
+      else if (o.state === 'wait' && kind === 'heart') { em.heartsAt(new THREE.Vector3(o.x, this.groundY(o.x, o.z) + 0.9, o.z), 2); n++; }
+    }
+    return n;
+  }
+
   /** Spots a follower keeps clear of: doors, ladders and boarding points. */
   doorSpots() {
     if (!this._doors) this._doors = [...this.host.map.places.map((p) => p.door), ...DOORS_EXTRA, ...Object.values(this.host.homes?.list || {}).map((h) => h.spot)];

@@ -6,7 +6,7 @@ import { addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     // ---------- interface ----------
-    'isl.keys': '[A] jump · [B] use, talk, go in · {bag}: bag · 1-9: hotbar · F: journal · [MAP]: map · [C] menu · Esc help',
+    'isl.keys': '[A] jump · [B] use, talk, go in · {bag}: bag · 1-9: hotbar · F: journal · [MAP]: map · [EMOTE]: emotes · [C] menu · Esc help',
     'isl.bag': 'Bag: [B] picks up and puts down · [A] moves across · [C] closes',
     'isl.tasks': 'Tasks',
     'isl.coins': '{n}',
@@ -261,7 +261,7 @@ addStrings({
     'isl.mumble.q1.done': 'Crunch crunch! You are a friend! Look, the grumble burrow opens for you!',
   },
   no: {
-    'isl.keys': '[A] hopp · [B] bruk, snakk, gå inn · {bag}: sekk · 1-9: verktøylinja · F: dagbok · [MAP]: kart · [C] meny · Esc hjelp',
+    'isl.keys': '[A] hopp · [B] bruk, snakk, gå inn · {bag}: sekk · 1-9: verktøylinja · F: dagbok · [MAP]: kart · [EMOTE]: hilsener · [C] meny · Esc hjelp',
     'isl.bag': 'Sekk: [B] tar opp og legger ned · [A] flytter over · [C] lukker',
     'isl.tasks': 'Oppgaver',
     'isl.coins': '{n}',

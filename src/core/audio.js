@@ -120,6 +120,11 @@ export class AudioEngine {
       case 'join': [0, 4, 7].forEach((n, i) => this.tone(NOTE(67 + n), 0.12, { type: 'triangle', vol: 0.14, delay: i * 0.05 })); break;
       case 'leave': [7, 4, 0].forEach((n, i) => this.tone(NOTE(67 + n), 0.12, { type: 'triangle', vol: 0.12, delay: i * 0.05 })); break;
       case 'select': this.tone(NOTE(79), 0.08, { type: 'triangle', vol: 0.12 }); break;
+      // emotes (core/emotes.js): soft and short, so a few players at once stay friendly
+      case 'emoteHeart': [0, 4, 9].forEach((n, i) => this.tone(NOTE(79 + n), 0.22, { type: 'sine', vol: 0.1, delay: i * 0.09, attack: 0.02 })); break;
+      case 'emoteWave': this.tone(NOTE(76) * r, 0.1, { type: 'triangle', vol: 0.11, slide: 1.25 }); this.tone(NOTE(81) * r, 0.16, { type: 'triangle', vol: 0.1, delay: 0.12, slide: 0.9 }); break;
+      case 'emoteDance': [0, 7, 4, 12, 7].forEach((n, i) => this.tone(NOTE(72 + n), 0.09, { type: 'square', vol: 0.045, delay: i * 0.11 })); break;
+      case 'emoteLaugh': [0, 1, 2].forEach((i) => this.tone((620 - i * 50) * r, 0.08, { type: 'triangle', vol: 0.1, delay: i * 0.13, slide: 0.75 })); break;
       case 'fanfare':
         [[0, 0], [4, 0.12], [7, 0.24], [12, 0.36], [7, 0.52], [12, 0.64]].forEach(([n, d]) =>
           this.tone(NOTE(72 + n), d > 0.6 ? 0.5 : 0.14, { type: 'square', vol: 0.07, delay: d }));
