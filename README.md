@@ -219,7 +219,8 @@ island (or Story in the C menu); leaving the Story returns to the shared island 
 ### Help me play (accessibility)
 
 The game teaches children to play games: accessible, not necessarily easy. The assists widen access and
-leave the challenge alone; they are separate from any game's difficulty. All are off by default.
+leave the challenge alone; they are separate from any game's difficulty. All are off by default, except
+the snowball fight's aim help, which starts at "a little" (its old built-in help) until a profile picks a level.
 
 - **Where:** "Help me play" in every game's pause menu, in your own island's menu and in the shared
   island's menu (C). Stick up/down picks a row, left/right or OK changes it, Back (Esc / B) closes it.
@@ -228,8 +229,9 @@ leave the challenge alone; they are separate from any game's difficulty. All are
   defaults). Guests, the start screen and the shared island use the device default ("Everyone (guests)",
   editable from the shared island's menu; its first row switches between the device default and every
   profile playing). Per player: forgiving timing, aim help, hold to toggle, buttons. For the whole screen
-  (one shared screen): game speed, text size and outlines, which on the shared island take the most help
-  anyone playing asked for (the slowest speed, the biggest text).
+  (one shared screen): game speed, text size, outlines and reduce flashing and shake, which on the shared
+  island take the most help anyone playing asked for (the slowest speed, the biggest text, calm if anyone
+  asked).
 - **Game speed:** 100 / 90 / 75 / 60 / 50 %. Slows every game's time and the island's activities (hop trail
   runs, fishing, the island mini-games, sledding), not menus, banners, music or voices.
 - **Forgiving timing:** later jumps after an edge and earlier presses before landing (Sky Hop, the island),
@@ -237,16 +239,35 @@ leave the challenge alone; they are separate from any game's difficulty. All are
   Bokstavballonger, the learning rounds, the quiz, Spot the Difference, votes), longer floor warnings
   (Pillow Keep and Pillow Keep Solo) and slime wind-ups (Lighthouse Caves).
 - **Aim help:** off / a little / a lot. The snowball fight's auto-aim (off: face the target, it finds the
-  distance; a little: the old help; a lot: wide and tight), Laser Ducks (crosshair pull and hit size),
+  distance; a little: the old help, its default for profiles that never picked a level, and for guests; a
+  lot: wide and tight; a level picked on purpose is kept, and so is a little / a lot saved before), Laser Ducks (crosshair pull and hit size),
   Spacefall (aim snap, curving missiles), Paint Pilots (pellets bend), Pillow Keep (both) and Lighthouse
   Caves (shots curve toward enemies, never toward switches).
 - **Hold to toggle:** a held button becomes tap on, tap off where a game marks it as a hold (Space Race
   boost and slide, Spacefall thrust, Hockey charge, Rooftop Rush swing, Grumble Guides fast-forward, Kitchen
-  chopping). A chip under the top bar says who holds what. Bean Brigade's "hold C to end the turn" is also in
-  its battle menu (tap C).
+  chopping, Golf power and fine aim, Splash throws, Party Mix digging and paint by numbers, Portal Pals'
+  reset: hold C, or both portal buttons as before). Where a button is both tapped and held, the taps stay
+  and a quick double tap holds it, the next tap lets go: Snowball Fort's scoop, Castle (versus and campaign:
+  big slash, bow, take down, shield), Lighthouse Caves' spin attack and item screen / map, the shared
+  island's "hold B to leave", decorating's "hold A: next thing", the Story map's back and leave, the frost
+  boss's snowball, Pillow Keep Solo's block and menu. A chip under the top bar says who holds what (and, for
+  a while after a game starts, how to double tap). Bean Brigade's "hold C to end the turn" is also in its
+  battle menu (tap C).
 - **Buttons:** remap the three buttons per keyboard scheme (keys other schemes, the stick and the game's
   shortcuts M, N, V, B, G, F, Tab, 1-9, Esc stay free; picking another of your keys swaps them) and the pad
   buttons (A, B, X, Y, LB, RB swap with each other). Every on-screen [A] / [B] / [C] / [OK] follows.
+- **Reduce flashing and shake:** beans that cannot be hit glow softly instead of blinking at 5-10 Hz (Sky
+  Hop, Bonk Brawl, Bubble Buddies, Snowball Fort, Castle versus and campaign, Cave, Pillow Keep and Pillow
+  Keep Solo, Lighthouse Caves, the Story bosses); every other fast blink slows to a pulse under 3 Hz
+  (Spacefall and Paint Pilots ships, grumbles, warnings, fuses, burning-out torches, Laser Ducks' sky and
+  zaps, Party Mix boats and trails, Kart's item roll); no camera shake (Snowball Fort, Hockey, Football,
+  Bonk Brawl, Castle versus and campaign, Spacefall, Lighthouse Caves), and Lighthouse Caves' white screen
+  flash is a third as strong. Helpers: `blinkOn`, `invulnBlink`, `shakeScale` in `core/assist.js`.
+- **Symbols for players and teams:** every player colour has its own shape (Coral ●, Sunny ▲, Mint ■,
+  Sky ◆, Grape ★, Tangerine ✚) and the teams theirs (Sun ☀, Sea ≈), always shown next to the colour: the
+  player chips, results, name tags (the island, Snowball Fort, Castle, Paint Pilots, Laser Ducks, Hide &
+  Seek, Pillow Keep, Bonk Brawl), Paint Party's score bars, the team picker, votes and pickers, and the
+  team scoreboards (`symbolOf()` / `symHtml()` in `core/palette.js`).
 - **Text size:** normal / big / huge for every overlay, label and panel. **Strong outlines:** thick dark
   outlines on enemies and targets (grumbles everywhere, ducks, aliens), white ones on players, and menus
   mark the picked item with an arrow and a dashed ring as well as colour.
@@ -261,6 +282,15 @@ leave the challenge alone; they are separate from any game's difficulty. All are
 - **Skip a hard part:** Sky Hop levels, Grumble Guides levels, the Golden Bean campaign's levels and Bean
   Brigade Easy battles (not the Queen) can be skipped from the offer: marked as skipped (↷ on the level
   picker or the map, `progress.skipped`), the next one opens, and the skipped one stays playable.
+  Story games skip with a short "solved" moment, and whatever gates the story is still given:
+  Lighthouse Caves puzzle and boss rooms (tries: faints, "Restart room", torches burning out; you are back
+  at the door and watch it solve itself or the boss give up, with its doors, chest, heart and lamp crystal;
+  "Restart room" plays it again), the Story's Grumble King fights (a fight that runs out of time is a try;
+  the second offers speed, the third a skip: he gives up, one star, ↷ on the map until beaten), Pillow
+  Keep Solo's act bosses (a faint at the boss is a try; you wake up and the boss gives up with all its
+  loot; the act counts as cleared) and The Secret of Pudding Island (things used where they do nothing and
+  wrong comebacks are tries: Pip has a brilliant idea and does the right thing himself, a needed item turns
+  up in his pocket, or the duel opponent giggles until she gives up; a New game plays them again).
 - **Checkpoints and instant retry:** Sky Hop levels have three checkpoint posts (a fall never floats you
   back behind the last one); on a hop trail every top you reach is a checkpoint (land off the trail any way
   and you pop back on the last top); Lighthouse Caves wakes you at the last beacon stone (the menu's
@@ -377,7 +407,7 @@ aside. Anyone who falls far behind floats back to the pack in a bubble.
 **Portal Pals** (co-op puzzle, 4 rooms). Top-down rooms. A and B shoot your two portals onto
 white walls; walk into one to come out of the other. Anyone can use anyone's portals.
 Buttons open doors while someone (or a box) stands on them. Push boxes, even through
-portals. Everyone has to reach the gold exit. Hold A+B to reset a room. Each player's portal pair has its own symbol as well as a color (star, heart, moon, drop, lightning bolt, diamond), also drawn on the floor in front of the portal; standing next to a portal shows a trail of symbols to its partner.
+portals. Everyone has to reach the gold exit. Hold C (or A+B) to reset a room. Each player's portal pair has its own symbol as well as a color (star, heart, moon, drop, lightning bolt, diamond), also drawn on the floor in front of the portal; standing next to a portal shows a trail of symbols to its partner.
 
 **Space Race** (split-screen 3D, laps by vote, 14 rings per lap). Every rocket has its pilot bean in a
 glass dome. The flight model borrows the feel of Tachyon-style arcade flight: turn rates ease in
@@ -1023,14 +1053,16 @@ src/
     devvoices.js     ?dev voice panel (F10): the device's voices, play every type
     input.js         keyboard schemes + gamepads -> one controller shape; gamepad layouts ('default',
                      'island'), menu pick/back (okPressed/backPressed), button names per pad kind,
-                     remapped keys / pad buttons and hold to toggle (scene.holdButtons, held())
+                     remapped keys / pad buttons and hold to toggle (scene.holdButtons, held(); a double
+                     tap holds scene.tapHoldButtons)
     assist.js        "Help me play" settings per profile / device default, game speed, timingScale,
-                     aimLevel / aimAt / homeToward, struggle() / overcame() (the offers), skipped parts
+                     aimLevel / aimAt / homeToward (scene.aimDefault), reduce flashing and shake (blinkOn,
+                     invulnBlink, shakeScale), struggle() / overcame() (the offers), skipped parts
     assistmenu.js    the Help me play page, the buttons (remap) page and the offer card
     outline.js       strong outlines: markA11y(model, kind), refreshOutlines(scene, on)
     roster.js        joined players, colors, hats, saved star count
     character.js     the shared bean buddy (squash/stretch, blink, hats)
-    palette.js       colors, cached toon materials and geometry
+    palette.js       colors, cached toon materials and geometry, player and team symbols (symbolOf)
     world.js         lights, sky, trees, clouds, flowers, stars, gems
     critters.js      grumbles (the harmless "enemies")
     physics2d.js     side-view AABB physics + forgiving platformer controller
