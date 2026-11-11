@@ -27,6 +27,7 @@ import { LightMixin } from './keepsolo/light.js';
 import { MonsterMixin } from './keepsolo/monsters.js';
 import { CharPanel, TreePanel } from './keepsolo/tree.js';
 import { invulnBlink, struggle, markSkipped } from '../core/assist.js';
+import { Emotes } from '../core/emotes.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
 // bank). Pick a hero (Pillow Knight, Feather Archer or Bubble Wizard: one save each), get ready in
@@ -101,6 +102,8 @@ export class KeepSoloScene extends MiniGame {
     this.live = null; // the floor waiting behind the town portal: { world, at }
     this.lootRates = LOOT; // keep/foes.js reads the gear drop chances from here
     this.hud = new Hud(this);
+    // emotes in town ([EMOTE]: Y or G): the townsfolk nearby react (core/emotes.js)
+    this.emotes = new Emotes(this, { onEmote: (p, kind) => this.townReact(kind) });
     this.initControl();
     this.cls = this.data.last;
     this.hs = this.data.classes[this.cls];
@@ -120,6 +123,12 @@ export class KeepSoloScene extends MiniGame {
 
   /** While a panel or menu is open, Esc closes it (instead of the pause menu). */
   get ownMenu() { return !!(this.panel || this.menu); }
+
+  /**
+   * Gamepad layout (input.js): walking in town, Y opens the emote wheel ('walk': Y is not a second A); in
+   * the keep, the class picker, panels and menus Y is [A] as before.
+   */
+  get padLayout() { return this.kind === 'town' && this.mode !== 'pick' && !this.panel && !this.menu ? 'walk' : 'default'; }
 
   onLanguage() {
     this.picker?.render?.();
@@ -623,7 +632,10 @@ export class KeepSoloScene extends MiniGame {
       return;
     }
     const active = !this.moving && !this.game.switching;
-    const inp = active && d ? d : NO_INPUT;
+    // the emote wheel (town only): while it is open the stick, the keys and the buttons pick an emote
+    const emo = this.kind === 'town' && !!d && this.emotes.handle(this.player, d, this.hero.ch, { keys: true, can: active && this.hero.state === 'walk' });
+    if (this.kind !== 'town') this.emotes.closeAll();
+    const inp = active && d && !emo ? d : NO_INPUT;
     // [C]: tap or hold
     if (this.cHold < 0) { if (!inp.c) this.cHold = 0; } else if (inp.cPressed && this.hero.state === 'walk') this.cHold = 0.001;
     else if (this.cHold > 0) {
@@ -632,10 +644,11 @@ export class KeepSoloScene extends MiniGame {
         if (this.cHold >= HOLD_C) { this.cHold = 0; this.menu = new SkillMenu(this); this.game.audio.play('select'); }
       } else { this.cHold = 0; this.tapC(); }
     }
-    if (active) this.updateMouse(dt); else this.ctlCancel();
-    this.updateHero(dt, inp, active);
+    if (active && !emo) this.updateMouse(dt); else this.ctlCancel();
+    this.updateHero(dt, inp, active && !emo);
     if (this.kind === 'town') {
       this.updateTown(dt);
+      this.emotes.update(dt); // after the beans' own update: the emote moves add to their pose
       this.updateShots(dt);
       this.updateFx(dt);
     } else {
@@ -863,6 +876,7 @@ export class KeepSoloScene extends MiniGame {
   }
 
   dispose() {
+    this.emotes?.dispose();
     this.saveNow();
     const cur = this.level;
     for (const w of [this.townWorld, this.live?.world]) if (w && w.level !== cur) this.disposeWorld(w);

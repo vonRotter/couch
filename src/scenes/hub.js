@@ -5,6 +5,7 @@ import { Character, makeHat } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture, makeTree, makeCloud, makeFlower, makeRock, makeBush, makeStar, makeMushroom, seeded } from '../core/world.js';
 import { KEYBOARD_SCHEMES } from '../core/input.js';
+import { Emotes, NO_INPUT } from '../core/emotes.js';
 import { hatName } from '../core/roster.js';
 import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
@@ -133,6 +134,9 @@ export class HubScene extends BaseScene {
     this.camPos = new THREE.Vector3(0, 22, 30);
     this.launching = false;
     this.helpEl = null;
+    // emotes: every player has their own wheel (a pad's Y; G for the keyboard player who moved last)
+    this.padLayout = 'walk'; // input.js: Y is not a second A here (it opens the wheel); menus pick with A
+    this.emotes = new Emotes(this);
     this.eduOn = game.roster.progress.edu !== false;
     this.switchCd = 0;
     this.baskets = game.roster.progress.baskets || 0;
@@ -651,6 +655,16 @@ export class HubScene extends BaseScene {
 
   // ---------- players ----------
 
+  /** The keyboard player G (and 1-4) belongs to: the one who moved or pressed a button last. */
+  emoteKeyOwner() {
+    const kb = this.players.filter((p) => p.deviceId?.startsWith('kb'));
+    for (const p of kb) {
+      const d = this.input(p);
+      if (d && !this.emotes.isOpen(p) && (d.x || d.y || d.aPressed || d.bPressed || d.cPressed)) this.emotes.lastKey = p;
+    }
+    return kb.includes(this.emotes.lastKey) ? this.emotes.lastKey : kb[0] || null;
+  }
+
   spawn(p, x, z) {
     const ch = new Character(p.color, { hat: p.hat });
     ch.group.position.set(x, 0, z);
@@ -674,6 +688,7 @@ export class HubScene extends BaseScene {
     this.puffs.burst(new THREE.Vector3(e.x, 0.6, e.z), 0xffffff, { count: 14, speed: 4, size: 0.4 });
     this.scene.remove(e.ch.group);
     e.tag.remove();
+    this.emotes.drop(e.p);
     this.entities.delete(e.p);
     this.game.roster.leave(e.p);
     this.game.audio.play('leave');
@@ -873,9 +888,15 @@ export class HubScene extends BaseScene {
     e.carry = null;
   }
 
-  updatePlayer(e, dt) {
-    const inp = this.input(e.p);
+  updatePlayer(e, dt, keyOwner = null) {
+    let inp = this.input(e.p);
     if (!inp) return;
+    // the emote wheel: while it is open the player's stick and buttons pick an emote (core/emotes.js)
+    const kb = e.p === keyOwner;
+    if (this.emotes.handle(e.p, inp, e.ch, { keys: kb, arrows: kb && !this.players.some((p) => p !== e.p && p.deviceId === 'kb1'), can: !this.launching })) {
+      inp = NO_INPUT;
+      e.bActT = this.time; // a [B] that closed the wheel never starts "hold to leave" right after
+    }
     const audio = this.game.audio;
     e.potCd -= dt; e.hatCd -= dt; e.bonkT -= dt;
     if (this.handleB(e, inp, dt)) return;
@@ -1318,7 +1339,7 @@ export class HubScene extends BaseScene {
   updateCorner(dt) {
     this.switchCd -= dt;
     this.swapCd -= dt;
-    if (this.game.input.pressed.has('KeyG')) this.toggleEdu();
+    // (G opens the emote wheel here now: the learning games switch with the green book button)
     const ents = [...this.entities.values()];
 
     // Pot labels: only the pot nearest to each player.
@@ -1537,7 +1558,7 @@ export class HubScene extends BaseScene {
     this.helpEl = this.game.ui.panel(`
       <div class="help-panel">
         <h2>${t('help.title')}</h2>
-        <ul>${[1, 2, 8, 3, 7, 4, 5, 6].map((i) => `<li>${t(`help.${i}`)}</li>`).join('')}</ul>
+        <ul>${[1, 2, 8, 3, 7, 9, 4, 5, 6].map((i) => `<li>${t(`help.${i}`)}</li>`).join('')}</ul>
       </div>`);
   }
 
@@ -1546,8 +1567,11 @@ export class HubScene extends BaseScene {
     this.handleJoins();
     this.refreshTitle();
     const menu = this.updateMode(dt);
-    if (!menu && !this.launching && this.players.some((p) => this.input(p)?.cPressed)) this.openMode(0);
-    for (const e of [...this.entities.values()]) if (!menu) this.updatePlayer(e, dt);
+    if (!menu && !this.launching && this.players.some((p) => this.input(p)?.cPressed && !this.emotes.isOpen(p))) this.openMode(0);
+    if (menu) this.emotes.closeAll();
+    const keyOwner = this.emoteKeyOwner();
+    for (const e of [...this.entities.values()]) if (!menu) this.updatePlayer(e, dt, keyOwner);
+    this.emotes.update(dt); // after the beans' own update: the emote moves add to their pose
     this.separatePlayers();
     this.updateToys(dt);
     this.updatePins(dt);

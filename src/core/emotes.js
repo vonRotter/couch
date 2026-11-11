@@ -201,6 +201,32 @@ export class Emotes {
     this.game.ui.place(w.el, _v, this.host.camera);
   }
 
+  /** Every open wheel over its bean; wheels of players standing close slide apart so none hides another. */
+  placeAll() {
+    const open = [...this.wheels.values()].filter((w) => w.open && w.el && w.ch);
+    if (open.length < 2) { for (const w of open) this.place(w); return; }
+    const ui = this.game.ui, cam = this.host.camera;
+    const z = ui.textScale > 1 ? ui.textScale : 1; // big text zooms .label elements (see UI.place)
+    const list = open.map((w) => {
+      _v.copy(w.ch.group.position);
+      _v.y += 2.0;
+      _v.project(cam);
+      return { w, x: ((_v.x + 1) / 2) * window.innerWidth / z, y: ((1 - _v.y) / 2) * window.innerHeight / z, off: _v.z > 1, wd: (w.el.offsetWidth || 180) + 6 };
+    }).sort((a, b) => a.x - b.x);
+    // push neighbours apart until they no longer overlap (a few rounds are plenty for six players)
+    for (let k = 0; k < 6; k++) {
+      for (let i = 0; i + 1 < list.length; i++) {
+        const a = list[i], b = list[i + 1];
+        const need = (a.wd + b.wd) / 2 - (b.x - a.x);
+        if (need > 0 && Math.abs(a.y - b.y) < (a.w.el.offsetHeight || 130)) { a.x -= need / 2; b.x += need / 2; }
+      }
+    }
+    for (const o of list) {
+      o.w.el.style.display = o.off ? 'none' : '';
+      o.w.el.style.transform = `translate(${o.x.toFixed(1)}px, ${o.y.toFixed(1)}px) translate(-50%, -100%)`;
+    }
+  }
+
   // ---------- the moves ----------
 
   /**
@@ -333,7 +359,7 @@ export class Emotes {
         return false;
       });
     }
-    for (const w of this.wheels.values()) this.place(w);
+    this.placeAll();
   }
 
   dispose() {

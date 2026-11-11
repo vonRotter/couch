@@ -402,6 +402,25 @@ export const TownMixin = {
     }
   },
 
+  /**
+   * The hero played an emote (core/emotes.js): townsfolk nearby turn and answer with the same move a moment
+   * later (hearts, a wave back, a dance along, a giggle).
+   */
+  townReact(kind) {
+    const e = this.hero;
+    let n = 0;
+    for (const v of this.npcs || []) {
+      if (Math.hypot(e.x - v.x, e.z - v.z) > 6 || (v.emoteAt && this.time - v.emoteAt < 2)) continue;
+      v.emoteAt = this.time;
+      v.ch.face(e.x - v.x, e.z - v.z);
+      v.wait = Math.max(v.wait, 2); // walkers stop for a moment
+      this.later(0.3 + n * 0.15, () => this.emotes.play(v.ch, kind, { small: true, css: '#9b5de5' }));
+      n++;
+    }
+    if (n) this.later(0.35, () => this.game.audio.play(kind === 'laugh' ? 'emoteLaugh' : 'bubble'));
+    return n;
+  },
+
   /** A speech bubble over a townsperson, read aloud in their own voice. */
   npcSay(id, text, secs = 5) {
     const n = this.npcs?.find((x) => x.id === id);
