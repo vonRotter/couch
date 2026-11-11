@@ -114,14 +114,15 @@ export class PassportBook {
       return `<div><span>${s.icon}</span><b>${esc(t(`pp.skill.${s.id}`))}</b><span>${MEDALS[lv] || '·'}</span><small>${esc(lv ? t(`pp.lv.${LEVEL_NAMES[lv]}`) : t('pp.lv.none'))}${more && lv < 3 ? ` · ${esc(more)}` : ''}</small></div>`;
     }).join('');
     const sug = this.host.coach?.suggestion();
-    const next = sug ? `<div class="pp-next">⭐ <b>${esc(t('pp.next'))}:</b> ${esc(sug.why || sug.text)}</div>` : '';
+    const sugText = sug ? (sug.why ? `${sug.text}. ${sug.why}` : sug.text) : '';
+    const next = sug ? `<div class="pp-next">⭐ <b>${esc(t('pp.next'))}:</b> ${esc(sugText)}</div>` : '';
     const html = `<h2>${esc(t('pp.title'))}</h2>
       <div style="text-align:center;font-weight:700;opacity:.75">${esc(t('pp.stamps', { n, m: GENRES.length }))}</div>
       <div class="pp-stamps">${stamps}</div>
       <div style="font-weight:700;margin:2px 0 4px;color:#8a5a32">${esc(t('pp.skills'))}</div>
       <div class="pp-skills">${skills}</div>${next}`;
     const say = [t('pp.say.title', { n, m: GENRES.length }), ...SKILLS.map((s) => t('pp.say.skill', { skill: t(`pp.skill.${s.id}`), level: t(`pp.lv.${LEVEL_NAMES[skillLevel(P, s.id)]}`) }))];
-    if (sug) say.push(t('pp.say.next', { game: sug.why || sug.text }));
+    if (sug) say.push(t('pp.say.next', { game: sugText.replace(/\.$/, '') }));
     return [html, say];
   }
 

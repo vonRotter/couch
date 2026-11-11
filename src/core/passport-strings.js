@@ -76,7 +76,7 @@ addStrings({
     'pp.say.trials': 'Coach’s trials.', 'pp.say.trial': '{trial}: {state}.', 'pp.say.done': 'done', 'pp.say.open': 'not yet',
     'pp.say.medal': 'raises {skill} to {level}',
     'pp.map.suggest': '⭐ Coach: try this next',
-    'pp.why': '{game} builds on {skill} from {from}.', 'pp.whyNew': '{game}: a {genre}. You practise {skills}.',
+    'pp.why': 'It builds on {skill} from {from}.', 'pp.whyNew': 'It is a {genre}: you practise {skills}.',
     'pp.and': ' and ',
   },
   no: {
@@ -144,7 +144,7 @@ addStrings({
     'pp.say.trials': 'Trenerens prøver.', 'pp.say.trial': '{trial}: {state}.', 'pp.say.done': 'klart', 'pp.say.open': 'ikke ennå',
     'pp.say.medal': 'løfter {skill} til {level}',
     'pp.map.suggest': '⭐ Treneren: prøv dette nå',
-    'pp.why': '{game} bygger på {skill} fra {from}.', 'pp.whyNew': '{game}: et {genre}. Du øver på {skills}.',
+    'pp.why': 'Det bygger på {skill} fra {from}.', 'pp.whyNew': 'Sjanger: {genre}. Du øver på {skills}.',
     'pp.and': ' og ',
   },
 });
