@@ -113,7 +113,7 @@ island. Each dungeon has keys, a map, a compass, a big key, a mini-boss and a bo
 phases; the finale is a fight against the Gloom at the top of the lighthouse, then an ending and
 credits, and the island stays open: 12 heart pieces and 10 golden shells to find. Stick to walk, A
 sword (hold for a spin), B talk/lift/throw/open, C use the item (hold C for the item and map screen,
-with "restart room"). Beacon stones save; fainting puts you back at the door of the room you fainted in, hearts full.
+with "restart room"). Beacon stones save; fainting puts you back at the last beacon stone, hearts full, items kept.
 Progress is saved per profile (part-1 saves carry over).
 
 **Bean Brigade** (solo island; an Into the Breach-style tactics game, the mech garage on the east hill).
@@ -263,7 +263,8 @@ leave the challenge alone; they are separate from any game's difficulty. All are
   picker or the map, `progress.skipped`), the next one opens, and the skipped one stays playable.
 - **Checkpoints and instant retry:** Sky Hop levels have three checkpoint posts (a fall never floats you
   back behind the last one); on a hop trail every top you reach is a checkpoint (land off the trail any way
-  and you pop back on the last top); Lighthouse Caves puts you back at the door of the room you fainted in.
+  and you pop back on the last top); Lighthouse Caves wakes you at the last beacon stone (the menu's
+  "restart room" tries the room again from its door).
 - The audit against the Game Accessibility Guidelines and the Xbox Accessibility Guidelines, with its
   findings for the owner: `ACCESSIBILITY.md`.
 

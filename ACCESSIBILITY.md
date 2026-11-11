@@ -26,7 +26,7 @@ page in every pause menu and both islands' menus.
 | Spacefall | – | aim snap, curving missiles | thrust | – | – | respawns |
 | Paint Pilots | – | pellets bend further | – | – | – | respawns |
 | Pillow Keep / Pillow Keep Solo | longer floor warnings | shots curve | – | – | – | Keep Solo: faint to town (unchanged by decision) |
-| Lighthouse Caves | longer slime wind-ups | arrows curve, hit wider (never toward switches) | – | faints: timing, speed | – | faint: back at the door of that room, hearts full |
+| Lighthouse Caves | longer slime wind-ups | arrows curve, hit wider (never toward switches) | – | faints: timing, speed | – | faint: back at the last beacon stone, hearts full (by decision); menu: restart room |
 | Grumble Guides | – | – | fast-forward | lost levels: speed (2), skip (3) | level | try the level again |
 | Golden Bean campaign | – | – | – | lost levels: speed (2), skip (3) | level | [C] tries the level again |
 | Bean Brigade | (turn-based) | – | end turn is also in the battle menu | Easy: lost battles: skip (3) | battle (not the Queen) | Easy: try the battle again, rewind, undo |
@@ -70,8 +70,9 @@ level's restarts and reset when you leave the game.
   learning cards' clues, player tags, join hints).
 - **Menus:** with strong outlines, the picked item is marked with an arrow and a dashed ring as well as its
   colour (pause menus, votes, profile cards, level cards).
-- **Retry:** the pause menu's Retry starts with a short title and a fast countdown; Lighthouse Caves no
-  longer sends you back to the last beacon stone when you faint.
+- **Retry:** the pause menu's Retry starts with a short title and a fast countdown. (Lighthouse Caves
+  briefly put you back at the room you fainted in; by the owner's decision fainting goes back to the last
+  beacon stone again, and the menu's "restart room" tries a room again from its door.)
 
 ## Audit: big findings for the owner to decide
 

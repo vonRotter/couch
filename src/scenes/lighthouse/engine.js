@@ -419,18 +419,16 @@ export class LighthouseEngine {
       this.heroChar.group.scale.setScalar(HERO_SCALE);
       this.hud.setBig(null);
       this.hud.setDark(false);
-      // Instant retry ("Help me play" step): back at the door of the room you fainted in, hearts full (the
-      // save lamp is only where a new visit starts). Many faints in one room offer forgiving timing and speed.
+      // back at the last beacon stone, hearts full, items kept (owner's decision: not the room you fainted in)
+      const fainted = this.room?.id;
+      const sp = s.savePoint || { room: START.room, at: START.at, face: 's' };
       this.lastPlace = '';
-      if (this.room?.entry) this.restartRoom();
-      else {
-        const sp = s.savePoint || { room: START.room, at: START.at, face: 's' };
-        this.loadRoom(sp.room, sp.at, sp.face);
-        this.mode = 'play';
-        this.onEnterRoom('respawn');
-      }
+      this.loadRoom(sp.room, sp.at, sp.face);
       this.hero.inv = 1.5;
-      struggle(this.host, this.host.players[0], 'timing', `lh.${this.room.id}`);
+      this.mode = 'play';
+      this.onEnterRoom('respawn');
+      // many faints in one room offer forgiving timing and a slower game (Help me play)
+      struggle(this.host, this.host.players[0], 'timing', `lh.${fainted || this.room.id}`);
     }
   }
 
