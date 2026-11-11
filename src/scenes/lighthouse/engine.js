@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { struggle, blinkOn, shakeScale } from '../../core/assist.js';
+import { struggle, blinkOn, shakeScale, markSkipped, isSkipped, clearSkipped } from '../../core/assist.js';
 import { t } from '../../core/i18n.js';
 import { stopVoice } from '../../core/voice.js';
 import { W, H, DIRS, tileX, tileZ, colOf, rowOf, inGrid } from './tiles.js';
@@ -326,6 +326,11 @@ export class LighthouseEngine {
 
   restartRoom() {
     const e = this.room.entry;
+    const id = this.room.id;
+    // a skipped puzzle or boss (Help me play) can be played again: it is unsolved until you solve it
+    const replay = this.replayable(id);
+    if (replay) { delete this.save.solved[id]; delete this.save.bosses[id]; this.persist(); }
+    else if (ROOMS[id]?.solve && !this.save.solved[id]) this.later(0.5, () => this.tryAgain(id, 'any'));
     this.loadRoomAt(this.room.id, e.x, e.z, e.face);
     this.room.entry = { ...e };
     this.mode = 'play';
@@ -421,6 +426,7 @@ export class LighthouseEngine {
       this.hud.setDark(false);
       // back at the last beacon stone, hearts full, items kept (owner's decision: not the room you fainted in)
       const fainted = this.room?.id;
+      const entry = this.room?.entry ? { ...this.room.entry } : null;
       const sp = s.savePoint || { room: START.room, at: START.at, face: 's' };
       this.lastPlace = '';
       this.loadRoom(sp.room, sp.at, sp.face);
@@ -428,7 +434,7 @@ export class LighthouseEngine {
       this.mode = 'play';
       this.onEnterRoom('respawn');
       // many faints in one room offer forgiving timing and a slower game (Help me play)
-      struggle(this.host, this.host.players[0], 'timing', `lh.${fainted || this.room.id}`);
+      this.tryAgain(fainted || this.room.id, 'timing', entry);
     }
   }
 
@@ -597,6 +603,7 @@ export class LighthouseEngine {
   solveRoom(room) {
     const def = room.def;
     room.solved = true;
+    if (!room.skipping && isSkipped(this.game.roster.progress, 'lighthouse', room.id)) { clearSkipped(this.game.roster.progress, 'lighthouse', room.id); this.game.roster.save(); }
     room.trapActive = false;
     this.save.solved[room.id] = true;
     if (def.lightOnSolve) room.lit = true;
@@ -627,9 +634,85 @@ export class LighthouseEngine {
     this.later(0.9, () => {
       if (this.room !== room) return;
       if (!this.save.got[`${room.id}.heart`]) this.addPickup(room, 'container', tileX(6), tileZ(5), { id: `${room.id}.heart`, persist: true, pop: true });
-      this.addPickup(room, 'crystal', tileX(10), tileZ(5), { id: `${room.id}.crystal`, persist: true, pop: true });
+      if (!this.save.got[`${room.id}.crystal`]) this.addPickup(room, 'crystal', tileX(10), tileZ(5), { id: `${room.id}.crystal`, persist: true, pop: true });
       this.sfx('fanfare');
     });
+  }
+
+  // ---------- skip a hard part ("Help me play", core/assist.js) ----------
+  //
+  // Faints in a room, "restart room" and torches burning out count as tries at that room. With offers on,
+  // after many tries at a puzzle room (plates, torches, eyes, enemies to clear) or a boss room, the game offers
+  // to skip it: you are back at its door and watch it solve itself (or the boss gives up), with everything it
+  // gives (doors, chests, the heart and the lamp crystal) as if you had solved it. It is marked as skipped
+  // (progress.skipped.lighthouse) and "restart room" there plays it again.
+
+  /** A try at a room failed: count it (and maybe offer timing, speed or a skip). */
+  tryAgain(id, kind, entry = null) {
+    const skip = this.canSkip(id) ? () => this.skipRoom(id, entry) : null;
+    return struggle(this.host, this.host.players[0], kind, `lh.${id}`, { skip });
+  }
+
+  canSkip(id) {
+    const def = ROOMS[id];
+    return !!def?.solve && !this.save.solved[id] && !def.victory?.finale;
+  }
+
+  /** A skipped room that is solved only because it was skipped (it can be played again). */
+  replayable(id) {
+    return !!this.save.solved[id] && isSkipped(this.game.roster.progress, 'lighthouse', id) && !ROOMS[id]?.victory?.finale;
+  }
+
+  skipRoom(id, entry = null) {
+    if (!this.canSkip(id)) return;
+    if (this.room?.id !== id) {
+      const e = entry || { x: 0, z: 3.5, face: 'n' };
+      this.loadRoomAt(id, e.x, e.z, e.face);
+      this.room.entry = { x: e.x, z: e.z, face: e.face };
+      this.mode = 'play';
+      this.onEnterRoom('skip');
+    }
+    markSkipped(this.game.roster.progress, 'lighthouse', id);
+    this.game.roster.save();
+    this.cutscene(this.skipScene);
+  }
+
+  /** The "solved" moment: the puzzle solves itself, or the boss gives up. */
+  *skipScene() {
+    const room = this.room;
+    const def = room.def;
+    const boss = def.solve === 'boss';
+    room.skipping = true;
+    room.bossSpawned = true; // a boss that has not woken up stays asleep
+    yield 0.4;
+    yield { lines: [{ who: 'you', key: boss ? 'lh.skip.boss' : 'lh.skip.puzzle' }] };
+    if (def.solve === 'torches') for (const tc of room.torches) { if (this.lightTorch(room, tc)) yield 0.3; }
+    if (def.solve === 'eyes') for (const e of room.eyes) { if (!e.hit) { this.hitEye(room, e); yield 0.3; } }
+    if (def.solve === 'plates') for (const pl of room.plates) { this.puffAt(pl.x, pl.z, 0xffffff, 10); this.sfx('switch'); yield 0.3; }
+    if (def.solve === 'clear') for (const en of room.enemies) { if (!en.dead) { en.dead = true; this.poof(en.x, en.z, en.y); yield 0.3; } }
+    if (boss) {
+      const b = room.bossSpec;
+      const bx = b ? tileX(b.c) : 0, bz = b ? tileZ(b.r) : 0;
+      for (const en of room.enemies) if (!en.dead) { en.dead = true; this.poof(en.x, en.z, en.y); }
+      for (let i = 0; i < 4; i++) { this.puffAt(bx + (Math.random() - 0.5) * 2, bz + (Math.random() - 0.5) * 2, 0xffffff, 14); yield 0.25; }
+      this.sfx('roar');
+    }
+    yield 0.4;
+    this.solveRoom(room);
+    room.skipping = false;
+    if (boss) {
+      // the heart and the lamp crystal come to you (the crystal opens the way on)
+      yield 1.4;
+      for (const id of [`${room.id}.heart`, `${room.id}.crystal`]) {
+        const p = room.pickups.find((q) => q.id === id && !q.dead);
+        if (!p) continue;
+        p.x = this.hero.x; p.z = this.hero.z; p.mesh.position.x = this.hero.x + room.origin.x; p.mesh.position.z = this.hero.z + room.origin.z;
+        p.dead = true;
+        this.giveItem(p.item, { id: p.id });
+        yield 0.3;
+        while (this.hero.mode === 'get') yield 0.1;
+      }
+    }
   }
 
   // ---------- HUD ----------

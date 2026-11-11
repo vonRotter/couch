@@ -467,6 +467,7 @@ export const WorldMixin = {
   lightTorch(room, torch) {
     if (torch.lit) return false;
     torch.lit = true;
+    room.torchTry = false;
     torch.timer = room.def.torchTime && !room.solved ? room.def.torchTime : 0;
     torch.mesh.userData.flame.visible = true;
     this.sfx('torch');
@@ -529,7 +530,12 @@ export const WorldMixin = {
         if (tc.timer > 0) {
           tc.timer -= dt;
           if (tc.timer < 2) f.visible = blinkOn(tc.timer, 4);
-          if (tc.timer <= 0) { tc.timer = 0; this.extinguish(tc); }
+          if (tc.timer <= 0) {
+            tc.timer = 0;
+            this.extinguish(tc);
+            // the torches went out before all were lit: a try (Help me play offers), once per round of lighting
+            if (!room.solved && room.def.solve === 'torches' && !room.torchTry) { room.torchTry = true; this.tryAgain(room.id, 'timing'); }
+          }
         }
       }
     }

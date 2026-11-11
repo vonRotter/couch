@@ -19,6 +19,8 @@ addStrings({
 
     'lh.who.keeper': 'Keeper Bram', 'lh.who.olga': 'Grandma Olga', 'lh.who.tobi': 'Tobi', 'lh.who.mira': 'Mira', 'lh.who.pell': 'Pell the fisher',
     'lh.who.sign': 'Sign', 'lh.who.you': 'You',
+    'lh.skip.puzzle': 'Look! This puzzle solves itself. It is marked as skipped: "Restart room" in the menu lets you try it again.',
+    'lh.skip.boss': 'The big one has had enough. It gives up and lets you pass! Marked as skipped: "Restart room" in the menu lets you try it again.',
 
     // keeper
     'lh.k.intro1': "Ah, you're awake! Good.",
@@ -210,6 +212,8 @@ addStrings({
 
     'lh.who.keeper': 'Fyrvokter Bram', 'lh.who.olga': 'Bestemor Olga', 'lh.who.tobi': 'Tobi', 'lh.who.mira': 'Mira', 'lh.who.pell': 'Fisker Pell',
     'lh.who.sign': 'Skilt', 'lh.who.you': 'Du',
+    'lh.skip.puzzle': 'Se! Denne gåten løser seg selv. Den er merket som hoppet over: «Start rommet på nytt» i menyen lar deg prøve igjen.',
+    'lh.skip.boss': 'Den store har fått nok. Den gir seg og slipper deg forbi! Merket som hoppet over: «Start rommet på nytt» i menyen lar deg prøve igjen.',
 
     'lh.k.intro1': 'Å, der er du våken! Bra.',
     'lh.k.intro2': 'I natt ble fyrtårnet mørkt. Dystre skapninger krøp opp fra hulene.',
