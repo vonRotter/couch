@@ -7,6 +7,7 @@ import { skyTexture } from '../../core/world.js';
 import { AdvUI } from './ui.js';
 import { ITEMS, itemIcon, combineResponse } from './items.js';
 import { makeSpoon } from './props.js';
+import { triedPuzzle, triedDuel } from './skip.js';
 
 // The point-and-click engine: rooms, hotspots, the pointer, Pip walking, verbs, inventory and a
 // tiny SCUMM-like script runner.
@@ -727,13 +728,19 @@ export class AdventureEngine {
     this.faceHotspot(h);
     this.held = null;
     const ctx = { hs: h, verb, item };
+    this.lastGeneric = false;
     this.run(this.handlerFor(h, verb, item), ctx);
+    if (this.lastGeneric) triedPuzzle(this); // a thing used where it does nothing: a try (Help me play, skip.js)
   }
+
+  /** A wrong comeback in a duel (duel.js): a try; a skip makes the opponent give up. */
+  triedDuel(opponent) { triedDuel(this, opponent); }
 
   handlerFor(h, verb, item) {
     if (item) {
       const u = h.useItem?.[item] ?? h.useItem?.any ?? ITEMS[item]?.useOn;
       if (u) return u;
+      this.lastGeneric = true;
       return this.generic('useOn', { i: this.itemName(item) });
     }
     if (verb === 'go' && !h.go && h.to) return (s) => s.goRoom(h.to, h.entry);
@@ -756,6 +763,7 @@ export class AdventureEngine {
     this.held = null;
     const r = combineResponse(a, b);
     this.run(r || [['pip', 'adv.gen.combine', { a: this.itemName(a), b: this.itemName(b) }]]);
+    if (!r) triedPuzzle(this); // two things that do not go together: a try (Help me play, skip.js)
   }
 
   // ---------- title card ----------

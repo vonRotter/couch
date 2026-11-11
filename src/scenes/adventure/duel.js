@@ -83,6 +83,18 @@ export function* tickleDuel(s, def) {
 
   let bi = 0;
   while (bi < def.boasts.length) {
+    if (s.duelGiveUp) {
+      // Help me play: the duel was skipped (skip.js): the opponent giggles until she gives up
+      s.duelGiveUp = false;
+      yield s.say(def.opponent, 'adv.duel.giveUp');
+      while (meter.opp < need) {
+        meter.opp++;
+        show();
+        yield* steps(s, def.onHit, meter.opp, need);
+      }
+      done();
+      return true;
+    }
     const id = def.boasts[bi];
     const b = BOASTS[id];
     yield s.say(def.opponent, b.boast, null, { hold: true });
@@ -112,6 +124,9 @@ export function* tickleDuel(s, def) {
       meter.pip++;
       show();
       yield* steps(s, def.onMiss, meter.pip);
+      s.triedDuel?.(def.opponent); // a try (Help me play): many offer a skip, and she gives up
+      yield s.wait(0.05); // (an offer card freezes the game: this waits for the answer)
+      if (s.duelGiveUp) continue;
       if (def.teach) {
         // The opponent can't help telling the right answer, and Pip remembers it.
         yield* steps(s, def.teach, id, b.comeback);
