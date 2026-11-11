@@ -318,6 +318,9 @@ the snowball fight's aim help, which starts at "a little" (its old built-in help
   "restart room" tries the room again from its door).
 - The audit against the Game Accessibility Guidelines and the Xbox Accessibility Guidelines, with its
   findings for the owner: `ACCESSIBILITY.md`.
+- **Genres, skills and onboarding:** the genre passport's table of every game's genre, skills and trials is
+  [GENRES.md](GENRES.md); an audit of every game's first minutes against "teach one action at a time before
+  combining them" (findings and suggestions only, no game changed) is [ONBOARDING.md](ONBOARDING.md).
 
 ### Colors
 
@@ -726,10 +729,42 @@ night match yours and crops grow while you are away.
 - **The journal** (F on a keyboard, the D-pad down on a gamepad) is one book with tabs: the **Map**
   (below), **Friends**, **Tasks** (everything on your list, not just the first five), **Calendar** (the
   calendar board opens it here), **Fish log** (the fish log book opens it here) and **Museum** (the
-  collection to look at; you still donate at Curator Hoot's board). LB/RB (L1/R1, L/R) or the keys 1–6
+  collection to look at; you still donate at Curator Hoot's board) and the **Passport** (the genre passport,
+  below). LB/RB (L1/R1, L/R) or the keys 1–7
   (also `[` and `]`) switch tabs, the stick looks through a page, B or Q (also F, Tab) closes it; the mouse
   can click a tab. F and the D-pad open it at the last book page (Friends at first), never at the Map,
   which has its own button.
+- **Genre passport** (development step 3: the game teaches children to play video games). Every game, island
+  activity and guest game belongs to one of 14 **genres** (platformer, adventure, point and click, puzzle,
+  tactics, role-playing, roguelite, aim and shoot, racing, sports, building, party, life sim, learning) and
+  trains two or three of 9 **skills** (timing, aiming, moving and steering, exploring, puzzles, thinking ahead,
+  building, reading the enemy, teamwork); the table is in `src/core/passport.js` and written out in
+  [GENRES.md](GENRES.md). Playing a game *properly* (a level cleared, a match finished, a first fish) stamps
+  its genre and gives **bronze** in its skills; **silver** comes with 3 mastery points (one thing done well,
+  counted once: a level, a battle, a crystal, a fish species...) and **gold** with 8 from two games, or
+  straight from one of **Coach's trials** (18 short optional challenges, two per skill: "Clear a Sky Hop level
+  without anyone falling", "Win a Bean Brigade battle without a house getting hit", "Catch 3 fish in a row,
+  every press in the green"...). A toast says what is new. The journal's **Passport** tab has the stamps and
+  medals with what Coach suggests next, the trials (done ones ticked, Coach's own marked), and one card per
+  genre with a picture and a paragraph (what kind of game it is, what you practise, a famous example like Mario
+  or Zelda, the games here); every page is read aloud by the narrator (help), in English and Norwegian. Old
+  saves get the stamps their progress already shows; profiles without a passport start empty. Saved per
+  profile in this browser (`couch-party.passport.<id>`); on the shared island every player who joined as a
+  profile is credited (guests are not), and finishing a game together counts for teamwork.
+- **Coach Bo** lives in the Game Hall (a door on its west wall; he warms up on kite hill at 7 and stands by the
+  hall's open front 8-20). Talking to him: the first time he explains the passport; then he hands out the
+  stamps you earned (each with its genre card, 10 coins a stamp), cheers for finished trials (25 coins), and
+  asks: *What should I try next?* (a suggestion that builds on what you learned, e.g. Sky Hop before the hop
+  trails, the caves and Lighthouse Caves, with the way there on the map), *Give me a trial!*, *Kinds of games*
+  (the passport's cards) or *Bye*. He has a Friends-book page, a map marker (📣, "!" when he has stamps to hand
+  out) and his own voice. The map stars his suggestion (⭐ "Coach: try this next"). Nothing is ever locked or
+  forced: every place stays open as before.
+- **The parent page:** in a menu (the start screen, the island's menu or a game's pause menu) hold **View +
+  Start** on a gamepad or **H** on a keyboard for 3 seconds (a ring fills). One page per profile (the stick or
+  ←/→ switches): time played per day for the last 14 days (by game in the bar's tooltip; idle minutes do not
+  count), the genres and skills, the most played games, the trials done, the "Help me play" settings that are
+  on, the help offers taken and the skipped parts. Esc, H or a gamepad's B closes it. Everything is read from
+  this browser's storage; nothing leaves the device.
 - **The map** (the journal's first tab, and its own button: **M** on a keyboard, the **View** button on
   an Xbox pad, Create on a PlayStation pad, − on a Nintendo pad; the same button or B / Q closes it). A
   drawing of the island from above (the land, the river, the paths, the pier) with pictures on it, and a
@@ -1093,6 +1128,11 @@ src/
                      aimLevel / aimAt / homeToward (scene.aimDefault), reduce flashing and shake (blinkOn,
                      invulnBlink, shakeScale), struggle() / overcame() (the offers), skipped parts
     assistmenu.js    the Help me play page, the buttons (remap) page and the offer card
+    passport.js      the genre passport: genres, skills, every game's genre and skills, trials, the
+                     suggested order (data tables, see GENRES.md); per-profile store, report() for games,
+                     syncProgress() from saves, play time per day, suggestNext()
+    passport-strings.js  its text (skills, genres, the read-aloud genre cards, trials), English and Norwegian
+    parentpage.js    the parent page behind a hold (play time, genres, skills, help taken, skips)
     outline.js       strong outlines: markA11y(model, kind), refreshOutlines(scene, on)
     roster.js        joined players, colors, hats, saved star count
     character.js     the shared bean buddy (squash/stretch, blink, hats)
@@ -1113,7 +1153,7 @@ src/
     ferry-model.js   the Party Pier ferry (shared by both islands)
     solo/            the solo island (island.js, map.js, ...; ferry.js: the Party Pier and badge board;
                      school.js: the School House and its picker; atlas.js: the island map and its arrow;
-                     journal.js: the journal's tabs)
+                     journal.js: the journal's tabs; passport.js: its Passport tab; coach.js: Coach Bo)
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     spacefall.js  spacefall/  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js

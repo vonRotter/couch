@@ -7,6 +7,24 @@ This file lists which game supports which assist, how the game offers help, and 
 [Xbox Accessibility Guidelines](https://learn.microsoft.com/gaming/accessibility/guidelines) (XAG):
 the small things fixed now and the big findings for the owner to decide.
 
+## Genres, skills and the parent page
+
+The genre passport (development step 3) maps every game to a genre and its skills; the table is in
+[GENRES.md](GENRES.md) (the data lives in `src/core/passport.js`). Accessibility notes on it:
+
+- **Assists never cost a stamp, a medal or a trial.** Playing with forgiving timing, aim help, a slower game or
+  hold to toggle counts exactly like playing without them; a skipped part is simply not counted as done (the
+  rest of the game still is).
+- **Read aloud:** the Passport tab's pages and every genre card are help and read by the narrator; Coach speaks
+  with his own voice type (`isl.coach`). Medals are shown as a medal and a word (bronze / silver / gold), not
+  by colour only; stamps are coloured and named, missing ones are grey, dashed and named too.
+- **Never forced:** Coach's suggestions and trials are optional, nothing is locked by them.
+- **The parent page** (hold View + Start or H for 3 s in a menu) shows per profile the time played per day,
+  the genres and skills practised, the "Help me play" settings that are on, the help offers taken and the
+  skipped parts, so a grown-up can see where a child gets stuck. Nothing leaves the device.
+- **Onboarding:** [ONBOARDING.md](ONBOARDING.md) audits every game's first minutes against "teach one action at
+  a time before combining them" (findings only).
+
 ## Which game supports which assist
 
 Everywhere (core, every scene): **button remapping** (keyboard keys per scheme, pad buttons; every on-screen
