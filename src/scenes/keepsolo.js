@@ -66,6 +66,7 @@ const BORROW = ['cx', 'cz', 'tileC', 'tileR', 'cell', 'walkable', 'walkableAt', 
 export class KeepSoloScene extends MiniGame {
   constructor(game, opts = {}) {
     super(game, opts);
+    this.tapHoldButtons = ['b', 'c']; // hold to toggle ("Help me play", input.js): tapped and held (dodge / the knight's block, skill / the menu): a double tap holds
     this.state = 'play'; // no countdown: the class picker is the intro
     this.playStart = 0;
     this.data = loadKeepSolo(game.roster);

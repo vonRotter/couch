@@ -45,6 +45,7 @@ const landX = (c) => c * LAND_STEP;
 export class StoryScene extends BaseScene {
   constructor(game, opts = {}) {
     super(game);
+    this.tapHoldButtons = ['b', 'c']; // hold to toggle ("Help me play", input.js): hold [B] (back to the menu) and hold [C] (leave): a double tap holds
     this.key = 'story';
     this.camera.fov = 40;
     this.camera.far = 400;

@@ -113,6 +113,8 @@ const STAR_SPOTS = [
 export class HubScene extends BaseScene {
   constructor(game, { fromGame = null, solo = false, joinDevice = null } = {}) {
     super(game);
+    this.tapHoldButtons = ['b']; // hold to toggle ("Help me play", input.js): [B] picks up and throws, so a double tap holds it (to leave)
+    this.tapHoldHint = false;
     this.key = null;
     this.camera.fov = 45;
     this.camera.far = 500;

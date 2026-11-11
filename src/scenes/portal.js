@@ -68,11 +68,11 @@ const ROOMS = [
 addStrings({
   en: {
     'portal.intro': 'Get everyone to the exit · [A] and [B] shoot your two portals · your pair has your color and your symbol',
-    'portal.left': '{n} to go · hold both portal buttons to reset',
+    'portal.left': '{n} to go · hold [C] (or both portal buttons) to reset',
   },
   no: {
     'portal.intro': 'Få alle til utgangen · [A] og [B] skyter de to portalene dine · paret ditt har din farge og ditt symbol',
-    'portal.left': '{n} igjen · hold begge portalknappene for å starte rommet på nytt',
+    'portal.left': '{n} igjen · hold [C] (eller begge portalknappene) for å starte rommet på nytt',
   },
 });
 
@@ -125,6 +125,7 @@ const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 export class PortalScene extends MiniGame {
   constructor(game, opts) {
     super(game, opts);
+    this.holdButtons = ['c']; // hold to toggle ("Help me play", input.js): holding [C] resets the room (as holding both portal buttons does)
     this.camera.fov = 40;
     this.scene.background = skyTexture('#b9a7ff', '#ffe6f4');
     addLights(this.scene, { size: 22, dir: new THREE.Vector3(-0.4, 1, 0.5) });
@@ -764,13 +765,14 @@ export class PortalScene extends MiniGame {
   checkReset(dt) {
     const holding = this.players.some((p) => {
       const d = this.input(p);
-      return d && d.a && d.b;
+      return d && ((d.a && d.b) || d.c); // both portal buttons, or [C] (one button to hold, or tap with hold to toggle)
     });
     this.resetHold = holding ? this.resetHold + dt : 0;
     if (this.resetHold > 1.3) {
       this.resetHold = 0;
       this.game.audio.play('whoosh');
       this.game.ui.toast(t('portal.reset'));
+      this.game.input.clearLatches(); // hold to toggle: a latched [C] lets go after the reset
       this.loadRoom(this.roomIndex);
     }
   }

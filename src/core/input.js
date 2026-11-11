@@ -94,6 +94,7 @@ export const RESERVED_KEYS = new Set(['Escape', 'KeyM', 'KeyN', 'KeyV', 'KeyB', 
  */
 export function held(d, k) {
   if (!d) return false;
+  if (d.toggle && d.tapHoldKeys?.includes(k)) return !!d[k]; // already latched in toggleHolds()
   return d.toggle ? !!d.latch?.[k] : !!d[k];
 }
 
@@ -114,6 +115,7 @@ export function schemeKeyOwner(code) {
 }
 
 const DEADZONE = 0.28;
+const DOUBLE_TAP_MS = 450; // hold to toggle: two taps this close hold a tap-and-hold button
 
 function makeDevice(id, type, label, scheme = null) {
   return {
@@ -126,6 +128,7 @@ function makeDevice(id, type, label, scheme = null) {
     raw: {}, rawPressed: {}, // gamepads: the physical buttons before a remap (the remap page listens to these)
     keys: null, padMap: null, // "Help me play" remaps (main.js sets them from the player's settings)
     toggle: false, holdKeys: [], latch: {}, // hold to toggle (see held())
+    tapHoldKeys: [], tapLatch: {}, tapLast: {}, tapSup: {}, // hold to toggle for buttons that are tapped and held
     connected: type === 'keyboard',
   };
 }
@@ -252,16 +255,37 @@ export class Input {
     }
   }
 
-  /** Hold to toggle: the scene's hold buttons (d.holdKeys) stay held from one tap to the next. */
+  /**
+   * Hold to toggle: the scene's hold buttons (d.holdKeys) stay held from one tap to the next.
+   * Buttons that are both tapped and held (d.tapHoldKeys, scene.tapHoldButtons: tap to throw, hold to scoop)
+   * keep their taps: a quick double tap holds the button (the first tap still counts as a tap), and the next
+   * tap lets go (that tap is only the letting go: the game sees the release, not a new press).
+   */
   toggleHolds(d) {
-    if (!d.toggle) { d.latch = {}; return; }
+    if (!d.toggle) { d.latch = {}; d.tapLatch = {}; d.tapSup = {}; return; }
     for (const k of ['a', 'b', 'c']) if (d[`${k}Pressed`]) d.latch[k] = !d.latch[k];
     for (const k of d.holdKeys || []) d[k] = !!d.latch[k];
+    const now = performance.now();
+    for (const k in d.tapLatch) if (d.tapLatch[k] && !d.tapHoldKeys?.includes(k)) d.tapLatch[k] = false; // the scene stopped asking
+    for (const k of d.tapHoldKeys || []) {
+      const P = `${k}Pressed`;
+      if (d.tapSup[k]) { // the tap that let go: ignore the button until it is up again
+        if (!d[k] && !d[P]) d.tapSup[k] = false;
+        d[k] = false; d[P] = false;
+        continue;
+      }
+      if (d.tapLatch[k]) {
+        if (d[P]) { d.tapLatch[k] = false; d.tapSup[k] = true; d[k] = false; d[P] = false; } else d[k] = true;
+        continue;
+      }
+      if (!d[P]) continue;
+      if (now - (d.tapLast[k] ?? -1e9) < DOUBLE_TAP_MS) { d.tapLatch[k] = true; d.tapLast[k] = -1e9; } else d.tapLast[k] = now;
+    }
   }
 
   /** Forget held toggles (a new scene starts with every hold off). */
   clearLatches() {
-    for (const d of this.devices.values()) d.latch = {};
+    for (const d of this.devices.values()) { d.latch = {}; d.tapLatch = {}; d.tapLast = {}; d.tapSup = {}; }
   }
 
   /** stepX/stepY: -1/0/+1 on the frame a direction is first pushed (for menus and pickers). */

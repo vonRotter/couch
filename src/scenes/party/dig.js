@@ -161,6 +161,7 @@ export class DigRound extends Round {
 
   constructor(party) {
     super(party);
+    this.holdButtons = ['a']; // hold to toggle ("Help me play", input.js): digging
     this.t = 0;
     this.holes = [];
     this.treasures = [];

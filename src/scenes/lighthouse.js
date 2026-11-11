@@ -23,6 +23,10 @@ import { LighthouseEngine } from './lighthouse/engine.js';
 // Progress: game.roster.progress.lighthouse (per solo profile).
 
 export class LighthouseScene extends MiniGame {
+  // hold to toggle ("Help me play", input.js), while walking about: [A] swings and charges the spin attack, [C] uses
+  // the item and opens the item screen and map. A quick double tap holds them; menus and talk never latch.
+  get tapHoldButtons() { return this.engine?.mode === 'play' ? ['a', 'c'] : null; }
+
   constructor(game, opts = {}) {
     super(game, opts);
     this.engine = new LighthouseEngine(this);

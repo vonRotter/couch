@@ -110,6 +110,7 @@ export class PaintNumRound extends Round {
 
   constructor(party) {
     super(party);
+    this.holdButtons = ['a']; // hold to toggle ("Help me play", input.js): painting
     this.design = DESIGNS[Math.floor(Math.random() * DESIGNS.length)];
     this.t = 0;
     this.finished = false;

@@ -149,6 +149,7 @@ class Game {
     if (this.current) this.current.dispose();
     this.ui.clear();
     this.input.clearLatches(); // hold to toggle: every hold starts off in a new scene
+    this.sceneAt = performance.now();
     this.current = make();
     this.current.resize(window.innerWidth, window.innerHeight);
     this.applyScreenSettings();
@@ -163,6 +164,7 @@ class Game {
   applyDeviceSettings(force = false) {
     const sig = `${assistVersion()}|${this.roster.players.map((p) => `${p.deviceId}:${p.profileId || ''}`).join(',')}`;
     const holds = this.current?.holdButtons || [];
+    const tapHolds = this.current?.tapHoldButtons || []; // tapped and held: a double tap holds (input.js)
     if (force || sig !== this.deviceSig) {
       this.deviceSig = sig;
       const extra = new Set();
@@ -170,6 +172,7 @@ class Game {
         const p = this.roster.players.find((q) => q.deviceId === d.id);
         const s = p ? settingsFor(p) : deviceSettings();
         d.toggle = !!s.toggle;
+        if (!p) { d.latch = {}; d.tapLatch = {}; } // a player who left (held [B] or [C] to leave) holds nothing
         if (d.type === 'keyboard') {
           const k = schemeKeys(s, d.scheme);
           const same = ['a', 'b', 'c'].every((b) => k[b][0] === d.scheme[b][0]);
@@ -180,7 +183,7 @@ class Game {
       this.input.extraCodes = extra;
       this.applyScreenSettings(); // someone joined or left, or settings changed: text size and outlines follow
     }
-    for (const d of this.input.devices.values()) d.holdKeys = holds;
+    for (const d of this.input.devices.values()) { d.holdKeys = holds; d.tapHoldKeys = tapHolds; }
   }
 
   /** Hold to toggle: a small chip per held button ("Coral: E held · tap to let go"), so a latched hold is never a surprise. */
@@ -191,12 +194,16 @@ class Game {
       this.ui.root.appendChild(this.holdEl);
     }
     let html = '';
-    if (!this.pause && this.current?.holdButtons) {
+    if (!this.pause && (this.current?.holdButtons || this.current?.tapHoldButtons)) {
+      const fresh = this.current.tapHoldHint !== false && performance.now() - (this.sceneAt || 0) < 9000; // the double-tap hint, for a while after a game starts
       for (const p of this.roster.players) {
         const d = this.input.get(p.deviceId);
         if (!d?.toggle) continue;
-        for (const k of d.holdKeys) {
-          if (d.latch[k]) html += `<div class="hold-chip" style="--c:${p.css}">🔒 ${esc(tFor(p, 'assist.held', { name: p.name, b: `[${k.toUpperCase()}]` }))}</div>`;
+        const chip = (key, vars) => `<div class="hold-chip" style="--c:${p.css}">🔒 ${esc(tFor(p, key, vars))}</div>`;
+        for (const k of d.holdKeys) if (d.latch[k]) html += chip('assist.held', { name: p.name, b: `[${k.toUpperCase()}]` });
+        for (const k of d.tapHoldKeys || []) {
+          if (d.tapLatch[k]) html += chip('assist.held', { name: p.name, b: `[${k.toUpperCase()}]` });
+          else if (fresh) html += `<div class="hold-chip hint" style="--c:${p.css}">👆👆 ${esc(tFor(p, 'assist.tapHold', { name: p.name, b: `[${k.toUpperCase()}]` }))}</div>`;
         }
       }
     }

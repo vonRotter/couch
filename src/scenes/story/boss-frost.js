@@ -71,6 +71,7 @@ const WALK = [4.2, 4.8, 5.4];
 export class BossFrostScene extends BossScene {
   constructor(game, opts) {
     super(game, opts, { chapter: 1, kingSize: 2.1 });
+    this.tapHoldButtons = ['b']; // hold to toggle ("Help me play", input.js): tap [B] throws, a double tap holds it to make a snowball
     this.camera.fov = 40;
     this.scene.background = skyTexture('#86c8ff', '#f2fbff');
     addLights(this.scene, { size: 20, dir: new THREE.Vector3(-0.3, 1, 0.6) });

@@ -92,6 +92,7 @@ function toWall(w, x, z) {
 export class SnowballScene extends MiniGame {
   constructor(game, opts = {}) {
     super(game, opts);
+    this.tapHoldButtons = ['b']; // hold to toggle ("Help me play", input.js): tap [B] throws, so a quick double tap holds it to scoop
     this.aimDefault = 1; // aim help "a little" unless the player picked a level (Help me play)
     this.camera.fov = 40;
     this.scene.background = skyTexture('#a6d6ff', '#f4fbff');

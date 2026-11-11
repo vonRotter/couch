@@ -174,6 +174,9 @@ function screenAt(pos, cam) {
 }
 
 export class SoloIslandScene extends BaseScene {
+  // hold to toggle ("Help me play", input.js): decorating's "hold [A]: next thing" (a tap turns): a double tap holds
+  get tapHoldButtons() { return this.mode === 'deco' ? ['a'] : null; }
+
   constructor(game, { fromGame = null } = {}) {
     super(game);
     this.toasts = new ToastQueue(game.ui); // one or two pop-ups at a time, paused under panels

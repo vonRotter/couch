@@ -41,6 +41,10 @@ const HOWTO_MAX = 20;
 const SCORES_MAX = 9;
 
 export class PartyScene extends MiniGame {
+  // hold to toggle ("Help me play", input.js): the round on now says which buttons are held
+  get holdButtons() { return this.round?.holdButtons || null; }
+  get tapHoldButtons() { return this.round?.tapHoldButtons || null; }
+
   constructor(game, opts) {
     super(game, opts);
     this.camera.fov = 42;

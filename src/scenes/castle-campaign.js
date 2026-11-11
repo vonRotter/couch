@@ -138,6 +138,7 @@ class ClassPicker {
 export class CastleCampaignScene extends MiniGame {
   constructor(game, opts = {}) {
     super(game, { ...opts, key: opts.key || 'castle' });
+    this.tapHoldButtons = ['b', 'c']; // hold to toggle ("Help me play", input.js): tapped and held (sword and big slash, draw the bow, build and dig, shield): a double tap holds
     this.opts = opts;
     this.prog = loadProgress(game);
     this.floaters = [];

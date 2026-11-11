@@ -166,6 +166,7 @@ const UNIT_CYL = () => sharedGeo('golfUnitCyl', () => new THREE.CylinderGeometry
 export class GolfScene extends MiniGame {
   constructor(game, opts) {
     super(game, opts);
+    this.holdButtons = ['a', 'b']; // hold to toggle ("Help me play", input.js): power (tap to charge, tap again to putt) and fine aim
     this.camera.fov = 40;
     this.scene.background = skyTexture('#8fd8ff', '#ffe3f1');
     this.lights = addLights(this.scene, { size: 17, dir: new THREE.Vector3(-0.4, 1, 0.5) });

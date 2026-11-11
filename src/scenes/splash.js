@@ -443,6 +443,7 @@ function grumbleBody(color) {
 export class SplashScene extends MiniGame {
   constructor(game, opts) {
     super(game, opts);
+    this.holdButtons = ['b']; // hold to toggle ("Help me play", input.js): the throw's power (tap to charge, tap again to throw)
     this.camera.fov = 40;
     this.camera.far = 500;
     this.camera.updateProjectionMatrix();

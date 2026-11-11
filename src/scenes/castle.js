@@ -233,6 +233,7 @@ class ClassPicker {
 export class CastleScene extends MiniGame {
   constructor(game, opts) {
     super(game, opts);
+    this.tapHoldButtons = ['b', 'c']; // hold to toggle ("Help me play", input.js): tapped and held (sword and big slash, draw the bow, build and take down, shield): a double tap holds
     this.scene.background = skyTexture('#7fcfff', '#fff3d9');
     addLights(this.scene, { size: 34, target: new THREE.Vector3(0, 10, 0), dir: new THREE.Vector3(-0.45, 0.85, 1) });
 
