@@ -23,6 +23,7 @@ export const DEFAULTS = Object.freeze({
   speed: 1, // game speed (1 = 100 %)
   timing: false, // forgiving timing: wider windows, longer telegraphs
   aim: 0, // aim help: 0 off, 1 a little, 2 a lot
+  aimChosen: false, // aim was picked on purpose (else each game's default: off, the snowball fight "a little")
   toggle: false, // hold to toggle: tap a held button on, tap again off
   text: 0, // text size: index into TEXT_SIZES
   contrast: false, // strong outlines on important things, shapes as well as colours
@@ -38,6 +39,9 @@ function clean(s) {
   const out = { ...DEFAULTS, ...(s || {}) };
   if (!SPEEDS.includes(out.speed)) out.speed = 1;
   out.aim = Math.max(0, Math.min(AIM_LEVELS - 1, out.aim | 0));
+  // settings saved before aimChosen existed: a little / a lot was picked on purpose; off was the default
+  if (s && s.aimChosen === undefined) out.aimChosen = out.aim > 0;
+  out.aimChosen = !!out.aimChosen;
   out.text = Math.max(0, Math.min(TEXT_SIZES.length - 1, out.text | 0));
   out.never = Array.isArray(out.never) ? out.never : [];
   out.keys = out.keys && typeof out.keys === 'object' ? out.keys : {};
@@ -96,14 +100,17 @@ export function resetAssistCache() { cache = new Map(); version++; }
  * default joined with every joined profile (the most help anyone asked for).
  */
 export function screenSettings(game) {
-  if (game?.solo?.profile) return profileSettings(game.solo.profile.id);
+  if (game?.solo?.profile) {
+    const s = profileSettings(game.solo.profile.id);
+    return { ...s, aim: effectiveAim(s, sceneAimDefault(game)) };
+  }
   const list = [deviceSettings(), ...(game?.roster?.players || []).filter((p) => p.profileId).map((p) => settingsFor(p))];
   return {
     speed: Math.min(...list.map((s) => s.speed)),
     text: Math.max(...list.map((s) => s.text)),
     contrast: list.some((s) => s.contrast),
     timing: list.some((s) => s.timing),
-    aim: Math.max(...list.map((s) => s.aim)),
+    aim: Math.max(...list.map((s) => effectiveAim(s, sceneAimDefault(game)))),
   };
 }
 
@@ -125,9 +132,22 @@ export function timingScale(p = null, game = null) {
 
 // ---------- aim help ----------
 
+/**
+ * The aim help a settings object gives in a game whose default is def (a scene's aimDefault): the level the
+ * player picked, or the game's default when they never picked one (the snowball fight: "a little").
+ */
+export function effectiveAim(s, def = 0) {
+  return s.aimChosen ? s.aim : Math.max(s.aim, def);
+}
+
+/** The aim default of the scene on screen (scene.aimDefault; 0 for most games). */
+export function sceneAimDefault(game = null) {
+  return (game || window.game)?.current?.aimDefault || 0;
+}
+
 /** 0 off, 1 a little, 2 a lot. Without a player: the most anyone on screen asked for. */
 export function aimLevel(p = null, game = null) {
-  return p ? settingsFor(p).aim : screenSettings(game || window.game).aim;
+  return p ? effectiveAim(settingsFor(p), sceneAimDefault(game)) : screenSettings(game || window.game).aim;
 }
 
 // how far (radians) aim help looks for a target around where you aim, and how much of the way it turns
@@ -226,7 +246,7 @@ export function struggle(scene, player, kind, part = 'all', { skip = null, at = 
   if (n >= A.skip && skip && can('skip')) offer = 'skip';
   else if (speed && n >= A.speed && can('speed') && screenSettings(game).speed === 1) offer = 'speed';
   else if (n >= A.assist && kind === 'timing' && can('timing') && !s.timing) offer = 'timing';
-  else if (n >= A.assist && kind === 'aim' && can('aim') && s.aim < 2) offer = 'aim';
+  else if (n >= A.assist && kind === 'aim' && can('aim') && effectiveAim(s, scene.aimDefault || 0) < 2) offer = 'aim';
   if (!offer) return null;
   // skip can come again at another part; an assist is offered once per visit
   if (game.offerAssist?.({ kind: offer, player, part, skip, scene }) === false) return null; // a menu is up: later

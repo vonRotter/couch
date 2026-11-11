@@ -7,7 +7,7 @@
 import { t, tFor, keyName, addStrings } from './i18n.js';
 import { esc } from './ui.js';
 import { say, voiceOn } from './voice.js';
-import { SPEEDS, TEXT_SIZES, profileSettings, saveSettings } from './assist.js';
+import { SPEEDS, TEXT_SIZES, profileSettings, saveSettings, effectiveAim, sceneAimDefault } from './assist.js';
 import { KEYBOARD_SCHEMES, PAD_LABELS, REMAP_PAD, RESERVED_KEYS, schemeKeyOwner } from './input.js';
 import { deviceLabel } from './roster.js';
 
@@ -20,6 +20,7 @@ addStrings({
     'assist.timing': 'Forgiving timing', 'assist.timing.d': 'Wider timing: late jumps still work, bigger green zones, longer warnings and more time to answer.',
     'assist.aim': 'Aim help', 'assist.aim.d': 'Shots, throws and spells bend toward what you aim at.',
     'assist.aim.0': 'off', 'assist.aim.1': 'a little', 'assist.aim.2': 'a lot',
+    'assist.aim.dflt': '(not chosen: snowball fight a little, other games off)',
     'assist.toggle': 'Hold to toggle', 'assist.toggle.d': 'Things you must hold (charge, boost, end turn...) become: tap to start, tap again to stop.',
     'assist.text': 'Text size', 'assist.text.d': 'Bigger words on the screen.', 'assist.text.0': 'normal', 'assist.text.1': 'big', 'assist.text.2': 'huge',
     'assist.contrast': 'Strong outlines', 'assist.contrast.d': 'Thick outlines on players, enemies and targets, and shapes as well as colours.',
@@ -53,6 +54,7 @@ addStrings({
     'assist.timing': 'Snill timing', 'assist.timing.d': 'Mer tid: sene hopp virker, større grønne felt, lengre varsler og mer tid til å svare.',
     'assist.aim': 'Siktehjelp', 'assist.aim.d': 'Skudd, kast og trylleformler svinger mot det du sikter på.',
     'assist.aim.0': 'av', 'assist.aim.1': 'litt', 'assist.aim.2': 'mye',
+    'assist.aim.dflt': '(ikke valgt: litt i snøballkrigen, av i andre spill)',
     'assist.toggle': 'Trykk i stedet for å holde', 'assist.toggle.d': 'Ting du må holde (lade, turbo, avslutte turen...) blir: trykk for å starte, trykk igjen for å stoppe.',
     'assist.text': 'Tekststørrelse', 'assist.text.d': 'Større ord på skjermen.', 'assist.text.0': 'vanlig', 'assist.text.1': 'stor', 'assist.text.2': 'kjempestor',
     'assist.contrast': 'Tydelige kanter', 'assist.contrast.d': 'Tykke kanter rundt spillere, fiender og mål, og former i tillegg til farger.',
@@ -128,12 +130,15 @@ export class AssistMenu {
     switch (k) {
       case 'who': return esc(this.target.name);
       case 'speed': return `${Math.round(s.speed * 100)} %`;
-      case 'aim': return t(`assist.aim.${s.aim}`);
+      case 'aim': return s.aimChosen ? t(`assist.aim.${s.aim}`) : `${t(`assist.aim.${this.aimNow}`)} ${t('assist.aim.dflt')}`;
       case 'text': return t(`assist.text.${s.text}`);
       case 'timing': case 'toggle': case 'contrast': case 'offers': return t(s[k] ? 'assist.on' : 'assist.off');
       default: return '';
     }
   }
+
+  /** The aim help in the game on screen (a profile that never picked one gets the game's default). */
+  get aimNow() { return effectiveAim(this.s, sceneAimDefault(this.game)); }
 
   label(k) {
     return k === 'who' ? t('assist.for') : t(`assist.${k}`);
@@ -170,7 +175,7 @@ export class AssistMenu {
     const cyc = (list, v) => list[(list.indexOf(v) + dir + list.length) % list.length];
     if (k === 'who') { this.ti = (this.ti + dir + this.targets.length) % this.targets.length; return; }
     if (k === 'speed') this.set({ speed: cyc(SPEEDS, s.speed) });
-    else if (k === 'aim') this.set({ aim: (s.aim + dir + 3) % 3 });
+    else if (k === 'aim') this.set({ aim: (this.aimNow + dir + 3) % 3, aimChosen: true });
     else if (k === 'text') this.set({ text: (s.text + dir + TEXT_SIZES.length) % TEXT_SIZES.length });
     else if (k === 'offers') this.set({ offers: !s.offers, never: !s.offers ? [] : s.never });
     else if (['timing', 'toggle', 'contrast'].includes(k)) this.set({ [k]: !s[k] });
@@ -386,7 +391,8 @@ export class OfferCard {
         this.game.ui.toast(t('offer.skipped'), 2400);
         this.skip?.();
       } else {
-        const patch = this.kind === 'timing' ? { timing: true } : this.kind === 'aim' ? { aim: Math.min(2, s.aim + 1) } : { speed: 0.75 };
+        const aim = effectiveAim(s, sceneAimDefault(this.game));
+        const patch = this.kind === 'timing' ? { timing: true } : this.kind === 'aim' ? { aim: Math.min(2, aim + 1), aimChosen: true } : { speed: 0.75 };
         saveSettings(this.targetId, { ...s, ...patch });
         this.game.applyScreenSettings?.();
         const msg = t('offer.on', { what: t(names[this.kind]) });
