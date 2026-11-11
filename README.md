@@ -49,7 +49,7 @@ Each game shows its own controls before it starts.
 
 | Device | Move | A (jump) | B (use) | C (third) |
 | --- | --- | --- | --- | --- |
-| Gamepad 1–4 | Left stick / D-pad | A / Y (✕ / △) | B, RB, RT (○) | X, LB, LT (□) |
+| Gamepad 1–4 | Left stick / D-pad | A / Y (✕ / △; Y opens the emote wheel where you walk about) | B, RB, RT (○) | X, LB, LT (□) |
 | Keyboard 1 | W A S D | Space | E | Q |
 | Keyboard 2 | Arrow keys | Enter | Right Shift | Right Ctrl |
 | Keyboard 3 | I J K L | U | O | P |
@@ -61,7 +61,7 @@ boards, the gate, map, level, squad and difficulty pickers, votes or result scre
 back, or does nothing where there is nowhere to go back to). Start opens and closes the pause menu.
 Keyboards pick as before: the jump key, and in most menus also the use key (E), which is how the pause
 menu picks; `Esc` closes it. The solo island has its own gamepad layout (A jump, X use, B back,
-D-pad for the hotbar, bag and journal, Start for the menu): see Solo island, Controls. Hints name
+D-pad for the hotbar, bag and journal, Start for the menu, Y for the emote wheel): see Solo island, Controls. Hints name
 the buttons of every kind of pad (Xbox A/B/X/Y, LB/RB, Start; PlayStation ✕/○/□/△, L1/R1, Options;
 Nintendo B/A/Y/X, L/R, +).
 
@@ -72,13 +72,32 @@ Nintendo B/A/Y/X, L/R, +).
 | back / close | B (○) | the menu's back key (E in game menus that already went back with E, Q on the solo island, `Esc` for the pause menu) |
 | pause menu | Start (Options / +) | `Esc` |
 
+**Emotes (everywhere you walk about):** on your own island and Shell Isle, on the shared island and in
+Pillow Keep Solo's town, **Y** on a gamepad (△ on a PlayStation pad, X on a Nintendo one) opens a small
+wheel over your bean with four emotes: **heart** (up: hearts float up), **wave** (right: a little white
+mitten waves), **dance** (down: hops, a wiggle and a spin, with notes) and **laugh** (left: "ha ha"
+bubbles and a giggly bounce). The D-pad or the stick plays one at once; Y or B closes the wheel. On a
+keyboard **G** opens it (G again closes it), and the arrow keys, your own walk keys or **1–4** (heart,
+wave, dance, laugh) pick. While the wheel is open nothing else moves: the stick, the D-pad (on your
+island: not the hotbar, bag or journal), the hotbar keys and the buttons only pick an emote. Each emote
+has its own short sound; nothing is read aloud. Villagers, farm animals, Mitten the cat and crab friends
+near you react (they wave back, dance along, send little hearts, giggle, cluck or moo), and so do the
+townsfolk of Pillowby. On the shared island every player has their own wheel and emote (wheels of players
+standing close slide apart); G belongs to the keyboard player who moved last, and the arrow keys pick
+only when nobody else walks with them. There Y is no longer a second A (menus pick with A); in every
+game Y is still A as before. Emotes never blink or shake; with reduce flashing on they are a little
+softer and have no sparkles. A pad remap ("Help me play", Buttons) moves the emote button like any other,
+and the hints say so ([EMOTE] in text: G / Y). Code: `core/emotes.js` (`Emotes`: the wheels, the moves and
+`onEmote` for reactions).
+
 - On the shared island, press A on any device to join (up to 6 players). With profiles in this
   browser a small card asks **Who are you?** next to the others: a profile (each profile only once at a
   time; taken ones are marked *playing*) or **Guest**; A picks, B goes back. Profiles bring their name,
   hat and color (if nobody has that color yet, else a free one); guests get a free color. Without any
   profiles, A joins as a guest right away. Color pots, swap pads and the hat stand work for everyone and
   last for the visit (a profile's own look is kept on its island). Press C for the menu: **Keep
-  playing**, **Story** or **Home** (the ferry home, below).
+  playing**, **Story** or **Home** (the ferry home, below). Y (G on a keyboard) opens your own emote
+  wheel (see Emotes above); here Y does not join or pick (A does).
 
 **Paint Pilots** (side-view biplane dogfight, inspired by Triplane Turmoil and Luftrausers). Vote
 on Free for all, Teams or Co-op against waves of grumble planes and blimps ending with the King Blimp.
@@ -167,6 +186,7 @@ lots of mana; Magic). It plays with mouse and keyboard like Diablo (the gamepad 
 |---|---|
 | Stick | walk (aim help on attacks) |
 | A | attack (talk and use in town) |
+| Y (town) | the emote wheel (G on a keyboard; see Controls, Emotes): the townsfolk nearby join in. In the keep, panels and menus Y is A as before |
 | B | the class move: block (hold), dodge roll, bubble hop |
 | tap C / hold C | the skill on C (picks up gear you stand on) / menu: skills (choosing one puts it on C and the right button), potions, Town Portal, bag, hero page, skill tree |
 | In panels | the stick moves a hand pointer, A clicks, C right-clicks, B closes |
@@ -214,7 +234,7 @@ island (or Story in the C menu); leaving the Story returns to the shared island 
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
 - In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level, with a quick title and countdown), Help me play or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound (on your own island `M` is the map; Sound is in its menu).
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
-- `G` shows or hides the learning games, or jump on the green book button.
+- Jump on the green book button to show or hide the learning games (`G` opens the emote wheel here now).
 
 ### Help me play (accessibility)
 
@@ -255,7 +275,8 @@ the snowball fight's aim help, which starts at "a little" (its old built-in help
   battle menu (tap C).
 - **Buttons:** remap the three buttons per keyboard scheme (keys other schemes, the stick and the game's
   shortcuts M, N, V, B, G, F, Tab, 1-9, Esc stay free; picking another of your keys swaps them) and the pad
-  buttons (A, B, X, Y, LB, RB swap with each other). Every on-screen [A] / [B] / [C] / [OK] follows.
+  buttons (A, B, X, Y, LB, RB swap with each other). Every on-screen [A] / [B] / [C] / [OK] follows, and so
+  does the emote button ([EMOTE]: Y moved to LB opens the wheel with LB, and the hints say LB).
 - **Reduce flashing and shake:** beans that cannot be hit glow softly instead of blinking at 5-10 Hz (Sky
   Hop, Bonk Brawl, Bubble Buddies, Snowball Fort, Castle versus and campaign, Cave, Pillow Keep and Pillow
   Keep Solo, Lighthouse Caves, the Story bosses); every other fast blink slows to a pulse under 3 Hz
@@ -571,7 +592,7 @@ number). Nobody is ever knocked out of a round.
 
 Three educational games in Norwegian (bokmål), marked with a green **LÆRING** badge on the
 shared island, and all of them (plus the quiz) in the **School House** on every child's own island
-(see Solo island), where each child keeps their own level and progress. Jump on the green book button in the settings corner (or press `G`) to show or hide them;
+(see Solo island), where each child keeps their own level and progress. Jump on the green book button in the settings corner to show or hide them;
 the choice is saved. Before each round every player picks their own level (Lett, Middels,
 Vanskelig), so younger and older kids can play together. Mistakes never cost anything.
 
@@ -720,8 +741,8 @@ night match yours and crops grow while you are away.
   greenhouse once they are fixed, and the homes of Aunt Hazel, Pip and Mumble; every **villager where they
   are right now** (a face in their color; a red "!" for those who want to talk or have a quest, 💤 at
   their home when they sleep); and **today's activities** with a yellow glow: the festival, the day's
-  surprise (Marlo's cart, Skye's balloon, the bottle on the beach, the dig spot from its map), crabs that
-  need a hand, the crab dance, ripe crops on the field and in the greenhouse, animals waiting (hungry,
+  surprise (Marlo's cart, Skye's balloon, the bottle on the beach, the dig spot from its map), today's crab
+  that needs a hand (only listed when it is on the other island or in the dive), the crab dance, ripe crops on the field and in the greenhouse, animals waiting (hungry,
   eggs, milk or a pet today), letters in the mailbox, leaf piles in autumn. A **Today** list sums them up
   (also things without a place: a meteor shower anywhere tonight, a chest you found that has filled up
   again). On **Shell Isle** the map is Shell Isle's own: the boat home, Shelby's shell house, the palms
@@ -794,24 +815,34 @@ night match yours and crops grow while you are away.
   you there from the end of the pier. It has tide pools, palms, wild berries, treasure to dig, a
   hidden cove with its own fish, and Shelby the hermit crab, who visits Crab Cove on weekends (10 to 18).
 - **Crab friends:** crabs, snow crabs and lobsters are never caught, sold or cooked: they are friends who
-  sometimes need a hand (they never pinch, never get hurt). Each real day, on the main island's beach and
-  pier, on Shell Isle and in the dive: a crab flipped on its back (B turns it over), a crab tangled in
-  seaweed or an old net (B three times; in the dive a crab or lobster in a net), a family of three lost baby
-  crabs who follow you in a little parade to the glowing ring where their family waits, and (on land) a
-  hermit crab who has outgrown its shell and a couple of shells to find. Helped crabs say thank you with a
+  sometimes need a hand (they never pinch, never get hurt). **One crab needs a hand each real day** in all
+  (it was up to eleven): its trouble and its place take turns by date (`todaysCrab()` in `crabdata.js`):
+  a crab flipped on its back (B turns it over), a crab tangled in seaweed or an old net (B three times), a
+  family of three lost baby crabs who follow you in a little parade to the glowing ring where their family
+  waits, or a hermit crab who has outgrown its shell; on the main island's beach and pier, on Shell Isle
+  (once you have the sea chart) or in the dive (once you have the suit). The trouble changes every day
+  (flip, free, home, shell) and the place with it, so in 12 days every trouble comes to every place (in the
+  dive a shell day is a lobster in a net; with only the main island open, every crab is there). In winter
+  weeks the crabs on its back or in seaweed are snow crabs, and a crab in a dive net is a lobster, so the
+  museum's Crab friends wall still fills over time. A place that opens during the day does not move
+  today's crab. Shells to find lie on the sand every day (two on each island, one in the dive). The task
+  list says where today's crab is ("Today's crab: lost baby crabs on Shell Isle"), the map shows it where
+  you are and lists it in its Today list when it is on the other island or in the dive, and the Friends
+  book's crab page names it (or that it is happy again). Helped crabs say thank you with a
   shell, a piece of sea glass, a pearl or a big shell. **Hermit crabs** (Pebble, Biscuit, Noodle, Dot,
   Bubbles, Sandy, Coco and Wiggle, one or two waiting each day) want a big shell: a spiral shell or a conch
   (on the sand, in the dive, as thanks from crab families) or one crafted at the workbench (castle shell,
   teapot shell, lantern shell, flower shell, each from a sea shell and a few things); they wear it and show
   it off, and move to the cove. **Crab Cove** on the east beach grows with the crabs you help: a sign and a
   pool (0), a sandcastle crab house and a crab family (1 crab, +30 coins), shell houses and flags where the
-  hermit crabs live (5, +50 coins and a spiral shell), a dance ring and shell lanterns (12, +80 coins and a
-  golden crab statue for the yard) and a shell palace with a crab band (25, +150 coins and a big crab
-  plushie). From level 3 the crabs dance on weekend evenings (17 to 20) and on full moon nights (19 to 23):
+  hermit crabs live (4, +50 coins and a spiral shell), a dance ring and shell lanterns (9, +80 coins and a
+  golden crab statue for the yard) and a shell palace with a crab band (16, +150 coins and a big crab
+  plushie); at one crab a day that is the first day, then about four, nine and sixteen days (it was 1 / 5 /
+  12 / 25; saves keep the level they reached and get the rewards of a level the new numbers give them). From level 3 the crabs dance on weekend evenings (17 to 20) and on full moon nights (19 to 23):
   B joins the dance (25 coins and a shell once a day). **Crab friends** (Ruby the red crab, Frost the snow
   crab, Captain the lobster, Tiny the baby crab and every hermit crab you helped) can follow you, one at a
   time, chosen at the cove's sign: they scuttle behind you, keep clear of doors, dance when you jump, wave
-  when you stand still, dig up a little treasure on the sand (three times a day) and wait at your cottage at
+  when you stand still, answer your emotes, dig up a little treasure on the sand (three times a day) and wait at your cottage at
   night (21 to 6). The Friends book has a Crab friends page (how many you helped and how, the cove's level,
   the museum wall, the hermit crabs and their shells, who comes along), and Shelby talks about your crabs.
   Old saves: crabs in the bag go home to the sea with a thank-you letter from Shelby that brings the coins
@@ -971,6 +1002,7 @@ night match yours and crops grow while you are away.
   | Mode | jump (Space / A) | use (E / X) | back (Q / B) |
   | --- | --- | --- | --- |
   | Walking | jump | use, talk, go in, knock | keyboard: the menu (gamepad: Start) |
+  | Emote wheel (G / Y while walking) | – | – | gamepad: close (Y too); keyboard: G closes; the D-pad, stick, arrows, WASD or 1–4 play heart / wave / dance / laugh |
   | Dialog | next / pick the highlighted answer | next / pick the highlighted answer | keyboard: answer "no"; gamepad: next on a plain line, nothing on a question |
   | Bag (see the table above) | move across | pick up / put down | close |
   | Journal | – | keyboard: close | close |
@@ -1051,8 +1083,10 @@ src/
     voices.js        speaker -> voice type table, types, choosing the device's voices per type
     babble.js        WebAudio babble syllables per voice type
     devvoices.js     ?dev voice panel (F10): the device's voices, play every type
+    emotes.js        the emote wheel (Y / G) and the heart, wave, dance and laugh moves on any bean, with
+                     onEmote for villagers, animals and crabs to react (solo island, shared island, Pillowby)
     input.js         keyboard schemes + gamepads -> one controller shape; gamepad layouts ('default',
-                     'island'), menu pick/back (okPressed/backPressed), button names per pad kind,
+                     'island', 'walk': Y free for emotes), menu pick/back (okPressed/backPressed), button names per pad kind,
                      remapped keys / pad buttons and hold to toggle (scene.holdButtons, held(); a double
                      tap holds scene.tapHoldButtons)
     assist.js        "Help me play" settings per profile / device default, game speed, timingScale,
