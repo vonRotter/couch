@@ -4,7 +4,7 @@ import { Character } from '../core/character.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
 import { addLights } from '../core/world.js';
 import { SONGS } from '../core/audio.js';
-import { t, tFor } from '../core/i18n.js';
+import { t, tFor, addStrings } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
 import { say } from '../core/voice.js';
 import { KeepScene } from './keep.js';
@@ -26,7 +26,7 @@ import { HeroMixin } from './keepsolo/hero.js';
 import { LightMixin } from './keepsolo/light.js';
 import { MonsterMixin } from './keepsolo/monsters.js';
 import { CharPanel, TreePanel } from './keepsolo/tree.js';
-import { invulnBlink } from '../core/assist.js';
+import { invulnBlink, struggle, markSkipped } from '../core/assist.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
 // bank). Pick a hero (Pillow Knight, Feather Archer or Bubble Wizard: one save each), get ready in
@@ -62,6 +62,12 @@ const NO_INPUT = { x: 0, y: 0, a: false, b: false, c: false, aPressed: false, bP
 const BORROW = ['cx', 'cz', 'tileC', 'tileR', 'cell', 'walkable', 'walkableAt', 'buildTiles', 'buildDoors', 'buildStairs', 'buildDecor', 'makeChest',
   'moveCircle', 'pushOut', 'pushRound', 'inArc', 'swing', 'updateShots', 'doorNear', 'chestNear', 'unlock', 'updateDoorsAndChests', 'addFx',
   'spawnStarFx', 'updateFx', 'floater', 'updateFloaters', 'updateLamps', 'inStairs', 'bossBar'];
+
+// Help me play: an act boss that the hero fainted at a few times can be skipped (it gives up)
+addStrings({
+  en: { 'ks.giveUp': 'It gives up!', 'ks.giveUpSub': 'Too sleepy to go on: it lets you pass. Skipped: fight it again on this floor any time' },
+  no: { 'ks.giveUp': 'Den gir seg!', 'ks.giveUpSub': 'For trøtt til å fortsette: den slipper deg forbi. Hoppet over: kjemp mot den igjen på denne etasjen når du vil' },
+});
 
 export class KeepSoloScene extends MiniGame {
   constructor(game, opts = {}) {
@@ -292,9 +298,16 @@ export class KeepSoloScene extends MiniGame {
     this.later(2.4, () => this.afterFaint());
   }
 
-  afterFaint() {
+  afterFaint(asked = false) {
     if (this.kind !== 'dungeon') return;
     const e = this.hero, hs = this.hs;
+    // Help me play: fainting at an act boss is a try; after a few the game offers a slower game, then a skip
+    // (the boss gives up, see bossGivesUp). While that offer is up the faint waits (update() goes on with it).
+    const boss = this.boss;
+    if (!asked && boss && !boss.gone && boss.state !== 'asleep' && boss.state !== 'idle' && !isDeep(this.g)) {
+      const o = struggle(this, this.players[0], 'any', `ks.act${actOf(this.g)}`, { skip: () => this.bossGivesUp(), at: { speed: 2, skip: 3, gap: 1 } });
+      if (o === 'skip') { this.pendingFaint = true; return; }
+    }
     // Only the newest bag waits: an older one (here or anywhere) is gone.
     if (hs.drop) {
       for (const it of this.items) if (it.kind === 'bag') this.removeItem(it);
@@ -320,6 +333,21 @@ export class KeepSoloScene extends MiniGame {
     this.zones.forEach((z) => { z.done = true; });
     this.updateZones(0);
     this.goTown('faint');
+  }
+
+  /** The skip (from the offer): the hero wakes up where they fainted and the act boss gives up (it falls asleep and poofs, with its loot). */
+  bossGivesUp() {
+    const e = this.hero, b = this.boss;
+    this.bossSkipped = true;
+    if (!b || b.gone) return;
+    e.state = 'walk';
+    e.hp = e.st.maxHp;
+    e.inv = 2;
+    markSkipped(this.game.roster.progress, 'keepsolo', `act${actOf(this.g)}`);
+    this.game.roster.save();
+    b.fallAsleep();
+    this.game.ui.banner(t('ks.giveUp'), t('ks.giveUpSub'), 2800);
+    this.game.audio.play('fanfare');
   }
 
   // ---------------------------------------------------------------- moving between worlds
@@ -548,6 +576,8 @@ export class KeepSoloScene extends MiniGame {
   // ---------------------------------------------------------------- per frame
 
   update(dt) {
+    // a faint that waited for the skip offer: go on with it unless the boss gave up
+    if (this.pendingFaint && !this.game.offer) { this.pendingFaint = false; if (!this.bossSkipped) this.afterFaint(true); }
     this.frame(dt);
     this.updateLight(dt);
     const m = this.mouse;

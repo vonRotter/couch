@@ -1,3 +1,4 @@
+import { clearSkipped, overcame } from '../../core/assist.js';
 import * as THREE from 'three';
 import { COLORS, toon, basic, sharedGeo } from '../../core/palette.js';
 import { skyTexture, makeTree, makeMushroom, makeStar } from '../../core/world.js';
@@ -487,6 +488,13 @@ export const WorldMixin = {
       this.fog = null;
     }
     this.hs.stats.bosses++;
+    // Help me play: beaten for real clears the "skipped" mark; given up (skipped) keeps it
+    if (!isDeep(this.g)) {
+      const part = `act${Math.floor(this.g / ACT_FLOORS)}`;
+      if (!this.bossSkipped) clearSkipped(this.game.roster.progress, 'keepsolo', part);
+      overcame(this, `ks.${part}`);
+    }
+    this.bossSkipped = false;
     if (!isDeep(this.g)) {
       const act = Math.floor(this.g / ACT_FLOORS);
       const first = !this.hs.bosses[act];
