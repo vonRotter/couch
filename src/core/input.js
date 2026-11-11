@@ -65,7 +65,7 @@ export function padLayout() { return layoutNow; }
 // [BACK] closes the pause menu: Esc on a keyboard, B on a gamepad. [MENU] is the solo island's menu (Q / Start).
 // [MAP] is the solo island's map (M / the View button: Create on a PlayStation pad, − on a Nintendo one).
 // [EMOTE] opens the emote wheel (G / Y: △ on a PlayStation pad, X on a Nintendo one; core/emotes.js).
-const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–6', back: 'Esc', map: 'M', emote: 'G' };
+const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–7', back: 'Esc', map: 'M', emote: 'G' };
 const PAD_EXTRA = { ok: 'a', back: 'b', menu: 'start', tabs: ['lb', 'rb'], map: 'view', emote: 'y' };
 const DPAD = { bag: 'pad.up', journal: 'pad.down', items: 'pad.leftRight' };
 

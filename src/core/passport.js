@@ -400,6 +400,9 @@ export function syncProgress(P, p = {}) {
   for (let i = 0; i < chests; i++) master(P, 'hops', `chest${i}`, ['exploring']);
   if (chests >= 3) trial(P, 'chests.three');
   if (isl.cafe?.served > 0) playedOnce(P, 'cafe');
+  if (isl.sea?.dives > 0) playedOnce(P, 'dive');
+  for (const n of [5, 20]) if ((isl.sea?.dives || 0) >= n) master(P, 'dive', `dives${n}`);
+  for (const n of [10, 50]) if ((isl.cafe?.served || 0) >= n) master(P, 'cafe', `served${n}`);
 }
 
 // ---------- who gets the credit ----------

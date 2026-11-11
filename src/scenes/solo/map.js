@@ -112,6 +112,7 @@ export const HOME_DOORS = {
   mumble: { spot: { x: DEN.x, z: DEN.z + 1.9 } },
   hoot: { spot: { x: 26, z: 1.1 } }, // the museum
   shelby: { spot: { x: 6.5, z: 189.5 } }, // her shell house on Shell Isle
+  coach: { spot: { x: HALL.x - 6.4, z: HALL.z - 0.6 } }, // Coach Bo: a little door on the game hall's west wall
 };
 
 // Named spots for NPC routines and props.
@@ -126,6 +127,7 @@ export const SPOTS = {
   meadow: { x: 47, z: -11 },
   beachDay: { x: 16.5, z: 39.6 },
   museumDoor: { x: 23.4, z: 1.2 },
+  hallCoach: { x: HALL.x - 3.4, z: HALL.z + 3.0 }, // Coach Bo by the game hall's open front
   ...ISLE2_SPOTS,
 };
 

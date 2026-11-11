@@ -63,6 +63,8 @@ import { SeeThrough } from './seethrough.js';
 import { Ferry, deliverCoopMail, coopMailVars, coopBadgeGifts } from './ferry.js';
 import { School } from './school.js';
 import { IslandAtlas } from './atlas.js';
+import { PassportBook } from './passport.js';
+import { Coach } from './coach.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
 // One player (with the profile's name, color and hat). Games are PLACES you walk to; some open through
@@ -245,7 +247,9 @@ export class SoloIslandScene extends BaseScene {
     this.tour = new Tournament(this);
     this.homes = new Homes(this); // everyone's front door (milestone C)
     this.friends = new FriendsBook(this); // hearts, birthdays and favorite gifts (milestone C)
-    this.journal = new Journal(this); // Friends, Tasks, Calendar, Fish log and Museum in one book with tabs
+    this.journal = new Journal(this); // Friends, Tasks, Calendar, Fish log, Museum and Passport in one book with tabs
+    this.coach = new Coach(this, { fromGame }); // Coach Bo in the Game Hall and the genre passport (core/passport.js)
+    this.passport = new PassportBook(this); // the journal's Passport tab
     this.crabs = new CrabCare(this); // crab friends: help crabs, Crab Cove, a crab who follows you (crabs.js)
     this.zipzap = new ZipZap(this); // Pip's Zip-Zap: rocks, grass and trees to zap, the beam, the scan, upgrades
     this.hops = new Hops(this); // jumping: stepping stones, hidden areas with chests, hop trails and races
@@ -944,6 +948,7 @@ export class SoloIslandScene extends BaseScene {
     const st = npcState(S, id);
     const def = NPCS[id];
     if (!st.met && S.intro) return true;
+    if (id === 'coach') return this.coach.hasNews(); // stamps to hand out, trials to cheer for
     if (this.story?.hasNews(id)) return true;
     if (this.play?.hasNews(id)) return true; // today's little task
     if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3) || (count(S, 'seaChart') && !S.isle2?.chart) || this.tour?.available(now()))) return true;
@@ -967,6 +972,7 @@ export class SoloIslandScene extends BaseScene {
     // today's little task (asking, or the thing you bring back: play.js)
     if (this.play.talk(n)) return;
     n.talking = true;
+    if (id === 'coach') { this.coach.talk(n); return; } // Coach Bo: stamps, suggestions, trials (coach.js)
     // the lighthouse story first (milestone B4)
     if (this.story.talk(n, () => { n.talking = false; this.markDirty(); })) {
       st.met = true;

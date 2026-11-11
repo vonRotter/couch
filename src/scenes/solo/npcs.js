@@ -111,6 +111,15 @@ export const NPCS = {
     quests: [], events: [],
     game: () => null,
   },
+  // development step 3: Coach Bo, the game coach (coach.js): lives in the Game Hall (a door on its west wall),
+  // warms up on kite hill in the morning, explains kinds of games, suggests what to try next, hands out stamps
+  coach: {
+    voice: { css: '#e07a10' },
+    sched: [[0, 'coachHome', true], [7, 'hillTop'], [8, 'hallCoach'], [20, 'coachHome', 'in'], [21.5, 'coachHome', true]],
+    loves: ['starfruit', 'fishStew'], likes: ['corn', 'tomato', 'cocoa', 'strawberryShake'], dislikes: ['hay'],
+    quests: [], events: [],
+    game: () => null,
+  },
   shelby: {
     voice: { css: '#e0557a' },
     sched: [[0, 'shelbyHome', true], [7, 'shelbyHut'], [9, 'tidepools'], [13, 'shelbyHut'], [16, 'isleBeach'], [19, 'shelbyHome', 'in'], [20, 'shelbyHome', true]],
@@ -255,6 +264,16 @@ export function makeNpcModel(id) {
       pup.model.scale.setScalar(0.85);
       return pup;
     }
+    case 'coach': return bean(0xff9f1c, 0, (p) => {
+      // a cap with a visor, a sweatband, a whistle on a cord and a striped shirt
+      p.add(mesh(sharedGeo('isl-cap', () => new THREE.SphereGeometry(0.42, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), 0x2f7fd0, 0, 1.06, 0));
+      const visor = mesh(cyl(0.3, 0.3, 0.04, 14), 0x2f7fd0, 0, 1.08, 0.36, false);
+      visor.scale.set(1, 1, 0.75);
+      p.add(visor, mesh(cyl(0.425, 0.425, 0.1, 16), 0xffffff, 0, 1.0, 0, false));
+      p.add(mesh(cyl(0.012, 0.012, 0.5, 4), 0xff5d73, 0, 0.62, 0.36, false).rotateX(0.3));
+      p.add(mesh(cyl(0.05, 0.06, 0.14, 8), 0xffd23f, 0, 0.38, 0.44, false).rotateX(Math.PI / 2));
+      for (let i = 0; i < 2; i++) p.add(mesh(box(0.62, 0.06, 0.06), 0xffffff, 0, 0.3 + i * 0.16, 0.37, false));
+    });
     case 'mumble': {
       const g = makeGrumble(0x6fbf73);
       const leaf = mesh(sph(0.12, 8, 6), 0x3f9a32, 0.05, 0.98, 0, false);

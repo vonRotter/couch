@@ -3,16 +3,16 @@ import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 
 // The journal: one book with tabs for the Map (atlas.js), Friends (villagers, crab friends, the farm animals:
-// friends.js), Tasks, the Calendar (seasons.js), the Fish log (island.js) and the Museum list (museum.js, to
+// friends.js), Tasks, the Passport (genre stamps, skills and Coach's trials: passport.js), the Calendar (seasons.js), the Fish log (island.js) and the Museum list (museum.js, to
 // look at; donating stays at Curator Hoot's board). F or the D-pad down opens it (at the last tab, Friends at
-// first); M or a gamepad's View opens it at the Map (and closes the Map again); LB/RB on a gamepad or 1-6
+// first); M or a gamepad's View opens it at the Map (and closes the Map again); LB/RB on a gamepad or 1-7
 // (also [ and ]) on a keyboard switch tabs; [C] (Q / gamepad B) closes it (F and Tab too; on a keyboard Space
 // and E as before, except on the Map, where they pick). The calendar board and the fish log book open it at
 // their tab.
-// Read-aloud: the Friends pages (a book you open) and the Tasks (help) are read; the lists are not.
+// Read-aloud: the Friends pages (a book you open), the Tasks and the Passport pages (help) are read; the lists are not.
 
-export const TABS = ['map', 'friends', 'tasks', 'cal', 'fish', 'museum'];
-const ICONS = { map: '🗺️', friends: '💛', tasks: '📝', cal: '📅', fish: '🐟', museum: '🏛️' };
+export const TABS = ['map', 'friends', 'tasks', 'cal', 'fish', 'museum', 'passport']; // (the passport came last: the keys 1-6 stay)
+const ICONS = { map: '🗺️', friends: '💛', tasks: '📝', passport: '🏷️', cal: '📅', fish: '🐟', museum: '🏛️' };
 
 addStrings({
   en: {
@@ -91,7 +91,7 @@ export class Journal {
   /** Draw the current tab (read: read it aloud when it is a page that is read). */
   show(read = false) {
     const host = this.host, hud = host.hud;
-    const num = (i) => (host.onPad ? '' : `<small style="opacity:.5"> ${i + 1}</small>`); // the keys 1-6 on a keyboard
+    const num = (i) => (host.onPad ? '' : `<small style="opacity:.5"> ${i + 1}</small>`); // the keys 1-7 on a keyboard
     hud.panelPrefix = `<div class="isl-jtabs">${TABS.map((k, i) => `<span data-tab="${k}" class="${k === this.tab ? 'on' : ''}">${ICONS[k]} ${esc(t(`isl.jn.${k}`))}${num(i)}</span>`).join('')}</div>`;
     const map = this.tab === 'map';
     hud.panelSuffix = `<div class="isl-foot">${esc(tFor(host.player?.p, map ? (host.onPad ? 'map.hint' : 'map.hintKb') : 'isl.jn.hint'))}</div>`;
@@ -101,6 +101,7 @@ export class Journal {
       case 'map': host.atlas.render(); break;
       case 'friends': host.friends.render(read); break;
       case 'tasks': this.renderTasks(read); break;
+      case 'passport': host.passport.render(read); break;
       case 'cal': host.seasons.renderCalendar(); break;
       case 'fish': host.log ||= { i: 0, t: 0 }; host.renderLog(); break;
       case 'museum': host.museum.renderList(); break;
@@ -122,7 +123,7 @@ export class Journal {
     const keys = host.game.input.pressed;
     const dev = host.playerDevice;
     const P = dev?.btnPressed || {};
-    // tabs: LB/RB, [ and ], or 1-6
+    // tabs: LB/RB, [ and ], or 1-7
     let step = (P.rb || keys.has('BracketRight') ? 1 : 0) - (P.lb || keys.has('BracketLeft') ? 1 : 0);
     for (let k = 1; k <= TABS.length; k++) if (keys.has(`Digit${k}`)) { this.setTab(TABS[k - 1]); step = 0; }
     if (step) this.setTab(TABS[(TABS.indexOf(this.tab) + step + TABS.length) % TABS.length]);
@@ -136,6 +137,7 @@ export class Journal {
     switch (this.tab) {
       case 'map': if (this.t > 0.25) host.atlas.update(inp, dt); break;
       case 'friends': host.friends.flip(inp); break;
+      case 'passport': host.passport.flip(inp); break;
       case 'fish': host.logStep(inp); break;
       case 'museum': host.museum.listStep(inp); break;
     }

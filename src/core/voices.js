@@ -79,6 +79,7 @@ export const SPEAKERS = {
   'isl.mumble': 'tiny',
   'isl.hoot': 'owl',
   'isl.shelby': 'crab',
+  'isl.coach': { type: 'friendly', pitch: 0.12, rate: 0.08, seed: 'coach' }, // Coach Bo in the Game Hall (solo/coach.js)
   'isl.visitor': 'friendly', // café guests who are not villagers
   'isl.merchant': { type: 'sleepy', pitch: 0.2, rate: 0.12, seed: 'marlo' }, // Marlo, the traveling merchant (surprise.js)
   'isl.skye': { type: 'cheerful', pitch: -0.15, seed: 'skye' }, // Skye, the balloon explorer (surprise.js)

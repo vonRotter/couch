@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { t } from '../../core/i18n.js';
 import { toon } from '../../core/palette.js';
 import { mesh, box, cyl, sph, WOOD_DARK } from './models.js';
-import { heightAt, HAZEL_HOME, STORE, MUSEUM, PAD, PLACES, HOME_DOORS, DEN } from './map.js';
+import { heightAt, HAZEL_HOME, STORE, MUSEUM, PAD, PLACES, HOME_DOORS, DEN, HALL } from './map.js';
 import { HUT } from './isle2geo.js';
 import { wakeHour } from './npcs.js';
 
@@ -134,6 +134,10 @@ export class Homes {
     const mus = host.museum.model;
     mus.traverse((o) => { if (o.isMesh && o.material === M.win) o.material = M.home.hoot; });
     add('hoot', placeRig(makeDoorRig(1.3, 2.0, 0x8a5a32), mus, 0, 0.3, 2.28), { zzz: new THREE.Vector3(MUSEUM.x, 6.2, MUSEUM.z), closed: 'isl.home.museum' });
+    // Coach Bo: a little door on the game hall's west wall (he lives in the hall's back room)
+    const hall = map.hall;
+    hall.add(mesh(box(0.06, 0.5, 0.5), M.home.coach, -5.66, 2.3, -1.6, false)); // his window
+    add('coach', placeRig(makeDoorRig(0.8, 1.45, 0xff9f1c), hall, -5.67, 0.3, -0.6, -Math.PI / 2), { zzz: new THREE.Vector3(HALL.x - 5.6, 4.6, HALL.z - 0.6), closed: 'isl.home.hall' });
     // Shelby: her shell house on Shell Isle
     const hut = host.isle2.hut;
     hut.add(mesh(box(0.5, 0.4, 0.07), M.home.shelby, 0.95, 1.0, 1.14, false));

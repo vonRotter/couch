@@ -51,7 +51,7 @@ function injectStyle() {
 const AREA = {
   hazelGarden: 'garden', hazelPorch: 'garden', farmFence: 'farm', plazaBench: 'square', plazaFountain: 'square', plazaEast: 'square',
   storeCounter: 'store', lhDoor: 'lighthouse', beach: 'beach', beachDay: 'beach', shelbyVisit: 'cove', pier: 'pier', pierEnd: 'pier',
-  cafe: 'cafe', pad: 'pad', rocket: 'pad', hallFront: 'hall', hillTop: 'hill', meadow: 'meadow', museumDoor: 'museum',
+  cafe: 'cafe', pad: 'pad', rocket: 'pad', hallFront: 'hall', hallCoach: 'hall', hillTop: 'hill', meadow: 'meadow', museumDoor: 'museum',
   shelbyHut: 'isle', tidepools: 'isle', isleBeach: 'isle',
 };
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];

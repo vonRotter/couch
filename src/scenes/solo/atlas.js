@@ -33,7 +33,7 @@ addStrings({
     'map.hintKb': 'Stick or mouse: move · [OK] or click: show the way · [MAP] or [C]: close',
     'map.idle': 'Move the circle onto a picture', 'map.main': 'Your island', 'map.isle': 'Shell Isle',
     'map.pick': '[OK]: show the way there', 'map.unpick': '[OK]: arrow off', 'map.isTarget': 'The arrow points here',
-    'map.lg.you': 'You', 'map.lg.game': 'Games', 'map.lg.new': 'Not tried yet', 'map.lg.place': 'Shops and homes',
+    'map.lg.you': 'You', 'map.lg.game': 'Games', 'map.lg.new': 'Not tried yet', 'map.lg.suggest': 'Coach suggests', 'map.lg.place': 'Shops and homes',
     'map.lg.npc': 'Friends', 'map.lg.talk': 'Wants to talk', 'map.lg.sleep': 'Asleep at home', 'map.lg.today': 'Today', 'map.lg.target': 'The arrow points here',
     'map.today': 'Today', 'map.nothing': 'A quiet day. Walk around and say hello!',
     'map.home': 'Your home', 'map.store': "Rosa's store", 'map.cafe': 'Driftwood Café', 'map.cafeClosed': 'needs fixing',
@@ -56,7 +56,7 @@ addStrings({
     'map.hintKb': 'Pinne eller mus: flytt · [OK] eller klikk: vis veien · [MAP] eller [C]: lukk',
     'map.idle': 'Flytt ringen til et bilde', 'map.main': 'Øya di', 'map.isle': 'Skjelløya',
     'map.pick': '[OK]: vis veien dit', 'map.unpick': '[OK]: pila av', 'map.isTarget': 'Pila peker hit',
-    'map.lg.you': 'Deg', 'map.lg.game': 'Spill', 'map.lg.new': 'Ikke prøvd ennå', 'map.lg.place': 'Butikker og hjem',
+    'map.lg.you': 'Deg', 'map.lg.game': 'Spill', 'map.lg.new': 'Ikke prøvd ennå', 'map.lg.suggest': 'Treneren foreslår', 'map.lg.place': 'Butikker og hjem',
     'map.lg.npc': 'Venner', 'map.lg.talk': 'Vil snakke med deg', 'map.lg.sleep': 'Sover hjemme', 'map.lg.today': 'I dag', 'map.lg.target': 'Pila peker hit',
     'map.today': 'I dag', 'map.nothing': 'En rolig dag. Gå rundt og si hei!',
     'map.home': 'Hjemmet ditt', 'map.store': 'Butikken til Rosa', 'map.cafe': 'Drivvedkafeen', 'map.cafeClosed': 'må fikses',
@@ -86,7 +86,7 @@ const SNAP = 4.2; // world units: the cursor picks the nearest marker this close
 const READ_AFTER = 0.45; // seconds the cursor rests on a marker before its name is read
 
 const PLACE_ICON = { lighthouse: '🗼', ship: '🏴‍☠️', tent: '🎪', balloon: '🎈', mine: '⛏️', keep: '🏰', castle: '🏯', burrow: '🕳️', garage: '🤖', school: '🏫' };
-const NPC_FACE = { hazel: '👵', rosa: '🌸', bram: '🧔', grumbleton: '🏴‍☠️', pip: '🔧', mumble: '🐾', hoot: '🦉', shelby: '🐚' };
+const NPC_FACE = { hazel: '👵', rosa: '🌸', bram: '🧔', grumbleton: '🏴‍☠️', pip: '🔧', mumble: '🐾', hoot: '🦉', shelby: '🐚', coach: '📣' };
 
 const CSS = `
 .isl-panel.isl-map-wide { width: min(1120px, 96vw); max-height: 96vh; padding: 12px 18px 10px; }
@@ -101,6 +101,7 @@ const CSS = `
 .isl-mk.dim { opacity: .55; filter: grayscale(.7) drop-shadow(0 1px 0 #fff); }
 .isl-mk i { position: absolute; font-style: normal; font-size: .62em; }
 .isl-mk i.nw { right: -.55em; top: -.55em; }
+.isl-mk i.sg { left: -.6em; top: -.6em; }
 .isl-mk i.lk { right: -.5em; bottom: -.4em; }
 .isl-mk i.ex { right: -.45em; top: -.75em; background: #ff4f6d; color: #fff; border-radius: 999px; padding: 1px 5px; font-weight: 800; font-size: .6em; }
 .isl-mk i.zz { right: -.6em; top: -.6em; }
@@ -288,6 +289,10 @@ export class IslandAtlas {
     }
     // today's activities
     for (const a of this.today(region)) if (a.x !== undefined) add({ kind: 'today', r: 2.6, ...a });
+    // what Coach suggests trying next (a star; never a lock: everything stays open)
+    const sug = host.coach?.suggestion?.();
+    const sm = sug?.marker && out.find((m) => m.key === sug.marker || (sug.marker === 'trail:' && m.key.startsWith('trail:')));
+    if (sm) { sm.suggest = true; sm.sub = [t('pp.map.suggest'), sm.sub].filter(Boolean).join(' · '); }
     return out;
   }
 
@@ -355,7 +360,7 @@ export class IslandAtlas {
     const tk = this.target?.key;
     const mk = this.list.map((m, i) => {
       const cls = ['isl-mk', m.kind, m.locked ? 'dim' : '', m.key === tk ? 'tgt' : ''].join(' ');
-      const badge = (m.isNew ? '<i class="nw">✨</i>' : '') + (m.locked ? '<i class="lk">🔒</i>' : '') + (m.talk ? '<i class="ex">!</i>' : '') + (m.asleep ? '<i class="zz">💤</i>' : '');
+      const badge = (m.suggest ? '<i class="sg">⭐</i>' : '') + (m.isNew ? '<i class="nw">✨</i>' : '') + (m.locked ? '<i class="lk">🔒</i>' : '') + (m.talk ? '<i class="ex">!</i>' : '') + (m.asleep ? '<i class="zz">💤</i>' : '');
       const body = m.kind === 'npc' ? `<b style="--c:${m.css}">${m.icon}</b>` : m.icon;
       return `<div class="${cls}" data-i="${i}" style="${pos(m.x, m.z)}">${body}${badge}</div>`;
     }).join('');
@@ -365,7 +370,7 @@ export class IslandAtlas {
       ? `<svg class="lines" viewBox="0 0 ${R.x1 - R.x0} ${R.z1 - R.z0}" preserveAspectRatio="none"><path d="M${BRIDGE.x - BRIDGE.len / 2 - R.x0} ${BRIDGE.z - R.z0} H${BRIDGE.x + BRIDGE.len / 2 - R.x0}" stroke="#a06a3a" stroke-width="2.2"/></svg>` : '';
     const you = P ? `<div class="isl-mk you" style="${pos(P.x, P.z)}">${youArrow(P.p?.css || '#4cc9f0')}</div>` : '';
     // the legend shows each kind of marker as it looks on the map
-    const legend = [['you', `<span style="display:inline-block;width:1.2em">${youArrow(P?.p?.css || '#4cc9f0')}</span>`], ['game', '🎪'], ['new', '✨'], ['place', '🏠'],
+    const legend = [['you', `<span style="display:inline-block;width:1.2em">${youArrow(P?.p?.css || '#4cc9f0')}</span>`], ['game', '🎪'], ['new', '✨'], ['suggest', '⭐'], ['place', '🏠'],
       ['npc', '<b class="lgf">🙂</b>'], ['talk', '<b class="lgx">!</b>'], ['sleep', '💤'], ['today', '<span class="tdy">🌾</span>'], ['target', '🎯']]
       .map(([k, ic]) => `<div><span>${ic}</span>${esc(t(`map.lg.${k}`))}</div>`).join('');
     const today = this.today(region);
