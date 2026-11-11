@@ -796,7 +796,9 @@ export class HubScene extends BaseScene {
   /** B: pick up / throw, toggle swap readiness, or hold to leave. */
   handleB(e, inp, dt) {
     if (inp.bPressed) {
-      e.bAction = 'hold';
+      // a press right after another [B] action (a throw, a pick-up, a hat...) never starts "hold to leave":
+      // a quick double tap (hold to toggle latches it) or mashing must not walk a player out of the game
+      e.bAction = this.time - (e.bActT ?? -9) < 0.6 ? 'none' : 'hold';
       if (e.carry) {
         e.bAction = 'throw';
         e.charge = 0;
@@ -818,6 +820,7 @@ export class HubScene extends BaseScene {
         }
       }
     }
+    if (e.bAction && e.bAction !== 'hold' && inp.bPressed) e.bActT = this.time; // (a chain of quick presses stays 'none')
     if (inp.b) {
       if (e.bAction === 'throw') e.charge += dt;
       if (e.bAction === 'hold') {
@@ -825,7 +828,7 @@ export class HubScene extends BaseScene {
         if (e.bHold > 1.3) { this.despawn(e); this.refreshTitle(); return true; }
       }
     } else {
-      if (e.prevB && e.bAction === 'throw') this.throwToy(e);
+      if (e.prevB && e.bAction === 'throw') { this.throwToy(e); e.bActT = this.time; }
       e.bHold = 0;
       e.bAction = null;
     }
