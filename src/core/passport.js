@@ -184,8 +184,8 @@ export function freshPassport() {
 function clean(P) {
   const f = freshPassport();
   const out = P && typeof P === 'object' ? P : f;
-  for (const k of Object.keys(f)) if (out[k] === undefined || typeof out[k] !== typeof f[k] || Array.isArray(out[k]) !== Array.isArray(f[k])) out[k] = f[k];
-  for (const k of Object.keys(f.coach)) if (out.coach[k] === undefined) out.coach[k] = f.coach[k];
+  for (const k of Object.keys(f)) if (out[k] === undefined || out[k] === null || typeof out[k] !== typeof f[k] || Array.isArray(out[k]) !== Array.isArray(f[k])) out[k] = f[k];
+  for (const k of Object.keys(f.coach)) if (out.coach[k] === undefined || (out.coach[k] === null && k !== 'trial')) out.coach[k] = f.coach[k];
   return out;
 }
 
