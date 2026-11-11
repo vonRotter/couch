@@ -8,6 +8,7 @@ import { COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, makeTree, makeRock, seeded } from '../core/world.js';
 import { moveBody, approach } from '../core/physics2d.js';
 import { esc } from '../core/ui.js';
+import { invulnBlink, shakeScale } from '../core/assist.js';
 
 const STOCKS = 3;
 const MATCH_TIME = 150;
@@ -348,7 +349,7 @@ export class BrawlScene extends MiniGame {
     e.ch.faceSide(e.facing);
     e.ch.spin = e.attackKind === 'spin' && e.attack ? (e.atkT / e.attack.total) * Math.PI * 2 : 0;
     e.ch.group.position.set(b.x, b.y, 0);
-    e.ch.group.visible = e.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
+    e.ch.group.visible = invulnBlink(e.ch, e.invuln > 0, this.time, 7);
     e.ch.update(dt, { moving: Math.min(1, Math.abs(b.vx) / PHYS.speed), grounded: b.grounded, vy: b.vy });
     if (e.bot) e.ch.group.rotation.y = e.facing * 0.8;
 
@@ -408,8 +409,8 @@ export class BrawlScene extends MiniGame {
     this.camera.position.copy(this.camPos);
     if (this.shake > 0) {
       this.shake -= dt;
-      this.camera.position.x += (Math.random() - 0.5) * this.shake * 1.5;
-      this.camera.position.y += (Math.random() - 0.5) * this.shake * 1.5;
+      this.camera.position.x += (Math.random() - 0.5) * this.shake * 1.5 * shakeScale();
+      this.camera.position.y += (Math.random() - 0.5) * this.shake * 1.5 * shakeScale();
     }
     this.camera.lookAt(this.camLook);
     this.confettiOrigin = new THREE.Vector3(this.camLook.x, this.camLook.y + 2, 0);

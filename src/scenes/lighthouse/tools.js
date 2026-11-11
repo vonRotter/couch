@@ -1,4 +1,4 @@
-import { aimLevel, homeToward } from '../../core/assist.js';
+import { aimLevel, homeToward, blinkOn } from '../../core/assist.js';
 import { DIRS, TALL, ARROW_RANGE, tileX, tileZ, colOf, rowOf, inGrid, pegUp } from './tiles.js';
 import { makeBomb, makeArrow } from './models.js';
 
@@ -46,7 +46,7 @@ export const ToolsMixin = {
       const u = b.mesh.userData;
       // the bomb swells and blinks faster just before it goes off
       const hurry = b.fuse < 0.6;
-      u.spark.visible = Math.floor(b.fuse * (hurry ? 18 : 8)) % 2 === 0;
+      u.spark.visible = blinkOn(b.fuse, hurry ? 9 : 4);
       u.ball.scale.setScalar(1 + (hurry ? (0.6 - b.fuse) * 0.4 : 0) + Math.sin(this.time * 20) * 0.02);
       if (b.fuse <= 0) {
         b.dead = true;

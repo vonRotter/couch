@@ -10,7 +10,7 @@ import { moveBody, platformerControl, solidAt, boxesTouch, overlaps } from '../c
 import { SKYHOP_LEVELS } from './skyhop-levels.js';
 import { esc } from '../core/ui.js';
 import { addStrings } from '../core/i18n.js';
-import { timingScale, struggle, overcame, markSkipped, isSkipped } from '../core/assist.js';
+import { timingScale, struggle, overcame, markSkipped, isSkipped, invulnBlink } from '../core/assist.js';
 import { say } from '../core/voice.js';
 
 addStrings({
@@ -547,7 +547,7 @@ export class PlatformerScene extends MiniGame {
       ent.ch.faceSide(ent.facing || 1);
       if (ent.state === 'done') ent.ch.targetYaw = 0;
       ent.ch.group.position.set(b.x, b.y, 0);
-      ent.ch.group.visible = ent.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
+      ent.ch.group.visible = invulnBlink(ent.ch, ent.invuln > 0, this.time, 7);
       ent.ch.update(dt, { moving: Math.min(1, Math.abs(b.vx) / PHYS.speed), grounded: b.grounded || ent.state === 'bubble', vy: b.vy });
     }
   }

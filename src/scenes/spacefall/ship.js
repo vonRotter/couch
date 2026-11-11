@@ -1,5 +1,5 @@
 import { SHIP, GRAV, ZERO } from './config.js';
-import { aimLevel } from '../../core/assist.js';
+import { aimLevel, blinkOn } from '../../core/assist.js';
 import { makeShip, makeAmmoRack } from './models.js';
 import { angleDiff, clamp, damp, rand } from './util.js';
 import { t } from '../../core/i18n.js';
@@ -313,7 +313,7 @@ export class Ship {
     u.shield.visible = this.shield;
     if (this.shield) { u.shield.rotation.y += 0.05; u.shield.rotation.x += 0.03; }
     u.halo.scale.setScalar(this.dashing ? 1.5 : 1.1);
-    mesh.visible = this.invuln <= 0 || Math.floor(this.match.time * 14) % 2 === 0;
+    mesh.visible = this.invuln <= 0 || blinkOn(this.match.time, 7);
     // Missile pips float above the ship.
     const r = this.rack;
     r.position.set(this.x, this.y + 0.72, 0.3);

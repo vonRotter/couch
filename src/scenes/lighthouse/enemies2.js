@@ -3,6 +3,7 @@ import { COLORS, toon, basic, sharedGeo } from '../../core/palette.js';
 import { box, cyl, sph, cone, tor, mesh } from './models.js';
 import { Enemy, makeShadow, makeAlert, markGeo, markMat, DIR_V, cardinal } from './enemies.js';
 import { colOf, rowOf, inGrid, TALL } from './tiles.js';
+import { blinkOn } from '../../core/assist.js';
 
 // Part 2 enemies and bosses. Every one shows what it is about to do:
 //   beetle    a hard shell: swords bounce off. A bomb, or a thrown pot / boulder, flips it over.
@@ -743,7 +744,7 @@ class Stormbeak extends Enemy {
         this.face = cardinal(this.target.x - this.x, this.target.z - this.z);
         this.y += (2.0 - this.y) * Math.min(1, dt * 4);
         setLine(this.line, this.x, this.z, this.target.x, this.target.z);
-        this.line.visible = Math.floor(this.st * 12) % 2 === 0 || this.st > 0.4;
+        this.line.visible = blinkOn(this.st, 6) || this.st > 0.4;
         if (this.st <= 0) { this.from = { x: this.x, z: this.z, y: this.y }; this.go('dive', 0); eng.sfx('dash'); }
         break;
       case 'dive': {

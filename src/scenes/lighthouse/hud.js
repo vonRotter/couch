@@ -1,5 +1,6 @@
 import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
+import { calmOn } from '../../core/assist.js';
 
 // HTML overlay for Lighthouse Caves: hearts, shells, keys and the two button boxes at the top, the
 // dialog box, button hints, the item / map screen, the title card, "fainted" and "to be continued".
@@ -259,7 +260,7 @@ export class LhHud {
     roll.style.transform = `translateY(${(H - c.p * (h + H * 0.45)).toFixed(1)}px)`;
   }
 
-  flash(v = 0.6) { this.flashV = Math.max(this.flashV || 0, v); }
+  flash(v = 0.6) { this.flashV = Math.max(this.flashV || 0, calmOn() ? v * 0.35 : v); } // softer with reduce flashing
 
   setDark(on) { this.darkTarget = on ? 1 : 0; }
 

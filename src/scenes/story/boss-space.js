@@ -5,6 +5,7 @@ import { t, addStrings } from '../../core/i18n.js';
 import { BossScene, volley } from './boss-common.js';
 import { darken } from '../../core/character.js';
 import { makeGrumble } from '../../core/critters.js';
+import { blinkOn, invulnBlink } from '../../core/assist.js';
 
 // Starry Space boss (side view): the Grumble King sits on his little moon and blows bubble
 // rings across the sky. Steer your rocket through them with the stick; A gives a short boost.
@@ -261,7 +262,7 @@ export class BossSpaceScene extends BossScene {
     for (const b of this.bands) {
       b.t += dt;
       // Flash while warning.
-      b.g.visible = b.t > BAND_WARN || Math.floor(b.t * 8) % 2 === 0;
+      b.g.visible = b.t > BAND_WARN || blinkOn(b.t, 4);
       if (b.t >= BAND_WARN) {
         if (b.front === null) { b.front = KING_X - 2; this.game.audio.play('whoosh'); this.king.squash(0.8); }
         b.front -= SNEEZE_SPEED * dt;
@@ -352,7 +353,7 @@ export class BossSpaceScene extends BossScene {
         e.bubble.scale.setScalar(1.05 + Math.sin(this.time * 10) * 0.05);
         e.ch.group.rotation.z = Math.sin(this.time * 6) * 0.3;
       }
-      e.ch.group.visible = !(e.safe > 0 && !stuck && Math.floor(e.safe * 12) % 2 === 0) || this.finished;
+      e.ch.group.visible = invulnBlink(e.ch, e.safe > 0 && !stuck && !this.finished, e.safe, 6);
       const fl = e.rocket.userData.flame;
       fl.scale.set(1, 0.7 + Math.hypot(e.vx, e.vy) * 0.06 + (e.boostT > 0 ? 0.6 : 0) + Math.random() * 0.15, 1);
     }

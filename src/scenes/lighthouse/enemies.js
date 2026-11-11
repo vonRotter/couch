@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { timingScale } from '../../core/assist.js';
+import { timingScale, blinkOn } from '../../core/assist.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeGrumble } from '../../core/critters.js';
 import { box, cyl, sph, cone, mesh } from './models.js';
@@ -112,7 +112,7 @@ export class Enemy {
   sync() {
     this.group.position.set(this.x, this.y, this.z);
     this.body.rotation.y += ((YAW[this.face] - this.body.rotation.y + Math.PI * 3) % (Math.PI * 2) - Math.PI) * 0.25;
-    this.group.visible = this.flash > 0 ? Math.floor(this.flash * 20) % 2 === 0 : true;
+    this.group.visible = this.flash > 0 ? blinkOn(this.flash, 10) : true;
   }
 
   /** Returns 'hit', 'clang' or 'none'. src: sword | spin | pot | rock | flame | rope. */
@@ -858,7 +858,7 @@ class KingCrab extends Enemy {
       if (c.st <= 0) { c.state = 'rest'; c.g.rotation.z = 0; }
     }
     c.g.position.set(c.x, c.y, c.z);
-    c.g.visible = c.flash > 0 ? Math.floor(c.flash * 20) % 2 === 0 : true;
+    c.g.visible = c.flash > 0 ? blinkOn(c.flash, 10) : true;
     c.shadow.position.set(c.x, 0.03, c.z);
     c.shadow.scale.setScalar(c.state === 'raise' ? 1.5 + (2.6 - c.y) * 0.1 : 1.2);
     c.shadow.material = c.state === 'raise' ? markMat() : shadowMat();

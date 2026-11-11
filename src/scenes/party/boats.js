@@ -4,6 +4,7 @@ import { makeGrumble } from '../../core/critters.js';
 import { COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeTree, makeFlower, makeBush, seeded } from '../../core/world.js';
 import { t, addStrings } from '../../core/i18n.js';
+import { blinkOn } from '../../core/assist.js';
 
 addStrings({
   en: {
@@ -343,7 +344,7 @@ export class BoatsRound extends Round {
       const tilt = THREE.MathUtils.clamp(sp / MAX, 0, 1.5);
       e.boat.position.set(e.x, Math.sin(this.time * 3 + e.yaw) * 0.04, e.z);
       e.boat.rotation.set(-tilt * 0.08 + Math.sin(this.time * 2.2 + e.x) * 0.03, e.yaw, Math.sin(this.time * 1.7 + e.z) * 0.04);
-      e.boat.visible = e.safe > 0 ? Math.floor(this.time * 14) % 2 === 0 : true;
+      e.boat.visible = e.safe > 0 ? blinkOn(this.time, 7) : true;
       if (sp > 2 && Math.random() < dt * 10) this.party.puffs.burst(new THREE.Vector3(e.x - (e.vx / sp) * 0.8, 0.05, e.z - (e.vz / sp) * 0.8), 0xe8fbff, { count: 1, size: 0.2, life: 0.4, speed: 0.5, up: 0.5 });
     }
 

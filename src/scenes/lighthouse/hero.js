@@ -3,6 +3,7 @@ import { toon } from '../../core/palette.js';
 import { Character } from '../../core/character.js';
 import { DIRS, TALL, tileX, tileZ, colOf, rowOf, inGrid, pegUp, ROPE_RANGE, THROW_RANGE } from './tiles.js';
 import { makeSword, makeItem, mesh, cyl, cone, sph, tor } from './models.js';
+import { blinkOn, invulnBlink } from '../../core/assist.js';
 
 // The hero: a bean in the solo profile's color and hat. Mixed into LighthouseEngine.
 //   stick: walk (8 ways, faces 4 ways like the classics)   [A]: sword (hold and let go: spin)
@@ -79,7 +80,7 @@ export const HeroMixin = {
     }
     if (h.mode !== 'get' && h.mode !== 'spin') ch.targetYaw = YAW[h.face];
     ch.update(dt, { moving: h.moving });
-    ch.group.visible = h.inv > 0 && h.mode !== 'get' ? Math.floor(h.inv * 16) % 2 === 0 : true;
+    ch.group.visible = invulnBlink(ch, h.inv > 0 && h.mode !== 'get', h.inv, 8);
     this.swordMesh.visible = !!this.save.items.sword && !h.carry && h.mode !== 'get' && !h.swim;
     this.beltLantern.visible = !!this.save.items.lantern;
     // sword pose
@@ -97,7 +98,7 @@ export const HeroMixin = {
       sp.position.set(0.32, 0.45, 0.05);
     }
     if (h.mode === 'swing' || h.mode === 'spin' || h.mode === 'charge') sp.position.set(0, 0.5, 0.05);
-    this.chargeGlow.visible = h.mode === 'charge' && h.charge >= CHARGE && Math.floor(this.time * 10) % 2 === 0;
+    this.chargeGlow.visible = h.mode === 'charge' && h.charge >= CHARGE && blinkOn(this.time, 5);
     if (h.carry) {
       const m = h.carry.mesh;
       const lift = h.mode === 'lift' ? Math.min(1, h.t / 0.2) : 1;

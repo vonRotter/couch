@@ -7,6 +7,7 @@ import { COLORS, toon, sharedGeo } from '../core/palette.js';
 import { addLights, skyTexture, makeCloud, seeded } from '../core/world.js';
 import { makeGrumble } from '../core/critters.js';
 import { moveBody, platformerControl, solidAt, boxesTouch, approach } from '../core/physics2d.js';
+import { blinkOn, invulnBlink } from '../core/assist.js';
 
 // Arena: x in [-13, 13], y in [0, 15]. A gap in the floor wraps you to the top.
 const LEFT = -13, RIGHT = 13, TOP = 15;
@@ -350,7 +351,7 @@ export class BubbleScene extends MiniGame {
 
       ent.ch.faceSide(ent.facing);
       ent.ch.group.position.set(b.x, b.y, 0);
-      ent.ch.group.visible = ent.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
+      ent.ch.group.visible = invulnBlink(ent.ch, ent.invuln > 0, this.time, 7);
       ent.ch.update(dt, { moving: Math.min(1, Math.abs(b.vx) / PHYS.speed), grounded: b.grounded || ent.state === 'bubbled', vy: b.vy });
     }
 
@@ -439,7 +440,7 @@ export class BubbleScene extends MiniGame {
       const sq = Math.sin(bub.squish * Math.PI) * 0.3;
       bub.mesh.position.set(bub.x, bub.y, 0);
       bub.mesh.scale.set(1 + wob + sq, 1 - wob - sq, 1);
-      const warn = bub.t > life - 1.5 && Math.floor(bub.t * 10) % 2 === 0;
+      const warn = bub.t > life - 1.5 && blinkOn(bub.t, 5);
       bub.mesh.children[0].visible = !warn;
       if (bub.trapped) {
         const e = bub.trapped;
@@ -540,7 +541,7 @@ export class BubbleScene extends MiniGame {
       this.wrap(b);
       f.mesh.position.set(b.x, b.y, 0);
       f.mesh.rotation.y += dt * 2;
-      f.mesh.visible = f.life > 2 || Math.floor(f.life * 10) % 2 === 0;
+      f.mesh.visible = f.life > 2 || blinkOn(f.life, 5);
       for (const ent of this.ents) {
         if (ent.state !== 'play') continue;
         if (boxesTouch(ent.body, b, 0.1)) {

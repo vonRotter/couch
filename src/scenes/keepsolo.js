@@ -26,6 +26,7 @@ import { HeroMixin } from './keepsolo/hero.js';
 import { LightMixin } from './keepsolo/light.js';
 import { MonsterMixin } from './keepsolo/monsters.js';
 import { CharPanel, TreePanel } from './keepsolo/tree.js';
+import { invulnBlink } from '../core/assist.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
 // bank). Pick a hero (Pillow Knight, Feather Archer or Bubble Wizard: one save each), get ready in
@@ -733,7 +734,7 @@ export class KeepSoloScene extends MiniGame {
     e.block.visible = e.blocking;
     if (e.offMesh && e.offKind === 'shield') e.offMesh.position.set(e.blocking ? -0.1 : -0.5, 0.45, e.blocking ? 0.55 : 0.15);
     if (e.offMesh && e.offKind === 'orb') e.offMesh.position.y = 0.75 + Math.sin(this.time * 3) * 0.08;
-    ch.group.visible = !(e.inv > 0 && e.hurtT > -0.25 && e.state === 'walk' && this.kind === 'dungeon' && Math.floor(this.time * 14) % 2 === 0);
+    ch.group.visible = invulnBlink(ch, e.inv > 0 && e.hurtT > -0.25 && e.state === 'walk' && this.kind === 'dungeon', this.time, 7);
     ch.update(dt, { moving: e.moving || 0 });
     e.ring.position.set(e.x, 0.05 + Math.min(0, e.y), e.z);
     e.aimPivot.position.set(e.x, 0.12 + Math.min(0, e.y), e.z);

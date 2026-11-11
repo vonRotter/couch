@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { aimLevel, struggle, overcame } from '../core/assist.js';
+import { aimLevel, struggle, overcame, blinkOn, calmOn } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { COLORS, PLAYER_COLORS } from '../core/palette.js';
 import { addLights, skyTexture } from '../core/world.js';
@@ -561,7 +561,8 @@ export class DuckHuntScene extends MiniGame {
     }
     if (this.flashT > 0) {
       this.flashT -= dt;
-      this.scene.background = this.flashT > 0 && (this.flashT > 0.4 || Math.floor(this.flashT * 10) % 2 === 0) ? this.skyFlash : this.skyNormal;
+      // reduce flashing: the sky turns pink once and stays until it fades back, no blinking
+      this.scene.background = this.flashT > 0 && (calmOn() || this.flashT > 0.4 || Math.floor(this.flashT * 10) % 2 === 0) ? this.skyFlash : this.skyNormal;
     }
   }
 
@@ -684,7 +685,7 @@ export class DuckHuntScene extends MiniGame {
       m.rotation.x = 0;
     } else if (tg.state === 'hit') {
       // Frozen in the zap: flicker bright.
-      zapTint(m, Math.floor(tg.t * 16) % 2 === 0, Math.floor(tg.t * 8) % 2 ? 0xffffff : tg.by.p.color);
+      zapTint(m, blinkOn(tg.t, 8), blinkOn(tg.t, 4) ? tg.by.p.color : 0xffffff);
       for (const w of wings) w.rotation.x = w.userData.side * 1.2;
       if (tg.t > 0.5) {
         zapTint(m, false);

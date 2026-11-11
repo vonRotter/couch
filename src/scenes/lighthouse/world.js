@@ -10,6 +10,7 @@ import {
 } from './models.js';
 import { basic } from '../../core/palette.js';
 import { makeEnemy } from './foes.js';
+import { blinkOn } from '../../core/assist.js';
 
 // Room runtime: turns room data into a live room (meshes, entities, doors, puzzle state) and
 // answers "can something stand / walk / fly here?". Mixed into LighthouseEngine.
@@ -527,7 +528,7 @@ export const WorldMixin = {
         f.scale.set(1 + Math.sin(room.time * 17 + tc.c) * 0.08, 1 + Math.sin(room.time * 23 + tc.r) * 0.12, 1);
         if (tc.timer > 0) {
           tc.timer -= dt;
-          if (tc.timer < 2) f.visible = Math.floor(tc.timer * 8) % 2 === 0;
+          if (tc.timer < 2) f.visible = blinkOn(tc.timer, 4);
           if (tc.timer <= 0) { tc.timer = 0; this.extinguish(tc); }
         }
       }

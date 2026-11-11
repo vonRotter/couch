@@ -5,6 +5,7 @@ import { makeGrumble } from '../../core/critters.js';
 import { COLORS, PLAYER_COLORS, toon, sharedGeo } from '../../core/palette.js';
 import { makeTree, seeded } from '../../core/world.js';
 import { t, addStrings } from '../../core/i18n.js';
+import { blinkOn } from '../../core/assist.js';
 
 addStrings({
   en: {
@@ -447,7 +448,7 @@ export class TrailsRound extends Round {
       const splatted = rl.state === 'splat';
       rl.group.rotation.y = rl.yaw + (splatted ? (RESPAWN - rl.wait) * 9 : 0);
       rl.group.position.y = splatted ? Math.max(0, Math.sin((RESPAWN - rl.wait) * 6) * 0.4) : 0;
-      rl.group.visible = !(splatted && rl.wait < 0.6) && !(rl.ghost > 0 && Math.floor(this.time * 12) % 2 === 0);
+      rl.group.visible = !(splatted && rl.wait < 0.6) && !(rl.ghost > 0 && !blinkOn(this.time, 6));
       rl.drum.rotation.x += (playing && rl.state === 'roll' ? SPEED * CELL / 0.22 : 0) * dt;
       if (rl.ch) {
         rl.ch.targetYaw = 0;

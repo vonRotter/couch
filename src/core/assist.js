@@ -6,13 +6,14 @@
 // profiles saved before this existed simply get the defaults.
 //
 // Per player (follow the player who plays): forgiving timing, aim help, hold to toggle, button remapping.
-// For the whole screen (one shared screen): game speed, text size, outlines. On a profile's own island that is
+// For the whole screen (one shared screen): game speed, text size, outlines, reduce flashing and shake. On a profile's own island that is
 // the profile's choice; on the shared island the most help anyone playing asked for (slowest speed, biggest
 // text, outlines if anyone wants them), starting from the device default.
 //
 // Games ask with the helpers below: timingScale(p), aimLevel(p), aimAt(...), homeToward(...), gameSpeed(game)
 // and report trouble with struggle(scene, p, kind, part) / overcame(scene, part) (see the offer logic below).
 
+import * as THREE from 'three';
 import { listProfiles, setProfileAssist } from './profiles.js';
 
 export const SPEEDS = [1, 0.9, 0.75, 0.6, 0.5];
@@ -27,6 +28,7 @@ export const DEFAULTS = Object.freeze({
   toggle: false, // hold to toggle: tap a held button on, tap again off
   text: 0, // text size: index into TEXT_SIZES
   contrast: false, // strong outlines on important things, shapes as well as colours
+  calm: false, // reduce flashing and shake: no fast blinking (a soft glow or a slow pulse) and no camera shake
   offers: true, // the game may offer help after repeated tries
   never: [], // offers answered with "don't ask again" ('timing', 'aim', 'speed', 'skip')
   keys: {}, // keyboard remaps per scheme: { kb0: { a: 'Space', b: 'KeyE', c: 'KeyQ' } }
@@ -109,6 +111,7 @@ export function screenSettings(game) {
     speed: Math.min(...list.map((s) => s.speed)),
     text: Math.max(...list.map((s) => s.text)),
     contrast: list.some((s) => s.contrast),
+    calm: list.some((s) => s.calm),
     timing: list.some((s) => s.timing),
     aim: Math.max(...list.map((s) => effectiveAim(s, sceneAimDefault(game)))),
   };
@@ -117,6 +120,54 @@ export function screenSettings(game) {
 /** Game speed for the scene on screen (1 = full speed). Menus and banners are not slowed. */
 export function gameSpeed(game) {
   return screenSettings(game).speed;
+}
+
+// ---------- reduce flashing and shake ----------
+//
+// Screen-wide (what the screen shows): main.js calls setCalm() from applyScreenSettings. Games blink a
+// character at 7-10 Hz while it cannot be hit and blink warnings; with it on, characters glow softly instead
+// (invulnBlink) and other blinks slow to a gentle pulse under 3 Hz (blinkOn). Camera shakes multiply by
+// shakeScale() (0 with it on).
+
+export const CALM_HZ = 1.25; // the slow pulse (on/off cycles per second) that replaces fast blinking
+let calmNow = false;
+export function setCalm(on) { calmNow = !!on; }
+export function calmOn() { return calmNow; }
+
+/** 0 with "Reduce flashing and shake" on, else 1: multiply a camera shake offset by it. */
+export function shakeScale() { return calmNow ? 0 : 1; }
+
+/**
+ * A blink that shows hz times a second (Math.floor(time * hz * 2) % 2 === 0, as the games did): true while
+ * shown. With reduce flashing on it slows to CALM_HZ.
+ */
+export function blinkOn(time, hz) {
+  const f = calmNow ? Math.min(hz, CALM_HZ) : hz;
+  return Math.floor(time * f * 2) % 2 === 0;
+}
+
+/**
+ * "Can't be hit right now" on a bean (core/character.js Character): returns whether its group shows.
+ * Off: the game's fast blink at hz. Reduce flashing on: it stays visible with a soft glow that breathes slowly.
+ */
+export function invulnBlink(ch, active, time, hz = 7) {
+  if (!active || !calmNow) {
+    if (ch?.glow) ch.glow.visible = false;
+    return !active || Math.floor(time * hz * 2) % 2 === 0;
+  }
+  if (ch?.body) {
+    if (!ch.glow) {
+      const m = new THREE.MeshBasicMaterial({ color: 0xfff4b8, transparent: true, opacity: 0.5, side: THREE.BackSide, depthWrite: false });
+      ch.glow = new THREE.Mesh(ch.body.geometry, m);
+      ch.glow.scale.setScalar(1.25);
+      ch.glow.userData.hull = true; // outlines skip it
+      ch.glow.renderOrder = -1;
+      ch.body.add(ch.glow);
+    }
+    ch.glow.visible = true;
+    ch.glow.material.opacity = 0.5 + 0.2 * Math.sin(time * Math.PI * 2 * 0.9); // breathes under 1 Hz
+  }
+  return true;
 }
 
 // ---------- forgiving timing ----------

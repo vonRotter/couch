@@ -24,6 +24,7 @@ addStrings({
     'assist.toggle': 'Hold to toggle', 'assist.toggle.d': 'Things you must hold (charge, boost, end turn...) become: tap to start, tap again to stop.',
     'assist.text': 'Text size', 'assist.text.d': 'Bigger words on the screen.', 'assist.text.0': 'normal', 'assist.text.1': 'big', 'assist.text.2': 'huge',
     'assist.contrast': 'Strong outlines', 'assist.contrast.d': 'Thick outlines on players, enemies and targets, and shapes as well as colours.',
+    'assist.calm': 'Reduce flashing and shake', 'assist.calm.d': 'No fast blinking (a soft glow or a slow pulse instead) and no camera shake.',
     'assist.offers': 'Offer help when it is hard', 'assist.offers.d': 'After a few tries at the same part, the game asks if you want help. (Turning it on again also brings back every "don\'t ask again".)',
     'assist.buttons': 'Buttons…', 'assist.buttons.d': 'Choose which key or button does what, for the controller you hold.',
     'assist.done': 'Done', 'assist.done.d': 'Back to the game.',
@@ -58,6 +59,7 @@ addStrings({
     'assist.toggle': 'Trykk i stedet for å holde', 'assist.toggle.d': 'Ting du må holde (lade, turbo, avslutte turen...) blir: trykk for å starte, trykk igjen for å stoppe.',
     'assist.text': 'Tekststørrelse', 'assist.text.d': 'Større ord på skjermen.', 'assist.text.0': 'vanlig', 'assist.text.1': 'stor', 'assist.text.2': 'kjempestor',
     'assist.contrast': 'Tydelige kanter', 'assist.contrast.d': 'Tykke kanter rundt spillere, fiender og mål, og former i tillegg til farger.',
+    'assist.calm': 'Mindre blinking og risting', 'assist.calm.d': 'Ingen rask blinking (et mykt lys eller en rolig puls i stedet) og ingen risting av bildet.',
     'assist.offers': 'Tilby hjelp når det er vanskelig', 'assist.offers.d': 'Etter noen forsøk på samme sted spør spillet om du vil ha hjelp. (Slår du det på igjen, kommer alle «ikke spør igjen» tilbake.)',
     'assist.buttons': 'Knapper…', 'assist.buttons.d': 'Velg hvilken tast eller knapp som gjør hva, for kontrollen du holder.',
     'assist.done': 'Ferdig', 'assist.done.d': 'Tilbake til spillet.',
@@ -82,7 +84,7 @@ addStrings({
   },
 });
 
-const ROWS = ['speed', 'timing', 'aim', 'toggle', 'text', 'contrast', 'offers', 'buttons', 'done'];
+const ROWS = ['speed', 'timing', 'aim', 'toggle', 'text', 'contrast', 'calm', 'offers', 'buttons', 'done'];
 
 /** The devices that steer a shared menu: the joined players', or every device when nobody has joined. */
 export function menuDevices(game) {
@@ -132,7 +134,7 @@ export class AssistMenu {
       case 'speed': return `${Math.round(s.speed * 100)} %`;
       case 'aim': return s.aimChosen ? t(`assist.aim.${s.aim}`) : `${t(`assist.aim.${this.aimNow}`)} ${t('assist.aim.dflt')}`;
       case 'text': return t(`assist.text.${s.text}`);
-      case 'timing': case 'toggle': case 'contrast': case 'offers': return t(s[k] ? 'assist.on' : 'assist.off');
+      case 'timing': case 'toggle': case 'contrast': case 'calm': case 'offers': return t(s[k] ? 'assist.on' : 'assist.off');
       default: return '';
     }
   }
@@ -178,7 +180,7 @@ export class AssistMenu {
     else if (k === 'aim') this.set({ aim: (this.aimNow + dir + 3) % 3, aimChosen: true });
     else if (k === 'text') this.set({ text: (s.text + dir + TEXT_SIZES.length) % TEXT_SIZES.length });
     else if (k === 'offers') this.set({ offers: !s.offers, never: !s.offers ? [] : s.never });
-    else if (['timing', 'toggle', 'contrast'].includes(k)) this.set({ [k]: !s[k] });
+    else if (['timing', 'toggle', 'contrast', 'calm'].includes(k)) this.set({ [k]: !s[k] });
     else return;
     this.game.applyScreenSettings?.();
   }

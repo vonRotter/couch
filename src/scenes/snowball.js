@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { aimLevel, struggle, overcame } from '../core/assist.js';
+import { aimLevel, struggle, overcame, blinkOn, invulnBlink, shakeScale } from '../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
@@ -566,7 +566,7 @@ export class SnowballScene extends MiniGame {
       if (f.state === 'dropped') {
         f.returnT -= dt;
         f.group.rotation.z = 0.9 * sideOf(f.team);
-        f.group.visible = f.returnT > 3 || Math.sin(this.time * 20) > -0.3;
+        f.group.visible = f.returnT > 3 || blinkOn(this.time, 3.2);
         if (f.returnT <= 0) { f.group.visible = true; this.returnFlag(f); continue; }
       }
       if (this.state !== 'play') continue;
@@ -831,7 +831,7 @@ export class SnowballScene extends MiniGame {
   updateFreezes(dt) {
     for (const f of this.freezes) {
       f.t -= dt;
-      if (f.t < 1) f.mesh.visible = Math.sin(this.time * 18) > 0;
+      if (f.t < 1) f.mesh.visible = blinkOn(this.time, 2.9);
       if (f.t <= 0) { this.scene.remove(f.mesh); f.mesh.geometry.dispose(); }
     }
     this.freezes = this.freezes.filter((f) => f.t > 0);
@@ -875,7 +875,7 @@ export class SnowballScene extends MiniGame {
         if (tg.gold > 0) {
           tg.gold -= dt;
           tg.coin.rotation.z += dt * 4;
-          tg.coin.visible = tg.gold > 2 || Math.sin(this.time * 16) > 0;
+          tg.coin.visible = tg.gold > 2 || blinkOn(this.time, 2.5);
           if (tg.gold <= 0) tg.coin.visible = false;
         }
       } else {
@@ -1333,7 +1333,7 @@ export class SnowballScene extends MiniGame {
     if (e.scooping && !e.bot) e.ch.pivot.rotation.x = 0.35; else if (!e.bot) e.ch.pivot.rotation.x *= 0.8;
     e.hand.visible = e.snow >= 1;
     // Blink softly while you can't be hit.
-    e.ch.group.visible = !(e.immune > 0 && e.slip <= 0) || Math.sin(this.time * 30) > -0.4;
+    e.ch.group.visible = invulnBlink(e.ch, e.immune > 0 && e.slip <= 0, this.time, 4.8);
     if (e.powerMesh) e.powerMesh.rotation.y += dt * 2;
     e.ring.position.set(e.x, e.y + 0.04, e.z);
   }
@@ -1562,8 +1562,8 @@ export class SnowballScene extends MiniGame {
     this.camera.position.copy(this.camBase);
     if (this.shake > 0) {
       this.shake -= dt;
-      this.camera.position.x += (Math.random() - 0.5) * this.shake;
-      this.camera.position.y += (Math.random() - 0.5) * this.shake;
+      this.camera.position.x += (Math.random() - 0.5) * this.shake * shakeScale();
+      this.camera.position.y += (Math.random() - 0.5) * this.shake * shakeScale();
     }
     this.camera.lookAt(this.camera.position.x, 0, 1);
 

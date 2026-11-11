@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { aimLevel, homeToward } from '../core/assist.js';
+import { aimLevel, homeToward, invulnBlink } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
@@ -1189,7 +1189,7 @@ export class KeepScene extends MiniGame {
     ch.pivot.rotation.x += ((e.state === 'nap' ? -1.35 : 0) - ch.pivot.rotation.x) * Math.min(1, dt * 8);
     ch.spin = e.spinT > 0 ? (1 - e.spinT / 0.4) * Math.PI * 2 : 0;
     e.hand.rotation.y = e.swingT > 0 ? e.swingDir * Math.sin((e.swingT / 0.22) * Math.PI) * 1.3 : 0;
-    ch.group.visible = !(e.inv > 0 && e.state === 'walk' && Math.floor(this.time * 14) % 2 === 0);
+    ch.group.visible = invulnBlink(ch, e.inv > 0 && e.state === 'walk', this.time, 7);
     ch.update(dt, { moving });
     e.bubble.visible = e.state === 'bubble';
     if (e.bubble.visible) e.bubble.position.set(e.x, e.y + 0.65, e.z);

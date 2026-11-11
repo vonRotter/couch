@@ -52,7 +52,7 @@ import { StartScene } from './scenes/start.js';
 import { coopReward, nameList } from './core/coop.js';
 import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './core/voice.js';
 import * as assist from './core/assist.js';
-import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES } from './core/assist.js';
+import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES, setCalm } from './core/assist.js';
 import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
 import { refreshOutlines } from './core/outline.js';
 import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
@@ -210,6 +210,8 @@ class Game {
     root.style.setProperty('--ts', String(TEXT_SIZES[s.text] || 1));
     root.classList.toggle('a11y-text', s.text > 0);
     root.classList.toggle('a11y-contrast', !!s.contrast);
+    root.classList.toggle('a11y-calm', !!s.calm); // reduce flashing and shake (fast CSS blinks slow down)
+    setCalm(s.calm);
     this.ui.textScale = TEXT_SIZES[s.text] || 1;
     if (this.contrastOn !== !!s.contrast || this.outlinedScene !== this.current) {
       this.contrastOn = !!s.contrast;

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { aimLevel } from '../core/assist.js';
+import { aimLevel, blinkOn } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { COLORS, PLAYER_COLORS, toon } from '../core/palette.js';
 import { addLights, skyTexture } from '../core/world.js';
@@ -889,7 +889,7 @@ export class DogfightScene extends MiniGame {
       m.ch.yaw = m.ch.targetYaw = yaw;
       m.ch.update(dt, { grounded: true });
     }
-    if (e.state === 'fly') m.group.visible = e.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
+    if (e.state === 'fly') m.group.visible = e.invuln <= 0 || blinkOn(this.time, 7);
   }
 
   updateTag(e) {
@@ -911,7 +911,7 @@ export class DogfightScene extends MiniGame {
     const html = `${esc(e.name)}${sub}`;
     if (html !== e.tagHtml) { e.tag.innerHTML = html; e.tagHtml = html; }
     this.game.ui.place(e.tag, pos, this.camera);
-    if (e.state === 'fly' && f.stalled && Math.floor(this.time * 6) % 2 === 0) {
+    if (e.state === 'fly' && f.stalled && blinkOn(this.time, 3)) {
       e.stallEl.textContent = t('dogfight.stall');
       this.game.ui.place(e.stallEl, new THREE.Vector3(f.x, f.y + 3.6, 0), this.camera);
     } else {

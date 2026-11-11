@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { struggle } from '../../core/assist.js';
+import { struggle, blinkOn, shakeScale } from '../../core/assist.js';
 import { t } from '../../core/i18n.js';
 import { stopVoice } from '../../core/voice.js';
 import { W, H, DIRS, tileX, tileZ, colOf, rowOf, inGrid } from './tiles.js';
@@ -207,7 +207,7 @@ export class LighthouseEngine {
     const cam = this.host.camera;
     if (cam.fov !== FOV) { cam.fov = FOV; cam.updateProjectionMatrix(); }
     if (this.shakeT > 0) this.shakeT = Math.max(0, this.shakeT - dt);
-    const s = this.shakeT * 0.6;
+    const s = this.shakeT * 0.6 * shakeScale(); // none with reduce flashing and shake
     const sx = (Math.random() - 0.5) * s, sz = (Math.random() - 0.5) * s;
     const d = this.camDist;
     cam.position.set(this.camTarget.x + sx, Math.sin(PITCH) * d, this.camTarget.z + Math.cos(PITCH) * d + sz);
@@ -570,7 +570,7 @@ export class LighthouseEngine {
       if (!collect) continue;
       if (p.life !== Infinity) {
         p.life -= dt;
-        p.mesh.visible = p.life > 2 || Math.floor(p.life * 8) % 2 === 0;
+        p.mesh.visible = p.life > 2 || blinkOn(p.life, 4);
         if (p.life <= 0) { p.dead = true; continue; }
       }
       if (h.mode !== 'get' && h.mode !== 'fall' && h.mode !== 'dead' && Math.hypot(p.x - h.x, p.z - h.z) < 0.55) {

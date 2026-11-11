@@ -5,6 +5,7 @@ import { PLAYER_COLORS, COLORS, toon, basic, sharedGeo } from '../../core/palett
 import { t, addStrings } from '../../core/i18n.js';
 import { makeKing } from './king.js';
 import { BOSS_GOALS, BOSS_TIME } from './stages.js';
+import { invulnBlink } from '../../core/assist.js';
 
 // Shared flow for the four Grumble King encounters: a co-op goal counter, a time limit and a
 // happy ending either way (he ends up dizzy and giggling, never hurt).
@@ -184,7 +185,7 @@ export class BossScene extends MiniGame {
       if (Math.abs(target - e.ch.spin) < 0.02) e.ch.spin = 0;
     }
     if (e.safe > 0) e.safe -= dt;
-    e.ch.group.visible = !(e.safe > 0 && e.slip <= 0 && Math.floor(e.safe * 12) % 2 === 0);
+    e.ch.group.visible = invulnBlink(e.ch, e.safe > 0 && e.slip <= 0, e.safe, 6);
   }
 
   /** Call at the end of the subclass constructor. */

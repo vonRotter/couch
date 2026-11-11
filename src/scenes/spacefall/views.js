@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { VIEW } from './config.js';
 import { clamp, damp, lerp, rand } from './util.js';
+import { shakeScale } from '../../core/assist.js';
 
 // Viewports and cameras (ported from Spacefall, extended to Couch's 1-6 players). Every viewport
 // on screen has the same size: 1 = full screen, 2 = halves, 3-4 = quarters, 5-6 = a 3 x 2 grid.
@@ -94,7 +95,7 @@ export class View {
 
   apply() {
     const dist = this.visH / 2 / halfFovTan();
-    const s = this.shakeAmt * this.shakeAmt * 0.5;
+    const s = this.shakeAmt * this.shakeAmt * 0.5 * shakeScale(); // none with reduce flashing and shake
     this.camera.position.set(this.x + rand(-s, s), this.y + rand(-s, s), dist);
     this.camera.lookAt(this.camera.position.x, this.camera.position.y, 0);
     this.camera.updateMatrixWorld();

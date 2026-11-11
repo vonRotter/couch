@@ -12,6 +12,7 @@ import { buttonLabel } from '../core/input.js';
 import { esc } from '../core/ui.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 import { voteLength, VotePicker } from '../core/vote.js';
+import { invulnBlink, shakeScale } from '../core/assist.js';
 
 const STRINGS = {
   en: {
@@ -1587,7 +1588,7 @@ export class CastleScene extends MiniGame {
       e.ch.update(dt, { moving: Math.min(1, Math.abs(b.vx) / PHYS.speed), grounded: b.grounded || inBubble || e.climbing, vy: b.vy });
       e.ch.pivot.rotation.z = Math.sin(this.time * 18) * e.wobble * 0.5;
     }
-    e.ch.group.visible = e.invuln <= 0.4 || Math.floor(this.time * 14) % 2 === 0 || e.hits > 0;
+    e.ch.group.visible = invulnBlink(e.ch, e.invuln > 0.4 && !(e.hits > 0), this.time, 7);
 
     // Gear rides in front of the bean and mirrors with its facing.
     G2.g.visible = !inBubble;
@@ -1779,8 +1780,8 @@ export class CastleScene extends MiniGame {
     this.camera.position.copy(this.camBase);
     if (this.shake > 0) {
       this.shake -= dt;
-      this.camera.position.x += (Math.random() - 0.5) * this.shake;
-      this.camera.position.y += (Math.random() - 0.5) * this.shake;
+      this.camera.position.x += (Math.random() - 0.5) * this.shake * shakeScale();
+      this.camera.position.y += (Math.random() - 0.5) * this.shake * shakeScale();
     }
 
     if (this.updateResults(dt)) return;

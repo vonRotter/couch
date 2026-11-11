@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { struggle, overcame, markSkipped } from '../core/assist.js';
+import { struggle, overcame, markSkipped, invulnBlink, shakeScale } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
 import { Character } from '../core/character.js';
 import { COLORS, toon, basic, sharedGeo } from '../core/palette.js';
@@ -1122,7 +1122,7 @@ export class CastleCampaignScene extends MiniGame {
     e.ch.spin = inBubble ? e.ch.spin + dt * 3 : 0;
     e.ch.update(dt, { moving: Math.min(1, Math.abs(b.vx) / PHYS.speed), grounded: b.grounded || inBubble || e.climbing, vy: b.vy });
     e.ch.pivot.rotation.z = Math.sin(this.time * 18) * e.wobble * 0.5;
-    e.ch.group.visible = e.invuln <= 0.4 || Math.floor(this.time * 14) % 2 === 0 || e.hits > 0;
+    e.ch.group.visible = invulnBlink(e.ch, e.invuln > 0.4 && !(e.hits > 0), this.time, 7);
     G2.g.visible = !inBubble;
     G2.g.position.set(b.x, b.y, 0.5);
     G2.g.scale.set(e.facing * BEAN_SCALE, BEAN_SCALE, BEAN_SCALE);
@@ -1206,8 +1206,8 @@ export class CastleCampaignScene extends MiniGame {
     this.placeCamera();
     if (this.shake > 0) {
       this.shake -= dt;
-      this.camera.position.x += (Math.random() - 0.5) * this.shake;
-      this.camera.position.y += (Math.random() - 0.5) * this.shake;
+      this.camera.position.x += (Math.random() - 0.5) * this.shake * shakeScale();
+      this.camera.position.y += (Math.random() - 0.5) * this.shake * shakeScale();
     }
     // Strays: off screen for a while -> bubble over to the nearest bean on screen.
     if (this.state !== 'play') return;

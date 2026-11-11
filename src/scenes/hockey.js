@@ -8,6 +8,7 @@ import { addLights, skyTexture, makeTree, makeCloud, seeded } from '../core/worl
 import { t } from '../core/i18n.js';
 import { TeamPicker, TEAM_COLORS, TEAM_CSS, helpersNeeded } from '../core/teams.js';
 import { voteLength } from '../core/vote.js';
+import { shakeScale } from '../core/assist.js';
 
 // Ice Hockey: slidey skating, a puck that sticks to your stick, two teams.
 const HX = 14, HZ = 8; // rink half size
@@ -702,8 +703,8 @@ export class HockeyScene extends MiniGame {
     this.camera.position.lerp(target, Math.min(1, dt * 2));
     if (this.shake > 0) {
       this.shake -= dt;
-      this.camera.position.x += (Math.random() - 0.5) * this.shake;
-      this.camera.position.y += (Math.random() - 0.5) * this.shake;
+      this.camera.position.x += (Math.random() - 0.5) * this.shake * shakeScale();
+      this.camera.position.y += (Math.random() - 0.5) * this.shake * shakeScale();
     }
     this.camera.lookAt(this.camera.position.x - this.camBase.x, 0, 1);
 

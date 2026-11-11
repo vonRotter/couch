@@ -8,6 +8,7 @@ import { addLights, skyTexture, makeGem, makeMushroom, makeStar, seeded } from '
 import { moveBody, platformerControl } from '../core/physics2d.js';
 import { esc } from '../core/ui.js';
 import { makeGrumble } from '../core/critters.js';
+import { blinkOn, invulnBlink } from '../core/assist.js';
 
 addStrings({
   en: {
@@ -1423,7 +1424,7 @@ export class CaveScene extends MiniGame {
       e.ch.faceSide(e.facing);
       if (e.climbing) e.ch.targetYaw = Math.PI;
       e.ch.group.position.set(b.x, b.y, 0);
-      if (e.state === 'play') e.ch.group.visible = e.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
+      if (e.state === 'play') e.ch.group.visible = invulnBlink(e.ch, e.invuln > 0, this.time, 7);
       else if (e.state === 'ghost') e.ch.group.visible = false;
       e.heartRow.visible = e.heartShow > 0 && e.state === 'play';
       if (e.heartRow.visible) {
@@ -1682,7 +1683,7 @@ export class CaveScene extends MiniGame {
       bomb.fuse -= dt;
       const pulse = 1 + Math.sin((BOMB_FUSE - bomb.fuse) * (10 + (BOMB_FUSE - bomb.fuse) * 14)) * 0.08;
       bomb.ball.scale.setScalar(pulse);
-      bomb.spark.visible = Math.floor(this.time * 20) % 2 === 0;
+      bomb.spark.visible = blinkOn(this.time, 10);
       bomb.mesh.position.set(b.x, b.y + 0.22, 0.2);
       if (bomb.fuse <= 0) this.popBomb(bomb);
     }

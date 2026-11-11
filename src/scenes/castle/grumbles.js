@@ -6,6 +6,7 @@ import { makeStar } from '../../core/world.js';
 import { t } from '../../core/i18n.js';
 import { makeGrumbleGear, mesh, GRUMBLE_COLORS, FRIEND_COLOR } from './props.js';
 import { CASTLE, DOOR, EMPTY, KNIGHT_HP, WOOD, LADDER, PAD, ROWS } from './tilemap.js';
+import { blinkOn } from '../../core/assist.js';
 
 // The grumble army. Knights guard a post and charge beans and troopers with pink foam swords (they
 // raise the sword for a moment before each swing); archers stand on the walls and draw, then shoot
@@ -531,7 +532,7 @@ export class Grumbles {
       g.pivot.position.y = hop;
       g.pivot.scale.set(1 / Math.sqrt(g.sq), g.sq, 1 / Math.sqrt(g.sq));
       g.pivot.rotation.z = Math.sin(this.scene.time * 18) * g.wobble * 0.5 + (g.state === 'bubble' ? this.scene.time * 3 : 0);
-      g.group.visible = g.state !== 'rest' && (g.invuln <= 0.4 || Math.floor(this.scene.time * 14) % 2 === 0 || g.hits > 0);
+      g.group.visible = g.state !== 'rest' && (g.invuln <= 0.4 || blinkOn(this.scene.time, 7) || g.hits > 0);
       const G = g.gear.userData;
       // Wind-up: sword held high (and a lean back), then the sweep.
       if (G.sword) G.sword.rotation.z = g.windT > 0 ? 2.2 : g.swingT > 0 ? 1.3 - (1 - g.swingT / 0.22) * 3 : g.shieldT > 0 ? 1.4 : -0.4;
