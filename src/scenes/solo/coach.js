@@ -80,7 +80,7 @@ addStrings({
     'coach.trialNone': 'Du er så flink at jeg ikke har flere prøver til deg. Wow!',
     'coach.genres': 'Hvert spill er en slags spill. Ta en titt på kortene i passet ditt!',
     'coach.bye': 'Ha det gøy! Husk: én ny ting om gangen.',
-    'coach.why.rod': 'Grumleton på brygga har en fiskestang til deg.', 'coach.why.suit': 'Grumleton kan hjelpe deg å få en dykkerdrakt.',
+    'coach.why.rod': 'Grumbleton på brygga har en fiskestang til deg.', 'coach.why.suit': 'Grumbleton kan hjelpe deg å få en dykkerdrakt.',
     'coach.why.cafe': 'Kafeen må fikses først.', 'coach.why.burrow': 'Mumle på enga vet veien.',
   },
 });
@@ -181,6 +181,8 @@ export class Coach {
         host.grant({ coins: TRIAL_COINS });
       }));
     }
+    // nothing new: a bit of coaching first (isl.coach.chat1-5, in turn)
+    if (!lines.length) { n.chatI = ((n.chatI || 0) % 5) + 1; lines.push(C(`isl.coach.chat${n.chatI}`)); }
     if (canTalkBonus(st, at)) { st.talkAt = at; host.addPts('coach', TALK_PTS); }
     lines.push({ ...C('ask'), choices: ['coach.c.next', 'coach.c.trial', 'coach.c.genres', 'coach.c.bye'], onChoice: (i) => this.answer(n, i) });
     host.say(lines, () => this.done(n));
