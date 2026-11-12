@@ -342,9 +342,9 @@ export function apply(P, ev, d = {}) {
  */
 export function syncProgress(P, p = {}) {
   const isl = p.island || {};
-  const sky = p.skyhop || 0;
-  if (sky >= 1) playedOnce(P, 'platformer');
-  for (let i = 0; i < sky; i++) master(P, 'platformer', `lv${i}`);
+  // (a part skipped with "Help me play" opens the next one but is not counted as done)
+  const sky = p.skyhop || 0, skySkip = new Set(p.skipped?.skyhop || []);
+  for (let i = 0; i < sky; i++) if (!skySkip.has(i)) { playedOnce(P, 'platformer'); master(P, 'platformer', `lv${i}`); }
   const lh = p.lighthouse;
   if (lh && (lh.crystals > 0 || Object.keys(lh.items || {}).length || Object.keys(lh.solved || {}).length)) {
     playedOnce(P, 'lighthouse');
@@ -379,9 +379,10 @@ export function syncProgress(P, p = {}) {
   if ((br?.bestBattles || 0) >= CLOVER_BATTLES) trial(P, 'breach.isle');
   const ks = p.keepSolo?.summary;
   if (ks && (ks.best > 1 || ks.acts > 0)) playedOnce(P, 'keepsolo');
-  for (let i = 0; i < (ks?.acts || 0); i++) master(P, 'keepsolo', `act${i}`);
+  const ksSkip = p.skipped?.keepsolo || [];
+  for (let i = 0; i < (ks?.acts || 0) - ksSkip.length; i++) master(P, 'keepsolo', `act${i}`);
   for (const lv of [5, 10, 15]) if ((ks?.best || 0) >= lv) master(P, 'keepsolo', `hero${lv}`, ['planning']);
-  if (ks?.act1) trial(P, 'ks.teddy');
+  if (ks?.act1 && !ksSkip.includes('act0')) trial(P, 'ks.teddy'); // (acts count from 0 in the skip marks)
   const sc = p.school;
   if (sc && Object.values(sc.plays || {}).some((n) => n > 0)) playedOnce(P, 'school');
   for (const [id, n] of Object.entries(sc?.plays || {})) if (n > 0 && (sc.levels?.[id] || 0) >= 1) master(P, 'school', id);
