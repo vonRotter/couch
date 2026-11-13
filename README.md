@@ -824,6 +824,10 @@ night match yours and crops grow while you are away.
   second room) and has a decorate mode: the stick moves a cursor over the grid, B places or picks
   up, A turns (hold A for the next thing), C ends. The front door leads into the cottage,
   which you decorate the same way.
+- **Walkways (playtest round 3):** short, obvious ways past buildings stay open: the well and its barrel stand
+  against the field fence (a wide lane runs between the field and the greenhouse), the café has a boardwalk along
+  its front over the water's edge and its specials board stands off the beach, and the cottage's flower bed and lamp
+  leave a lane on both sides of the house. Old saves: a yard piece that now stood under one of them moves to the lawn.
 - **The trophy shelf:** game trophies and the prizes games send by mail (the lighthouse lamp, the kite, the
   banner, the mech statue, the pillow fort, the golden fish...) stand on a tall shelf against the cottage's back
   wall, not in the yard. [B] at the shelf opens a close-up: the trophy turns on a glowing ring, its name and

@@ -54,8 +54,8 @@ Object.assign(ITEMS, { stone: { kind: 'res', sell: 3 }, fiber: { kind: 'res', se
 const YARD = { x0: -23, x1: 6, z0: -24, z1: 3 };
 export const ROOM = { x: 200, z: 120, w: 8, w2: 12, d: 6 };
 const HOME_DOOR = { x: HOME.x, z: HOME.z + 2.7 };
-/** Where new decorations go when they arrive (the nearest free cell): the open lawn west of the cottage. */
-const NEW_SPOT = { x: HOME.x - 5.5, z: HOME.z + 1.5 };
+/** Where new decorations go when they arrive (the nearest free cell): the open lawn south-west of the cottage (away from the lanes). */
+const NEW_SPOT = { x: HOME.x - 7.5, z: HOME.z + 3.5 };
 /** The storage chest in the cottage: in the back right corner of the first room (bagui.js). */
 export const CHEST = { x: ROOM.x + ROOM.w / 2 - 0.5, z: ROOM.z - ROOM.d / 2 + 0.5 };
 /** The trophy shelf (shelf.js): against the back wall, between the windows of both the small and the big room. */
@@ -220,7 +220,11 @@ export class Builder {
       return false;
     });
     for (const id of Object.keys(S.store)) if (isTrophy(id)) { S.deco[id] = true; delete S.store[id]; }
-    for (const p of S.yard.filter((q) => nearGreenhouse(q.x, q.z))) {
+    // in the greenhouse or before its door, or now under a prop that moved to open a walkway (the well, its
+    // barrel, the flower bed, the lamp by the cottage): to a free spot on the lawn
+    const map = this.host.map, st = this.host.walkState, b = this.roomBounds();
+    const indoors = (q) => q.x > b.x0 - 1 && q.x < b.x1 + 1 && q.z > b.z0 - 1 && q.z < b.z1 + 1;
+    for (const p of S.yard.filter((q) => !indoors(q) && (nearGreenhouse(q.x, q.z) || !map.walkable(q.x, q.z, 0.3, st)))) {
       S.yard = S.yard.filter((q) => q !== p);
       const spot = this.freeCellNear(NEW_SPOT.x, NEW_SPOT.z);
       if (spot) this.addPiece(p.id, spot.x, spot.z, p.r || 0);

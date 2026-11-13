@@ -19,7 +19,7 @@ const WOOD_NEED = 10, COIN_NEED = 100;
 const SEATS = [-11.4, -10, -8.6].map((x) => ({ x, z: CAFE.z + 2.55 }));
 const SERVE_SPOT = { x: CAFE.x, z: CAFE.z + 4.35 };
 const STOVE = { x: CAFE.x - 3.3, z: CAFE.z + 2.9 };
-const MENU = { x: CAFE.x + 2.9, z: CAFE.z + 4.2 }; // the chalkboard with today's specials (milestone B3)
+const MENU = { x: CAFE.x + 3.9, z: CAFE.z + 3.55 }; // the chalkboard with today's specials (milestone B3; moved off the beach in front of the counter: playtest round 3)
 const MAX_SPECIALS = 4, SPECIAL_BONUS = 1.3;
 const ENTER = { x: CAFE.x + 4.4, z: CAFE.z + 2.55 };
 const PATIENCE = 30;
@@ -58,7 +58,7 @@ export class Cafe {
     const map = host.map;
     this.boards = map.live(makeCafeBoards(), CAFE.x, CAFE.z, 0, heightAt(CAFE.x, CAFE.z));
     this.open = map.live(makeCafeOpen(host.M), CAFE.x, CAFE.z, 0, heightAt(CAFE.x, CAFE.z));
-    for (const [x, z, c] of [[CAFE.x - 5.2, CAFE.z + 1.6, 0xff5d73], [CAFE.x + 3.6, CAFE.z + 1.8, 0xffc93c]]) {
+    for (const [x, z, c] of [[CAFE.x - 5.8, CAFE.z + 1.2, 0xff5d73], [CAFE.x + 3.6, CAFE.z + 1.8, 0xffc93c]]) {
       map.live(makeCafeTable(c), x, z);
       map.circObs(x, z, 0.6);
     }

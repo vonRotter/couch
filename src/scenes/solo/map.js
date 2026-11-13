@@ -7,7 +7,7 @@ import {
   mesh, box, cyl, ico, cone, WOOD, WOOD_DARK, makeCottage, makeStore, makeLighthouse, makeTent, makeBalloon, makeMine, makeRockfall,
   makeKeepTower, makeBurrow, makeCastleGate, makeHall, makeLaunchPad, makeBridge, makeFence, makeLamp, makeSign, makeBench, makeBarrel,
   makeCrate, makeMailbox, makeShippingBin, makeWell, makeFountain, makeNoticeBoard, makeBunting, makeCafe, makeBarn, makePier, makeBuoy, makeDiveBoat,
-  makeRowboat, makeTelescope, makeCrop, sph, roofGeo,
+  makeRowboat, makeTelescope, makeCrop, sph, roofGeo, makeBoardwalk,
 } from './models.js';
 import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
 import { makeGarage } from './models5.js';
@@ -44,7 +44,9 @@ export const GREEN = { x0: -2.2, z0: -5.4, cols: 4, rows: 2, size: 1.25, green: 
 export const MUSEUM = { x: 26, z: -2.8 };
 export const BIN = { x: -7.2, z: -11.6 };
 export const MAILBOX = { x: -15, z: -11.2 };
-export const WELL = { x: -5, z: -5.2 };
+// (playtest round 3: the well and its barrel moved against the field fence, so a wide lane runs between the field and
+// the greenhouse; they stood in the middle of it, and you had to walk all the way around the greenhouse)
+export const WELL = { x: -6.35, z: -5.2 };
 export const HAZEL_HOME = { x: -2, z: -27 };
 export const PLAZA = { x: 12, z: -5, r: 7.5 };
 export const STORE = { x: 12, z: -16.4 };
@@ -149,6 +151,8 @@ export const FINDS = { feather: { x: 37, z: -27 }, starmap: { x: 3.5, z: -29 }, 
 export const DIVE_SPOT = { x: -4, z: 55 };
 export const DIVE_BOAT = { x: 0, z: 56.2 };
 export const CAFE = { x: -10, z: 37.4 };
+/** The boardwalk along the café's front, over the edge of the water (walkable). */
+export const CAFE_WALK = { x0: -13.4, x1: -4.6, z0: 41.4, z1: 43.0 };
 // the crab update: Crab Cove on the east beach, between the sandcastle and the lighthouse point (crabs.js)
 export const CRAB_COVE = { x: 35.5, z: 36.1 };
 
@@ -906,7 +910,7 @@ export class IslandMap {
     this.home = home;
     this.boxObs(HOME.x, HOME.z, 2.85, 2.2);
     this.chimneys.push(home.userData.chimney.clone().add(new THREE.Vector3(HOME.x, 0, HOME.z)));
-    this.lamp(HOME.x + 3.4, HOME.z + 2.8);
+    this.lamp(HOME.x + 2.7, HOME.z + 3.0); // (a bean's width from the house corner and the shipping bin: playtest round 3)
     // field: soft dark grass underlay and a fence with a gate gap at the north side
     const F = FIELD, w = F.cols * F.size, d = F.rows * F.size;
     this.put(mesh(box(w + 0.6, 0.04, d + 0.6), 0x86c24e, 0, 0, 0, false), F.x0 + w / 2, F.z0 + d / 2, 0, 0.02);
@@ -926,8 +930,8 @@ export class IslandMap {
     sc.add(mesh(box(0.7, 0.8, 0.3), 0x4c8bd6, 0, 1.4, 0), mesh(ico(0.3, 1), 0xf3d9a4, 0, 2.1, 0), mesh(cyl(0.5, 0.5, 0.06, 12), 0xe2b06a, 0, 2.35, 0), mesh(cyl(0.25, 0.3, 0.3, 12), 0xe2b06a, 0, 2.5, 0));
     this.put(sc, x1 + 1.6, z1 - 1.0, -0.3); // (a bean's width from the fence end)
     this.circObs(x1 + 1.6, z1 - 1.0, 0.4);
-    this.put(makeBarrel(0x4cc9f0), WELL.x + 1.4, WELL.z + 0.6);
-    this.circObs(WELL.x + 1.4, WELL.z + 0.6, 0.45);
+    this.put(makeBarrel(0x4cc9f0), WELL.x - 0.65, WELL.z - 1.45); // (on the fence side of the well, out of the lane)
+    this.circObs(WELL.x - 0.65, WELL.z - 1.45, 0.45);
     // the old paddock and barn (animals come later)
     const p0 = { x: -19.4, z: 2.6 }, p1 = { x: -8.6, z: 9.4 };
     for (const [a, b] of [[p0, { x: p1.x, z: p0.z }], [{ x: p1.x, z: p0.z }, p1], [p1, { x: p0.x, z: p1.z }], [{ x: p0.x, z: p1.z }, { x: p0.x, z: p0.z + 2.5 }]]) { this.put(makeFence(a, b, heightAt), 0, 0, 0, 0); this.fenceObs(a, b); }
@@ -935,8 +939,9 @@ export class IslandMap {
     this.boxObs(-14, 12.6, 2.3, 1.9);
     this.circObs(-11, 4, 0.7);
     this.sign(-7.6, 4.2, 0xd94a4a);
-    // home yard: flower beds and a bench
-    this.flowerBed(HOME.x - 4.3, HOME.z + 1.0);
+    // home yard: flower beds and a bench (the bed stands a lane's width from the house: playtest round 3, the
+    // cottage was walled in by it, the workbench, the lamp and the shipping bin)
+    this.flowerBed(HOME.x - 5.7, HOME.z + 1.3);
     this.put(makeBench(), HOME.x + 4.6, HOME.z + 0.4, -Math.PI / 2 + 0.3);
     this.longObs(HOME.x + 4.6, HOME.z + 0.4, -Math.PI / 2 + 0.3, 0.62, 0.32);
   }
@@ -966,6 +971,11 @@ export class IslandMap {
     // the Driftwood Café (closed, a restaurant for later) and the dive spot sign
     this.put(makeCafe(M), -10, 37.4);
     this.boxObs(-10, 37.4, 2.5, 1.9);
+    // a boardwalk along the café's front (playtest round 3: the counter, the stove and the specials board left
+    // no way past on the water side, so you had to go round behind the café)
+    const BW = CAFE_WALK;
+    this.put(makeBoardwalk(BW.x1 - BW.x0, BW.z1 - BW.z0), (BW.x0 + BW.x1) / 2, (BW.z0 + BW.z1) / 2, 0, 0);
+    this.decks.push({ ...BW, y: 0.1 });
     this.sign(-5.2, 40.6, 0x3ddc97);
     this.sign(-2, 42.6, 0xff5d73, 0.3);
     // a beach towel, parasol and sand castle

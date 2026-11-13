@@ -682,6 +682,16 @@ export function makeBarn(M) {
 }
 
 /** The pier: planks on posts, starting at z=0 and running toward +z. */
+/** A low boardwalk (top at y 0.1) of planks across x, on posts; w along x, d along z, centered. */
+export function makeBoardwalk(w, d) {
+  const g = new THREE.Group();
+  const n = Math.round(w / 0.5);
+  for (let i = 0; i < n; i++) g.add(mesh(box(0.46, 0.1, d), i % 2 ? WOOD : 0xb77c48, -w / 2 + 0.25 + i * (w / n), 0.05, 0));
+  for (const z of [-d / 2 + 0.1, d / 2 - 0.1]) g.add(mesh(box(w, 0.08, 0.12), WOOD_DARK, 0, -0.02, z));
+  for (let x = -w / 2 + 0.3; x < w / 2; x += 2.2) g.add(mesh(cyl(0.08, 0.08, 0.9, 6), WOOD_DARK, x, -0.4, d / 2 - 0.1));
+  return g;
+}
+
 export function makePier(len, w = 3) {
   const g = new THREE.Group();
   const n = Math.round(len / 0.6);
