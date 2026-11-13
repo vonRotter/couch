@@ -15,6 +15,7 @@ import {
   crabSave, doneToday, dailyCrabs, crabHelped, hermitHelped, releaseOldCrabs, coveLevel, COVE_LEVELS, SHELL_IDS, HERMITS,
   friendKind, isCrabNight, crabDanceNow, crabDanceKind, DANCE_HOURS, MUSEUM_CRABS, todaysCrab,
 } from './crabdata.js';
+import { keepSolid } from './seethrough.js';
 import './strings13.js';
 
 // Crab friends on the solo island and Shell Isle (the owner's crab update). Crabs are never caught any more;
@@ -111,7 +112,7 @@ export class CrabCare {
     // the cove's crabs: a family first, more as it grows (hermit crabs you helped move in from level 2)
     this.coveCrabs = [];
     const add = (kind, dx, dz, minLevel, extra = {}) => {
-      const g = makeCrab(kind, extra);
+      const g = keepSolid(makeCrab(kind, extra));
       g.scale.multiplyScalar(BIG);
       this.coveGroup.add(g);
       const c = { g, kind, minLevel, hx: COVE.x + dx, hz: COVE.z + dz, x: COVE.x + dx, z: COVE.z + dz, tx: COVE.x + dx, tz: COVE.z + dz, wait: Math.random() * 3, wave: 0, yaw: 0, ...extra };
@@ -139,7 +140,7 @@ export class CrabCare {
       if (c.hermit) {
         const shell = C.hermits[c.hermit];
         c.g.visible = lv >= 2 && !!shell;
-        if (shell && c.g.userData.shellId !== shell) setHermitShell(c.g, shell);
+        if (shell && c.g.userData.shellId !== shell) { setHermitShell(c.g, shell); keepSolid(c.g); }
       } else c.g.visible = lv >= c.minLevel;
     }
     if ((C.level || 0) >= lv) return;
@@ -191,6 +192,7 @@ export class CrabCare {
       o.glint = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.45, 0.07), new THREE.MeshBasicMaterial({ color: 0xffffff }));
       o.glint.position.set(o.x, y + 1.1, o.z);
       this.group.add(o.g, o.glint);
+      keepSolid(o.g); keepSolid(o.glint);
       return o;
     }
     if (c.type === 'home') {
@@ -199,7 +201,9 @@ export class CrabCare {
         const b = makeCrab('baby');
         b.scale.multiplyScalar(BIG);
         this.group.add(b);
-        o.babies.push({ g: b, x: o.x + (i - 1) * 0.5, z: o.z + (i % 2) * 0.35, ph: i * 1.3, yaw: 0 });
+        const bx = o.x + (i - 1) * 0.5, bz = o.z + (i % 2) * 0.35;
+        b.position.set(bx, this.groundY(bx, bz) + 0.02, bz); // (placed now: they used to wait at the world's middle until you came near)
+        o.babies.push({ g: b, x: bx, z: bz, ph: i * 1.3, yaw: 0 });
       }
       o.to = { x: c.to.x, z: c.to.z };
       o.spot = makeFamilySpot();
@@ -218,8 +222,17 @@ export class CrabCare {
       o.bubble = makeHelpBubble(c.type === 'shell');
       o.bubble.scale.setScalar(c.type === 'shell' ? 1.5 : 1.25);
       this.group.add(o.bubble);
+      this.placeBubble(o, 0);
     }
+    // everything of this crab stays solid in front of the bean (seethrough.js)
+    for (const g of [o.g, o.spot, o.bubble, ...(o.babies || []).map((b) => b.g), ...(o.parents || [])]) if (g) keepSolid(g);
     return o;
+  }
+
+  /** The help bubble over a crab (or over the first lost baby). */
+  placeBubble(o, tm) {
+    if (o.type === 'home') o.bubble.position.set(o.x + 0.3, this.groundY(o.x, o.z) + 1.3 + Math.sin(tm * 3) * 0.1, o.z);
+    else o.bubble.position.set(o.x + 0.35, this.groundY(o.x, o.z) + 1.85 + Math.sin(tm * 3 + o.x) * 0.1, o.z);
   }
 
   dispose(o) {
@@ -367,6 +380,7 @@ export class CrabCare {
     if (!take(this.S, shell, 1)) return;
     o.gave = shell;
     setHermitShell(o.g, shell);
+    keepSolid(o.g);
     o.state = 'happy';
     o.t = 0;
     give(this.S, 'seaShell', 1); // it leaves its old little shell for you
@@ -455,7 +469,7 @@ export class CrabCare {
     const id = C.follower;
     if (!id || !C.friends.includes(id)) { C.follower = null; return; }
     const kind = friendKind(id);
-    const g = makeCrab(kind, { shell: C.hermits[id] || null });
+    const g = keepSolid(makeCrab(kind, { shell: C.hermits[id] || null }));
     g.scale.setScalar(kind === 'baby' ? 0.85 : BIG * 1.1);
     this.group.add(g);
     const P = host.player;
@@ -616,7 +630,7 @@ export class CrabCare {
       if (far) continue;
       o.t += dt;
       const g = o.g, y = this.groundY(o.x, o.z);
-      if (o.bubble?.visible) o.bubble.position.set(o.x + 0.35, y + 1.85 + Math.sin(tm * 3 + o.x) * 0.1, o.z);
+      if (o.bubble?.visible) this.placeBubble(o, tm);
       if (o.type === 'find') { if (g.visible) { g.rotation.y = Math.sin(tm * 1.5 + o.x) * 0.4; o.glint.rotation.y += dt * 3; o.glint.scale.y = 0.6 + Math.sin(tm * 5 + o.z) * 0.4; } continue; }
       const u = g.userData;
       if (o.state === 'wait') {
@@ -667,7 +681,7 @@ export class CrabCare {
     if (!far) {
       for (const p of o.parents) animateCrab(p, dt, { wave: o.state === 'home' ? 0 : 1, dance: o.state === 'home' ? 1 : 0 });
       o.spot.userData.ring.scale.setScalar(1 + Math.sin(tm * 3) * 0.06);
-      if (o.bubble?.visible) o.bubble.position.set(o.x + 0.3, this.groundY(o.x, o.z) + 1.3 + Math.sin(tm * 3) * 0.1, o.z);
+      if (o.bubble?.visible) this.placeBubble(o, tm);
     }
     if (o.state === 'wait') {
       if (far) return;

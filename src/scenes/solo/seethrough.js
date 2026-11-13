@@ -63,6 +63,22 @@ function patch(m) {
   m.needsUpdate = true;
 }
 
+const solidCopies = new Map();
+/**
+ * Leave small things solid (the crabs, playtest round 3: a crab right in front of the bean was dithered away
+ * from the knees up, so it looked like it sank into the sand as you walked up to it). Swaps the materials
+ * of obj and its children for cached copies marked noCut (the shared toon() materials stay as they are).
+ */
+export function keepSolid(obj) {
+  obj.traverse((o) => {
+    if (!o.isMesh || Array.isArray(o.material) || !o.material || o.material.userData?.noCut) return;
+    let c = solidCopies.get(o.material);
+    if (!c) { c = o.material.clone(); c.userData = { noCut: true }; solidCopies.set(o.material, c); }
+    o.material = c;
+  });
+  return obj;
+}
+
 export class SeeThrough {
   /** skip: objects (and their children) to leave alone, like the ground and the water. */
   constructor(scene, renderer, skip = []) {
