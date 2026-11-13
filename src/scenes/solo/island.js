@@ -79,7 +79,7 @@ const PR = 0.42;
 const CAM_UP = 14.8, CAM_BACK = 13; // a little higher up (a more top-down view) and never closer than before (12.5 / 13)
 // the menu ([MENU]: Q or Start): keep playing, the other ways to play, and the settings a gamepad has no key for
 // 'island' is "Play together" (the shared island, like the Party Pier ferry); the story is a place there now
-const MENU = ['resume', 'island', 'solo', 'assist', 'voice', 'chars', 'sound', 'lang', 'help']; // assist: Help me play // (sound: M is the map here)
+const MENU = ['resume', 'deco', 'island', 'solo', 'assist', 'voice', 'chars', 'sound', 'lang', 'help']; // assist: Help me play // (sound: M is the map here)
 const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];
 const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
@@ -733,6 +733,7 @@ export class SoloIslandScene extends BaseScene {
     if (S.mail.length) out.push(t('isl.task.mail'));
     for (const [id, q] of Object.entries(S.quests)) out.push(id === 'hazel' && NPCS.hazel.quests[q.n]?.reward?.unlock === 'greenhouse' ? t('gh.task.quest', { text: this.questText(id, q.n) }) : this.questText(id, q.n));
     if (S.intro) { const gh = greenhouseTask(S); if (gh) out.push(gh); } // what it takes to fix the greenhouse (greenhouse.js)
+    if (S.intro && S.tut >= 8) { const dt = this.builder.task(); if (dt) out.push(dt); } // things to place: how to decorate (build.js)
     out.push(...this.crabs.tasks());
     if (S.intro && !S.unlocks.bridge && S.tut >= 5) out.push(t('isl.task.bridge', { n: S.unlocks.bridgeWood, m: BRIDGE_WOOD }));
     if (S.unlocks.rockBuster && !S.unlocks.mine) out.push(t('isl.task.mine'));
@@ -1958,6 +1959,7 @@ export class SoloIslandScene extends BaseScene {
     if (!(inp.aPressed || inp.bPressed)) return;
     if (setting) { this.menuSetting(k); return; }
     if (k === 'resume') { this.closeMode(); return; }
+    if (k === 'deco') { this.closeMode(); this.builder.startDecorate(); return; } // decorate right here (yard or cottage: build.js)
     if (k === 'help') { this.closeMode(); this.toggleHelp(); return; }
     if (k === 'assist') { this.closeMode(); this.mode = 'menu'; this.game.openAssist(() => { this.mode = 'walk'; this.openMode(MENU.indexOf('assist')); }); return; }
     this.modeEl.remove();

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { toon } from '../../core/palette.js';
-import { t, tFor } from '../../core/i18n.js';
+import { t, tFor, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { ITEMS, icon } from './items.js';
 import { count, give, take } from './save.js';
@@ -14,6 +14,7 @@ import { makeDeco6, DECO6 } from './models6.js';
 import { makeDeco7, DECO7, makeShell } from './models7.js';
 import { SHELLS, CRAFT_SHELLS, isShell } from './crabdata.js';
 import { isTrophy } from './shelf.js';
+import { makeDeco9, DECO9 } from './models9.js';
 
 // Building and decorating (milestone B2).
 // - Gathering (rock piles, tall grass, trees) moved to zipzap.js: Pip's Zip-Zap does it all.
@@ -46,6 +47,45 @@ export const CRAFT_IDS = Object.keys(CRAFTS);
 const DECO2 = new Set(['quilt', 'gardenArch', 'portrait', 'photo', 'shipWheel', 'scope', 'anchor', 'starLamp', 'derbyTrophy', 'ribbon', 'paperLantern']);
 const FLAT = new Set(['pathStone', 'rug', 'quilt']);
 export const UPGRADE = { wood: 30, stone: 20, coins: 500 };
+// Where things may go (playtest round 3: decorate mode starts where you are, so furniture goes inside): furniture
+// only inside the cottage, small keepsakes anywhere, everything else (fences, lamps, statues...) in the yard.
+// (Old saves keep every piece where it stands.)
+export const INSIDE_ONLY = new Set(['bed', 'table', 'chair', 'rug', 'shelf', 'quilt', 'portrait', 'photo']);
+export const ANYWHERE = new Set(['plant', 'bottle', 'lantern', 'spyglass', 'snowGlobe', 'starLamp', 'moonrock', 'crystalLamp', 'goldShell', 'scope', 'shipWheel',
+  'ribbon', 'paperLantern', 'robotToy', 'rubberDuck', 'cloudJar', 'musicBox', 'balloonModel', 'starJar', 'starGlobe', 'crabPlush', 'shellChime', 'glowShroom', 'pumpkinLamp', 'rocket']);
+/** Can this piece go inside the cottage (indoors) or in the yard (!indoors)? */
+export const fitsHere = (id, indoors) => (indoors ? INSIDE_ONLY.has(id) || ANYWHERE.has(id) : !INSIDE_ONLY.has(id));
+
+addStrings({
+  en: {
+    'deco.emptyIn': 'Nothing to place inside. Make furniture at the workbench!',
+    'deco.otherIn': 'Nothing more to place in here: {n} of your things go outside, in the yard.',
+    'deco.otherOut': 'Nothing more to place out here: {n} of your things go inside the cottage.',
+    'deco.t.notLand': 'You can decorate in your yard by the cottage, and inside it. Walk home first!',
+    'deco.t.goesIn': '{item} goes inside your cottage.',
+    'deco.t.goesOut': '{item} goes outside, in your yard.',
+    'deco.task': '🪑 {n} things to place: Decorate in the menu ([MENU]), or the workbench by your cottage',
+    'deco.bench.sign': 'Workbench',
+    'isl.mn.deco': 'Decorate (your yard or your cottage)',
+    'deco.map.sub': 'Make things and decorate',
+    'deco.bag': 'Things to place',
+    'deco.bag.tip': '[B] place it',
+  },
+  no: {
+    'deco.emptyIn': 'Ingenting å sette inn. Lag møbler på arbeidsbenken!',
+    'deco.otherIn': 'Ikke mer å sette ut her inne: {n} av tingene dine skal ut i hagen.',
+    'deco.otherOut': 'Ikke mer å sette ut her ute: {n} av tingene dine skal inn i hytta.',
+    'deco.t.notLand': 'Du kan pynte i hagen ved hytta di, og inne i den. Gå hjem først!',
+    'deco.t.goesIn': '{item} skal inn i hytta di.',
+    'deco.t.goesOut': '{item} skal ut i hagen din.',
+    'deco.task': '🪑 {n} ting å sette ut: Pynt i menyen ([MENU]), eller arbeidsbenken ved hytta',
+    'deco.bench.sign': 'Arbeidsbenk',
+    'isl.mn.deco': 'Pynt (hagen eller hytta)',
+    'deco.map.sub': 'Lag ting og pynt',
+    'deco.bag': 'Ting å sette ut',
+    'deco.bag.tip': '[B] sett den ut',
+  },
+});
 
 for (const id of CRAFT_IDS) ITEMS[id] = { kind: 'craft' };
 Object.assign(ITEMS, { stone: { kind: 'res', sell: 3 }, fiber: { kind: 'res', sell: 2 }, hay: { kind: 'res', sell: 2 } });
@@ -86,6 +126,19 @@ export class Builder {
     this.bench = { x: HOME.x - 4.6, z: HOME.z - 1.6 };
     map.live(wb, this.bench.x, this.bench.z, Math.PI / 2);
     map.boxObs(this.bench.x, this.bench.z, 0.45, 0.85);
+    // a sign with a hammer and a chair on it, so the workbench is easy to spot (playtest round 3)
+    const sign = makeSign(0xffd84a, 1.2);
+    const ham = new THREE.Group();
+    ham.add(mesh(box(0.06, 0.42, 0.05), 0x8a5a32, 0, 0, 0, false), mesh(box(0.26, 0.11, 0.08), 0x9a94b2, 0, 0.2, 0, false));
+    ham.rotation.z = -0.6;
+    ham.position.set(-0.17, 1.05, 0.08);
+    const chair = new THREE.Group();
+    chair.add(mesh(box(0.2, 0.04, 0.04), 0xc0392b, 0, 0, 0, false), mesh(box(0.04, 0.3, 0.04), 0xc0392b, -0.08, 0.1, 0, false), mesh(box(0.04, 0.14, 0.04), 0xc0392b, 0.08, -0.07, 0, false), mesh(box(0.04, 0.14, 0.04), 0xc0392b, -0.08, -0.07, 0, false));
+    chair.position.set(0.17, 1.0, 0.08);
+    sign.add(ham, chair);
+    this.signSpot = { x: this.bench.x - 1.0, z: this.bench.z + 1.4 };
+    map.live(sign, this.signSpot.x, this.signSpot.z, 0.25);
+    map.circObs(this.signSpot.x, this.signSpot.z, 0.25);
     // the porch (upgrade) and the inside room
     this.porch = map.live(makePorch(), HOME.x, HOME.z + 2.95, 0, 0);
     this.porchObs = [-2.6, 2.6].map((x) => map.circObs(HOME.x + x, HOME.z + 3.75, 0.15, { ox: HOME.x + x }));
@@ -96,6 +149,7 @@ export class Builder {
     host.scene.add(this.hl);
     this.migrate();
     this.migrateTrophies();
+    if (S.decoUsed === undefined) S.decoUsed = S.yard.some((p) => CRAFTS[p.id]); // (old saves: they found decorate mode already)
     this.renderYard();
     this.refreshHome();
   }
@@ -181,6 +235,7 @@ export class Builder {
     if (DECO4.has(id)) return makeDeco4(id, this.host.M);
     if (DECO5.has(id)) return makeDeco5(id);
     if (DECO6.has(id)) return makeDeco6(id);
+    if (DECO9.has(id)) return makeDeco9(id); // (hidden-area and surprise keepsakes: they showed as a plain gem)
     if (CRAFTS[id]) return makeCraft(id, this.host.M);
     if (DECO2.has(id)) return makeDeco2(id, this.host.M);
     return makeDeco(id, this.host.M);
@@ -396,14 +451,32 @@ export class Builder {
 
   // ---------- decorate mode ----------
 
-  storeList() {
+  /** Everything waiting to be placed (anywhere). */
+  storeAll() {
     return Object.entries(this.S.store).filter(([, n]) => n > 0).map(([id, n]) => ({ id, n, kind: 'deco', name: this.name(id) }));
   }
 
-  startDecorate() {
-    const P = this.host.player;
+  /** What can be placed where decorate mode is: inside the cottage or in the yard. */
+  storeList() { return this.storeAll().filter((it) => fitsHere(it.id, !!this.decoIndoors)); }
+
+  /** Your own land: the yard around the cottage (decorate mode works there and inside). */
+  onLand(P) { return P.x >= YARD.x0 - 1 && P.x <= YARD.x1 + 1 && P.z >= YARD.z0 - 1 && P.z <= YARD.z1 + 1; }
+
+  /**
+   * Decorate mode, right where you are (the workbench, the island menu, the bag): inside the cottage the room's
+   * grid with its furniture, outside the yard. id: start with that thing in hand. Returns false (with a toast)
+   * when you are not on your own land or the thing does not go here.
+   */
+  startDecorate(id = null) {
+    const host = this.host, P = host.player;
+    if (!P) return false;
+    const indoors = this.inside(P);
+    if (!indoors && !this.onLand(P)) { host.game.ui.toast(t('deco.t.notLand'), 2600); host.game.audio.play('bump'); return false; }
+    if (id && !fitsHere(id, indoors)) { host.game.ui.toast(t(indoors ? 'deco.t.goesOut' : 'deco.t.goesIn', { item: this.name(id) }), 2400); host.game.audio.play('bump'); return false; }
+    this.decoIndoors = indoors;
+    host.hud.setPanel(null);
     this.host.mode = 'deco';
-    this.sel = 0;
+    this.sel = id ? Math.max(0, this.storeList().findIndex((it) => it.id === id)) : 0;
     this.rot = 0;
     this.decoT = 0;
     this.bHold = -1;
@@ -412,6 +485,7 @@ export class Builder {
     this.cur = { x, z, fx: x, fz: z, holdT: 0 };
     this.host.game.audio.play('select');
     this.host.game.ui.toast(t('isl.deco.on'), 1800);
+    return true;
   }
 
   stopDecorate() {
@@ -525,7 +599,7 @@ export class Builder {
     this.arrow.rotation.y += dt * 2;
     // prompt
     const nm = (k, v) => tFor(host.player.p, k, v);
-    const parts = tg.piece ? [nm('isl.deco.pick', { item: this.name(tg.piece.id) }), nm('isl.deco.rotate')] : held ? [tg.ok ? nm('isl.deco.place', { item: this.name(held) }) : t('isl.deco.blocked'), nm('isl.deco.rotate')] : [t('isl.deco.empty')];
+    const parts = tg.piece ? [nm('isl.deco.pick', { item: this.name(tg.piece.id) }), nm('isl.deco.rotate')] : held ? [tg.ok ? nm('isl.deco.place', { item: this.name(held) }) : t('isl.deco.blocked'), nm('isl.deco.rotate')] : [this.emptyText()];
     if (list.length > 1) parts.push(nm('isl.deco.next'));
     parts.push(nm('isl.deco.done'));
     host.hud.setPrompt(parts.join(' · '));
@@ -554,8 +628,22 @@ export class Builder {
     }
   }
 
+  /** The prompt with nothing to place here (and how many things wait for the other side of the door). */
+  emptyText() {
+    const other = this.storeAll().filter((it) => !fitsHere(it.id, !!this.decoIndoors)).reduce((a, it) => a + it.n, 0);
+    if (other) return t(this.decoIndoors ? 'deco.otherIn' : 'deco.otherOut', { n: other });
+    return this.decoIndoors ? t('deco.emptyIn') : t('isl.deco.empty');
+  }
+
+  /** The task line while you have things to place and have never placed one yet, or null. */
+  task() {
+    const n = this.storeAll().reduce((a, it) => a + it.n, 0);
+    return n && !this.S.decoUsed ? t('deco.task', { n }) : null;
+  }
+
   place(id, x, z) {
     const S = this.S;
+    S.decoUsed = true;
     S.store[id]--;
     if (S.store[id] <= 0) delete S.store[id];
     this.addPiece(id, x, z, this.rot);

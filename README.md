@@ -823,7 +823,12 @@ night match yours and crops grow while you are away.
   workbench by the cottage crafts 12 yard pieces and furniture, upgrades the cottage (porch and a
   second room) and has a decorate mode: the stick moves a cursor over the grid, B places or picks
   up, A turns (hold A for the next thing), C ends. The front door leads into the cottage,
-  which you decorate the same way.
+  which you decorate the same way. Decorate mode starts right where you are, anywhere on your land and inside the
+  cottage: **Decorate** in the island's menu, a thing in the bag panel's *Things to place* row (below the hotbar),
+  or the workbench. Inside, the room's grid takes furniture (bed, table, chair, rug, bookshelf, quilt, pictures)
+  and small keepsakes; outside, the yard takes yard pieces and keepsakes (old saves keep every piece where it
+  stands). The workbench has a sign with a hammer and a map marker (🔨), and while you have things to place and
+  have never placed one, a task says how.
 - **Walkways (playtest round 3):** short, obvious ways past buildings stay open: the well and its barrel stand
   against the field fence (a wide lane runs between the field and the greenhouse), the café has a boardwalk along
   its front over the water's edge and its specials board stands off the beach, and the cottage's flower bed and lamp

@@ -3,7 +3,7 @@ import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { ITEMS, icon } from './items.js';
 import { HOTBAR, ROW, bagSize, chestSize, freeSlot, fixSlots } from './save.js';
-import { CHEST } from './build.js';
+import { CHEST, fitsHere } from './build.js';
 import { makeChest } from './models8.js';
 
 // The bag panel (the owner's playtest, like Stardew Valley): a grid of bag rows (9 wide) above the 9-slot
@@ -16,6 +16,9 @@ import { makeChest } from './models8.js';
 //   slot you hold), [B] picks a stack up and puts it down again, [A] moves it across at once, [C] (or Tab)
 //   closes. Keys 1-9 pick a hotbar slot.
 // - The name and sell price of the thing under the cursor or mouse is shown and read aloud.
+// - Below the hotbar: the things waiting to be placed (decorations and furniture from the workbench's storage).
+//   [B] or [A] on one (or a click) starts decorate mode right where you are with it in hand (playtest round 3;
+//   furniture only inside the cottage, yard pieces only outside: build.js fitsHere).
 
 const CSS = `
 .zb-panel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: auto; background: rgba(255,250,240,.98); border-radius: 24px;
@@ -40,6 +43,9 @@ const CSS = `
 @keyframes zb-bob { 50% { margin-top: -4px; } }
 .zb-tip { margin-top: 8px; min-height: 1.4em; text-align: center; font-size: clamp(14px, 1.35vw, 20px); font-weight: 700; }
 .zb-tip small { font-weight: 600; opacity: .7; }
+.zb-grid.decogrid .zb-slot { background: rgba(255,216,74,.25); }
+.zb-grid.decogrid .zb-slot img { width: 100%; height: 100%; object-fit: contain; }
+.zb-grid.decogrid .zb-slot.away { opacity: .45; }
 .zb-foot { text-align: center; margin-top: 4px; opacity: .75; font-size: clamp(11px, 1vw, 15px); }
 .zb-ghost { position: fixed; width: 54px; height: 54px; pointer-events: none; z-index: 50; transform: translate(-50%, -50%) scale(1.15); filter: drop-shadow(0 4px 2px rgba(43,35,64,.35)); }
 `;
@@ -88,13 +94,26 @@ export class BagUi {
 
   // ---------- the data: stacks in the bag (S.inv) and in the chest (S.chest) ----------
 
-  list(c) { return c === 'chest' ? this.S.chest : this.S.inv; }
-  size(c) { return c === 'chest' ? chestSize(this.S) : bagSize(this.S); }
+  list(c) { return c === 'chest' ? this.S.chest : c === 'deco' ? this.decoItems() : this.S.inv; }
+  size(c) { return c === 'chest' ? chestSize(this.S) : c === 'deco' ? this.decoItems().length : bagSize(this.S); }
+
+  /** The things waiting to be placed (build.js storage) as stacks on a row of their own. */
+  decoItems() { return (this.host.builder?.storeAll() || []).map((it, i) => ({ id: it.id, n: it.n, slot: i })); }
+
+  /** Decorate with this thing, right where you are (closes the bag; a toast if it cannot go here). */
+  decorateWith(p) {
+    const it = this.at(p);
+    if (!it) { this.host.game.audio.play('bump'); return; }
+    const host = this.host;
+    if (!fitsHere(it.id, !!host.indoors)) { host.game.ui.toast(t(host.indoors ? 'deco.t.goesOut' : 'deco.t.goesIn', { item: nameOf(it.id) }), 2400); host.game.audio.play('bump'); return; }
+    this.close();
+    host.builder.startDecorate(it.id); // (outside your land: a toast says where you can decorate)
+  }
   at(p) { return p ? this.list(p.c).find((it) => it.slot === p.s) || null : null; }
 
   /** Move the stack at a to slot b: into an empty slot, onto the same thing (merge), or swap. */
   move(a, b) {
-    if (!a || !b || (a.c === b.c && a.s === b.s)) return false;
+    if (!a || !b || (a.c === b.c && a.s === b.s) || a.c === 'deco' || b.c === 'deco') return false; // (things to place stay in storage)
     const A = this.at(a);
     if (!A || b.s < 0 || b.s >= this.size(b.c)) return false;
     const B = this.at(b);
@@ -131,6 +150,7 @@ export class BagUi {
   }
 
   quickMove(p) {
+    if (p.c === 'deco') { this.decorateWith(p); return true; }
     const to = this.quickTarget(p);
     if (!to) { this.host.game.audio.play('bump'); return false; }
     this.move(p, to);
@@ -180,6 +200,7 @@ export class BagUi {
     if (this.chest) for (let r = 0; r < chestSize(this.S) / ROW; r++) out.push(['chest', r * ROW]);
     for (let r = 0; r < (this.S.bagRows ?? 2); r++) out.push(['inv', HOTBAR + r * ROW]);
     out.push(['inv', 0]);
+    if (!this.chest) for (let r = 0; r < Math.ceil(this.size('deco') / ROW); r++) out.push(['deco', r * ROW]);
     return out;
   }
 
@@ -194,7 +215,8 @@ export class BagUi {
     if (r < 0) r = rows.length - 1;
     const col = this.cur.s % ROW;
     const nr = THREE.MathUtils.clamp(r - dy, 0, rows.length - 1);
-    const nc = (col + dx + ROW) % ROW;
+    let nc = (col + dx + ROW) % ROW;
+    if (rows[nr][0] === 'deco') nc = Math.min(nc, this.size('deco') - 1 - rows[nr][1]); // (a short last row)
     this.cur = { c: rows[nr][0], s: rows[nr][1] + nc };
     if (this.cur.c === 'inv' && this.cur.s < HOTBAR) this.S.sel = this.cur.s; // on the hotbar: that is what you hold
     this.host.game.audio.play('select');
@@ -204,6 +226,7 @@ export class BagUi {
 
   /** [B]: pick the stack up, or put the one you carry down here. */
   pickOrPlace() {
+    if (this.cur.c === 'deco') { this.carry = null; this.decorateWith(this.cur); return; }
     if (this.carry) {
       const from = this.carry;
       this.carry = null;
@@ -243,6 +266,10 @@ export class BagUi {
     const kind = it && ITEMS[it.id]?.kind;
     const n = it && (it.n > 1 || (kind !== 'tool' && kind !== 'book' && kind !== 'gadget')) ? `<span class="n">${it.n}</span>` : '';
     const up = this.carry && this.cur.c === c && this.cur.s === s ? `<div class="up">${icon(this.at(this.carry)?.id)}</div>` : '';
+    if (c === 'deco') {
+      if (it && !fitsHere(it.id, !!this.host.indoors)) cls.push('away');
+      return `<div class="${cls.join(' ')}" data-c="${c}" data-s="${s}">${it ? this.host.builder.icon3d(it.id) : ''}${it && it.n > 1 ? `<span class="n">${it.n}</span>` : ''}</div>`;
+    }
     return `<div class="${cls.join(' ')}" data-c="${c}" data-s="${s}">${c === 'inv' && s < HOTBAR ? `<span class="k">${s + 1}</span>` : ''}${it ? icon(it.id) : ''}${n}${up}</div>`;
   }
 
@@ -256,6 +283,11 @@ export class BagUi {
   tipText(p) {
     const it = this.at(p);
     if (!it) return '';
+    if (p.c === 'deco') {
+      const here = fitsHere(it.id, !!this.host.indoors);
+      const where = here ? tFor(this.host.player?.p, 'deco.bag.tip') : t(this.host.indoors ? 'deco.t.goesOut' : 'deco.t.goesIn', { item: nameOf(it.id) });
+      return [it.n > 1 ? `${nameOf(it.id)} × ${it.n}` : nameOf(it.id), where].join(' · ');
+    }
     const def = ITEMS[it.id] || {};
     const parts = [it.n > 1 ? `${nameOf(it.id)} × ${it.n}` : nameOf(it.id)];
     if (def.sell) parts.push(t('zb.sells', { n: def.sell }));
@@ -274,6 +306,8 @@ export class BagUi {
     h += `<h3><span class="ic">${icon(S.bagRows >= 4 ? 'backpack2' : 'backpack1')}</span>${esc(t('zb.bag'))} <small>${esc(t('zb.count', { n: used, m: size }))}</small></h3>`;
     h += this.grid('inv', HOTBAR, size);
     h += this.grid('inv', 0, HOTBAR, 'hot');
+    const nd = this.chest ? 0 : this.size('deco');
+    if (nd) h += `<h3><span class="ic">${icon('deco')}</span>${esc(t('deco.bag'))} <small>${nd}</small></h3>${this.grid('deco', 0, nd, 'decogrid')}`;
     const tipP = this.hover || this.cur;
     h += `<div class="zb-tip">${esc(this.tipText(tipP)) || '&nbsp;'}</div>`;
     h += `<div class="zb-foot">${esc(tFor(p, pad ? (this.chest ? 'zb.hint.padChest' : 'zb.hint.pad') : this.chest ? 'zb.hint.kbChest' : 'zb.hint.kb'))}</div>`;
@@ -331,6 +365,7 @@ export class BagUi {
       this.ghost.style.display = 'none';
       const p = this.slotFrom(document.elementFromPoint?.(e.clientX, e.clientY) || e.target);
       if (p && (p.c !== d.c || p.s !== d.s)) { if (this.move(d, p)) this.host.game.audio.play('pop'); return; }
+      if (p && !d.moved && p.c === 'deco') { this.cur = { ...p }; this.decorateWith(p); return; } // a click on a thing to place
       if (p && !d.moved) {
         // a click: on the hotbar it picks what you hold; it also moves the cursor there
         this.cur = { ...p };

@@ -263,6 +263,9 @@ export class IslandAtlas {
       if (S.sea?.suit) add({ key: 'place:dive', kind: 'game', icon: '🤿', name: t('map.dive'), x: DIVE_BOAT.x, z: DIVE_BOAT.z - 1.5 });
       // shops, homes and the other places
       add({ key: 'home', kind: 'place', icon: '🏠', name: t('map.home'), x: HOME.x, z: HOME.z, tx: HOME.x, tz: HOME.z + 2.9 });
+      // the workbench by the cottage: make things and decorate (playtest round 3: it was hard to find)
+      const wb = host.builder?.bench;
+      if (wb) add({ key: 'bench', kind: 'place', icon: '🔨', name: t('deco.bench.sign'), sub: t('deco.map.sub'), x: wb.x - 1.2, z: wb.z, tx: wb.x + 1.3, tz: wb.z });
       add({ key: 'store', kind: 'place', icon: '🛒', name: t('map.store'), x: STORE.x, z: STORE.z, tx: STORE.x, tz: STORE.z + 3.4 });
       add({ key: 'museum', kind: 'place', icon: '🏛️', name: t('map.museum'), x: MUSEUM.x, z: MUSEUM.z, tx: 26, tz: 1.4 });
       add({ key: 'cafe', kind: 'place', icon: '☕', name: t('map.cafe'), x: CAFE.x, z: CAFE.z, tx: -7.1, tz: 42.8, sub: S.cafe?.repaired ? '' : t('map.cafeClosed') });
