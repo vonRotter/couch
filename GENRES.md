@@ -35,14 +35,14 @@ table there, then this file. The passport is explained in the README (Solo islan
 | 🦘 Platformer | Super Mario Bros. | Sky Hop, Hop trails, Bubble Buddies, Rooftop Rush, Grumble King (meadow) |
 | 🗡️ Adventure | The Legend of Zelda | Lighthouse Caves, Starhop |
 | 🔍 Point and click | The Secret of Monkey Island | Pudding Island |
-| 🧩 Puzzle game | Tetris, Lemmings | Grumble Guides, Starlite, Portal Pals |
-| ♟️ Tactics | Into the Breach | Bean Brigade, Splash Squad |
+| 🧩 Puzzle game | Tetris, Lemmings | Grumble Guides, Portal Pals |
+| ♟️ Tactics | Into the Breach | Bean Brigade, Starlite, Foothold, Splash Squad |
 | 🛡️ Role-playing game | Pokémon, Diablo | Pillow Keep Solo, Pillow Keep |
 | 💎 Roguelite | Spelunky | Crystal Caves |
 | 🎯 Aim and shoot | Duck Hunt, Splatoon | Laser Ducks, Spacefall, Paint Pilots, Snowball Fort, Grumble King (snow fort) |
 | 🏁 Racing | Mario Kart | Tachyon, Kart Party, Snow Slalom, Space Race, Grumble King (space) |
 | ⚽ Sports | Rocket League, FIFA | Mega Ball, Ice Hockey, Bean Golf |
-| 🧱 Building game | Minecraft | Knights & Builders (Versus and the Golden Bean), Foothold, Building in your yard |
+| 🧱 Building game | Minecraft | Knights & Builders (Versus and the Golden Bean), Building in your yard |
 | 🎉 Party game | Mario Party | Skipping stones, Kite flying, Games with villagers, Party Mix, Bonk Brawl, Paint Party, Garden Hide & Seek, Cook-Off, Grumble King (kitchen) |
 | 🌱 Life sim | Animal Crossing, Stardew Valley | Farming, Fishing, Diving, The café |
 | 📚 Learning game | Big Brain Academy | The School House, Bokstavballonger, Mattejakt, Læringsmiks |
@@ -65,8 +65,8 @@ Each genre has a read-aloud card in the passport (English and Norwegian, `pp.car
 | Pillow Keep Solo (`keepsolo`) | solo island place | Role-playing game | Reading the enemy, Thinking ahead | hero level 2 or a boss asleep (from its save), or a part overcome |
 | The School House (`school`) | School House | Learning game | Puzzles | a learning game finished from the School House |
 | Tachyon (`tachyon`) | Game Hall (guest) | Racing | Moving and steering, Aiming | launched (only the launch is seen) |
-| Starlite (`starlite`) | Game Hall (guest) | Puzzle game | Puzzles | launched (only the launch is seen) |
-| Foothold (`foothold`) | Game Hall (guest) | Building game | Building, Thinking ahead | launched (only the launch is seen) |
+| Starlite (`starlite`) | Game Hall (guest) | Tactics | Thinking ahead, Building | launched (only the launch is seen) |
+| Foothold (`foothold`) | Game Hall (guest) | Tactics | Thinking ahead, Reading the enemy | launched (only the launch is seen) |
 | Starhop (`starhop`) | Game Hall (guest) | Adventure | Exploring, Moving and steering | launched (only the launch is seen) |
 | Farming (`farm`) | island activity | Life sim | Thinking ahead | the first harvest |
 | Fishing (`fishing`) | island activity | Life sim | Timing | a fish caught |
@@ -104,9 +104,9 @@ Each genre has a read-aloud card in the passport (English and Norwegian, `pp.car
 | Mattejakt (`math`) | shared island | Learning game | Puzzles | a game finished (its results screen) |
 | Læringsmiks (`learnmix`) | shared island | Learning game | Puzzles | a game finished (its results screen) |
 
-The four Game Hall guest games are other repositories: their genres and skills are a best guess from their
-names and icons (Tachyon: a space flier, Starlite: a crystal puzzle, Foothold: a colony builder, Starhop: space
-exploring) and only their launch can be seen.
+The four Game Hall guest games are other repositories and only their launch can be seen. Foothold is an
+XCOM-style tactics game and Starlite a real-time strategy game (both counted as tactics); Tachyon (a space flier)
+and Starhop (space exploring) are a best guess from their names.
 
 ## Coach's trials
 
@@ -133,7 +133,7 @@ exploring) and only their launch can be seen.
 
 ## Suggested order (Coach and the map, never forced)
 
-Farming → Sky Hop → Fishing → Laser Ducks → The School House → Skipping stones → Pudding Island → Hop trails (after Sky Hop) → Kite flying → Grumble Guides → Crystal Caves (after Sky Hop) → Lighthouse Caves (after Sky Hop) → Bean Brigade (after Grumble Guides) → Building in your yard → Diving → The café → Knights & Builders (Versus and the Golden Bean) (after Grumble Guides) → Pillow Keep Solo (after Lighthouse Caves) → Tachyon (after Sky Hop) → Starlite (after Grumble Guides) → Foothold (after Bean Brigade) → Starhop (after Lighthouse Caves).
+Farming → Sky Hop → Fishing → Laser Ducks → The School House → Skipping stones → Pudding Island → Hop trails (after Sky Hop) → Kite flying → Grumble Guides → Crystal Caves (after Sky Hop) → Lighthouse Caves (after Sky Hop) → Bean Brigade (after Grumble Guides) → Building in your yard → Diving → The café → Knights & Builders (Versus and the Golden Bean) (after Grumble Guides) → Pillow Keep Solo (after Lighthouse Caves) → Tachyon (after Sky Hop) → Starlite (after Bean Brigade) → Foothold (after Bean Brigade) → Starhop (after Lighthouse Caves).
 
 Coach suggests the first thing on this path not played properly yet whose "after" games are played, preferring
 places that are open now and games that train the weakest skill; a closed place comes with how to open it. He
