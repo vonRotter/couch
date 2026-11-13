@@ -39,8 +39,8 @@ table there, then this file. The passport is explained in the README (Solo islan
 | ♟️ Tactics | Into the Breach | Bean Brigade, Starlite, Foothold, Splash Squad |
 | 🛡️ Role-playing game | Pokémon, Diablo | Pillow Keep Solo, Pillow Keep |
 | 💎 Roguelite | Spelunky | Crystal Caves |
-| 🎯 Aim and shoot | Duck Hunt, Splatoon | Laser Ducks, Spacefall, Paint Pilots, Snowball Fort, Grumble King (snow fort) |
-| 🏁 Racing | Mario Kart | Tachyon, Kart Party, Snow Slalom, Space Race, Grumble King (space) |
+| 🎯 Aim and shoot | Duck Hunt, Splatoon | Laser Ducks, Tachyon, Spacefall, Paint Pilots, Snowball Fort, Grumble King (snow fort) |
+| 🏁 Racing | Mario Kart | Kart Party, Snow Slalom, Space Race, Grumble King (space) |
 | ⚽ Sports | Rocket League, FIFA | Mega Ball, Ice Hockey, Bean Golf |
 | 🧱 Building game | Minecraft | Knights & Builders (Versus and the Golden Bean), Building in your yard |
 | 🎉 Party game | Mario Party | Skipping stones, Kite flying, Games with villagers, Party Mix, Bonk Brawl, Paint Party, Garden Hide & Seek, Cook-Off, Grumble King (kitchen) |
@@ -64,7 +64,7 @@ Each genre has a read-aloud card in the passport (English and Norwegian, `pp.car
 | Knights & Builders (Versus and the Golden Bean) (`castle`) | solo island place | Building game | Building, Thinking ahead, Teamwork | a level won (campaign) or a match finished (Versus) |
 | Pillow Keep Solo (`keepsolo`) | solo island place | Role-playing game | Reading the enemy, Thinking ahead | hero level 2 or a boss asleep (from its save), or a part overcome |
 | The School House (`school`) | School House | Learning game | Puzzles | a learning game finished from the School House |
-| Tachyon (`tachyon`) | Game Hall (guest) | Racing | Moving and steering, Aiming | launched (only the launch is seen) |
+| Tachyon (`tachyon`) | Game Hall (guest) | Aim and shoot | Aiming, Moving and steering | launched (only the launch is seen) |
 | Starlite (`starlite`) | Game Hall (guest) | Tactics | Thinking ahead, Building | launched (only the launch is seen) |
 | Foothold (`foothold`) | Game Hall (guest) | Tactics | Thinking ahead, Reading the enemy | launched (only the launch is seen) |
 | Starhop (`starhop`) | Game Hall (guest) | Adventure | Exploring, Moving and steering | launched (only the launch is seen) |
@@ -105,8 +105,9 @@ Each genre has a read-aloud card in the passport (English and Norwegian, `pp.car
 | Læringsmiks (`learnmix`) | shared island | Learning game | Puzzles | a game finished (its results screen) |
 
 The four Game Hall guest games are other repositories and only their launch can be seen. Foothold is an
-XCOM-style tactics game and Starlite a real-time strategy game (both counted as tactics); Tachyon (a space flier)
-and Starhop (space exploring) are a best guess from their names.
+XCOM-style tactics game and Starlite a real-time strategy game (both counted as tactics), and Tachyon is space
+flight combat (aim and shoot: counted as a shooter); Starhop (space exploring, adventure) is a best guess from its
+name.
 
 ## Coach's trials
 
@@ -133,7 +134,7 @@ and Starhop (space exploring) are a best guess from their names.
 
 ## Suggested order (Coach and the map, never forced)
 
-Farming → Sky Hop → Fishing → Laser Ducks → The School House → Skipping stones → Pudding Island → Hop trails (after Sky Hop) → Kite flying → Grumble Guides → Crystal Caves (after Sky Hop) → Lighthouse Caves (after Sky Hop) → Bean Brigade (after Grumble Guides) → Building in your yard → Diving → The café → Knights & Builders (Versus and the Golden Bean) (after Grumble Guides) → Pillow Keep Solo (after Lighthouse Caves) → Tachyon (after Sky Hop) → Starlite (after Bean Brigade) → Foothold (after Bean Brigade) → Starhop (after Lighthouse Caves).
+Farming → Sky Hop → Fishing → Laser Ducks → The School House → Skipping stones → Pudding Island → Hop trails (after Sky Hop) → Kite flying → Grumble Guides → Crystal Caves (after Sky Hop) → Lighthouse Caves (after Sky Hop) → Bean Brigade (after Grumble Guides) → Building in your yard → Diving → The café → Knights & Builders (Versus and the Golden Bean) (after Grumble Guides) → Pillow Keep Solo (after Lighthouse Caves) → Tachyon (after Laser Ducks) → Starlite (after Bean Brigade) → Foothold (after Bean Brigade) → Starhop (after Lighthouse Caves).
 
 Coach suggests the first thing on this path not played properly yet whose "after" games are played, preferring
 places that are open now and games that train the weakest skill; a closed place comes with how to open it. He

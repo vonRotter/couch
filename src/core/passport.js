@@ -84,8 +84,9 @@ export const GAMES = {
   keepsolo: { genre: 'rpg', skills: ['reading', 'planning'], where: 'solo', place: 'place:keep', after: ['lighthouse'] },
   school: { genre: 'learning', skills: ['puzzles'], where: 'school', place: 'place:school', name: 'pp.g.school' },
   // the Game Hall's guest games (other repos: only the launch is seen). Foothold is XCOM-style tactics and Starlite a
-  // real-time strategy game (owner); Tachyon and Starhop are a best guess, see GENRES.md
-  tachyon: { genre: 'racing', skills: ['steering', 'aiming'], where: 'hall', place: 'place:hall', after: ['platformer'] },
+  // real-time strategy game, Tachyon space flight combat (aim and shoot: a shooter) (owner); Starhop is a best guess,
+  // see GENRES.md
+  tachyon: { genre: 'shooter', skills: ['aiming', 'steering'], where: 'hall', place: 'place:hall', after: ['duckhunt'] }, // space flight combat
   starlite: { genre: 'tactics', skills: ['planning', 'building'], where: 'hall', place: 'place:hall', after: ['breach'] }, // a real-time strategy game (StarCraft-like)
   foothold: { genre: 'tactics', skills: ['planning', 'reading'], where: 'hall', place: 'place:hall', after: ['breach'] }, // an XCOM-style tactics game
   starhop: { genre: 'adventure', skills: ['exploring', 'steering'], where: 'hall', place: 'place:hall', after: ['lighthouse'] },
