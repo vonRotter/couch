@@ -147,6 +147,7 @@ addStrings({
     'story.fest.8': 'I sailed all the way here. It was worth it. Even the boat ride. Mostly.',
     'story.fest.9': 'Good night, light! Light says good night to Mumble!',
     'story.fest.10': '{name}, thank you! Climb up to the top any time and look through my old telescope.',
+    'story.fest.coach': 'Now THAT is teamwork! Wood, stone, good friends and one big light. Gold medal, {name}!',
     'isl.d.miniLighthouse': 'Mini lighthouse', 'isl.d.starGlobe': 'Star globe',
 
     // the lighthouse top and the telescope
@@ -315,6 +316,7 @@ addStrings({
     'story.fest.8': 'Jeg seilte hele veien hit. Det var verdt det. Til og med båtturen. Nesten.',
     'story.fest.9': 'God natt, lys! Lyset sier god natt til Mumle!',
     'story.fest.10': '{name}, tusen takk! Klatre opp til toppen når du vil, og se gjennom den gamle kikkerten min.',
+    'story.fest.coach': 'DET kaller jeg lagarbeid! Ved, stein, gode venner og ett stort lys. Gullmedalje, {name}!',
     'isl.d.miniLighthouse': 'Minifyr', 'isl.d.starGlobe': 'Stjerneglobus',
 
     'story.top.title': 'Fyrtoppen',

@@ -92,8 +92,9 @@ const CH = [
 
 // The festival crowd: everyone in an arc south of the lighthouse door, Bram at the door.
 const FEST_SPOT = { x: LH.x, z: LH.z + 4.9 };
-const FEST_ORDER = ['grumbleton', 'hazel', 'rosa', 'mumble', null, 'pip', 'hoot', 'shelby']; // null = you
-const FEST_LINES = [[null], ['bram', 'hop'], ['pip', 'light'], ['hazel', 'hop'], ['grumbleton'], ['rosa', 'lanterns'], ['hoot', 'hop'], ['shelby'], ['mumble', 'hop'], ['bram', 'reward']];
+const FEST_ORDER = ['grumbleton', 'hazel', 'rosa', 'mumble', null, 'pip', 'coach', 'hoot', 'shelby']; // null = you
+// [who, fx, key]: the key is story.fest.<n> by default (n = the line's place); Coach Bo joined later (playtest round 3)
+const FEST_LINES = [[null], ['bram', 'hop'], ['pip', 'light'], ['hazel', 'hop'], ['grumbleton'], ['rosa', 'lanterns'], ['hoot', 'hop'], ['shelby'], ['mumble', 'hop'], ['coach', 'hop', 'story.fest.coach'], ['bram', 'reward']];
 
 const CSS = `
 .isl-fade { position: absolute; inset: 0; background: #0b1030; opacity: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; }
@@ -542,7 +543,7 @@ export class Story {
 
   festLines() {
     const host = this.host, P = host.player;
-    const lines = FEST_LINES.map(([who, fx], i) => ({ who, key: `story.fest.${i + 1}`, fx: () => {
+    const lines = FEST_LINES.map(([who, fx, key], i) => ({ who, key: key || `story.fest.${Math.min(i + 1, 10)}`, fx: () => {
       // the speaker turns to us; everyone else looks at the light
       for (const m of this.festCast) m.model.face(m.id === 'bram' ? 0 : LH.x - m.x, m.id === 'bram' ? 1 : LH.z - m.z);
       const sp = who && this.festCast.find((m) => m.id === who);
