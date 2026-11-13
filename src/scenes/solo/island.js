@@ -47,7 +47,7 @@ import { IslandHud } from './hud.js';
 import { Life } from './life.js';
 import { SEASON_ICON, dayKey, dayRand } from './calendar.js';
 import { ToastQueue } from './toasts.js';
-import { Greenhouse } from './greenhouse.js';
+import { Greenhouse, greenhouseTask } from './greenhouse.js';
 import { TrophyShelf, isTrophy } from './shelf.js';
 import { Museum } from './museum.js';
 import { Isle2 } from './isle2.js';
@@ -731,7 +731,8 @@ export class SoloIslandScene extends BaseScene {
     const out = [];
     if (S.intro && S.tut >= 1 && S.tut <= 7) out.push(t(`isl.tut.${S.tut}`));
     if (S.mail.length) out.push(t('isl.task.mail'));
-    for (const [id, q] of Object.entries(S.quests)) out.push(this.questText(id, q.n));
+    for (const [id, q] of Object.entries(S.quests)) out.push(id === 'hazel' && NPCS.hazel.quests[q.n]?.reward?.unlock === 'greenhouse' ? t('gh.task.quest', { text: this.questText(id, q.n) }) : this.questText(id, q.n));
+    if (S.intro) { const gh = greenhouseTask(S); if (gh) out.push(gh); } // what it takes to fix the greenhouse (greenhouse.js)
     out.push(...this.crabs.tasks());
     if (S.intro && !S.unlocks.bridge && S.tut >= 5) out.push(t('isl.task.bridge', { n: S.unlocks.bridgeWood, m: BRIDGE_WOOD }));
     if (S.unlocks.rockBuster && !S.unlocks.mine) out.push(t('isl.task.mine'));

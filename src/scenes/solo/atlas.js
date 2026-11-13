@@ -9,7 +9,7 @@ import { TRAILS } from './hopdata.js';
 import { PILE, KITE, LEAF_PILES } from './games.js';
 import { MAIN_BOARD } from './isle2.js';
 import { PADDOCK } from './animals.js';
-import { npcState } from './npcs.js';
+import { npcState, heartsOf } from './npcs.js';
 import { todaysCrab } from './crabdata.js';
 import { stageOf, tileCenter, parseKey } from './farm.js';
 
@@ -270,6 +270,8 @@ export class IslandAtlas {
       if (S.isle2?.chart) add({ key: 'boat', kind: 'place', icon: '⛵', name: t('map.boat'), x: PIER.x, z: PIER.z0 + PIER.len + 1.5, tx: MAIN_BOARD.x, tz: MAIN_BOARD.z });
       if (S.unlocks.barn) add({ key: 'barn', kind: 'place', icon: '🐄', name: t('map.barn'), x: -14, z: 12.6, tx: (PADDOCK.x0 + PADDOCK.x1) / 2, tz: PADDOCK.z1 + 0.6 });
       if (S.unlocks.greenhouse) add({ key: 'greenhouse', kind: 'place', icon: '🌿', name: t('map.greenhouse'), x: GREENHOUSE.x, z: GREENHOUSE.z, tz: GREENHOUSE.z + GREENHOUSE.d / 2 + 0.6 });
+      // the broken greenhouse, from 3 hearts with Aunt Hazel: what it takes (greenhouse.js)
+      else if (heartsOf(npcState(S, 'hazel')) >= 3 && host.greenhouse) add({ key: 'greenhouse', kind: 'place', icon: '🌱', name: t('map.greenhouse'), sub: host.greenhouse.mapHint(), x: GREENHOUSE.x, z: GREENHOUSE.z, tz: GREENHOUSE.z + GREENHOUSE.d / 2 + 0.6 });
       add({ key: 'home:hazel', kind: 'place', icon: '🏡', name: t('map.home.hazel'), x: HAZEL_HOME.x, z: HAZEL_HOME.z, tx: HOME_DOORS.hazel.spot.x, tz: HOME_DOORS.hazel.spot.z });
       add({ key: 'home:pip', kind: 'place', icon: '🚀', name: t('map.home.pip'), x: 40, z: -16, tx: HOME_DOORS.pip.spot.x, tz: HOME_DOORS.pip.spot.z });
       if (npcState(S, 'mumble').met) add({ key: 'home:mumble', kind: 'place', icon: '🪵', name: t('map.home.mumble'), x: DEN.x, z: DEN.z, tx: HOME_DOORS.mumble.spot.x, tz: HOME_DOORS.mumble.spot.z });

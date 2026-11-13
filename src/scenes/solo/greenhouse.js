@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { toon } from '../../core/palette.js';
 import { GREENHOUSE, GREEN, heightAt } from './map.js';
 import { tileKey } from './farm.js';
-import { now } from './save.js';
+import { now, count } from './save.js';
 import { mesh, box, cyl, sph, cone, roofGeo, makeSign } from './models.js';
+import { t, addStrings } from '../../core/i18n.js';
+import { NPCS, npcState, heartsOf } from './npcs.js';
 
 // The greenhouse east of the farm (milestone B3). At first it is an empty old frame; Aunt Hazel's fourth
 // quest (wood, stone and fiber) fixes it: glass walls and roof and two rows of beds (a second small field,
@@ -11,6 +13,64 @@ import { mesh, box, cyl, sph, cone, roofGeo, makeSign } from './models.js';
 // Milestone C: outdoor crops nearly sleep at night, but the greenhouse has grow lamps and keeps going.
 
 const G = GREENHOUSE;
+/** Aunt Hazel's quest that fixes it (npcs.js: her fourth). */
+const GH_Q = NPCS.hazel.quests.findIndex((q) => q.reward?.unlock === 'greenhouse');
+const NEED = NPCS.hazel.quests[GH_Q];
+
+// Playtest round 3: what it takes to fix the greenhouse is said up front (its sign, a task and the map), not only
+// once Aunt Hazel asks for it.
+addStrings({
+  en: {
+    'gh.sign.hearts': 'The old greenhouse. The glass is gone! Aunt Hazel can fix it once you are good friends (3 hearts: you have {h}). Then she asks for {list}. Talk to her, bring her gifts and help with her jobs!',
+    'gh.sign.jobs': 'The old greenhouse. The glass is gone! Aunt Hazel can fix it after her other jobs ({n} of {m} done). Then she asks for {list}.',
+    'gh.sign.ask': 'The old greenhouse. Aunt Hazel can fix it now: talk to her! She will ask for {list}.',
+    'gh.sign.quest': 'The old greenhouse. Bring Aunt Hazel {list} and she fixes it: glass, beds and grow lamps!',
+    'gh.task.ask': '🌱 Aunt Hazel can fix the greenhouse now: talk to her',
+    'gh.task.jobs': '🌱 Greenhouse: finish Aunt Hazel\'s other jobs first ({n} of {m} done)',
+    'gh.task.quest': '🌱 Greenhouse: {text}',
+    'gh.map.broken': 'Broken. Aunt Hazel can fix it',
+    'gh.map.need': 'Broken. Aunt Hazel fixes it for {list}',
+  },
+  no: {
+    'gh.sign.hearts': 'Det gamle drivhuset. Glasset er borte! Tante Hassel kan fikse det når dere er gode venner (3 hjerter: du har {h}). Da ber hun om {list}. Snakk med henne, gi henne gaver og hjelp henne med oppdragene!',
+    'gh.sign.jobs': 'Det gamle drivhuset. Glasset er borte! Tante Hassel kan fikse det etter de andre oppdragene hennes ({n} av {m} klart). Da ber hun om {list}.',
+    'gh.sign.ask': 'Det gamle drivhuset. Tante Hassel kan fikse det nå: snakk med henne! Hun ber om {list}.',
+    'gh.sign.quest': 'Det gamle drivhuset. Gi tante Hassel {list}, så fikser hun det: glass, bed og vekstlamper!',
+    'gh.task.ask': '🌱 Tante Hassel kan fikse drivhuset nå: snakk med henne',
+    'gh.task.jobs': '🌱 Drivhuset: gjør ferdig de andre oppdragene til tante Hassel først ({n} av {m} klart)',
+    'gh.task.quest': '🌱 Drivhuset: {text}',
+    'gh.map.broken': 'Ødelagt. Tante Hassel kan fikse det',
+    'gh.map.need': 'Ødelagt. Tante Hassel fikser det for {list}',
+  },
+});
+
+/** "20 wood, 10 stone and 8 fiber" (with what you have when have is true). */
+function needList(S, have = false) {
+  const parts = NEED.need.map(([id, n]) => `${n} ${t(`isl.i.${id}`)}${have ? ` (${Math.min(n, count(S, id))}/${n})` : ''}`);
+  return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} ${t('gh.and')} ${parts[parts.length - 1]}` : parts[0];
+}
+addStrings({ en: { 'gh.and': 'and' }, no: { 'gh.and': 'og' } });
+
+/**
+ * Where you are with fixing it: 'open' (fixed), 'quest' (Hazel asked: bring the things), 'ask' (she can ask
+ * now: talk to her), 'jobs' (3 hearts, her earlier jobs first) or 'hearts' (not 3 hearts yet).
+ */
+export function greenhouseStep(S) {
+  if (S.unlocks.greenhouse) return { step: 'open' };
+  const st = npcState(S, 'hazel'), h = heartsOf(st);
+  if (S.quests.hazel?.n === GH_Q) return { step: 'quest', h };
+  if (h < (NEED.minHearts || 0)) return { step: 'hearts', h };
+  if (st.q >= GH_Q && !S.quests.hazel) return { step: 'ask', h };
+  return { step: 'jobs', h, n: Math.min(st.q, GH_Q), m: GH_Q };
+}
+
+/** A task line about the greenhouse (from 3 hearts with Aunt Hazel until it is fixed), or null. */
+export function greenhouseTask(S) {
+  const g = greenhouseStep(S);
+  if (g.step === 'ask') return t('gh.task.ask');
+  if (g.step === 'jobs' && !S.quests.hazel) return t('gh.task.jobs', { n: g.n, m: g.m });
+  return null;
+}
 
 export class Greenhouse {
   constructor(host) {
@@ -105,8 +165,19 @@ export class Greenhouse {
     this.host.confetti.burst(new THREE.Vector3(G.x, 3.5, G.z), 0, { count: 70, speed: 7, up: 5, life: 1.6, gravity: -7, colors: [0x3ddc97, 0xffffff, 0xbff6ff, 0xffc93c] });
   }
 
-  /** [B] at the broken greenhouse's sign. */
+  /** [B] at the broken greenhouse's sign: what it takes to fix it, and from whom. */
   interactions(P, out, nm) {
-    if (!this.open && Math.hypot(P.x - this.signSpot.x, P.z - this.signSpot.z) < 1.5) out.b = { text: nm('isl.h.sign'), fn: () => this.host.say([{ key: 'isl.sign.greenhouse' }]) };
+    if (!this.open && Math.hypot(P.x - this.signSpot.x, P.z - this.signSpot.z) < 1.5) out.b = { text: nm('isl.h.sign'), fn: () => this.host.say([{ text: this.signText() }]) };
+  }
+
+  signText() {
+    const S = this.host.save, g = greenhouseStep(S);
+    return t(`gh.sign.${g.step === 'open' ? 'ask' : g.step}`, { h: g.h, n: g.n, m: g.m, list: needList(S, g.step === 'quest') });
+  }
+
+  /** The map's marker for the broken greenhouse (atlas.js): a short hint. */
+  mapHint() {
+    const g = greenhouseStep(this.host.save);
+    return g.step === 'quest' || g.step === 'ask' ? t('gh.map.need', { list: needList(this.host.save) }) : t('gh.map.broken');
   }
 }

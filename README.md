@@ -852,7 +852,9 @@ night match yours and crops grow while you are away.
   Hoot; 46 pieces: 22 fish, 13 sea finds and treasures, 6 crystals and a **Crab friends** wall of 5 that
   fills itself as you help crabs; prizes at 5, 10, 20, 30 and all 46; crystals come from Lighthouse Caves and Crystal
   Caves letters, the glow cave and Shell Isle), the greenhouse (Aunt Hazel's fourth quest; anything
-  grows inside in any season), sprinklers (water their 8 neighbours) and scarecrows (sometimes an
+  grows inside in any season; before it is fixed its sign says what it takes and from whom (3 hearts with Aunt
+  Hazel, then 20 wood, 10 stone and 8 fiber), and from 3 hearts a task and the map say so too; nothing spawns or
+  is placed in it or in front of its door), sprinklers (water their 8 neighbours) and scarecrows (sometimes an
   extra crop) from the workbench, and Shell Isle: a sea chart in the glow cave lets Grumbleton sail
   you there from the end of the pier. It has tide pools, palms, wild berries, treasure to dig, a
   hidden cove with its own fish, and Shelby the hermit crab, who visits Crab Cove on weekends (10 to 18).

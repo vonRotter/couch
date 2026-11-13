@@ -62,7 +62,7 @@ export const CHEST = { x: ROOM.x + ROOM.w / 2 - 0.5, z: ROOM.z - ROOM.d / 2 + 0.
 export const SHELF = { x: ROOM.x + 0.5, z: ROOM.z - ROOM.d / 2 + 0.25, w: 1.7, d: 0.45 };
 /** The greenhouse and the apron in front of its door: kept clear of yard pieces (its door and beds stay free). */
 const GH = { x0: GREENHOUSE.x - GREENHOUSE.w / 2 - 0.6, x1: GREENHOUSE.x + GREENHOUSE.w / 2 + 0.6, z0: GREENHOUSE.z - GREENHOUSE.d / 2 - 0.6, z1: GREENHOUSE.z + GREENHOUSE.d / 2 + 0.6 };
-const GH_DOOR = { x0: GREENHOUSE.x - 1.5, x1: GREENHOUSE.x + 1.5, z0: GH.z1, z1: GH.z1 + 1.8 };
+const GH_DOOR = { x0: GREENHOUSE.x - 2.0, x1: GREENHOUSE.x + 2.0, z0: GH.z1, z1: GH.z1 + 1.8 };
 const inRect = (r, x, z) => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1;
 /** Is (x, z) the greenhouse or the way to its door? */
 export const nearGreenhouse = (x, z) => inRect(GH, x, z) || inRect(GH_DOOR, x, z);

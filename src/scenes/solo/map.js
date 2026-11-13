@@ -1327,6 +1327,7 @@ export class IslandMap {
     for (const [id, h] of Object.entries(HOME_DOORS)) add(h.spot.x, h.spot.z, 1.8, `home:${id}`);
     add(HOME.x, HOME.z + 2.7, 2.2, 'door:cottage');
     add(GREENHOUSE.x, GREENHOUSE.z + GREENHOUSE.d / 2 + 0.6, 2.4, 'door:greenhouse');
+    for (const dx of [-1.6, 1.6]) add(GREENHOUSE.x + dx, GREENHOUSE.z, 2.4, 'greenhouse'); // its beds (nothing spawns inside)
     add(MUSEUM.x, MUSEUM.z + 3.9, 2.4, 'door:museum');
     add(STORE.x, STORE.z + 3.4, 2.4, 'door:store');
     add(BIN.x, BIN.z, 1.6, 'bin'); add(MAILBOX.x, MAILBOX.z, 1.4, 'mailbox'); add(WELL.x, WELL.z, 1.8, 'well');
