@@ -4,7 +4,7 @@ import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { ITEMS, icon } from './items.js';
 import { count, give, take } from './save.js';
-import { heightAt, HOME, FIELD } from './map.js';
+import { heightAt, HOME, FIELD, GREENHOUSE } from './map.js';
 import { mesh, box, cone, makeDeco, makeSign } from './models.js';
 import { makeCraft, makeDeco2, makeRoom, makePorch } from './models2.js';
 import { makeDeco3, DECO3, makeSprinkler, makeScarecrow } from './models3.js';
@@ -13,6 +13,7 @@ import { makeDeco5, DECO5 } from './models5.js';
 import { makeDeco6, DECO6 } from './models6.js';
 import { makeDeco7, DECO7, makeShell } from './models7.js';
 import { SHELLS, CRAFT_SHELLS, isShell } from './crabdata.js';
+import { isTrophy } from './shelf.js';
 
 // Building and decorating (milestone B2).
 // - Gathering (rock piles, tall grass, trees) moved to zipzap.js: Pip's Zip-Zap does it all.
@@ -53,8 +54,18 @@ Object.assign(ITEMS, { stone: { kind: 'res', sell: 3 }, fiber: { kind: 'res', se
 const YARD = { x0: -23, x1: 6, z0: -24, z1: 3 };
 export const ROOM = { x: 200, z: 120, w: 8, w2: 12, d: 6 };
 const HOME_DOOR = { x: HOME.x, z: HOME.z + 2.7 };
+/** Where new decorations go when they arrive (the nearest free cell): the open lawn west of the cottage. */
+const NEW_SPOT = { x: HOME.x - 5.5, z: HOME.z + 1.5 };
 /** The storage chest in the cottage: in the back right corner of the first room (bagui.js). */
 export const CHEST = { x: ROOM.x + ROOM.w / 2 - 0.5, z: ROOM.z - ROOM.d / 2 + 0.5 };
+/** The trophy shelf (shelf.js): against the back wall, between the windows of both the small and the big room. */
+export const SHELF = { x: ROOM.x + 0.5, z: ROOM.z - ROOM.d / 2 + 0.25, w: 1.7, d: 0.45 };
+/** The greenhouse and the apron in front of its door: kept clear of yard pieces (its door and beds stay free). */
+const GH = { x0: GREENHOUSE.x - GREENHOUSE.w / 2 - 0.6, x1: GREENHOUSE.x + GREENHOUSE.w / 2 + 0.6, z0: GREENHOUSE.z - GREENHOUSE.d / 2 - 0.6, z1: GREENHOUSE.z + GREENHOUSE.d / 2 + 0.6 };
+const GH_DOOR = { x0: GREENHOUSE.x - 1.5, x1: GREENHOUSE.x + 1.5, z0: GH.z1, z1: GH.z1 + 1.8 };
+const inRect = (r, x, z) => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1;
+/** Is (x, z) the greenhouse or the way to its door? */
+export const nearGreenhouse = (x, z) => inRect(GH, x, z) || inRect(GH_DOOR, x, z);
 
 export class Builder {
   constructor(host) {
@@ -84,6 +95,7 @@ export class Builder {
     this.hl.visible = false;
     host.scene.add(this.hl);
     this.migrate();
+    this.migrateTrophies();
     this.renderYard();
     this.refreshHome();
   }
@@ -182,11 +194,39 @@ export class Builder {
     if (S.yardInit) return;
     S.yardInit = true;
     for (const id of Object.keys(S.deco)) {
-      if (id === 'flag') continue;
-      const spot = this.host.decoSpot(id);
-      if (spot && !this.occupied(spot.x, spot.z)) this.addPiece(id, spot.x, spot.z, 0);
+      if (id === 'flag' || isTrophy(id)) continue; // (trophies stand on the shelf: shelf.js)
+      const spot = this.freeCellNear(NEW_SPOT.x, NEW_SPOT.z);
+      if (spot) this.addPiece(id, spot.x, spot.z, 0);
       else S.store[id] = (S.store[id] || 0) + 1;
     }
+  }
+
+  /**
+   * Playtest round 3: game trophies left the yard for the trophy shelf in the cottage (shelf.js), and the
+   * greenhouse is kept clear. Once per save: trophies in the yard or in storage go onto the shelf (they are
+   * no longer yard pieces), and anything standing in the greenhouse or on the way to its door moves to a free
+   * spot in the yard by the cottage (or into storage). A letter from Aunt Hazel tells about the shelf when
+   * trophies were standing in the yard.
+   */
+  migrateTrophies() {
+    const S = this.S;
+    if (S.shelfInit) return;
+    S.shelfInit = true;
+    let moved = 0;
+    S.yard = S.yard.filter((p) => {
+      if (!isTrophy(p.id)) return true;
+      S.deco[p.id] = true;
+      moved++;
+      return false;
+    });
+    for (const id of Object.keys(S.store)) if (isTrophy(id)) { S.deco[id] = true; delete S.store[id]; }
+    for (const p of S.yard.filter((q) => nearGreenhouse(q.x, q.z))) {
+      S.yard = S.yard.filter((q) => q !== p);
+      const spot = this.freeCellNear(NEW_SPOT.x, NEW_SPOT.z);
+      if (spot) this.addPiece(p.id, spot.x, spot.z, p.r || 0);
+      else S.store[p.id] = (S.store[p.id] || 0) + 1;
+    }
+    if (moved) S.mail.push({ id: 'shelfMoved', from: 'hazel' });
   }
 
   addPiece(id, x, z, r) {
@@ -229,10 +269,9 @@ export class Builder {
     return heightAt(x, z);
   }
 
-  /** A new decoration (from a game, a friend or a festival): on its usual spot if free, else in storage. */
+  /** A new decoration (from a friend, a festival, a find): on a free spot in the yard by the cottage, else in storage. */
   addDecoration(id, celebrate) {
-    let spot = this.host.decoSpot(id);
-    if (!spot || this.occupied(spot.x, spot.z)) spot = this.freeCellNear(HOME.x + 3.5, HOME.z + 6.5);
+    const spot = this.freeCellNear(NEW_SPOT.x, NEW_SPOT.z);
     if (spot && !this.occupied(spot.x, spot.z)) {
       this.addPiece(id, spot.x, spot.z, 0);
       this.renderYard();
@@ -388,8 +427,9 @@ export class Builder {
 
   cellOk(x, z) {
     const b = this.roomBounds();
-    if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 - 0.6) return !this.occupied(x, z) && Math.hypot(x - CHEST.x, z - CHEST.z) > 0.8;
+    if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 - 0.6) return !this.occupied(x, z) && Math.hypot(x - CHEST.x, z - CHEST.z) > 0.8 && !(Math.abs(x - SHELF.x) < 1.1 && z < SHELF.z + 1.0);
     if (x < YARD.x0 || x > YARD.x1 || z < YARD.z0 || z > YARD.z1) return false;
+    if (nearGreenhouse(x, z)) return false; // its door and beds stay free
     if (x > FIELD.x0 - 1 && x < FIELD.x0 + FIELD.cols * FIELD.size + 1 && z > FIELD.z0 - 1 && z < FIELD.z0 + FIELD.rows * FIELD.size + 1) return false;
     if (Math.hypot(x - HOME_DOOR.x, z - HOME_DOOR.z) < 1.4) return false;
     if (this.host.map.pathDist(x, z) < 1.3) return false;

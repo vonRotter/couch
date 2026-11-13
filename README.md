@@ -822,8 +822,15 @@ night match yours and crops grow while you are away.
 - **Building and decorating:** zap ore rocks for stone, trees for wood and tall grass for hay and fiber. The
   workbench by the cottage crafts 12 yard pieces and furniture, upgrades the cottage (porch and a
   second room) and has a decorate mode: the stick moves a cursor over the grid, B places or picks
-  up, A turns (hold A for the next thing), C ends. Game trophies are movable pieces too. The front door leads into the cottage,
+  up, A turns (hold A for the next thing), C ends. The front door leads into the cottage,
   which you decorate the same way.
+- **The trophy shelf:** game trophies and the prizes games send by mail (the lighthouse lamp, the kite, the
+  banner, the mech statue, the pillow fort, the golden fish...) stand on a tall shelf against the cottage's back
+  wall, not in the yard. [B] at the shelf opens a close-up: the trophy turns on a glowing ring, its name and
+  where it came from are shown and read aloud, the stick or the D-pad goes to the next one, [C] goes back.
+  Trophies still to win wait as a "?" with how to win them. New trophies go straight onto the shelf. Old saves:
+  trophies in the yard or in storage moved onto it (a letter from Aunt Hazel says so), and anything that stood
+  in the greenhouse or on the way to its door moved to the lawn west of the cottage.
 - **Island life:** friendship goes to 10 hearts with new heart events at 6 and 8 (Pip's rocket
   launch among them). A calendar board in the square shows birthdays (gifts count double),
   rainy days (about one in five; rain waters the crops) and the festivals (see Seasons below).

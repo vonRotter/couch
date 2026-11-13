@@ -48,6 +48,7 @@ import { Life } from './life.js';
 import { SEASON_ICON, dayKey, dayRand } from './calendar.js';
 import { ToastQueue } from './toasts.js';
 import { Greenhouse } from './greenhouse.js';
+import { TrophyShelf, isTrophy } from './shelf.js';
 import { Museum } from './museum.js';
 import { Isle2 } from './isle2.js';
 import { Photo } from './photo.js';
@@ -96,10 +97,8 @@ const ZZ_SCALE = 0.8; // the Zip-Zap in the hand: about half the bean's height (
 const SNAP = 0.3; // walking down a slope or a small step keeps your feet on the ground (more: you fall)
 const SLIDE = 1.6, SLIDE_V = 5; // ground steeper than this (a cliff face) has no foothold: you slide down it, this fast
 
-// The trophy garden between the farm and the square: 3 rows of 5 spots for decorations.
-const DECO_ORDER = ['lhLamp', 'lhTrophy', 'duckTrophy', 'kite', 'hopTrophy', 'banner', 'statue', 'gnome', 'pumpkinLamp', 'bottle', 'lantern', 'spyglass', 'rocket', 'moonrock', 'castleTrophy'];
-const DECO_SPOTS = DECO_ORDER.map((id, i) => ({ id, x: -1.6 + (i % 5) * 1.35, z: -4.2 + Math.floor(i / 5) * 1.6 }));
-const TROPHY_SIGN = { x: -2.6, z: -0.8 };
+// (The trophy garden between the farm and the square is gone: the greenhouse stands there, and game trophies
+// have a shelf in the cottage now: shelf.js. Other decorations arrive in the yard by the cottage: build.js.)
 
 // Signs you can read with [B].
 const SIGNS = [
@@ -107,7 +106,6 @@ const SIGNS = [
   { x: -5.2, z: 40.6, key: 'isl.sign.cafe', key2: 'isl.sign.cafe2', when: (S) => S.cafe.repaired },
   { x: -2, z: 42.6, key: 'isl.sign.dive2' },
   { x: -7.6, z: 4.2, key: 'isl.sign.barn', key2: 'isl.sign.barn2', when: (S) => S.unlocks.barn },
-  { x: TROPHY_SIGN.x, z: TROPHY_SIGN.z, key: 'isl.sign.trophy' },
 ];
 
 // Day and night from the real clock: [hour, look].
@@ -241,6 +239,7 @@ export class SoloIslandScene extends BaseScene {
     this.school = new School(this); // the school house: the learning games, saved per profile
     this.ranch = new Ranch(this);
     this.builder = new Builder(this);
+    this.shelf = new TrophyShelf(this); // game trophies on a shelf in the cottage, with a close-up view (shelf.js)
     this.greenhouse = new Greenhouse(this);
     this.museum = new Museum(this);
     this.isle2 = new Isle2(this);
@@ -301,10 +300,7 @@ export class SoloIslandScene extends BaseScene {
     const S = this.save;
     // decorations
     this.decoViews = new Map();
-    if (S.deco.flag) this.placeDeco('flag', false); // other decorations are yard pieces (build.js)
-    this.put(makeSign(0xc9a8ff), TROPHY_SIGN.x, TROPHY_SIGN.z);
-    // hedge around the trophy garden
-    for (let i = 0; i < 9; i++) this.put(mesh(sph(0.36, 8, 6), 0x4cc46a, 0, 0.25, 0), -2.4 + i * 0.85, -5.3);
+    if (S.deco.flag) this.placeDeco('flag', false); // other decorations are yard pieces (build.js), trophies stand on the shelf (shelf.js)
     // branches (wood)
     this.branches = BRANCHES.map(([x, z], i) => {
       const g = makeBranch();
@@ -353,20 +349,11 @@ export class SoloIslandScene extends BaseScene {
     return obj;
   }
 
+  /** The pirate flag on the front corner of the house (the one decoration with a spot of its own). */
   placeDeco(id, celebrate) {
-    if (this.decoViews.has(id)) return;
-    let g;
-    if (id === 'flag') {
-      g = makeDeco('flag', this.M);
-      this.put(g, HOME.x - 2.35, HOME.z + 2.15, 2.6); // on the front corner of the house
-    } else {
-      const spot = DECO_SPOTS.find((s) => s.id === id) || DECO_SPOTS.find((s) => s.id === 'castleTrophy');
-      if (id === 'duckGold' && this.decoViews.has('duckTrophy')) { this.decoViews.get('duckTrophy').removeFromParent(); }
-      g = makeDeco(id, this.M);
-      const s = id === 'duckGold' ? DECO_SPOTS.find((d) => d.id === 'duckTrophy') : spot;
-      this.put(g, s.x, s.z);
-      g.rotation.y = 0.3;
-    }
+    if (this.decoViews.has(id) || id !== 'flag') return;
+    const g = makeDeco('flag', this.M);
+    this.put(g, HOME.x - 2.35, HOME.z + 2.15, 2.6);
     this.decoViews.set(id, g);
     if (celebrate) this.confetti.burst(g.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 0, { colors: PARTY, count: 40, speed: 6, up: 4, life: 1.4, gravity: -6 });
   }
@@ -828,13 +815,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map', 'school', 'pier'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
-  }
-
-  /** The usual spot of a decoration (the trophy garden), or null. */
-  decoSpot(id) {
-    const sid = id === 'duckGold' ? 'duckTrophy' : id;
-    return DECO_SPOTS.find((s) => s.id === sid) || null;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map', 'school', 'pier', 'shelf'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   picture3d(key, make) {
@@ -843,6 +824,7 @@ export class SoloIslandScene extends BaseScene {
 
   addDeco(id) {
     this.save.deco[id] = true;
+    if (isTrophy(id)) { this.shelf.add(id); this.game.ui.toast(t('shelf.t.new', { item: t(`isl.d.${id}`) }), 2400); return; } // onto the trophy shelf in the cottage
     if (id === 'flag') this.placeDeco(id, true);
     else this.builder.addDecoration(id, true);
     this.game.ui.toast(t('isl.t.deco', { item: t(`isl.d.${id}`) }), 2200);
@@ -1147,6 +1129,7 @@ export class SoloIslandScene extends BaseScene {
     }
     if (this.indoors) {
       this.bagUi.interactions(P, out, nm); // the storage chest
+      if (!out.b) this.shelf.interactions(P, out, nm); // the trophy shelf
       if (!out.b) this.builder.interactions(P, out, nm);
       if (!out.b) out.b = { text: '', fn: () => this.openBag() };
       if (!out.a) out.a = { text: '', fn: () => this.doTool(held?.id, null) };
@@ -2346,6 +2329,7 @@ export class SoloIslandScene extends BaseScene {
         case 'cook': this.cafe.updateCook(panel, dt); break;
         case 'service': this.cafe.updateService(panel, dt); break;
         case 'bench': this.builder.updateBench(panel, dt); break;
+        case 'shelf': this.shelf.update(panel, dt); break; // the trophy shelf's close-up (shelf.js)
         case 'deco': this.builder.updateDecorate({ ...inp, aPressed: inp.bPressed, a: inp.b, bPressed: inp.aPressed, b: inp.a }, dt); break; // [B] places, [A] turns
         case 'sled': this.seasons.sled.update(inp, dt); break;
         case 'museum': this.museum.update(panel, dt); break;
