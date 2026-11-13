@@ -904,6 +904,53 @@ export function makeTool(id) {
 
 // ---------- decorations (rewards from the games and from friends) ----------
 
+/**
+ * The pirate flag's cloth with its skull and crossed bones baked in (one geometry, vertex colors). The pole
+ * is at x = 0 and the cloth flies toward +x. userData.wave(t) ripples it: a wave runs from the pole to the
+ * free end and grows toward it, and the skull moves with the cloth because it is part of it.
+ */
+function makeFlagCloth() {
+  const parts = [];
+  const add = (geo, color, x, y, z, rz = 0) => {
+    const q = geo.index ? geo.toNonIndexed() : geo.clone();
+    if (rz) q.rotateZ(rz);
+    q.translate(x, y, z);
+    const c = new THREE.Color(color), n = q.attributes.position.count, col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) col.set([c.r, c.g, c.b], i * 3);
+    q.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    for (const k of Object.keys(q.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'color') q.deleteAttribute(k);
+    parts.push(q);
+  };
+  add(new THREE.BoxGeometry(1.1, 0.7, 0.03, 10, 2, 1), 0x2b2340, 0.55, 0, 0);
+  for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.15, 10, 8), 0xffe0f0, 0.55, 0.05, s * 0.03); // the skull, on both sides
+  for (const s of [-1, 1]) for (const zz of [-1, 1]) add(new THREE.BoxGeometry(0.4, 0.06, 0.02), 0xffe0f0, 0.55, -0.18, zz * 0.03, s * 0.6);
+  for (const s of [-1, 1]) for (const ex of [-0.05, 0.05]) add(new THREE.SphereGeometry(0.03, 6, 4), 0x2b2340, 0.55 + ex, 0.08, s * 0.165); // eyes
+  // merge by hand (every part is non-indexed with the same attributes)
+  const total = parts.reduce((a, q) => a + q.attributes.position.count, 0);
+  const pos = new Float32Array(total * 3), col = new Float32Array(total * 3);
+  let o = 0;
+  for (const q of parts) { pos.set(q.attributes.position.array, o * 3); col.set(q.attributes.color.array, o * 3); o += q.attributes.position.count; q.dispose(); }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.computeVertexNormals();
+  const base = pos.slice();
+  const mat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: toon(0xffffff).gradientMap });
+  const m = mesh(geo, mat, 0, 0, 0);
+  m.userData.wave = (t) => {
+    const p = geo.attributes.position.array;
+    for (let i = 0; i < p.length; i += 3) {
+      const x = base[i], k = Math.max(0, x) / 1.1; // 0 at the pole, 1 at the free end
+      p[i + 2] = base[i + 2] + Math.sin(x * 5.5 - t * 4.5) * 0.12 * k + Math.sin(t * 1.7) * 0.1 * k;
+      p[i + 1] = base[i + 1] - 0.05 * k * k; // the free end droops a little
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.computeVertexNormals();
+  };
+  m.userData.wave(0);
+  return m;
+}
+
 export function makeDeco(id, M) {
   const g = new THREE.Group();
   switch (id) {
@@ -932,11 +979,12 @@ export function makeDeco(id, M) {
     }
     case 'flag': { // pirate flag on a pole (Pudding Island)
       g.add(mesh(cyl(0.05, 0.05, 3.2, 6), WOOD_DARK, 0, 1.6, 0));
-      const f = mesh(box(1.1, 0.7, 0.03), 0x2b2340, 0.55, 2.8, 0);
+      // the cloth, the skull and the crossed bones are ONE mesh (vertex colors), so the skull waves with the
+      // cloth: every frame g.userData.cloth(t) bends each vertex by the same wave along x (life.js)
+      const f = makeFlagCloth();
+      f.position.set(0, 2.8, 0);
       g.add(f);
-      g.add(mesh(sph(0.15, 10, 8), 0xffe0f0, 0.55, 2.85, 0.03, false));
-      for (const s of [-1, 1]) g.add(mesh(box(0.4, 0.06, 0.02), 0xffe0f0, 0.55, 2.62, 0.03, false).rotateZ(s * 0.6));
-      g.userData.wave = f;
+      g.userData.cloth = f.userData.wave;
       break;
     }
     case 'bottle': { // ship in a bottle on a little table

@@ -197,6 +197,7 @@ export class Life {
     for (const d of this.host.decoViews?.values() || []) {
       if (d.userData.spin) d.userData.spin.rotation.y += dt * 1.2;
       if (d.userData.wave) d.userData.wave.rotation.y = Math.sin(t * 2) * 0.25;
+      if (d.userData.cloth) d.userData.cloth(t); // the pirate flag: cloth and skull wave together (models.js)
     }
   }
 }
