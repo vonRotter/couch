@@ -13,6 +13,7 @@ import { NPCS, npcState, heartsOf } from './npcs.js';
 // Milestone C: outdoor crops nearly sleep at night, but the greenhouse has grow lamps and keeps going.
 
 const G = GREENHOUSE;
+const x1Pots = G.x + G.w / 2 - 0.45;
 /** Aunt Hazel's quest that fixes it (npcs.js: her fourth). */
 const GH_Q = NPCS.hazel.quests.findIndex((q) => q.reward?.unlock === 'greenhouse');
 const NEED = NPCS.hazel.quests[GH_Q];
@@ -131,7 +132,7 @@ export class Greenhouse {
     map.segObs({ x: x1, z: z0 }, { x: x1, z: z1 }, 0.15);
     map.segObs({ x: x0, z: z1 }, { x: G.x - 0.8, z: z1 }, 0.15);
     map.segObs({ x: G.x + 0.8, z: z1 }, { x: x1, z: z1 }, 0.15);
-    map.circObs(x1 - 0.45, z0 + 1.1, 0.5);
+    this.potObs = map.circObs(x1 - 0.45, z0 + 1.1, 0.5); // the flower pots (only there once it is fixed: no invisible wall)
     this.signObs = map.circObs(this.signSpot.x, this.signSpot.z, 0.3);
     this.refresh();
   }
@@ -151,6 +152,7 @@ export class Greenhouse {
     if (this.open && !has) spots.push(this.lampSpot);
     this.sign.visible = !this.open;
     this.signObs.x = this.open ? 1e5 : this.signSpot.x;
+    this.potObs.x = this.open ? x1Pots : 1e5;
   }
 
   /** Fixed by Aunt Hazel's quest: the beds become tilled soil. */
