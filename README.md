@@ -919,7 +919,7 @@ night match yours and crops grow while you are away.
   Island to get back the gear Grumbleton traded for a pudding. 5 *The green glow*: fly one Sky Hop level
   with Pip, follow the glowing crumbs to the meadow and find out who borrowed the old crystal (Mumble, who
   was scared of the dark; he keeps it as a nightlight). 6 *The Lamp Festival*: wood and stone for the
-  stairs, invite four friends, then a night festival with everyone (lanterns, music, fireworks, the lamp
+  stairs, invite four friends, then a night festival with everyone (Coach Bo too, with a line of his own; lanterns, music, fireworks, the lamp
   lights up) and a mini lighthouse for the yard. Game steps read the games' saves and count at once if you
   already got there earlier. Afterwards a long beam sweeps every night, with a path of light on the
   ground and the water.
