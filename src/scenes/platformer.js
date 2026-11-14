@@ -14,8 +14,25 @@ import { timingScale, struggle, overcame, markSkipped, isSkipped, invulnBlink } 
 import { say } from '../core/voice.js';
 
 addStrings({
-  en: { 'sky.checkpoint': 'Checkpoint!' },
-  no: { 'sky.checkpoint': 'Sjekkpunkt!' },
+  en: {
+    'sky.checkpoint': 'Checkpoint!',
+    // level 1's signs (one new thing at a time, see skyhop-levels.js)
+    'sky.sign.jump': 'Jump with [A]. Hold it to jump higher!',
+    'sky.sign.double': 'Too high? Jump, then press [A] again in the air: a double jump!',
+    'sky.sign.spring': 'Even higher? Hop on the mushroom and hold [A] to bounce up!',
+    'sky.sign.stomp': 'Land on a grumble to bonk it, or hop over it.',
+    'sky.sign.pits': 'Mind the gaps! A fall only floats you back in a bubble.',
+    'sky.sign.cloud': 'Clouds: jump up through them and stand on top. Down and [A] drops through.',
+  },
+  no: {
+    'sky.checkpoint': 'Sjekkpunkt!',
+    'sky.sign.jump': 'Hopp med [A]. Hold den inne for å hoppe høyere!',
+    'sky.sign.double': 'For høyt? Hopp, og trykk [A] en gang til i lufta: et dobbelthopp!',
+    'sky.sign.spring': 'Enda høyere? Hopp på soppen og hold [A] for å sprette opp!',
+    'sky.sign.stomp': 'Land på en grumling for å bonke den, eller hopp over den.',
+    'sky.sign.pits': 'Pass på hullene! Faller du, flyter du bare tilbake i en boble.',
+    'sky.sign.cloud': 'Skyer: hopp opp gjennom dem og stå på toppen. Ned og [A] slipper deg gjennom.',
+  },
 });
 
 const PHYS = {
@@ -59,6 +76,7 @@ export class PlatformerScene extends MiniGame {
     this.camDist = 20;
 
     this.buildLevel();
+    this.buildSigns();
     this.buildBackdrop();
 
     this.ents = this.players.map((p, i) => {
@@ -361,6 +379,53 @@ export class PlatformerScene extends MiniGame {
       this.game.audio.play('coin');
       this.puffs.burst(new THREE.Vector3(cp.x, cp.y + 1.9, 0), 0xffffff, { count: 10, size: 0.3 });
       this.game.ui.toast(t('sky.checkpoint'), 1200);
+    }
+  }
+
+  /**
+   * Level 1's teaching signs (skyhop-levels.js): a little post on the ground with its text above it. Each is
+   * read aloud (help text) the first time a bean comes near it.
+   */
+  buildSigns() {
+    this.signs = [];
+    for (const sg of this.level.signs || []) {
+      const c = Math.floor(sg.x);
+      let y = 2;
+      for (let r = 0; r < ROWS; r++) if (this.cell(c, r) === '#') { y = ROWS - r; break; }
+      const g = new THREE.Group();
+      g.position.set(sg.x, y, -1.3);
+      const pole = new THREE.Mesh(sharedGeo('signPole', () => new THREE.CylinderGeometry(0.06, 0.06, 1.6, 6)), toon(COLORS.trunk));
+      pole.position.y = 0.8;
+      const board = new THREE.Mesh(sharedGeo('skySignBoard', () => new RoundedBoxGeometry(1.1, 0.7, 0.12, 2, 0.05)), toon(0xffe9b8));
+      board.position.y = 1.55;
+      const mark = new THREE.Mesh(sharedGeo('skySignMark', () => new THREE.CircleGeometry(0.18, 12)), toon(0x8a45e0));
+      mark.position.set(0, 1.55, 0.07);
+      g.add(pole, board, mark);
+      this.scene.add(g);
+      const el = this.game.ui.label('label sky-sign');
+      el.style.color = '#8a45e0';
+      el.style.maxWidth = '22ch';
+      el.style.whiteSpace = 'normal';
+      el.style.textAlign = 'center';
+      this.signs.push({ ...sg, g, el, pos: new THREE.Vector3(sg.x, y + 2.6, -1.3), read: false });
+    }
+  }
+
+  /** Signs: text follows the language and the players' buttons; read aloud once when a bean comes near. */
+  updateSigns() {
+    const show = this.state === 'play' || this.state === 'intro';
+    for (const sg of this.signs) {
+      const text = t(sg.key);
+      // (the text shows as a bean comes near, so the next new thing is not on screen before its turn)
+      const near = this.ents.some((e) => e.state !== 'done' && sg.x - e.body.x < 13 && e.body.x - sg.x < 7);
+      if (!show || !near) { sg.el.style.display = 'none'; continue; }
+      sg.el.style.display = '';
+      if (sg.el.dataset.text !== text) { sg.el.textContent = text; sg.el.dataset.text = text; }
+      this.game.ui.place(sg.el, sg.pos, this.camera);
+      if (!sg.read && this.state === 'play' && this.ents.some((e) => e.state === 'play' && Math.abs(e.body.x - sg.x) < 5)) {
+        sg.read = true;
+        say(text, 'narrator');
+      }
     }
   }
 
@@ -780,6 +845,7 @@ export class PlatformerScene extends MiniGame {
     if (this.state === 'leaving') return;
     this.updatePlayers(dt);
     this.updateCamera(dt);
+    this.updateSigns();
     if (this.updateResults(dt)) return;
     this.updateGems(dt);
     this.updateEnemies(dt);
