@@ -1,5 +1,6 @@
 import { t } from '../../core/i18n.js';
 import { say as speak } from '../../core/voice.js';
+import { markTutorial } from '../../core/tutorial.js';
 import { makeItem } from './models.js';
 import { tileX, tileZ, colOf, rowOf } from './tiles.js';
 import { QUESTS, GOLD_SHELLS } from './rooms.js';
@@ -335,6 +336,7 @@ export const StoryMixin = {
     const k = this.room.ents.find((e) => e.t === 'npc' && e.id === 'keeper');
     this.save.flags.intro = true;
     this.persist();
+    markTutorial(this.game, this.host.players, 'lighthouse'); // (core/tutorial.js: the intro was shown)
     if (k) {
       this.room.occ.delete(`${k.c},${k.r}`);
       const path = [[tileX(8), tileZ(5)], [tileX(8), tileZ(7.2)]];
@@ -350,6 +352,22 @@ export const StoryMixin = {
           yield 0;
         }
       }
+      this.sfx('door');
+      k.mesh.visible = false;
+      this.room.ents = this.room.ents.filter((e) => e !== k);
+    }
+  },
+
+  /** "I know how to play" on the intro's card: the keeper says only where the sword is, then he is off. */
+  *introSkipScene() {
+    yield 0.4;
+    yield { lines: [{ who: 'keeper', key: 'lh.k.sword' }] };
+    const k = this.room.ents.find((e) => e.t === 'npc' && e.id === 'keeper');
+    this.save.flags.intro = true;
+    this.persist();
+    if (k) {
+      this.room.occ.delete(`${k.c},${k.r}`);
+      this.puffAt?.(k.mesh.position.x, k.mesh.position.z, 0xffffff, 10, 1);
       this.sfx('door');
       k.mesh.visible = false;
       this.room.ents = this.room.ents.filter((e) => e !== k);

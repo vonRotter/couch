@@ -357,9 +357,11 @@ html, body {
 .join-hint { font-size: clamp(12px, 1vw, 15px); opacity: 0.85; text-align: center; font-weight: 600; }
 
 /* "Help me play" (core/assistmenu.js) */
-.panel.assist-panel { min-width: min(620px, 92vw); }
-.assist-list { width: min(560px, 86vw); gap: 6px; margin: 12px auto 8px; }
-.assist-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 4px 16px; font-size: clamp(15px, 1.6vw, 24px); text-align: left; }
+.panel.assist-panel { min-width: min(620px, 92vw); padding-top: clamp(10px, 2vh, 24px); padding-bottom: clamp(10px, 2vh, 24px); }
+.panel.assist-panel .results-title { font-size: clamp(26px, min(4vw, 6.5vh), 60px); }
+/* (12 rows and the "settings for" row on the shared island: tight enough to fit a 720 px tall screen) */
+.assist-list { width: min(560px, 86vw); gap: 5px; margin: 10px auto 6px; }
+.assist-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 2px 16px; font-size: clamp(14px, min(1.5vw, 3.1vh), 24px); text-align: left; }
 .assist-row.who { background: #f4efff; }
 .assist-val { color: var(--grape); white-space: nowrap; }
 .assist-val.key { background: #f4efff; border-radius: 10px; padding: 0 10px; color: var(--ink); }

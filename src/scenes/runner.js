@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { tipsOn } from '../core/tutorial.js';
 import { t } from '../core/i18n.js';
 import { Character } from '../core/character.js';
 import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo } from '../core/palette.js';
@@ -570,7 +571,9 @@ export class RunnerScene extends MiniGame {
       sp.m.scale.set(1, 1 - sp.squish * 0.5, 1);
     }
     this.flagCloth.rotation.y = Math.sin(this.time * 4) * 0.2;
+    const signs = this.signsOn ??= tipsOn(this.game); // (tutorials and tips off: no signs, core/tutorial.js)
     for (const sg of this.signLabels) {
+      if (!signs) { sg.el.style.display = 'none'; continue; }
       if (sg.el.dataset.text !== t(sg.key)) { sg.el.textContent = t(sg.key); sg.el.dataset.text = t(sg.key); }
       this.game.ui.place(sg.el, sg.pos, this.camera);
     }

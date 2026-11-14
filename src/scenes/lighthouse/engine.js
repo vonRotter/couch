@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { struggle, blinkOn, shakeScale, markSkipped, isSkipped, clearSkipped } from '../../core/assist.js';
 import { t } from '../../core/i18n.js';
 import { stopVoice } from '../../core/voice.js';
+import { markTutorial, tipsOn } from '../../core/tutorial.js';
 import { W, H, DIRS, tileX, tileZ, colOf, rowOf, inGrid } from './tiles.js';
 import { ROOMS, AREAS, START, neighbor } from './rooms.js';
 import { THEMES } from './build.js';
@@ -349,9 +350,25 @@ export class LighthouseEngine {
     this.playAreaMusic();
     const place = room.area === 'over' || room.area === 'in' ? t(room.def.name) : t(AREAS[room.area].name);
     if (place !== this.lastPlace) { this.hud.showPlace(place); this.lastPlace = place; }
-    if (room.id === 'h_keeper' && !s.flags.intro) this.cutscene(this.introScene);
+    if (room.id === 'h_keeper' && !s.flags.intro) this.askIntro();
     else if (room.id === 'h_light' && s.crystals > (s.placed || 0)) this.cutscene(this.placeScene);
     else if (room.id === 'h_light' && (s.placed || 0) >= 2 && !s.flags.act2 && !s.bosses.d3_boss) this.cutscene(this.act2Scene);
+  }
+
+  /**
+   * Keeper Bram's welcome is the game's intro (a tutorial, core/tutorial.js): its first card asks "Show me how"
+   * or "I know how to play". Skipped, he only says where the sword is and goes to the lighthouse (the same
+   * state as after his walk: flags.intro).
+   */
+  async askIntro() {
+    this.mode = 'cut'; // (nothing moves until the card is answered)
+    this.cut = null;
+    const ans = await this.game.askTutorial({ id: 'lighthouse', title: t('game.lighthouse'), players: this.host.players });
+    if (this.game.current !== this.host || this.save.flags.intro || this.room.id !== 'h_keeper') { if (this.mode === 'cut' && !this.cut) this.mode = 'play'; return; }
+    // (seen before, on a New game: the full welcome again, unless tutorials are off)
+    if (ans === 'show' || (ans === 'seen' && tipsOn(this.game, this.host.players))) { this.cutscene(this.introScene); return; }
+    if (ans === 'skip') markTutorial(this.game, this.host.players, 'lighthouse', true);
+    this.cutscene(this.introSkipScene);
   }
 
   playAreaMusic() {

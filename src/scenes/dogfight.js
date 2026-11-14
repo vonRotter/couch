@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { aimLevel, blinkOn } from '../core/assist.js';
 import { MiniGame } from '../core/minigame.js';
+import { tipsOn } from '../core/tutorial.js';
 import { COLORS, PLAYER_COLORS, toon, symbolOf } from '../core/palette.js';
 import { addLights, skyTexture } from '../core/world.js';
 import { t, addStrings } from '../core/i18n.js';
@@ -512,7 +513,7 @@ export class DogfightScene extends MiniGame {
 
   onStall(e) {
     this.game.audio.play('dizzy');
-    if (e.p && !this.tips.has('stall')) {
+    if (e.p && !this.tips.has('stall') && tipsOn(this.game)) {
       this.tips.add('stall');
       this.game.ui.toast(t('dogfight.stallTip'), 3800);
     }

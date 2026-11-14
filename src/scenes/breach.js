@@ -4,6 +4,7 @@ import { report as passportReport } from '../core/passport.js';
 import { MiniGame } from '../core/minigame.js';
 import { t, tFor } from '../core/i18n.js';
 import { say } from '../core/voice.js';
+import { markTutorial, tipsOn, wantsTutorial } from '../core/tutorial.js';
 import { addLights, skyTexture } from '../core/world.js';
 import { SONGS } from '../core/audio.js';
 import { PLAYER_COLORS } from '../core/palette.js';
@@ -469,9 +470,23 @@ export class BreachScene extends MiniGame {
     const name = t(`breach.bt.${o.def.id}`);
     this.hud.banner(name, this.mode === 'deploy' ? t('breach.dep.short') : t(`breach.isl.${this.isl.id}`), 1600);
     if (this.mode === 'deploy') { this.startDeploy(); return; }
+    // The first battle's read-aloud tips are a tutorial (core/tutorial.js). Their first card is the first tip:
+    // [A] okay, or [C] "I know how to play" (skipTutorial). A profile with tutorials off skips them.
+    if (o.def.tutorial && !this.save.tutorial && !wantsTutorial(this.game, [this.player], 'breach')) { this.save.tutorial = true; this.save.deployTip = true; this.persist(); }
     this.tut = o.def.tutorial && !this.save.tutorial ? { step: 0 } : null;
     this.firstTurn();
     if (this.tut) this.later(0.6, () => this.showTip());
+  }
+
+  /** The pause menu's "Skip the tutorial" (main.js) shows while the tips run; skipped, the deploy explanation goes too. */
+  tutorialActive() { return !!this.tut && this.mode === 'battle'; }
+  skipTutorial() {
+    this.tut = null;
+    this.hud.setTip(null);
+    this.save.tutorial = true;
+    this.save.deployTip = true;
+    this.persist();
+    markTutorial(this.game, [this.player], 'breach', true);
   }
 
   /** Turn 1 begins (right away, or after the deploy step). */
@@ -496,6 +511,7 @@ export class BreachScene extends MiniGame {
     this.holdC = 0;
     this.cHeldFromBefore = true;
     this.cursor = this.suggestSpot();
+    if (!this.save.deployTip && !tipsOn(this.game, [this.player])) this.save.deployTip = true; // (tutorials off)
     const first = !this.save.deployTip;
     if (first) this.hud.setTip(tFor(this.player, 'breach.dep.tip'));
     if (first) this.speak(t('breach.dep.tip')); // help, once (the battle's story was read on the map)
@@ -663,6 +679,7 @@ export class BreachScene extends MiniGame {
     }
     if (this.tut?.modal) {
       if (inp.a) this.nextTip();
+      else if (inp.c && this.tut.step === 0) { this.sfx('select'); this.skipTutorial(); this.game.ui.toast(t('tut.skipped'), 2600); } // "I know how to play"
       return;
     }
     if (this.menu) { this.updateMenu(inp); return; }
@@ -904,7 +921,7 @@ export class BreachScene extends MiniGame {
     const modal = st === 0 || st === 1 || st === 8;
     this.tut.modal = modal;
     const text = t(`breach.tut.${st}`);
-    this.hud.setTip(text, modal ? tFor(this.player, 'breach.tutOk') : '');
+    this.hud.setTip(text, modal ? tFor(this.player, st === 0 ? 'breach.tutOk0' : 'breach.tutOk') : '');
     this.speak(text);
   }
 
@@ -912,7 +929,7 @@ export class BreachScene extends MiniGame {
     if (!this.tut) return;
     const st = this.tut.step;
     this.sfx('select');
-    if (st === 8) { this.tut = null; this.hud.setTip(null); this.save.tutorial = true; this.persist(); return; }
+    if (st === 8) { this.tut = null; this.hud.setTip(null); this.save.tutorial = true; this.persist(); markTutorial(this.game, [this.player], 'breach'); return; }
     this.tut.step++;
     this.tut.modal = false;
     this.showTip();

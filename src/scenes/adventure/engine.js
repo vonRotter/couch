@@ -8,6 +8,7 @@ import { AdvUI } from './ui.js';
 import { ITEMS, itemIcon, combineResponse } from './items.js';
 import { makeSpoon } from './props.js';
 import { triedPuzzle, triedDuel } from './skip.js';
+import { markTutorial, tipsOn } from '../../core/tutorial.js';
 
 // The point-and-click engine: rooms, hotspots, the pointer, Pip walking, verbs, inventory and a
 // tiny SCUMM-like script runner.
@@ -837,8 +838,28 @@ export class AdventureEngine {
       this.mode = 'play';
       this.loadRoom(this.startRoom, 'intro');
       this.persist();
-      if (this.introScript) this.run(this.introScript);
+      if (this.introScript) this.askIntro();
     }
+  }
+
+  /**
+   * Pip's hello and the help line are the game's intro (a tutorial, core/tutorial.js): its first card asks
+   * "Show me how" or "I know how to play". Skipped: Pip is already standing on the dock and the help line is
+   * left out (nothing in the story waits for it). Seen before (a New game): the intro again, unless tutorials are off.
+   */
+  async askIntro() {
+    this.mode = 'script'; // (nothing to click until it is answered)
+    const ans = await this.game.askTutorial({ id: 'adventure', title: t('game.adventure'), players: this.host.players });
+    if (this.game.current !== this.host) return;
+    if (ans === 'show' || (ans === 'seen' && tipsOn(this.game, this.host.players))) {
+      if (ans === 'show') markTutorial(this.game, this.host.players, 'adventure');
+      this.run(this.introScript);
+      return;
+    }
+    if (ans === 'skip') markTutorial(this.game, this.host.players, 'adventure', true);
+    this.mode = 'play';
+    this.pip.position.set(-2.3, 0, 0.4);
+    this.face?.('pip', 1);
   }
 
   // ---------- inventory ----------

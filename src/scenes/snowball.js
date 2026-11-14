@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { aimLevel, struggle, overcame, blinkOn, invulnBlink, shakeScale } from '../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { tipsOn } from '../core/tutorial.js';
 import { Character } from '../core/character.js';
 import { makeGrumble } from '../core/critters.js';
 import { COLORS, toon, basic, sharedGeo, symbolOf } from '../core/palette.js';
@@ -199,6 +200,7 @@ export class SnowballScene extends MiniGame {
     if (this.mode === 'ctf') tips.push('snowball.tip.ctf');
     if (this.mode === 'koth') tips.push('snowball.tip.koth');
     tips.push('snowball.tip.gift', MAPS[this.mapKey].tips[0], 'snowball.tip.dodge', 'snowball.tip.wall', MAPS[this.mapKey].tips[1]);
+    if (!tipsOn(this.game)) return; // (tutorials and tips off: Help me play, core/tutorial.js)
     tips.slice(0, 5).forEach((key, i) => this.later(9 + i * 24, () => {
       if (this.state === 'play') this.game.ui.toast(t(key), 4200);
     }));

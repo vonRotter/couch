@@ -12,6 +12,7 @@ import { esc } from '../core/ui.js';
 import { addStrings } from '../core/i18n.js';
 import { timingScale, struggle, overcame, markSkipped, isSkipped, invulnBlink } from '../core/assist.js';
 import { say } from '../core/voice.js';
+import { markTutorial } from '../core/tutorial.js';
 
 addStrings({
   en: {
@@ -104,8 +105,32 @@ export class PlatformerScene extends MiniGame {
     else this.startIntro();
   }
 
-  startIntro() {
+  /**
+   * Level 1 teaches with signs (skyhop-levels.js): the first time, the tutorial's first card asks first
+   * (core/tutorial.js; "I know how to play" leaves the signs out). Reaching the flag counts it as done.
+   */
+  async startIntro() {
+    if (this.signs.length) {
+      this.state = 'intro';
+      const ans = await this.game.askTutorial({ id: 'skyhop', title: `${t('game.platformer')} 1: ${this.levelName()}`, players: this.players });
+      if (this.game.current !== this) return;
+      this.signsOn = ans === 'show';
+      if (!this.signsOn) this.hideSigns();
+    }
     this.intro(`${t('game.platformer')} ${this.levelIndex + 1}: ${this.levelName()}`, t('sky.intro'));
+  }
+
+  hideSigns() {
+    for (const sg of this.signs) { sg.el.remove(); this.scene.remove(sg.g); }
+    this.signs = [];
+  }
+
+  /** The pause menu's "Skip the tutorial" (main.js): the signs go. */
+  tutorialActive() { return !!this.signsOn && this.state === 'play' && this.ents.some((e) => e.state !== 'done'); }
+  skipTutorial() {
+    this.signsOn = false;
+    this.hideSigns();
+    markTutorial(this.game, this.players, 'skyhop', true);
   }
 
   retryOptions() {
@@ -630,6 +655,7 @@ export class PlatformerScene extends MiniGame {
 
   reachFlag(ent) {
     ent.state = 'done';
+    if (this.signsOn) markTutorial(this.game, [ent.p], 'skyhop'); // level 1's signs: done
     overcame(this, `sky.${this.levelIndex}`);
     this.finishOrder = (this.finishOrder || 0) + 1;
     ent.place = this.finishOrder;

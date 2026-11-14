@@ -29,6 +29,7 @@ addStrings({
     'pg.offers': 'Help offers taken', 'pg.offersNone': 'none', 'pg.skips': 'Skipped parts', 'pg.skipsNone': 'none',
     'pg.offer.timing': 'forgiving timing', 'pg.offer.aim': 'more aim help', 'pg.offer.speed': 'slower game', 'pg.offer.skip': 'skip a part',
     'pg.lv': 'level {n}',
+    'pg.tutOff': 'Tutorials and tips: off', 'pg.tutSkipped': 'Tutorials skipped',
   },
   no: {
     'pg.title': 'For foreldre', 'pg.private': 'Alt her lagres bare i denne nettleseren. Ingenting forlater enheten.',
@@ -40,6 +41,7 @@ addStrings({
     'pg.offers': 'Hjelp som ble tatt imot', 'pg.offersNone': 'ingen', 'pg.skips': 'Deler som ble hoppet over', 'pg.skipsNone': 'ingen',
     'pg.offer.timing': 'snill timing', 'pg.offer.aim': 'mer siktehjelp', 'pg.offer.speed': 'saktere spill', 'pg.offer.skip': 'hoppe over en del',
     'pg.lv': 'brett {n}',
+    'pg.tutOff': 'Opplæring og tips: av', 'pg.tutSkipped': 'Opplæring hoppet over',
   },
 });
 
@@ -94,6 +96,7 @@ function assistOn(s) {
   if (s.contrast) out.push(t('assist.contrast'));
   if (s.calm) out.push(t('assist.calm'));
   if (Object.keys(s.keys || {}).length || s.pad) out.push('🎮 ⇄');
+  if (s.tutorials === false) out.push(t('pg.tutOff')); // tutorials and tips off (core/tutorial.js)
   return out;
 }
 
@@ -142,7 +145,9 @@ export class ParentPage {
     const on = assistOn(profileSettings(prof.id));
     const offers = P.assists.slice(-6).reverse().map((a) => `<li>${esc(t(`pg.offer.${a.kind}`))}${a.game && GAMES[a.game] ? ` · ${esc(gameName(a.game))}` : ''} · ${esc(new Date(a.at).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }))}</li>`).join('');
     const sk = skippedOf(prof.id);
-    const skips = Object.entries(sk).filter(([, l]) => l?.length).map(([g, l]) => `<span>${esc(GAMES[g] || g === 'skyhop' ? gameName(g === 'skyhop' ? 'platformer' : g) : g)}: ${l.length}</span>`).join('');
+    const tutSk = profileSettings(prof.id).tutSkipped; // tutorials skipped with "I know how to play" (core/tutorial.js)
+    const skips = Object.entries(sk).filter(([, l]) => l?.length).map(([g, l]) => `<span>${esc(GAMES[g] || g === 'skyhop' ? gameName(g === 'skyhop' ? 'platformer' : g) : g)}: ${l.length}</span>`).join('')
+      + (tutSk.length ? `<span>${esc(t('pg.tutSkipped'))}: ${tutSk.length}</span>` : '');
     this.el.innerHTML = `${head}
       <div class="pg-grid" style="--c:${css}">
         <div>

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { timingScale } from '../../core/assist.js';
+import { wantsTutorial, markTutorial } from '../../core/tutorial.js';
 import { BaseScene } from '../../core/scene.js';
 import { Character } from '../../core/character.js';
 import { toon, basic } from '../../core/palette.js';
@@ -665,15 +666,22 @@ export class SoloIslandScene extends BaseScene {
     const H = (k, fx) => ({ who: 'hazel', key: `isl.hazel.${k}`, fx });
     const Pp = (k, fx) => ({ who: 'pip', key: `zz.pip.${k}`, fx });
     // Pip built the Zip-Zap from rocket parts; Aunt Hazel gives seeds and teaches farming with it
-    this.say([H('intro1'), Pp('intro', () => { pip.hop = 1; this.giveItems([['zipzap', 1]], true); this.selectItem('zipzap'); }),
-      H('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), { ...H('intro4'), vars: { bagHow: this.bagKey(true) } }, H('q1.ask')], () => {
+    // the farming steps are a tutorial (core/tutorial.js): Hazel asks whether to show them, unless this profile
+    // turned tutorials off ("Help me play"); "I know how to play" skips them (nothing they give is held back)
+    const ask = wantsTutorial(this.game, [P.p], 'island');
+    let skipSteps = !ask;
+    const lines = [H('intro1'), Pp('intro', () => { pip.hop = 1; this.giveItems([['zipzap', 1]], true); this.selectItem('zipzap'); }),
+      H('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), { ...H('intro4'), vars: { bagHow: this.bagKey(true) } }, H('q1.ask')];
+    if (ask) lines.push({ ...H('tutAsk'), choices: ['isl.tut.yes', 'isl.tut.no'], onChoice: (i) => { skipSteps = i === 1; } });
+    this.say(lines, () => {
       const S = this.save;
       S.intro = true;
       npcState(S, 'hazel').met = true;
       npcState(S, 'pip').met = true;
       S.quests.hazel = { n: 0 };
       this.selectItem('zipzap');
-      this.setTut(1);
+      if (skipSteps) this.skipFarmSteps(ask);
+      else this.setTut(1);
       for (const n of [hz, pip]) { n.intro = false; n.spotName = null; }
       this.markDirty();
       this.game.ui.toast(t('isl.t.quest'));
@@ -703,9 +711,26 @@ export class SoloIslandScene extends BaseScene {
   /** A per-player text (its [B] names only this player's button). */
   nm(k, v) { return tFor(this.player?.p, k, v); }
 
+  /**
+   * Skip the farming tutorial (Hazel's question, the menu, or tutorials off): straight to step 8, which is what
+   * the steps lead to (the story, Pip's camera and the decorating task wait for it). Hazel's radish job stays.
+   */
+  skipFarmSteps(said = true) {
+    const S = this.save;
+    if (S.tut >= 8) return;
+    S.tut = 8;
+    markTutorial(this.game, [this.player?.p], 'island', true);
+    this.markDirty();
+    if (said) this.say([{ who: 'hazel', key: 'isl.hazel.tutSkip' }]);
+  }
+
+  /** The menu's "Skip the farming steps" shows while they run. */
+  get farmStepsOn() { return !!this.save.intro && this.save.tut >= 1 && this.save.tut <= 7; }
+
   setTut(n) {
     if (this.save.tut >= n && n !== 0) return;
     this.save.tut = n;
+    if (n === 8) markTutorial(this.game, [this.player?.p], 'island'); // done: not asked again on this profile
     if (n === 2) this.selectItem('radishSeed');
     if (n === 3) this.selectItem('zipzap');
     if (n >= 1 && n <= 7) this.readTut(n, 0);
@@ -1937,9 +1962,14 @@ export class SoloIslandScene extends BaseScene {
     return t(`isl.mn.${k}`);
   }
 
+  /** The menu's items now ("Skip the farming steps" at the end while they run). */
+  menuItems() {
+    return this.farmStepsOn ? [...MENU, 'skiptut'] : MENU;
+  }
+
   renderMode() {
     if (!this.modeEl) return;
-    const items = MENU.map((k, i) => `<div class="pause-item ${i === this.modeIndex ? 'on' : ''}">${esc(this.menuLabel(k))}</div>`).join('');
+    const items = this.menuItems().map((k, i) => `<div class="pause-item ${i === this.modeIndex ? 'on' : ''}">${esc(this.menuLabel(k))}</div>`).join('');
     this.modeEl.innerHTML = `<div class="results-title">${esc(t('isl.mn.title'))}</div>
       <div class="pause-list">${items}</div><div class="results-footer">${esc(tFor(this.player?.p, 'isl.mn.hint'))}</div>`;
   }
@@ -1947,10 +1977,11 @@ export class SoloIslandScene extends BaseScene {
   updateMode(inp, dt) {
     if (this.profilePicker) { this.profilePicker.update(dt); return; }
     this.modeT += dt;
-    const n = MENU.length;
+    const menu = this.menuItems();
+    const n = menu.length;
     if (inp.stepY) { this.modeIndex = (this.modeIndex - inp.stepY + n) % n; this.game.audio.play('select'); this.renderMode(); }
     if (this.modeT < 0.25) return;
-    const k = MENU[this.modeIndex];
+    const k = menu[this.modeIndex];
     const start = !!(this.playerDevice?.btnPressed?.start || this.playerDevice?.btnPressed?.view);
     if (inp.cPressed || start) { this.closeMode(); return; }
     // settings switch with left/right too, and the menu stays open
@@ -1961,6 +1992,7 @@ export class SoloIslandScene extends BaseScene {
     if (k === 'resume') { this.closeMode(); return; }
     if (k === 'deco') { this.closeMode(); this.builder.startDecorate(); return; } // decorate right here (yard or cottage: build.js)
     if (k === 'help') { this.closeMode(); this.toggleHelp(); return; }
+    if (k === 'skiptut') { this.closeMode(); this.skipFarmSteps(false); this.game.ui.toast(t('tut.skipped'), 2600); return; }
     if (k === 'assist') { this.closeMode(); this.mode = 'menu'; this.game.openAssist(() => { this.mode = 'walk'; this.openMode(MENU.indexOf('assist')); }); return; }
     this.modeEl.remove();
     this.modeEl = null;

@@ -267,11 +267,17 @@ class Game {
    */
   askTutorial({ id, title, players = this.roster.players }) {
     if (!wantsTutorial(this, players, id)) return Promise.resolve('seen');
+    // answered "Show me how" earlier in this visit (a retry, the next level): not asked again
+    if (this.tutShow?.has(id)) return Promise.resolve('show');
     // (a card left behind by a scene switch is never answered: setScene drops it; the game checks it is still on)
     return new Promise((resolve) => {
       const card = new TutorialCard(this, {
         id, title, players,
-        onAnswer: (k) => { if (this.tutorialCard === card) this.tutorialCard = null; resolve(k); },
+        onAnswer: (k) => {
+          if (this.tutorialCard === card) this.tutorialCard = null;
+          if (k === 'show') (this.tutShow ||= new Set()).add(id);
+          resolve(k);
+        },
       });
       this.tutorialCard = card;
     });

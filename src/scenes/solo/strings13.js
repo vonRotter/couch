@@ -23,3 +23,20 @@ addStrings({
     'map.a.crabAway': 'En krabbe trenger hjelp {where}',
   },
 });
+
+// The farming tutorial can be skipped (core/tutorial.js): Aunt Hazel asks after her welcome, and the menu has
+// "Skip the farming steps" while they run.
+addStrings({
+  en: {
+    'isl.hazel.tutAsk': 'Shall I show you how to farm, one step at a time?',
+    'isl.tut.yes': 'Yes please', 'isl.tut.no': 'I know how to play',
+    'isl.hazel.tutSkip': 'Off you go then! Your tasks are on the list, and Help in the menu has the buttons.',
+    'isl.mn.skiptut': 'Skip the farming steps',
+  },
+  no: {
+    'isl.hazel.tutAsk': 'Skal jeg vise deg hvordan du dyrker, ett steg om gangen?',
+    'isl.tut.yes': 'Ja takk', 'isl.tut.no': 'Jeg kan spille dette',
+    'isl.hazel.tutSkip': 'Da kan du bare sette i gang! Oppgavene står på lista, og Hjelp i menyen har knappene.',
+    'isl.mn.skiptut': 'Hopp over gårdsstegene',
+  },
+});

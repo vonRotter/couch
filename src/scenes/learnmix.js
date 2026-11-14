@@ -8,6 +8,7 @@ import { KlokkaRound } from './learn/klokka.js';
 import { PengerRound } from './learn/penger.js';
 import { RimordRound } from './learn/rimord.js';
 import { symHtml } from '../core/palette.js';
+import { markTutorial } from '../core/tutorial.js';
 
 // Læringsmiks: pick a level, then three short learning rounds in a row
 // (clock, money, rhymes) and a shared results screen. Norwegian only.
@@ -28,6 +29,7 @@ addStrings({
     'learnmix.short.klokka': 'Klokka',
     'learnmix.short.penger': 'Penger',
     'learnmix.short.rimord': 'Rim',
+    'learnmix.quick': 'starter straks · trykk hopp for å starte nå',
   },
   no: {
     'game.learnmix': 'Læringsmiks',
@@ -44,11 +46,13 @@ addStrings({
     'learnmix.short.klokka': 'Klokka',
     'learnmix.short.penger': 'Penger',
     'learnmix.short.rimord': 'Rim',
+    'learnmix.quick': 'starter straks · trykk hopp for å starte nå',
   },
 });
 
 export const LEARN_ROUNDS = [KlokkaRound, PengerRound, RimordRound];
 const HOWTO_MAX = 25;
+const QUICK_HOWTO = 4; // seconds a how-to card stays when the tutorial was skipped or done before
 const SCORES_MAX = 12;
 
 export class LearnMixScene extends MiniGame {
@@ -74,7 +78,13 @@ export class LearnMixScene extends MiniGame {
       this.round.frame();
       return chooseLevels(this, t('game.learnmix'));
     }).then(() => {
+      if (this.game.current !== this) return null;
+      // the how-to cards are a tutorial (core/tutorial.js): the first card asks first; "I know how to play" (or
+      // done before, or tutorials off) makes them quick: shown a few seconds, any jump starts the round
+      return this.game.askTutorial({ id: 'learnmix', title: t('game.learnmix'), players: this.players });
+    }).then((ans) => {
       if (this.game.current !== this) return;
+      this.quickHowTo = ans !== 'show';
       this.round.prepare();
       this.showHowTo();
     });
@@ -122,8 +132,8 @@ export class LearnMixScene extends MiniGame {
       <div class="results-title">${esc(this.round.title)}</div>
       <div class="party-hint">${esc(this.round.hint)}</div>
       ${this.round.howto?.() || ''}
-      <div class="party-ready">${chips}</div>
-      <div class="results-footer blink">${t('learnmix.ready')}</div>`;
+      ${this.quickHowTo ? '' : `<div class="party-ready">${chips}</div>`}
+      <div class="results-footer blink">${t(this.quickHowTo ? 'learnmix.quick' : 'learnmix.ready')}</div>`;
   }
 
   updateHowTo(dt) {
@@ -133,7 +143,8 @@ export class LearnMixScene extends MiniGame {
       if (this.input(p)?.aPressed && !this.ready.get(p)) { this.ready.set(p, true); this.game.audio.play('join'); changed = true; }
     }
     if (changed) this.renderHowTo();
-    if ([...this.ready.values()].every(Boolean) || this.stateT > HOWTO_MAX) {
+    const quick = this.quickHowTo && (this.stateT > QUICK_HOWTO || (changed && this.stateT > 0.4));
+    if (quick || [...this.ready.values()].every(Boolean) || this.stateT > HOWTO_MAX) {
       this.panelEl.remove();
       this.panelEl = null;
       this.state = 'countdown';
@@ -186,6 +197,7 @@ export class LearnMixScene extends MiniGame {
   }
 
   end() {
+    if (!this.quickHowTo) markTutorial(this.game, this.players, 'learnmix'); // every how-to card was shown
     // Keep the last field as a backdrop for the results.
     const last = this.order[this.order.length - 1];
     this.round = new last(this);

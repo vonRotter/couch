@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { struggle, overcame, markSkipped, isSkipped, clearSkipped } from '../core/assist.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MiniGame } from '../core/minigame.js';
+import { tipsOn } from '../core/tutorial.js';
 import { t, addStrings } from '../core/i18n.js';
 import { makeGrumble } from '../core/critters.js';
 import { COLORS, toon, basic, sharedGeo, faceted } from '../core/palette.js';
@@ -373,7 +374,7 @@ export class GuidesScene extends MiniGame {
   }
 
   onStart() {
-    this.game.ui.toast(t(`guides.tip${this.levelIndex}`), 5500);
+    if (tipsOn(this.game)) this.game.ui.toast(t(`guides.tip${this.levelIndex}`), 5500); // (first tips: Help me play, core/tutorial.js)
     // Point out jobs this level brings that earlier levels didn't have.
     const seen = new Set(LEVELS.slice(0, this.levelIndex).flatMap((lv) => Object.keys(lv.jobs)));
     const fresh = this.jobList.filter((j) => !seen.has(j));

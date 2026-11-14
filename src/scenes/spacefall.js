@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import './spacefall/strings.js';
 import { MiniGame } from '../core/minigame.js';
+import { tipsOn } from '../core/tutorial.js';
 import { t } from '../core/i18n.js';
 import { PLAYER_COLORS } from '../core/palette.js';
 import { addLights } from '../core/world.js';
@@ -174,6 +175,7 @@ export class SpacefallScene extends MiniGame {
 
   /** A short hint floating over one player's ship (drawn with tFor, so it names their own button). */
   tip(pl, key, sec) {
+    if (!tipsOn(this.game)) return; // (tutorials and tips off: Help me play, core/tutorial.js)
     pl.tip = key;
     pl.tipT = sec;
   }

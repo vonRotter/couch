@@ -147,6 +147,7 @@ addStrings({
     'breach.tut.7': 'When your mechs are done, hold [C] to end the turn. Then the bugs attack.',
     'breach.tut.8': 'Survive all four turns to win!',
     'breach.tutOk': '[A] okay',
+    'breach.tutOk0': '[A] okay · [C] I know how to play',
   },
   no: {
     'game.breach': 'Bønnebrigaden',
@@ -292,5 +293,6 @@ addStrings({
     'breach.tut.7': 'Når mekene er ferdige, holder du [C] for å avslutte turen. Da angriper billene.',
     'breach.tut.8': 'Hold ut alle fire turene for å vinne!',
     'breach.tutOk': '[A] greit',
+    'breach.tutOk0': '[A] greit · [C] jeg kan spille dette',
   },
 });
