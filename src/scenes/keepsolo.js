@@ -404,7 +404,6 @@ export class KeepSoloScene extends MiniGame {
     this.game.ui.banner(this.placeTitle(), this.placeSub(), 1900); // (floor names are not read aloud)
     // the first floor ever (this profile): the tutorial's first card, then the controls one at a time
     if (!hs.tips.dungeon && !this.teach) this.later(2.0, () => this.askTeach());
-    hs.tips.dungeon = true;
     this.saveNow();
   }
 
@@ -415,7 +414,9 @@ export class KeepSoloScene extends MiniGame {
    * Done or skipped it is not shown again for this profile (all three heroes).
    */
   async askTeach() {
-    if (this.kind !== 'dungeon' || this.teach) return;
+    if (this.kind !== 'dungeon' || this.teach || this.hs.tips.dungeon) return;
+    this.hs.tips.dungeon = true; // (this hero's first floor: asked once; the profile remembers the answer)
+    this.dirty = true;
     const ans = await this.game.askTutorial({ id: 'keepsolo', title: t('game.keepsolo'), players: [this.player] });
     if (this.game.current !== this || ans !== 'show') return;
     const mouse = () => !!this.mouse?.used && !this.isPad();

@@ -118,7 +118,8 @@ const _v = new THREE.Vector3();
  * did(p, on) when the player does it) and `time` makes an info step move on by itself after that many
  * seconds. text: a step's key can also be a function (p) => key, for input that changes while playing.
  * where(p): a world point to show that player's prompt at (above the bean); without it one box at the
- * bottom of the screen (solo games). onStep(p, step) / onDone(p) are optional hooks.
+ * bottom of the screen (solo games). onDone(p): an optional hook when a player finished. wantAll: teach
+ * every player given (the game asked already) instead of only those who still want this tutorial.
  */
 export class StepTeacher {
   constructor(scene, { id, players, steps, where = null, onDone = null, first = 0.8, pause = 1.1, wantAll = false }) {
