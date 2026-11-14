@@ -9,12 +9,20 @@ import { moveBody, platformerControl } from '../core/physics2d.js';
 import { esc } from '../core/ui.js';
 import { makeGrumble } from '../core/critters.js';
 import { blinkOn, invulnBlink } from '../core/assist.js';
+import { StepTeacher } from '../core/tutorial.js';
 
 addStrings({
   en: {
     'game.cave': 'Crystal Caves',
     'cave.intro': 'Dig down to the glowing door together! [A] jump · up/down climb · [B] rope · [C] pop bomb · 3 hearts each: mind the spikes!',
     'cave.tip': 'Spikes, goo, critters and long falls cost a heart. Hop on critters to make them dizzy, and use ropes to climb down!',
+    // the tutorial (core/tutorial.js): the card names the goal, the buttons come one at a time
+    'cave.introStep': 'Dig down to the glowing door together! The buttons come one at a time: try each one.',
+    'cave.step.jump': 'Jump with [A]',
+    'cave.step.rope': '[B]: throw a rope (this one is free)',
+    'cave.step.climb': 'Up and down: climb the rope (or a ladder)',
+    'cave.step.bomb': '[C]: a pop bomb breaks dirt (this one is free)',
+    'cave.step.hearts': '3 hearts each: spikes, goo, critters and long falls cost one. Hop on critters!',
     'cave.ghost': '{name} is a ghost until the next cave!',
     'cave.allGhosts': 'Everyone is a ghost!', 'cave.tryAgain': 'A fresh cave and full hearts. Try again!',
     'cave.revive': 'The ghosts are back with full hearts!',
@@ -43,6 +51,12 @@ addStrings({
     'game.cave': 'Krystallgrottene',
     'cave.intro': 'Grav dere ned til den lysende døra sammen! [A] hopp · opp/ned klatre · [B] tau · [C] poppbombe · 3 hjerter hver: pass dere for piggene!',
     'cave.tip': 'Pigger, slim, kryp og lange fall koster et hjerte. Hopp på krypene så blir de svimle, og bruk tau for å klatre ned!',
+    'cave.introStep': 'Grav dere ned til den lysende døra sammen! Knappene kommer én om gangen: prøv hver av dem.',
+    'cave.step.jump': 'Hopp med [A]',
+    'cave.step.rope': '[B]: kast et tau (dette er gratis)',
+    'cave.step.climb': 'Opp og ned: klatre i tauet (eller en stige)',
+    'cave.step.bomb': '[C]: en poppbombe knuser jord (denne er gratis)',
+    'cave.step.hearts': '3 hjerter hver: pigger, slim, kryp og lange fall koster ett. Hopp på krypene!',
     'cave.ghost': '{name} er et spøkelse til neste grotte!',
     'cave.allGhosts': 'Alle er spøkelser!', 'cave.tryAgain': 'Ny grotte og fulle hjerter. Prøv igjen!',
     'cave.revive': 'Spøkelsene er tilbake med fulle hjerter!',
@@ -882,14 +896,46 @@ export class CaveScene extends MiniGame {
     this.buildDepth(0);
     this.updateCamera(1, true);
     game.audio.playMusic('platformer');
-    this.intro(t('game.cave'), t('cave.intro'));
+    this.begin();
   }
+
+  /**
+   * The tutorial's first card (core/tutorial.js), then the intro. With the tutorial the intro names only the
+   * goal and each player gets the buttons one at a time above their bean: jump, rope, climb, bomb, then the
+   * hearts. The practice rope and bomb are free. Done or skipped, the full card as before.
+   */
+  async begin() {
+    const ans = await this.game.askTutorial({ id: 'cave', title: t('game.cave'), players: this.players });
+    if (this.game.current !== this) return;
+    if (ans === 'show') {
+      this.teach = new StepTeacher(this, {
+        id: 'cave', players: this.players,
+        steps: () => [
+          { key: 'cave.step.jump', on: 'jump' },
+          { key: 'cave.step.rope', on: 'rope' },
+          { key: 'cave.step.climb', on: 'climb' },
+          { key: 'cave.step.bomb', on: 'bomb' },
+          { key: 'cave.step.hearts', on: 'none', time: 6 },
+        ],
+        where: (p) => {
+          const e = this.ents.find((x) => x.p === p);
+          return e && e.state === 'play' && this.state === 'play' ? new THREE.Vector3(e.body.x, e.body.y + 1.95, 0.5) : null;
+        },
+      });
+    }
+    this.intro(t('game.cave'), t(this.teach?.active ? 'cave.introStep' : 'cave.intro'));
+  }
+
+  /** The pause menu's "Skip the tutorial" (main.js) shows while this is true. */
+  tutorialActive() { return !!this.teach?.active; }
+  skipTutorial() { this.teach?.skip(); }
 
   retryOptions() {
     return { key: this.key };
   }
 
   onStart() {
+    if (this.teach?.active) return; // (the tutorial's last step says it)
     this.later(0.6, () => { if (this.state === 'play') this.game.ui.toast(t('cave.tip'), 4200); });
   }
 
@@ -1499,7 +1545,7 @@ export class CaveScene extends MiniGame {
       const keepVx = b.vx;
       const j = platformerControl(b, { x: ctrl.x * slow, y: ctrl.y, a: ctrl.a, aPressed: ctrl.aPressed }, dt, PHYS);
       if (e.knock > 0) b.vx = keepVx; // a knockback push carries you for a moment
-      if (j) { e.ch.squash(1.3); this.game.audio.play('jump'); }
+      if (j) { e.ch.squash(1.3); this.game.audio.play('jump'); this.teach?.did(e.p, 'jump'); }
       moveBody(b, dt, this.solidsNear(b));
       if (!b.grounded) e.peakY = Math.max(e.peakY, b.y);
       if (b.justLanded) {
@@ -1547,6 +1593,7 @@ export class CaveScene extends MiniGame {
   }
 
   startClimb(e) {
+    this.teach?.did(e.p, 'climb');
     e.climbing = true;
     e.climbCol = Math.floor(e.body.x);
     e.body.vx = e.body.vy = 0;
@@ -1631,6 +1678,7 @@ export class CaveScene extends MiniGame {
     for (let k = 1; k < len; k++) knots.push(part(mesh, geo.sph(0.09), toon(0xd9a66b), 0, -k, 0));
     const rope = { c: tc, r0: tr, r1: br, len, mesh, cord, knots, t: 0, live: false };
     this.ropes.push(rope);
+    if (this.teach?.did(e.p, 'rope')) e.ropes++; // the tutorial's practice rope is free
     this.game.audio.play('whoosh');
     this.puffs.burst(new THREE.Vector3(tc + 0.5, top - 0.2, 0.2), 0xe8c07a, { count: 5, size: 0.2 });
   }
@@ -1654,6 +1702,7 @@ export class CaveScene extends MiniGame {
     if (e.bombs <= 0) { this.game.audio.play('bump'); this.game.ui.toast(t('cave.noBombs'), 900); return; }
     e.bombs--;
     e.bombsUsed++;
+    if (this.teach?.did(e.p, 'bomb')) e.bombs++; // the tutorial's practice bomb is free
     const b = e.body;
     const up = ctrl.y > 0.5, down = ctrl.y < -0.5;
     const mesh = new THREE.Group();
@@ -2569,6 +2618,7 @@ export class CaveScene extends MiniGame {
 
   update(dt) {
     if (this.state === 'leaving') return;
+    this.teach?.update(this.state === 'play' ? dt : 0);
     this.animateWorld(dt);
     if (this.state !== 'between') this.updatePlayers(dt);
     this.updateCamera(dt);

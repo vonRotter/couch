@@ -27,6 +27,7 @@ import { LightMixin } from './keepsolo/light.js';
 import { MonsterMixin } from './keepsolo/monsters.js';
 import { CharPanel, TreePanel } from './keepsolo/tree.js';
 import { invulnBlink, struggle, markSkipped } from '../core/assist.js';
+import { StepTeacher } from '../core/tutorial.js';
 import { Emotes } from '../core/emotes.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
@@ -401,13 +402,38 @@ export class KeepSoloScene extends MiniGame {
     this.updateLight(0, true);
     this.game.audio.playMusic(isDeep(g) ? 'keepDeep' : 'bubble');
     this.game.ui.banner(this.placeTitle(), this.placeSub(), 1900); // (floor names are not read aloud)
-    if (!hs.tips.dungeon) {
-      hs.tips.dungeon = true;
-      const tip = this.isPad() ? 'ks.tipDungeonPad' : 'ks.tipDungeon';
-      this.later(2.2, () => { this.game.ui.toast(tFor(this.player, tip), 5200); this.say(tFor(this.player, tip)); });
-    }
+    // the first floor ever (this profile): the tutorial's first card, then the controls one at a time
+    if (!hs.tips.dungeon && !this.teach) this.later(2.0, () => this.askTeach());
+    hs.tips.dungeon = true;
     this.saveNow();
   }
+
+  /**
+   * The tutorial (core/tutorial.js): the first card ("Show me how" / "I know how to play"), then one control
+   * at a time in a box above the HUD, for the input the hero is played with (the mouse once it is used, else
+   * the gamepad or the keyboard keys): attack, the class move, the menu or the bag, then a skill or the belt.
+   * Done or skipped it is not shown again for this profile (all three heroes).
+   */
+  async askTeach() {
+    if (this.kind !== 'dungeon' || this.teach) return;
+    const ans = await this.game.askTutorial({ id: 'keepsolo', title: t('game.keepsolo'), players: [this.player] });
+    if (this.game.current !== this || ans !== 'show') return;
+    const mouse = () => !!this.mouse?.used && !this.isPad();
+    const move = { knight: 'block', archer: 'roll', wizard: 'hop' }[this.cls] || 'roll';
+    this.teach = new StepTeacher(this, {
+      id: 'keepsolo', players: [this.player], wantAll: true,
+      steps: () => [
+        { key: () => (mouse() ? 'ks.step.attackMouse' : 'ks.step.attack'), on: 'attack' },
+        { key: () => (mouse() ? `ks.step.${move}Mouse` : `ks.step.${move}`), on: 'move' },
+        { key: () => (mouse() ? 'ks.step.bagMouse' : 'ks.step.menu'), on: ['menu', 'bag', 'tree'] },
+        { key: () => (mouse() ? 'ks.step.beltMouse' : 'ks.step.skill'), on: ['tapc', 'skill', 'belt'], time: 12 },
+      ],
+    });
+  }
+
+  /** The pause menu's "Skip the tutorial" (main.js) shows while this is true. */
+  tutorialActive() { return !!this.teach?.active; }
+  skipTutorial() { this.teach?.skip(); }
 
   placeTitle() {
     if (this.kind === 'town') return t('ks.townName');
@@ -543,6 +569,7 @@ export class KeepSoloScene extends MiniGame {
   // ---------------------------------------------------------------- panels
 
   openPanel(kind) {
+    this.teach?.did(this.player, kind); // (the tutorial: the bag, the skill tree)
     this.closePanel();
     const P = {
       bag: () => new GridPanel(this, 'bag'), smith: () => new GridPanel(this, 'smith'), stash: () => new GridPanel(this, 'stash'), shop: () => new GridPanel(this, 'shop'),
@@ -565,6 +592,7 @@ export class KeepSoloScene extends MiniGame {
   /** What tapping [C] does (gamepad): pick up gear under you, or the skill on [C] (in town: the bag). */
   tapC() {
     if (this.kind === 'town') { this.openPanel('bag'); return; }
+    this.teach?.did(this.player, 'tapc');
     const it = this.gearNear();
     if (it) { this.pickGear(it); return; }
     const sk = this.hs.bar.rmb;
@@ -588,6 +616,12 @@ export class KeepSoloScene extends MiniGame {
     // a faint that waited for the skip offer: go on with it unless the boss gave up
     if (this.pendingFaint && !this.game.offer) { this.pendingFaint = false; if (!this.bossSkipped) this.afterFaint(true); }
     this.frame(dt);
+    if (this.teach) {
+      // (the tutorial waits while a panel or menu is open, in town and between floors)
+      const away = !!(this.panel || this.menu) || this.kind !== 'dungeon' || this.moving;
+      this.teach.hidden = away;
+      this.teach.update(away ? 0 : dt);
+    }
     this.updateLight(dt);
     const m = this.mouse;
     this.hud.hand(m.virtual && (this.panel || this.menu || this.picker) ? m : null);
@@ -641,7 +675,7 @@ export class KeepSoloScene extends MiniGame {
     else if (this.cHold > 0) {
       if (inp.c) {
         this.cHold += dt;
-        if (this.cHold >= HOLD_C) { this.cHold = 0; this.menu = new SkillMenu(this); this.game.audio.play('select'); }
+        if (this.cHold >= HOLD_C) { this.cHold = 0; this.menu = new SkillMenu(this); this.game.audio.play('select'); this.teach?.did(this.player, 'menu'); }
       } else { this.cHold = 0; this.tapC(); }
     }
     if (active && !emo) this.updateMouse(dt); else this.ctlCancel();
@@ -739,6 +773,7 @@ export class KeepSoloScene extends MiniGame {
       if (len > 1) { mx /= len; mz /= len; }
       if (len > 0.25) { const l = Math.hypot(mx, mz); e.fx = mx / l; e.fz = mz / l; }
       e.blocking = this.cls === 'knight' && (inp.b || holdBlock) && this.kind === 'dungeon';
+      if (e.blocking) this.teach?.did(this.player, 'move');
       if (e.blocking && this.ground && (holdBlock && !inp.b)) { const dx = this.ground.x - e.x, dz = this.ground.z - e.z, d = Math.hypot(dx, dz); if (d > 0.2) { e.fx = dx / d; e.fz = dz / d; } }
       const sp = SPEED * e.st.speed * (e.blocking ? 0.45 : 1) * (this.kind === 'town' ? 1.1 : 1);
       e.vx += (mx * sp - e.vx) * Math.min(1, dt * 14);

@@ -6,6 +6,7 @@ import { COLORS, PLAYER_COLORS, toon, basic, sharedGeo, symHtml, symbolOf } from
 import { addLights, skyTexture, makeStar } from '../core/world.js';
 import { t } from '../core/i18n.js';
 import { esc } from '../core/ui.js';
+import { StepTeacher } from '../core/tutorial.js';
 import './keep/strings.js';
 import { CELL, WALL_H, PR, GR, SPEED, CLASSES, GLYPH, clamp, angDiff, clock, mesh, sph, rbox, bx, cyl, fadeMat, disposeTree } from './keep/common.js';
 import { generateFloor, FLOOR_PLAN } from './keep/dungeon.js';
@@ -164,15 +165,44 @@ export class KeepScene extends MiniGame {
     game.audio.playMusic('bubble');
 
     if (this.campaign) {
-      this.intro(t('game.keep'), t('keep.intro'));
+      this.begin();
     } else {
       this.state = 'pick';
       this.picker = new ClassPicker(this, this.ents, () => {
         this.picker = null;
-        this.intro(t('game.keep'), t('keep.intro'));
+        this.begin();
       });
     }
   }
+
+  /**
+   * After the class picker: the tutorial's first card (core/tutorial.js), then the intro. With the tutorial the
+   * intro names only the goal and each player gets their class's buttons one at a time above their bean:
+   * [A], then [B], then [C]. Done or skipped: the full card with every button, as before.
+   */
+  async begin() {
+    this.state = 'intro';
+    const ans = await this.game.askTutorial({ id: 'keep', title: t('game.keep'), players: this.players });
+    if (this.game.current !== this) return;
+    if (ans === 'show') {
+      this.teach = new StepTeacher(this, {
+        id: 'keep', players: this.players,
+        steps: (p) => {
+          const cls = this.ents.find((e) => e.p === p)?.cls || 'knight';
+          return [{ key: `keep.step.a.${cls}`, on: 'a' }, { key: `keep.step.b.${cls}`, on: 'b' }, { key: 'keep.step.c', on: 'c' }];
+        },
+        where: (p) => {
+          const e = this.ents.find((x) => x.p === p);
+          return e && e.state === 'walk' && this.state === 'play' && !this.moving ? new THREE.Vector3(e.x, e.y + (e.hasKey ? 3.2 : 2.6), e.z) : null;
+        },
+      });
+    }
+    this.intro(t('game.keep'), t(this.teach?.active ? 'keep.introStep' : 'keep.intro'));
+  }
+
+  /** The pause menu's "Skip the tutorial" (main.js) shows while this is true. */
+  tutorialActive() { return !!this.teach?.active; }
+  skipTutorial() { this.teach?.skip(); }
 
   onLanguage() {
     this.picker?.render();
@@ -1170,9 +1200,9 @@ export class KeepScene extends MiniGame {
       this.moveCircle(e, e.vx * dt, e.vz * dt, PR);
       moving = clamp(Math.hypot(e.vx, e.vz) / SPEED, 0, 1);
       if (active) {
-        if (inp.cPressed) this.interact(e);
-        else if (inp.bPressed && e.cdB <= 0) this.special(e);
-        if (inp.a && e.cdA <= 0) this.mainAction(e);
+        // (the tutorial, if on: each button moves its step on when it is used)
+        if (inp.cPressed) { this.interact(e); this.teach?.did(e.p, 'c'); } else if (inp.bPressed && e.cdB <= 0) { this.special(e); this.teach?.did(e.p, 'b'); }
+        if (inp.a && e.cdA <= 0) { this.mainAction(e); this.teach?.did(e.p, 'a'); }
       }
       if (e.calm > 3) e.yawn = Math.max(0, e.yawn - 0.03 * dt);
       if (e.boost > 0 && Math.random() < dt * 10) this.puffs.burst(new THREE.Vector3(e.x, 0.2, e.z), 0xffd23f, { count: 1, size: 0.18, life: 0.4, speed: 1 });
@@ -1431,6 +1461,7 @@ export class KeepScene extends MiniGame {
   update(dt) {
     if (this.state === 'pick') this.picker?.update(dt);
     const active = this.state === 'play' && !this.moving;
+    this.teach?.update(active ? dt : 0);
     this.toastCd -= dt;
     if (active) this.floorT += dt;
     if (active) {

@@ -118,6 +118,7 @@ export const HeroMixin = {
 
   /** Key 5-8 (or a click on the belt): use the bottom potion or scroll of that column. */
   useBelt(col) {
+    this.teach?.did(this.player, 'belt'); // (the tutorial)
     const it = this.hs.belt[col];
     if (!it) { this.game.audio.play('bump'); return false; }
     const r = this.useConsumable(it);

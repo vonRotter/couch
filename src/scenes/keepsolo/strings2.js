@@ -6,6 +6,19 @@ import { addStrings } from '../../core/i18n.js';
 // Some keys of strings.js are replaced here (they talked about the old controls).
 
 const en = {
+  // the tutorial (core/tutorial.js): one control at a time, for the gamepad / keys or the mouse
+  'ks.step.attack': '[A]: attack. Walk up to a grumble and bonk it!',
+  'ks.step.attackMouse': 'Click a grumble to bonk it (click the floor to walk there)',
+  'ks.step.block': 'Hold [B]: block with your cushion',
+  'ks.step.roll': '[B]: dodge roll',
+  'ks.step.hop': '[B]: bubble hop',
+  'ks.step.blockMouse': 'Hold 1 or [B]: block with your cushion',
+  'ks.step.rollMouse': '1 or [B]: dodge roll toward the pointer',
+  'ks.step.hopMouse': '1 or [B]: bubble hop to the pointer',
+  'ks.step.menu': 'Hold [C]: skills, potions, scrolls and your bag',
+  'ks.step.bagMouse': 'I: open your bag (T: your skills, C: your hero)',
+  'ks.step.skill': 'Tap [C]: your skill (hold [C] to pick it)',
+  'ks.step.beltMouse': 'Keys 5 to 8 drink from your belt when you need it',
   // things under the mouse pointer
   'ks.foe.basic': 'Grumble', 'ks.foe.charger': 'Charger Grumble', 'ks.foe.thrower': 'Pillow Thrower', 'ks.foe.shield': 'Shield Grumble',
   'ks.h.nest': 'Grumble nest', 'ks.h.chest': 'Treasure chest', 'ks.h.door': 'Locked door (find the key)', 'ks.h.doorKey': 'Locked door: click to open',
@@ -174,6 +187,18 @@ const no = {
   'ks.hintDungeonMouse': 'Venstre: gå / angrip · Høyre: ferdighet · 1-4: ferdigheter · 5-8: belte · Alt: navn på ting',
   'ks.hintTownPad': 'Pinnen: gå · [A]: snakk og bruk · trykk [C]: sekken · hold [C]: meny · [EMOTE]: hilsener',
   'ks.hintDungeonPad': '[A]: angrip · [B]: ditt triks · trykk [C]: ferdighet · hold [C]: meny',
+  'ks.step.attack': '[A]: angrip. Gå bort til en grumling og bonk den!',
+  'ks.step.attackMouse': 'Klikk på en grumling for å bonke den (klikk på gulvet for å gå dit)',
+  'ks.step.block': 'Hold [B]: blokker med puta di',
+  'ks.step.roll': '[B]: unnarull',
+  'ks.step.hop': '[B]: boblehopp',
+  'ks.step.blockMouse': 'Hold 1 eller [B]: blokker med puta di',
+  'ks.step.rollMouse': '1 eller [B]: unnarull mot pekeren',
+  'ks.step.hopMouse': '1 eller [B]: boblehopp dit pekeren er',
+  'ks.step.menu': 'Hold [C]: ferdigheter, drikker, ruller og sekken',
+  'ks.step.bagMouse': 'I: åpne sekken (T: ferdighetene dine, C: helten din)',
+  'ks.step.skill': 'Trykk [C]: ferdigheten din (hold [C] for å velge den)',
+  'ks.step.beltMouse': 'Tastene 5 til 8 drikker fra beltet når du trenger det',
   'ks.tipDungeon': 'Klikk på gulvet for å gå, klikk på grumlinger for å bonke dem. Høyreklikk bruker ferdigheten din der pekeren er. Tastene 1 til 4 bruker flere ferdigheter, 5 til 8 drikker fra beltet.',
   'ks.tipDungeonPad': '[A]: angrip · [B]: ditt triks · trykk [C]: ferdighet · hold [C]: ferdigheter, drikker, ruller og sekk',
   'ks.noMana': 'Ikke nok mana!', 'ks.noSkillC': 'Ingen ferdighet på [C] ennå: hold [C] for å velge en',

@@ -10,6 +10,7 @@ import { say, voiceOn } from './voice.js';
 import { SPEEDS, TEXT_SIZES, profileSettings, saveSettings, effectiveAim, sceneAimDefault } from './assist.js';
 import { KEYBOARD_SCHEMES, PAD_LABELS, REMAP_PAD, RESERVED_KEYS, schemeKeyOwner } from './input.js';
 import { deviceLabel } from './roster.js';
+import './tutorial.js'; // (its strings: the Tutorials and tips row)
 
 addStrings({
   en: {
@@ -86,7 +87,7 @@ addStrings({
   },
 });
 
-const ROWS = ['speed', 'timing', 'aim', 'toggle', 'text', 'contrast', 'calm', 'offers', 'buttons', 'done'];
+const ROWS = ['speed', 'timing', 'aim', 'toggle', 'text', 'contrast', 'calm', 'offers', 'tutorials', 'buttons', 'done'];
 
 /** The devices that steer a shared menu: the joined players', or every device when nobody has joined. */
 export function menuDevices(game) {
@@ -137,7 +138,7 @@ export class AssistMenu {
       // not picked yet: each game's default (the snowball fight: a little)
       case 'aim': return s.aimChosen ? t(`assist.aim.${s.aim}`) : `${t(`assist.aim.${this.aimNow}`)} ${t(sceneAimDefault(this.game) ? 'assist.aim.here' : 'assist.aim.dflt')}`;
       case 'text': return t(`assist.text.${s.text}`);
-      case 'timing': case 'toggle': case 'contrast': case 'calm': case 'offers': return t(s[k] ? 'assist.on' : 'assist.off');
+      case 'timing': case 'toggle': case 'contrast': case 'calm': case 'offers': case 'tutorials': return t(s[k] ? 'assist.on' : 'assist.off');
       default: return '';
     }
   }
@@ -183,6 +184,8 @@ export class AssistMenu {
     else if (k === 'aim') this.set({ aim: (this.aimNow + dir + 3) % 3, aimChosen: true });
     else if (k === 'text') this.set({ text: (s.text + dir + TEXT_SIZES.length) % TEXT_SIZES.length });
     else if (k === 'offers') this.set({ offers: !s.offers, never: !s.offers ? [] : s.never });
+    // tutorials (core/tutorial.js): on again brings back every tutorial that was done or skipped
+    else if (k === 'tutorials') this.set(s.tutorials ? { tutorials: false } : { tutorials: true, tutSeen: [], tutSkipped: [] });
     else if (['timing', 'toggle', 'contrast', 'calm'].includes(k)) this.set({ [k]: !s[k] });
     else return;
     this.game.applyScreenSettings?.();

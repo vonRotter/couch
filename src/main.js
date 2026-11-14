@@ -53,14 +53,16 @@ import { coopReward, nameList } from './core/coop.js';
 import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './core/voice.js';
 import * as assist from './core/assist.js';
 import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES, setCalm } from './core/assist.js';
-import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
+import { AssistMenu, OfferCard, schemeKeys, menuDevices } from './core/assistmenu.js';
 import { refreshOutlines } from './core/outline.js';
 import * as passport from './core/passport.js';
 import { tickPlayTime, flushPlayTime, logAssist } from './core/passport.js';
 import { ParentPage, HOLD_SECONDS } from './core/parentpage.js';
+import { TutorialCard, wantsTutorial } from './core/tutorial.js';
 import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
 
-// The pause menu in every game (chars is a setting that switches in place).
+// The pause menu in every game (chars is a setting that switches in place). While a tutorial runs
+// (scene.tutorialActive()) it also has "Skip the tutorial" (core/tutorial.js).
 const PAUSE_ITEMS = ['resume', 'retry', 'assist', 'end', 'chars'];
 
 export const GAMES = {
@@ -157,6 +159,7 @@ class Game {
     flushPlayTime();
     if (this.current) this.current.dispose();
     this.ui.clear();
+    this.tutorialCard = null; // (a card for the old scene went with it)
     this.input.clearLatches(); // hold to toggle: every hold starts off in a new scene
     this.sceneAt = performance.now();
     this.current = make();
@@ -255,6 +258,23 @@ class Game {
     if (this.offer || this.assistMenu || this.pause || this.switching || this.parentPage) return false;
     this.offer = new OfferCard(this, { kind, player, skip, onClose: () => { this.offer = null; } });
     return true;
+  }
+
+  /**
+   * The first card of a tutorial (core/tutorial.js): "Show me how" or "I know how to play", the first time
+   * tutorial `id` would start for these players. Resolves 'show', 'skip' (remembered per profile) or 'seen'
+   * (nobody here needs it: done, skipped before, or tutorials are off). The game waits behind the card.
+   */
+  askTutorial({ id, title, players = this.roster.players }) {
+    if (!wantsTutorial(this, players, id)) return Promise.resolve('seen');
+    // (a card left behind by a scene switch is never answered: setScene drops it; the game checks it is still on)
+    return new Promise((resolve) => {
+      const card = new TutorialCard(this, {
+        id, title, players,
+        onAnswer: (k) => { if (this.tutorialCard === card) this.tutorialCard = null; resolve(k); },
+      });
+      this.tutorialCard = card;
+    });
   }
 
   /** Switch scenes behind the circle wipe. */
@@ -464,8 +484,16 @@ class Game {
     this.renderPause();
   }
 
+  /** The pause menu's items now ("Skip the tutorial" only while one runs). */
+  pauseItems() {
+    if (!this.current?.tutorialActive?.()) return PAUSE_ITEMS;
+    const items = [...PAUSE_ITEMS];
+    items.splice(items.indexOf('end'), 0, 'skiptut');
+    return items;
+  }
+
   renderPause() {
-    const items = PAUSE_ITEMS;
+    const items = this.pauseItems();
     const label = (k) => (k === 'chars' ? `${t('pause.chars')}: ${t(babbleMode() ? 'pause.charsBabble' : 'pause.charsVoices')}` : k === 'assist' ? t('assist.title') : t(`pause.${k}`));
     const html = `<div class="results-title">${t('pause.title')}</div>
       <div class="pause-list">${items.map((k, i) => `<div class="pause-item ${i === this.pause.index ? 'on' : ''}">${label(k)}</div>`).join('')}</div>
@@ -481,11 +509,12 @@ class Game {
 
   updatePause() {
     const P = this.pause;
+    const items = this.pauseItems();
     for (const p of this.roster.players) {
       const d = this.input.get(p.deviceId);
       if (!d) continue;
       const dir = -d.stepY;
-      const n = PAUSE_ITEMS.length;
+      const n = items.length;
       if (dir) {
         P.index = (P.index + dir + n) % n;
         this.audio.play('select');
@@ -493,13 +522,19 @@ class Game {
       }
       // a gamepad's B goes back (resumes); it never picks (keyboards pick with Space or E, Esc resumes)
       if (d.backPressed) { this.closePause(); this.audio.play('select'); return; }
-      const k = PAUSE_ITEMS[P.index];
+      const k = items[P.index];
       // the last item is a setting: pick or left/right switches it, the menu stays open
       if (k === 'chars' && (d.okPressed || d.stepX)) { this.toggleBabble(); this.renderPause(); continue; }
       // Help me play: its page, then back to this menu
       if (k === 'assist' && d.okPressed) {
         this.closePause();
-        this.openAssist(() => { this.openPause(); this.pause.index = PAUSE_ITEMS.indexOf('assist'); this.renderPause(); });
+        this.openAssist(() => { this.openPause(); this.pause.index = this.pauseItems().indexOf('assist'); this.renderPause(); });
+        return;
+      }
+      if (k === 'skiptut' && d.okPressed) {
+        this.closePause();
+        this.current.skipTutorial?.();
+        this.ui.toast(t('tut.skipped'), 2600);
         return;
       }
       if (d.okPressed) {
@@ -616,6 +651,12 @@ class Game {
     // "Help me play" and its offers wait in front of everything (the game is frozen behind them)
     if (this.assistMenu || this.offer) {
       (this.assistMenu || this.offer).update(dt);
+      this.input.endFrame();
+      return;
+    }
+    // so does a tutorial's first card ("Show me how" / "I know how to play", core/tutorial.js)
+    if (this.tutorialCard && !this.switching) {
+      this.tutorialCard.update(dt, menuDevices(this));
       this.input.endFrame();
       return;
     }

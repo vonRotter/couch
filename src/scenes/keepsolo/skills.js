@@ -76,6 +76,7 @@ export const SkillMixin = {
     e.swingT = 0.22;
     e.swingDir = -e.swingDir;
     e.attackN++;
+    this.teach?.did(this.player, 'attack'); // (the tutorial, core/tutorial.js)
     if (this.cls === 'knight') {
       this.faceTarget(e, 3.2, 1.2);
       this.swing(e, 2.5, 1.25, this.rollDmg(e));
@@ -179,6 +180,7 @@ export const SkillMixin = {
     const ok = this.useSkill(e, id, p, r);
     this.aimAt = null;
     if (ok === false) return false;
+    this.teach?.did(this.player, id === B_MOVE[this.cls] ? 'move' : 'skill'); // (the tutorial)
     e.mana -= cost;
     e.cd[id] = def.cd * (1 - e.st.cdr);
     e.gcd = 0.3;

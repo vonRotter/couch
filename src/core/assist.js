@@ -5,7 +5,8 @@
 // (localStorage 'couch-party.assist', editable from the shared island's menu). Everything is off by default;
 // profiles saved before this existed simply get the defaults.
 //
-// Per player (follow the player who plays): forgiving timing, aim help, hold to toggle, button remapping.
+// Per player (follow the player who plays): forgiving timing, aim help, hold to toggle, button remapping,
+// tutorials and tips (core/tutorial.js: on/off and which tutorials were done or skipped).
 // For the whole screen (one shared screen): game speed, text size, outlines, reduce flashing and shake. On a profile's own island that is
 // the profile's choice; on the shared island the most help anyone playing asked for (slowest speed, biggest
 // text, outlines if anyone wants them), starting from the device default.
@@ -34,6 +35,9 @@ export const DEFAULTS = Object.freeze({
   never: [], // offers answered with "don't ask again" ('timing', 'aim', 'speed', 'skip')
   keys: {}, // keyboard remaps per scheme: { kb0: { a: 'Space', b: 'KeyE', c: 'KeyQ' } }
   pad: null, // gamepad remap: { a: 'b', b: 'a', ... } (game button -> the physical button that does it)
+  tutorials: true, // tutorials and first-time tips (core/tutorial.js); off skips them all
+  tutSeen: [], // tutorials done or skipped (not shown again): 'cave', 'keep', 'skyhop', ...
+  tutSkipped: [], // the ones of those that were skipped (the parent page lists them)
 });
 
 const DEVICE_KEY = 'couch-party.assist';
@@ -48,6 +52,9 @@ function clean(s) {
   out.text = Math.max(0, Math.min(TEXT_SIZES.length - 1, out.text | 0));
   out.never = Array.isArray(out.never) ? out.never : [];
   out.keys = out.keys && typeof out.keys === 'object' ? out.keys : {};
+  out.tutorials = out.tutorials !== false;
+  out.tutSeen = Array.isArray(out.tutSeen) ? out.tutSeen : [];
+  out.tutSkipped = Array.isArray(out.tutSkipped) ? out.tutSkipped : [];
   return out;
 }
 
