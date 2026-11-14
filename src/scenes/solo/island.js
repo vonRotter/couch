@@ -671,8 +671,9 @@ export class SoloIslandScene extends BaseScene {
     const ask = wantsTutorial(this.game, [P.p], 'island');
     let skipSteps = !ask;
     const lines = [H('intro1'), Pp('intro', () => { pip.hop = 1; this.giveItems([['zipzap', 1]], true); this.selectItem('zipzap'); }),
-      H('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), { ...H('intro4'), vars: { bagHow: this.bagKey(true) } }, H('q1.ask')];
-    if (ask) lines.push({ ...H('tutAsk'), choices: ['isl.tut.yes', 'isl.tut.no'], onChoice: (i) => { skipSteps = i === 1; } });
+      H('intro3', () => this.giveItems([['radishSeed', 6], ['carrotSeed', 3]], true)), { ...H('intro4'), vars: { bagHow: this.bagKey(true) } },
+      // (her radish job and the question are one line, so the welcome is as long as before)
+      ask ? { ...H('q1.askTut'), choices: ['isl.tut.yes', 'isl.tut.no'], onChoice: (i) => { skipSteps = i === 1; } } : H('q1.ask')];
     this.say(lines, () => {
       const S = this.save;
       S.intro = true;
