@@ -20,10 +20,16 @@ The genre passport (development step 3) maps every game to a genre and its skill
   by colour only; stamps are coloured and named, missing ones are grey, dashed and named too.
 - **Never forced:** Coach's suggestions and trials are optional, nothing is locked by them.
 - **The parent page** (hold View + Start or H for 3 s in a menu) shows per profile the time played per day,
-  the genres and skills practised, the "Help me play" settings that are on, the help offers taken and the
-  skipped parts, so a grown-up can see where a child gets stuck. Nothing leaves the device.
+  the genres and skills practised, the "Help me play" settings that are on (also "Tutorials and tips: off"),
+  the help offers taken and the skipped parts (also how many tutorials were skipped), so a grown-up can see where a child gets stuck. Nothing leaves the device.
 - **Onboarding:** [ONBOARDING.md](ONBOARDING.md) audits every game's first minutes against "teach one action at
-  a time before combining them" (findings only).
+  a time before combining them". Fixed since: Sky Hop level 1 teaches one thing at a time (the double jump on
+  its own); Crystal Caves, Pillow Keep and Pillow Keep Solo teach their buttons one at a time (each prompt
+  names that player's own button, follows remapping and is read aloud, and moves on only when it is used);
+  and every tutorial is skippable, never forced (both guidelines ask for tutorials that teach gradually
+  and can be skipped or replayed): "I know how to play" on its first card or "Skip the tutorial" in the pause menu,
+  remembered per profile; **Help me play → Tutorials and tips** turns them all off, and on again brings them
+  back. The parent page lists tutorials off and skipped. The list of tutorials is in ONBOARDING.md.
 
 ## Which game supports which assist
 

@@ -158,14 +158,17 @@ picks a landed one up again, B takes the last one back, then A on Start! or hold
 tiles are the old fixed ones (a retry suggests last time's), so A three times and Start! always
 works. Stick moves the cursor, A picks, walks, aims and confirms, B goes back or undoes a move,
 tap C for the battle menu (rewind, a helper-bean hint, tips), hold C to end the turn. The first
-battle has a short read-aloud tutorial, and the first deploy step is explained aloud once. Progress
+battle has a short read-aloud tutorial ([C] on its first tip: "I know how to play"), and the first deploy
+step is explained aloud once. Progress
 is saved per profile between battles: leaving in the middle of a battle (pause menu, End game)
 starts that same battle again next time, with the grid power you had before it.
 
 **Pillow Keep Solo** (solo island; a single-player Diablo-like, the keep tower on the west bank). Pick
 a hero, each with its own save: the **Pillow Knight** (melee, lots of health; main stat Strength), the
 **Feather Archer** (arrows from afar; Dexterity) or the **Bubble Wizard** (bubbles that trap, spells,
-lots of mana; Magic). It plays with mouse and keyboard like Diablo (the gamepad still works):
+lots of mana; Magic). It plays with mouse and keyboard like Diablo (the gamepad still works). On the
+first floor ever (per profile) the controls come one at a time for the input in use (skippable; see
+*Onboarding (tutorials)*):
 
 | Mouse and keyboard | |
 |---|---|
@@ -318,9 +321,46 @@ the snowball fight's aim help, which starts at "a little" (its old built-in help
   "restart room" tries the room again from its door).
 - The audit against the Game Accessibility Guidelines and the Xbox Accessibility Guidelines, with its
   findings for the owner: `ACCESSIBILITY.md`.
+- **Tutorials and tips:** the row in Help me play (per profile like the rest; guests and the shared island:
+  the device default). On: each game's tutorial shows the first time; off: every tutorial and first-time tip
+  is skipped; turning it on again brings back every tutorial that was done or skipped. Every tutorial is
+  skippable and never forced: its first card ("Show me how" / "I know how to play", read aloud; nobody
+  answering for 15 s shows it) or the pause menu's **Skip the tutorial** while one runs. Done or skipped, it
+  is not shown again to that profile (`profile.assist.tutorials`, `tutSeen`, `tutSkipped`; old saves get
+  "on, nothing seen"). Skipping never holds anything back. See *Onboarding* below for the list.
 - **Genres, skills and onboarding:** the genre passport's table of every game's genre, skills and trials is
   [GENRES.md](GENRES.md); an audit of every game's first minutes against "teach one action at a time before
-  combining them" (findings and suggestions only, no game changed) is [ONBOARDING.md](ONBOARDING.md).
+  combining them" is [ONBOARDING.md](ONBOARDING.md) (with what has been fixed since).
+
+### Onboarding (tutorials)
+
+One action at a time, a short moment to try it, then the next (`core/tutorial.js`). Prompts use the button
+tokens, so they name what each player presses (their device, their remapping) and are read aloud.
+
+- **Sky Hop level 1 (Sunny Meadow)** teaches one thing per stretch: a low block and a small gap (jump), a
+  wall 4 tiles high that only a double jump climbs, a 6-high wall with the spring alone (hold [A] while
+  bouncing, or jump again in the air), one grumble in a little pen (stomp it or hop over), pits, then a pit,
+  a double-jump wall and a grumble together, and clouds last. No moving platforms or crumbly blocks in level
+  1. A sign names each new thing (shown as you come near, read aloud once). Same checkpoints; levels 2-4
+  unchanged. Skipped: no signs. Done when someone reaches the flag.
+- **Crystal Caves:** the card names the goal; each player then gets one prompt above their bean: jump, throw
+  a rope (free), climb it, a pop bomb (free), then the hearts. Each moves on when that player does it (a
+  wrong button does not count), with a short "Nice!".
+- **Pillow Keep:** after the class picker, each player's class buttons one at a time: [A] (swing, dart,
+  bubble, note), [B] (the special), then [C] (chests, doors, waking friends).
+- **Pillow Keep Solo:** on the first floor ever (per profile), one control at a time in a box above the HUD,
+  for the input in use: gamepad or keys ([A] attack, [B] your move, hold [C] the menu, tap [C] your skill) or
+  the mouse once it is used (click a grumble, 1 or [B] your move, I the bag, keys 5-8 the belt).
+- **Skipping, everywhere:** the solo island's farming steps (Aunt Hazel asks after her welcome; the menu has
+  "Skip the farming steps"; skipping goes straight to step 8, which the story, Pip's camera and decorating
+  wait for; the Zip-Zap, the seeds and her radish job are given as before), Sky Hop level 1, Crystal Caves,
+  Pillow Keep, Pillow Keep Solo, Bean Brigade's first-battle tips ([C] "I know how to play" on the first tip;
+  the deploy explanation in the next battle goes too), Lighthouse Caves' welcome (the keeper only says where
+  the sword is, then is off to the lighthouse), Pudding Island's hello (Pip is already on the dock) and
+  Læringsmiks' how-to cards (quick: shown a few seconds, nobody has to press). First-time tips follow the
+  Tutorials and tips row: Grumble Guides' level tips, Spacefall's ship tips, Snowball Fort's tips, Paint
+  Pilots' stall tip and Rooftop Rush's signs. The farming steps and Bean Brigade's tips are once per save:
+  turning tutorials on again does not replay them (Bean Brigade's battle menu has "Tips").
 
 ### Colors
 
@@ -373,7 +413,8 @@ springy mushrooms, moving platforms, lifts, crumbling blocks and clouds you can 
 through (down + A drops through). Stand on friends' heads. If you fall or get left behind,
 you float back to the group in a bubble (never behind the last of the level's three checkpoint posts). Bump into a grumble and you are only pushed back;
 stomp it for gems. Once someone reaches the flag, everyone else has 12 seconds. After a
-level: A for the next level, B for the island.
+level: A for the next level, B for the island. Level 1 teaches one new thing at a time with signs (see
+*Onboarding (tutorials)*); moving platforms, lifts and crumbling blocks start in level 2.
 
 **Paint Party** (free-for-all, 60 seconds). Walk to paint the floor. A dashes (and shoves),
 B lobs a paint bomb. Grab the golden paint can for a Mega Brush. Most floor wins. Grumble painters smear grey mud over the floor (yours too), and mud has to be painted over again. Dash into a grumble or hit it with a paint bomb to make it dizzy and drop its brush. There are more grumbles with more players, and more join during the match.
@@ -510,7 +551,8 @@ sword smashes grumble doors and the hammer still bonks); a tent turns you into t
 
 **Pillow Keep** (co-op dungeon crawl on the shared island, Gauntlet and Diablo style, five random
 floors; the solo island's keep tower starts Pillow Keep Solo instead). Everyone picks
-a class: Knight, Archer, Wizard or Bard. Every run builds new floors with rooms, keys and doors,
+a class: Knight, Archer, Wizard or Bard (the first time, each player's [A], [B] and [C] then come one at a
+time above their bean; skippable). Every run builds new floors with rooms, keys and doors,
 pillow nests, chests and elite grumbles: Cushion Hall, Blanket Vaults, Toy Attic (Big Teddy guards
 the stairs), Moonlit Library and the Sheep's Bedroom (Sleepy Sheep). Loot (weapon, hat, slippers,
 cape; white, blue or gold) is put on automatically, and only when it is better. The team shares XP,
@@ -541,7 +583,8 @@ Run, jump (A) and climb ladders, vines and ropes. B shoots a rope up (down+B han
 and C drops a pop bomb that breaks dirt and only bounces players. Collect gold and gems, and carry
 the lost puppy on your head to the exit for a team bonus. Hazards are soft: bouncy mushrooms, mud,
 sticky honey and rolling snowballs; a long fall only makes you dizzy. Stragglers float to the leader
-in a bubble, sparkles show the way after a while, and nobody is ever out. Dangers: spikes, hot goo (icy water in the frost cave), crumbly floors, falling stalactites (they shake first), swooping bats, patrolling grumbles, pea plants and rolling boulders. Each player has 3 hearts; jumping on a bat or grumble makes it dizzy instead. At zero hearts you become a ghost who floats along with the others until the next depth, where you come back with 3 hearts. If everyone becomes a ghost, the depth restarts with a new layout.
+in a bubble, sparkles show the way after a while, and nobody is ever out. The first time, the buttons come
+one at a time above each bean (jump, rope, climb, bomb, hearts; skippable). Dangers: spikes, hot goo (icy water in the frost cave), crumbly floors, falling stalactites (they shake first), swooping bats, patrolling grumbles, pea plants and rolling boulders. Each player has 3 hearts; jumping on a bat or grumble makes it dizzy instead. At zero hearts you become a ghost who floats along with the others until the next depth, where you come back with 3 hearts. If everyone becomes a ghost, the depth restarts with a new layout.
 
 **Story** (co-op campaign, a place on the shared island: the golden book pad). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from
@@ -671,7 +714,8 @@ night match yours and crops grow while you are away.
 - **Pip's Zip-Zap:** one sci-fi gadget instead of a hoe, a watering can, a scythe and a pickaxe (in the
   spirit of a sonic screwdriver). On a new island Aunt Hazel and Pip pop in together: Pip has built the
   Zip-Zap from spare rocket parts and gives it to you, then Hazel gives seeds and her farming tutorial
-  teaches it (zap the soil, plant, zap the seeds with water, harvest, ship). It works by what it points
+  teaches it (zap the soil, plant, zap the seeds with water, harvest, ship); she asks first ("I know how to
+  play" skips the steps, and so does "Skip the farming steps" in the menu while they run). It works by what it points
   at, with [B]; a small icon floats over the target, every action has its own beam color and sound, the
   tip glows in that color and the gadget hums softly in the bean's hand (a slim wand about half the bean's
   height):
@@ -1146,6 +1190,8 @@ src/
                      aimLevel / aimAt / homeToward (scene.aimDefault), reduce flashing and shake (blinkOn,
                      invulnBlink, shakeScale), struggle() / overcame() (the offers), skipped parts
     assistmenu.js    the Help me play page, the buttons (remap) page and the offer card
+    tutorial.js      tutorials: StepTeacher (one action at a time, per player), the first card ("Show me
+                     how" / "I know how to play"), wantsTutorial / markTutorial / tipsOn (per profile)
     passport.js      the genre passport: genres, skills, every game's genre and skills, trials, the
                      suggested order (data tables, see GENRES.md); per-profile store, report() for games,
                      syncProgress() from saves, play time per day, suggestNext()
