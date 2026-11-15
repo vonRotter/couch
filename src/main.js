@@ -53,7 +53,7 @@ import { coopReward, nameList } from './core/coop.js';
 import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './core/voice.js';
 import * as assist from './core/assist.js';
 import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES, setCalm } from './core/assist.js';
-import { AssistMenu, OfferCard, schemeKeys, menuDevices } from './core/assistmenu.js';
+import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
 import { refreshOutlines } from './core/outline.js';
 import * as passport from './core/passport.js';
 import { tickPlayTime, flushPlayTime, logAssist } from './core/passport.js';
@@ -662,7 +662,7 @@ class Game {
     }
     // so does a tutorial's first card ("Show me how" / "I know how to play", core/tutorial.js)
     if (this.tutorialCard && !this.switching) {
-      this.tutorialCard.update(dt, menuDevices(this));
+      this.tutorialCard.update(dt);
       this.input.endFrame();
       return;
     }

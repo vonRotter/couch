@@ -324,8 +324,12 @@ the snowball fight's aim help, which starts at "a little" (its old built-in help
 - **Tutorials and tips:** the row in Help me play (per profile like the rest; guests and the shared island:
   the device default). On: each game's tutorial shows the first time; off: every tutorial and first-time tip
   is skipped; turning it on again brings back every tutorial that was done or skipped. Every tutorial is
-  skippable and never forced: its first card ("Show me how" / "I know how to play", read aloud; nobody
-  answering for 15 s shows it) or the pause menu's **Skip the tutorial** while one runs. Done or skipped, it
+  skippable and never forced: its first card ("Show me how" / "I know how to play", read aloud) or the pause
+  menu's **Skip the tutorial** while one runs. On the card every player who still needs the tutorial votes
+  with their own buttons (a mark with their colour and symbol); it closes when everyone has voted, or after
+  30 s (no vote counts as "Show me how"). If anyone wants it, it plays, with the steps only for those who
+  chose "Show me how"; the others are marked skipped (a guest's choice marks the device default only when no
+  guest wants it). Done or skipped, it
   is not shown again to that profile (`profile.assist.tutorials`, `tutSeen`, `tutSkipped`; old saves get
   "on, nothing seen"). Skipping never holds anything back. See *Onboarding* below for the list.
 - **Genres, skills and onboarding:** the genre passport's table of every game's genre, skills and trials is

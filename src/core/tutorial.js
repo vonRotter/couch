@@ -7,7 +7,8 @@
 //
 // Every tutorial can be skipped and is never forced:
 //   - the first card (TutorialCard, a main.js modal like the help offers) asks "Show me how" or
-//     "I know how to play" the first time a tutorial would start (with nobody answering it shows the tutorial);
+//     "I know how to play" the first time a tutorial would start; every player votes, and the steps go only to
+//     those who want them (with nobody answering for 30 s it shows the tutorial);
 //   - the pause menu has "Skip the tutorial" while one runs (the solo island's menu: "Skip the farming steps");
 //   - "Help me play" has "Tutorials and tips": off skips them all, turning it on again brings every one back.
 // Remembered per profile like the other assists (profile.assist.tutorials / tutSeen / tutSkipped, core/assist.js);
@@ -18,6 +19,7 @@
 import * as THREE from 'three';
 import { t, tFor, addStrings } from './i18n.js';
 import { esc } from './ui.js';
+import { symHtml } from './palette.js';
 import { say, voiceOn } from './voice.js';
 import { profileSettings, saveSettings } from './assist.js';
 
@@ -26,6 +28,9 @@ addStrings({
     'tut.ask': 'First time here? I can show you how to play, one thing at a time.',
     'tut.show': 'Show me how', 'tut.skip': 'I know how to play',
     'tut.hint': 'Stick up/down · [OK]: choose',
+    'tut.voteHint': 'Everyone: stick up/down, then [OK] to vote',
+    'tut.chipOk': '[OK]', 'tut.startsIn': 'starts in {n} s',
+    'tut.only': 'Step by step for {names}',
     'tut.skipped': 'Tutorial skipped. Turn tutorials back on in Help me play.',
     'tut.nice': 'Nice!',
     'pause.skiptut': 'Skip the tutorial',
@@ -35,6 +40,9 @@ addStrings({
     'tut.ask': 'Første gang her? Jeg kan vise deg hvordan du spiller, én ting om gangen.',
     'tut.show': 'Vis meg hvordan', 'tut.skip': 'Jeg kan spille dette',
     'tut.hint': 'Pinne opp/ned · [OK]: velg',
+    'tut.voteHint': 'Alle: pinne opp/ned, så [OK] for å stemme',
+    'tut.chipOk': '[OK]', 'tut.startsIn': 'starter om {n} s',
+    'tut.only': 'Steg for steg for {names}',
     'tut.skipped': 'Opplæringen er hoppet over. Slå den på igjen i Hjelp meg å spille.',
     'tut.nice': 'Bra!',
     'pause.skiptut': 'Hopp over opplæringen',
@@ -97,6 +105,9 @@ const CSS = `
 .panel.tut-panel { max-width: min(640px, 92vw); pointer-events: auto; }
 .tut-panel .tut-game { font-size: clamp(20px, 2.2vw, 32px); font-weight: 800; }
 .tut-panel .pause-item { cursor: pointer; }
+.tut-chips { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 3px; font-size: .62em; }
+.tut-chips:empty { display: none; }
+.tut-chip small { font-size: .8em; opacity: .75; }
 `;
 let cssDone = false;
 function addCss() {
@@ -134,7 +145,9 @@ export class StepTeacher {
     this.readT = 0;
     this.readKeys = new Set();
     // wantAll: the game already asked (the card said "Show me how"): teach everyone who has not done it
-    this.list = players.filter((p) => wantAll || playerWants(this.game, p, id)).map((p, i) => ({ p, steps: steps(p), i: 0, wait: first + i * 0.15, ok: 0, el: null, html: '' }));
+    // the card's vote (game.tutLearners): only the players who chose "Show me how" (or did not vote)
+    const only = this.game.tutLearners?.[id];
+    this.list = players.filter((p) => (only ? only.includes(p.deviceId) : wantAll || playerWants(this.game, p, id))).map((p, i) => ({ p, steps: steps(p), i: 0, wait: first + i * 0.15, ok: 0, el: null, html: '' }));
     this.solo = players.length === 1;
   }
 
@@ -255,10 +268,14 @@ export class StepTeacher {
 
 /**
  * "Show me how" or "I know how to play", the first time a tutorial would start. A main.js modal (the game waits
- * behind it, game.askTutorial()). Read aloud. Any joined player answers ([OK] picks, a gamepad's B never picks;
- * a click works too). With nobody answering for AUTO seconds it shows the tutorial (the gentle default).
+ * behind it, game.askTutorial()). Read aloud. Every player who still needs this tutorial votes with their own
+ * device (stick up/down, [OK]; a gamepad's B never picks; a click votes for the first player still to vote; [OK]
+ * again takes a vote back); a mark with their colour and symbol shows each choice. The card closes once everyone
+ * has voted, or after AUTO seconds (who has not voted counts as "Show me how"). If anyone wants it, it plays:
+ * the players who chose "I know how to play" get no steps (marked skipped: their profile, or the device default
+ * when no guest wants it), the others do (game.tutLearners[id], read by StepTeacher).
  */
-export const AUTO = 15;
+export const AUTO = 30;
 export class TutorialCard {
   constructor(game, { id, title, players, onAnswer }) {
     addCss();
@@ -267,45 +284,90 @@ export class TutorialCard {
     this.title = title;
     this.players = players;
     this.onAnswer = onAnswer;
-    this.index = 0;
     this.t = 0;
     this.items = ['show', 'skip'];
+    // who votes: the players who still need it and have a controller (at least one)
+    const need = players.filter((p) => playerWants(game, p, id));
+    this.voters = (need.length ? need : players).map((p) => ({ p, sel: 0, vote: null }));
     this.el = game.ui.panel('', 'panel pause offer-panel tut-panel');
     this.el.addEventListener('click', (ev) => {
       const i = [...this.el.querySelectorAll('.pause-item')].indexOf(ev.target.closest('.pause-item'));
-      if (i >= 0 && this.t > 0.4) this.answer(this.items[i]);
+      const v = this.voters.find((x) => !x.vote);
+      if (i >= 0 && v && this.t > 0.4) { v.sel = i; this.vote(v); }
     });
     this.render();
     game.audio.play('select');
     if (voiceOn()) say(`${title}. ${t('tut.ask')} ${t('tut.show')}? ${t('tut.skip')}?`, 'narrator');
   }
 
+  get solo() { return this.voters.length === 1; }
+
   render() {
     if (!this.el) return;
-    const items = this.items.map((k, i) => `<div class="pause-item ${i === this.index ? 'on' : ''}">${esc(t(`tut.${k}`))}</div>`).join('');
+    const items = this.items.map((k, i) => {
+      const chips = this.voters.filter((v) => (v.vote ? this.items.indexOf(v.vote) : v.sel) === i).map((v) => {
+        const p = v.p;
+        const mark = v.vote ? ' ✓' : ` <small>${esc(tFor(p, 'tut.chipOk'))}</small>`;
+        return `<span class="ball-pick tut-chip ${v.vote ? 'done' : ''}" style="--c:${p.css || '#8a45e0'}">${symHtml(p)}${esc(p.name || '')}${mark}</span>`;
+      }).join('');
+      const on = this.solo ? this.voters[0].sel === i : this.voters.some((v) => !v.vote && v.sel === i);
+      return `<div class="pause-item ${on ? 'on' : ''}">${esc(t(`tut.${k}`))}${this.solo ? '' : `<div class="tut-chips">${chips}</div>`}</div>`;
+    }).join('');
+    const left = Math.ceil(AUTO - this.t);
+    const foot = `${esc(t(this.solo ? 'tut.hint' : 'tut.voteHint'))}${left <= 10 ? ` · ${esc(t('tut.startsIn', { n: left }))}` : ''}`;
     this.el.innerHTML = `<div class="offer-icon">👋</div><div class="tut-game">${esc(this.title)}</div><div class="offer-q">${esc(t('tut.ask'))}</div>
-      <div class="pause-list">${items}</div><div class="results-footer">${esc(t('tut.hint'))}</div>`;
+      <div class="pause-list">${items}</div><div class="results-footer">${foot}</div>`;
   }
 
-  update(dt, devices) {
+  /** A player locks in (or takes back) their vote. */
+  vote(v) {
+    v.vote = v.vote ? null : this.items[v.sel];
+    this.game.audio.play(v.vote ? 'join' : 'select');
+    this.render();
+    if (this.voters.every((x) => x.vote)) this.doneT = 0.35; // (everyone has voted: close after a moment, so the last ✓ shows)
+  }
+
+  update(dt) {
     this.t += dt;
-    for (const d of devices) {
-      if (d.stepY) { this.index = (this.index - d.stepY + 2) % 2; this.game.audio.play('select'); this.render(); if (voiceOn()) say(t(`tut.${this.items[this.index]}`), 'narrator'); }
-      if (this.t < 0.6) continue;
-      if (d.okPressed) { this.answer(this.items[this.index]); return; }
+    if (this.doneT !== undefined) { this.doneT -= dt; if (this.doneT <= 0) this.close(); return; }
+    let changed = false;
+    for (const v of this.voters) {
+      const d = this.game.input.get(v.p.deviceId);
+      if (!d) continue;
+      if (d.stepY && !v.vote) {
+        v.sel = (v.sel - d.stepY + 2) % 2;
+        changed = true;
+        this.game.audio.play('select');
+        if (voiceOn()) say(this.solo ? t(`tut.${this.items[v.sel]}`) : `${v.p.name}: ${t(`tut.${this.items[v.sel]}`)}`, 'narrator');
+      }
+      if (this.t >= 0.6 && d.okPressed) { this.vote(v); if (this.doneT !== undefined) return; }
     }
-    if (this.t > AUTO) this.answer('show');
+    if (this.t > AUTO) { this.close(); return; }
+    const sec = Math.ceil(AUTO - this.t);
+    if (changed || (sec <= 10 && sec !== this.lastSec)) { this.lastSec = sec; this.render(); }
   }
 
-  answer(k) {
+  /** Count the votes (nobody's vote: "Show me how"), mark the skippers and answer the game. */
+  close() {
     if (!this.el) return;
     this.el.remove();
     this.el = null;
-    this.game.audio.play(k === 'skip' ? 'select' : 'join');
-    if (k === 'skip') {
-      markTutorial(this.game, this.players, this.id, true);
-      this.game.ui.toast(t('tut.skipped'), 2600);
-    }
+    const learners = this.voters.filter((v) => v.vote !== 'skip').map((v) => v.p);
+    const skippers = this.voters.filter((v) => v.vote === 'skip').map((v) => v.p);
+    // a guest who skips marks the device default only when no guest wants it (guests share it)
+    const guestLearns = learners.some((p) => !p.profileId) && !this.game.solo?.profile;
+    const mark = skippers.filter((p) => p.profileId || this.game.solo?.profile || !guestLearns);
+    if (mark.length) markTutorial(this.game, mark, this.id, true);
+    (this.game.tutLearners ||= {})[this.id] = learners.map((p) => p.deviceId);
+    const k = learners.length ? 'show' : 'skip';
+    if (k === 'skip') this.game.ui.toast(t('tut.skipped'), 2600);
+    else if (skippers.length) this.game.ui.toast(t('tut.only', { names: learners.map((p) => p.name).join(', ') }), 2600);
     this.onAnswer?.(k);
+  }
+
+  /** (tests, old callers) everyone answers the same. */
+  answer(k) {
+    for (const v of this.voters) { v.vote = k; v.sel = this.items.indexOf(k); }
+    this.close();
   }
 }

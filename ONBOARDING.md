@@ -195,7 +195,9 @@ covered. Verdicts: **good** (one thing at a time already), **mixed** (a good sta
 ### Skipping tutorials
 
 Every tutorial or onboarding part can be skipped and is never forced (`core/tutorial.js`): its first card asks
-"Show me how" or "I know how to play" (read aloud; with no answer for 15 s it shows the tutorial), and the
+"Show me how" or "I know how to play" (read aloud). Every player who still needs it votes with their own
+buttons; it closes when everyone has voted or after 30 s (no vote counts as "Show me how"); if anyone wants it,
+it plays, with the steps only for those who chose "Show me how" (the others are marked skipped). And the
 pause menu has "Skip the tutorial" while one runs. Remembered per profile (`profile.assist.tutorials`,
 `tutSeen`, `tutSkipped`; guests and the shared island use the device default; old saves get "on, nothing
 seen"). **Turning them back on:** Help me play → "Tutorials and tips" (off skips them all; on again shows
