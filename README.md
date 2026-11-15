@@ -592,7 +592,8 @@ and C drops a pop bomb that breaks dirt and only bounces players. Collect gold a
 the lost puppy on your head to the exit for a team bonus. Hazards are soft: bouncy mushrooms, mud,
 sticky honey and rolling snowballs; a long fall only makes you dizzy. Stragglers float to the leader
 in a bubble, sparkles show the way after a while, and nobody is ever out. The first time, the buttons come
-one at a time above each bean (jump, rope, climb, bomb, hearts; skippable). Dangers: spikes, hot goo (icy water in the frost cave), crumbly floors, falling stalactites (they shake first), swooping bats, patrolling grumbles, pea plants and rolling boulders. Each player has 3 hearts; jumping on a bat or grumble makes it dizzy instead. At zero hearts you become a ghost who floats along with the others until the next depth, where you come back with 3 hearts. If everyone becomes a ghost, the depth restarts with a new layout.
+one at a time above each bean (jump, rope, climb, bomb, hearts; skippable). The entrance is a safe start: no
+snowball rolls at it, no stalactite hangs over it and bats roost out of swooping reach. Dangers: spikes, hot goo (icy water in the frost cave), crumbly floors, falling stalactites (they shake first), swooping bats, patrolling grumbles, pea plants and rolling boulders. Each player has 3 hearts; jumping on a bat or grumble makes it dizzy instead. At zero hearts you become a ghost who floats along with the others until the next depth, where you come back with 3 hearts. If everyone becomes a ghost, the depth restarts with a new layout.
 
 **Story** (co-op campaign, a place on the shared island: the golden book pad). A map of four floating lands
 (Sunny Meadow, Frosty Peaks, Castle Kitchen and Starry Space). Each land has three stages built from

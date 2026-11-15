@@ -137,7 +137,13 @@ covered. Verdicts: **good** (one thing at a time already), **mixed** (a good sta
   ledge that needs the rope, then a dirt wall that needs a bomb), each with a one-line prompt.
   **Fixed (step by step):** the card names only the goal; each player then gets one prompt above their bean
   (jump, throw a rope, climb it, a pop bomb, then the hearts), each moving on when they do it; the practice
-  rope and bomb are free. The first cave is still random (a fixed first room was not chosen).
+  rope and bomb are free. The first cave is still random (a fixed first room was not chosen). Checked for
+  the tutorial: a bean standing at the entrance doing the steps (wait, jump, rope, climb, bomb) for 35 s was hit
+  in 5 of 60 random caves (snowballs rolling at the entrance, a stalactite above it, a bat swooping from 6
+  tiles). Fixed with a safe start: no snowball within 9 columns and 3 rows of the entrance, no stalactite
+  above it, bats roost 8+ tiles away. After: 0 hits in 120 caves (1 player) and 60 (4 players); the rope at
+  the entrance always had room to climb (2+ tiles), the bomb never hurt or dropped anyone, and the jump needs
+  no ledge. Bots still clear all three depths.
 - **Pillow Keep Solo.** All at once: class pick, then the first dungeon tip lists attack, class move, skill and
   the hold menu. *Suggestion:* the first floor's tip
   names attack only; the class move when the first charger appears; the skill when the first skill point is
