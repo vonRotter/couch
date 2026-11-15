@@ -562,7 +562,8 @@ function decorate(lv, seen, players = 1) {
     const i = m.r * W + m.c;
     if (q.at(m.c, m.r) !== TL.EMPTY || nearDoor(m.c, m.r) || used.has(i)) continue;
     used.add(i);
-    if (m.kind === 'crate') { if (q.support(m.c, m.r)) lv.crates.push({ c: m.c, r: m.r }); } else if (m.kind === 'snow') lv.snowballs.push({ c: m.c, r: m.r });
+    // (a safe start: no snowball that would roll at someone standing at the entrance, see placeCritters)
+    if (m.kind === 'crate') { if (q.support(m.c, m.r)) lv.crates.push({ c: m.c, r: m.r }); } else if (m.kind === 'snow') { if (Math.abs(m.c - ent.c) > 9 || Math.abs(m.r - ent.r) > 3) lv.snowballs.push({ c: m.c, r: m.r }); }
     else lv.gems.push({ c: m.c, r: m.r, kind: m.kind });
   }
   // Spots on solid ground that players can reach.
@@ -627,6 +628,7 @@ function placeCritters(lv, seen, players, used, free, take) {
     if (lv.stalactites.length >= budget.stalactites) break;
     const c = i % W, r = Math.floor(i / W);
     if (!open(c, r) || !rock(c, r - 1) || !open(c, r + 1) || nearEnt(c, r, 3) || nearExit(c, r, 2)) continue;
+    if (Math.abs(c - ent.c) <= 3 && ent.r - r >= 0 && ent.r - r <= 10) continue; // (a safe start: none above the entrance)
     let ok = false;
     for (let k = 1; k <= 8; k++) {
       const tl = q.at(c, r + k);
@@ -641,7 +643,8 @@ function placeCritters(lv, seen, players, used, free, take) {
   for (const i of shuffled(cells.slice())) {
     if (lv.bats.length >= budget.bats) break;
     const c = i % W, r = Math.floor(i / W);
-    if (!rock(c, r - 1) || nearEnt(c, r, 5) || nearExit(c, r, 2)) continue;
+    // (a safe start: out of swooping reach (6) of the entrance, so the first moments and the tutorial are calm)
+    if (!rock(c, r - 1) || Math.hypot(c - ent.c, r - ent.r) < 8 || nearExit(c, r, 2)) continue;
     let roomy = true;
     for (let dr = 0; dr <= 2 && roomy; dr++) for (let dc = -1; dc <= 1; dc++) if (!q.pass(c + dc, r + dr) || HAZ[q.at(c + dc, r + dr)]) roomy = false;
     if (roomy && seenBelow(c, r + 1, 5) && far(i, lv.bats, 8)) lv.bats.push({ c, r });
