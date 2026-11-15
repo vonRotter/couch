@@ -414,6 +414,7 @@ export const WorldMixin = {
       return false;
     }
     this.removeItem(it);
+    this.teach?.did(this.player, 'pickup'); // (the tutorial, core/tutorial.js)
     this.hs.stats.found++;
     if (it.item.rarity >= 2) this.hs.stats.rares++;
     const delta = this.compareItemFor(it.item);

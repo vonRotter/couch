@@ -60,7 +60,7 @@ covered. Verdicts: **good** (one thing at a time already), **mixed** (a good sta
 | Grumble Guides | solo + co-op | good | one job per level |
 | Golden Bean campaign | solo + co-op | good | one new thing per level; solo players get the Knight-Builder's two jobs at once |
 | Crystal Caves | solo + co-op | good (fixed) | was: five actions and hearts on the card; now one button at a time (the first cave is still random) |
-| Pillow Keep Solo | solo | good (fixed) | was: four controls in the first tip; now one at a time for the input in use (the class pick stays first) |
+| Pillow Keep Solo | solo | good (fixed) | was: four controls in the first tip; now one at a time when each is useful, for the input in use (the class pick stays first) |
 | School House games | solo + co-op | good | one action (run or jump to the answer) and a level picker |
 | Bubble Buddies | co-op | mixed | blowing bubbles and popping trapped ones are both on the card; bouncing on bubbles is never taught |
 | Paint Party | co-op | mixed | walk-to-paint is perfect; dash and bomb arrive at once with grumble mud |
@@ -142,11 +142,12 @@ covered. Verdicts: **good** (one thing at a time already), **mixed** (a good sta
   the hold menu. *Suggestion:* the first floor's tip
   names attack only; the class move when the first charger appears; the skill when the first skill point is
   spent; potions when health first drops below half.
-  **Fixed (step by step):** on the first floor ever, one control at a time in a box above the HUD for the
-  input in use: gamepad or keys ([A] attack, [B] your move, hold [C] the menu, tap [C] your skill) or the
-  mouse once it is used (click a grumble, 1 or [B] your move, I the bag, keys 5-8 the belt). Each moves on
-  when it is used (the last one also after a while). Event-timed prompts (a charger, half health) were not
-  chosen: the steps come in order.
+  **Fixed (step by step, at the right moment):** one control at a time in a box above the HUD, each when it is
+  useful: attack when a grumble is near, the class move when a charger or a thrower is near, a red potion when
+  health first drops to half, picking up when an item first drops, the skill when one is first ready; for the
+  input in use (gamepad or keys, or the mouse once it is used). Each moves on when it is used (or after 20 s
+  shown). A step whose moment does not come on that floor carries over to later floors and visits until shown
+  (remembered per profile: `keepsolo.attack`, `.move`, `.potion`, `.item`, `.skill`).
 - **The School House.** One action per game (run or jump to the right answer) and a level picker. Good.
 
 ### Shared island (co-op)
@@ -209,7 +210,7 @@ every tutorial again). The parent page lists "Tutorials and tips: off" and how m
 | Sky Hop level 1's signs | the first card; the pause menu | nothing to give (the level is the same) |
 | Crystal Caves' step-by-step buttons | the first card; the pause menu | – |
 | Pillow Keep's step-by-step buttons | the first card (after the class picker); the pause menu | – |
-| Pillow Keep Solo's step-by-step controls | the first card (first floor); the pause menu | – |
+| Pillow Keep Solo's step-by-step controls (each at its moment) | the first card (first floor, asked once); the pause menu | – |
 | Bean Brigade's first-battle tips | [C] "I know how to play" on the first tip; the pause menu | the battle as before; the deploy explanation is skipped too |
 | Lighthouse Caves' welcome (Keeper Bram) | the first card on a new game | the intro is done (`flags.intro`), the keeper says where the sword is and goes to the lighthouse |
 | Pudding Island's hello and help line | the first card on a new game | Pip stands on the dock; nothing in the story waits for it |

@@ -118,7 +118,6 @@ export const HeroMixin = {
 
   /** Key 5-8 (or a click on the belt): use the bottom potion or scroll of that column. */
   useBelt(col) {
-    this.teach?.did(this.player, 'belt'); // (the tutorial)
     const it = this.hs.belt[col];
     if (!it) { this.game.audio.play('bump'); return false; }
     const r = this.useConsumable(it);
@@ -162,6 +161,7 @@ export const HeroMixin = {
         this.game.audio.play('star');
         this.puffs.burst(new THREE.Vector3(e.x, 1, e.z), 0xff8fa8, { count: 10, size: 0.35, life: 0.6 });
         this.floater(t('ks.gulp'), new THREE.Vector3(e.x, 2.3, e.z), '#ff3b6b', 0.9, true);
+        this.teach?.did(this.player, 'potion'); // (the tutorial)
         return true;
       }
       case 'mp': {

@@ -167,7 +167,7 @@ starts that same battle again next time, with the grid power you had before it.
 a hero, each with its own save: the **Pillow Knight** (melee, lots of health; main stat Strength), the
 **Feather Archer** (arrows from afar; Dexterity) or the **Bubble Wizard** (bubbles that trap, spells,
 lots of mana; Magic). It plays with mouse and keyboard like Diablo (the gamepad still works). On the
-first floor ever (per profile) the controls come one at a time for the input in use (skippable; see
+first floors the controls come one at a time, each when it is useful, for the input in use (skippable; see
 *Onboarding (tutorials)*):
 
 | Mouse and keyboard | |
@@ -352,9 +352,13 @@ tokens, so they name what each player presses (their device, their remapping) an
   wrong button does not count), with a short "Nice!".
 - **Pillow Keep:** after the class picker, each player's class buttons one at a time: [A] (swing, dart,
   bubble, note), [B] (the special), then [C] (chests, doors, waking friends).
-- **Pillow Keep Solo:** on the first floor ever (per profile), one control at a time in a box above the HUD,
-  for the input in use: gamepad or keys ([A] attack, [B] your move, hold [C] the menu, tap [C] your skill) or
-  the mouse once it is used (click a grumble, 1 or [B] your move, I the bag, keys 5-8 the belt).
+- **Pillow Keep Solo:** from the first floor (per profile), one control at a time in a box above the HUD,
+  each when it is useful: attack when a grumble is near, your move ([B]; the knight holds it to block) when a
+  charger or a thrower is near, a red potion when health first drops to half, picking up when an item first
+  drops, your skill when one is first ready. The text is for the input in use: gamepad or keys (hold [C] for
+  potions and skills, tap [C] picks up) or the mouse once it is used (click, 1 or [B], key 5, I). A step whose
+  moment does not come waits for a later floor or visit (remembered per profile); shown for 20 s without being
+  used, it counts as shown.
 - **Skipping, everywhere:** the solo island's farming steps (Aunt Hazel asks after her welcome; the menu has
   "Skip the farming steps"; skipping goes straight to step 8, which the story, Pip's camera and decorating
   wait for; the Zip-Zap, the seeds and her radish job are given as before), Sky Hop level 1, Crystal Caves,

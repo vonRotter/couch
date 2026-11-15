@@ -13,7 +13,7 @@ import { FoeMixin } from './keep/foes.js';
 import './keepsolo/strings.js';
 import './keepsolo/strings2.js';
 import { loadKeepSolo, saveKeepSolo } from './keepsolo/save.js';
-import { CLASSES, MAX_LEVEL, B_MOVE, xpNeed, heroStats, armorCut, compareItem } from './keepsolo/classes.js';
+import { CLASSES, MAX_LEVEL, B_MOVE, xpNeed, heroStats, armorCut, compareItem, skillDef, manaCost } from './keepsolo/classes.js';
 import { foeHitAt, isDeep, deepDepth, ACT_FLOORS, ACTS, actOf, diffOffset } from './keepsolo/acts.js';
 import { WorldMixin, LOOT } from './keepsolo/world.js';
 import { TownMixin, TOWN_START, QuestPanel, GatePanel } from './keepsolo/town.js';
@@ -27,7 +27,7 @@ import { LightMixin } from './keepsolo/light.js';
 import { MonsterMixin } from './keepsolo/monsters.js';
 import { CharPanel, TreePanel } from './keepsolo/tree.js';
 import { invulnBlink, struggle, markSkipped } from '../core/assist.js';
-import { StepTeacher } from '../core/tutorial.js';
+import { StepTeacher, wantsTutorial, playerWants, markTutorial } from '../core/tutorial.js';
 import { Emotes } from '../core/emotes.js';
 
 // Pillow Keep Solo: a single-player Diablo-like for the solo island (the keep tower on the west
@@ -403,31 +403,46 @@ export class KeepSoloScene extends MiniGame {
     this.game.audio.playMusic(isDeep(g) ? 'keepDeep' : 'bubble');
     this.game.ui.banner(this.placeTitle(), this.placeSub(), 1900); // (floor names are not read aloud)
     // the first floor ever (this profile): the tutorial's first card, then the controls one at a time
-    if (!hs.tips.dungeon && !this.teach) this.later(2.0, () => this.askTeach());
+    if (!this.teach) this.later(2.0, () => this.askTeach());
+    hs.tips.dungeon = true;
     this.saveNow();
   }
 
   /**
-   * The tutorial (core/tutorial.js): the first card ("Show me how" / "I know how to play"), then one control
-   * at a time in a box above the HUD, for the input the hero is played with (the mouse once it is used, else
-   * the gamepad or the keyboard keys): attack, the class move, the menu or the bag, then a skill or the belt.
-   * Done or skipped it is not shown again for this profile (all three heroes).
+   * The tutorial (core/tutorial.js): the first card ("Show me how" / "I know how to play", asked once per
+   * profile), then one control at a time in a box above the HUD, each when it is useful (ONBOARDING.md), for
+   * the input the hero is played with (the mouse once it is used, else the gamepad or the keyboard keys):
+   * attack when a grumble is near, the class move when a charger or a thrower is near, a potion when health
+   * first drops to half, picking up when an item first drops, a skill when one is first ready. A step whose
+   * moment does not come on this floor waits for a later one (remembered per profile, also across visits);
+   * shown for a while without being used, it counts as shown. Done or skipped: not shown again (all heroes).
    */
   async askTeach() {
-    if (this.kind !== 'dungeon' || this.teach || this.hs.tips.dungeon) return;
-    this.hs.tips.dungeon = true; // (this hero's first floor: asked once; the profile remembers the answer)
-    this.dirty = true;
-    const ans = await this.game.askTutorial({ id: 'keepsolo', title: t('game.keepsolo'), players: [this.player] });
-    if (this.game.current !== this || ans !== 'show') return;
+    if (this.kind !== 'dungeon' || this.teach || !wantsTutorial(this.game, [this.player], 'keepsolo')) return;
+    // the card only the first time (steps left over from an earlier visit just go on)
+    if (playerWants(this.game, this.player, 'keepsolo.asked')) {
+      const ans = await this.game.askTutorial({ id: 'keepsolo', title: t('game.keepsolo'), players: [this.player] });
+      if (this.game.current !== this || ans !== 'show' || this.teach) return;
+      markTutorial(this.game, [this.player], 'keepsolo.asked');
+    }
+    const e = this.hero;
     const mouse = () => !!this.mouse?.used && !this.isPad();
     const move = { knight: 'block', archer: 'roll', wizard: 'hop' }[this.cls] || 'roll';
+    const live = () => this.kind === 'dungeon' && e.state === 'walk' && !this.moving;
+    const foeNear = (kinds, r) => this.grumbles.some((g) => !g.dead && (!kinds || kinds.includes(g.kind)) && Math.hypot(g.x - e.x, g.z - e.z) < r);
+    const skillReady = () => Object.entries(this.hs.ranks).some(([id, r]) => {
+      const def = skillDef(this.cls, id);
+      return r > 0 && def && id !== B_MOVE[this.cls] && def.kind !== 'passive' && def.kind !== 'hold' && e.mana >= manaCost(def, r) && this.skillCd(e, id) <= 0;
+    });
+    const T = 20; // shown this long without being used: it counts as shown
     this.teach = new StepTeacher(this, {
-      id: 'keepsolo', players: [this.player], wantAll: true,
+      id: 'keepsolo', players: [this.player], wantAll: true, anyOrder: true,
       steps: () => [
-        { key: () => (mouse() ? 'ks.step.attackMouse' : 'ks.step.attack'), on: 'attack' },
-        { key: () => (mouse() ? `ks.step.${move}Mouse` : `ks.step.${move}`), on: 'move' },
-        { key: () => (mouse() ? 'ks.step.bagMouse' : 'ks.step.menu'), on: ['menu', 'bag', 'tree'] },
-        { key: () => (mouse() ? 'ks.step.beltMouse' : 'ks.step.skill'), on: ['tapc', 'skill', 'belt'], time: 12 },
+        { id: 'attack', key: () => (mouse() ? 'ks.step.attackMouse' : 'ks.step.attack'), on: 'attack', time: T, when: () => live() && foeNear(null, 9) },
+        { id: 'move', key: () => (mouse() ? `ks.step.${move}Mouse` : `ks.step.${move}`), on: 'move', time: T, when: () => live() && foeNear(['charger', 'thrower'], 9) },
+        { id: 'potion', key: () => (mouse() ? 'ks.step.potionMouse' : 'ks.step.potion'), on: ['potion'], time: T, when: () => live() && e.hp <= e.st.maxHp * 0.5 },
+        { id: 'item', key: () => (mouse() ? 'ks.step.itemMouse' : 'ks.step.item'), on: ['pickup', 'bag'], time: T, when: () => live() && this.items.some((it) => !it.taken && it.kind === 'gear') },
+        { id: 'skill', key: () => (mouse() ? 'ks.step.skillMouse' : 'ks.step.skill'), on: ['skill'], time: T, when: () => live() && skillReady() },
       ],
     });
   }

@@ -124,16 +124,20 @@ const _v = new THREE.Vector3();
 
 /**
  * Teach a game's controls step by step, per player. scene: the game; id: the tutorial id (for skipping);
- * players: who learns (each only if they still want this tutorial); steps(p): that player's steps, each
- * { key, vars?, on: 'a' | 'rope' | ..., time? } where `on` is the event that moves it on (the game calls
- * did(p, on) when the player does it) and `time` makes an info step move on by itself after that many
- * seconds. text: a step's key can also be a function (p) => key, for input that changes while playing.
- * where(p): a world point to show that player's prompt at (above the bean); without it one box at the
- * bottom of the screen (solo games). onDone(p): an optional hook when a player finished. wantAll: teach
- * every player given (the game asked already) instead of only those who still want this tutorial.
+ * players: who learns (the card's vote, game.tutLearners, else each player who still wants this tutorial);
+ * steps(p): that player's steps, each { key, vars?, on, time?, when?, id? }:
+ *   key   the text key, or a function (p) => key (input that changes while playing: mouse or gamepad);
+ *   on    the event (or a list) that moves it on: the game calls did(p, on) when the player does it;
+ *   time  an info step moves on by itself after being shown that many seconds;
+ *   when  (p) => true once the step is useful (a charger in sight, health at half...): until then it waits;
+ *   id    a step remembered on its own (`${id}.${step.id}` in tutSeen): a step whose moment never came
+ *         carries over to the next time (the next floor, the next visit) until it has been shown and done.
+ * ordered (default): one after the other; anyOrder: whichever step's moment comes first (one at a time).
+ * where(p): a world point for that player's prompt (above the bean); without it one box at the bottom of the
+ * screen (solo games). onDone(p): an optional hook when a player finished. wantAll: teach every player given.
  */
 export class StepTeacher {
-  constructor(scene, { id, players, steps, where = null, onDone = null, first = 0.8, pause = 1.1, wantAll = false }) {
+  constructor(scene, { id, players, steps, where = null, onDone = null, first = 0.8, pause = 1.1, wantAll = false, anyOrder = false }) {
     addCss();
     this.scene = scene;
     this.game = scene.game;
@@ -141,31 +145,37 @@ export class StepTeacher {
     this.where = where;
     this.onDone = onDone;
     this.pause = pause;
+    this.anyOrder = anyOrder;
     this.readQueue = [];
     this.readT = 0;
     this.readKeys = new Set();
-    // wantAll: the game already asked (the card said "Show me how"): teach everyone who has not done it
     // the card's vote (game.tutLearners): only the players who chose "Show me how" (or did not vote)
     const only = this.game.tutLearners?.[id];
-    this.list = players.filter((p) => (only ? only.includes(p.deviceId) : wantAll || playerWants(this.game, p, id))).map((p, i) => ({ p, steps: steps(p), i: 0, wait: first + i * 0.15, ok: 0, el: null, html: '' }));
+    this.list = players.filter((p) => (only ? only.includes(p.deviceId) : wantAll || playerWants(this.game, p, id))).map((p, i) => {
+      const all = steps(p);
+      // steps remembered on their own and already done are left out (they carried over and were shown)
+      const left = all.map((st, k) => k).filter((k) => !all[k].id || playerWants(this.game, p, `${id}.${all[k].id}`));
+      return { p, steps: all, left, total: all.length, cur: -1, wait: first + i * 0.15, ok: 0, el: null, html: '' };
+    });
     this.solo = players.length === 1;
+    for (const s of this.list) if (!s.left.length) this.finish(s);
   }
 
-  get active() { return this.list.some((s) => s.i < s.steps.length); }
+  get active() { return this.list.some((s) => s.left.length); }
 
   stateOf(p) { return this.list.find((s) => s.p === p) || null; }
 
   /** The player's current step (or null). */
   step(p) {
     const s = this.stateOf(p);
-    return s && s.i < s.steps.length && s.wait <= 0 && s.ok <= 0 ? s.steps[s.i] : null;
+    return s && s.cur >= 0 && s.ok <= 0 ? s.steps[s.cur] : null;
   }
 
   /** The player did something: returns true when it was what the shown step asked for (it moves on). */
   did(p, ev) {
     const s = this.stateOf(p);
-    if (!s || s.i >= s.steps.length || s.wait > 0 || s.ok > 0) return false;
-    const st = s.steps[s.i];
+    if (!s || s.cur < 0 || s.ok > 0) return false;
+    const st = s.steps[s.cur];
     if (st.on !== ev && !(Array.isArray(st.on) && st.on.includes(ev))) return false;
     s.ok = this.pause;
     this.game.audio.play('coin');
@@ -174,8 +184,8 @@ export class StepTeacher {
 
   /** Everyone skips what is left (the pause menu's "Skip the tutorial"). */
   skip() {
-    const left = this.list.filter((s) => s.i < s.steps.length).map((s) => s.p);
-    for (const s of this.list) { s.i = s.steps.length; this.hide(s); }
+    const left = this.list.filter((s) => s.left.length).map((s) => s.p);
+    for (const s of this.list) { s.left = []; s.cur = -1; this.hide(s); }
     if (left.length) markTutorial(this.game, left, this.id, true);
   }
 
@@ -184,21 +194,39 @@ export class StepTeacher {
     return tFor(s.p, key, st.vars);
   }
 
+  /** The next step to show now: the first one left (ordered), or the first whose moment has come. */
+  pick(s) {
+    const ready = (k) => !s.steps[k].when || s.steps[k].when(s.p);
+    if (!this.anyOrder) return s.left.length && ready(s.left[0]) ? s.left[0] : -1;
+    return s.left.find(ready) ?? -1;
+  }
+
+  finish(s) {
+    if (s.finished) return;
+    s.finished = true;
+    this.hide(s);
+    markTutorial(this.game, [s.p], this.id);
+    this.onDone?.(s.p);
+  }
+
   update(dt) {
     for (const s of this.list) {
-      if (s.i >= s.steps.length) continue;
-      if (s.ok > 0) {
+      if (!s.left.length) continue;
+      if (s.cur < 0) {
+        if (s.wait > 0) s.wait -= dt;
+        if (s.wait <= 0 && dt > 0) { const k = this.pick(s); if (k >= 0) { s.cur = k; this.shown(s); } }
+      } else if (s.ok > 0) {
         s.ok -= dt;
         if (s.ok <= 0) {
-          s.i++;
+          const st = s.steps[s.cur];
+          if (st.id) markTutorial(this.game, [s.p], `${this.id}.${st.id}`);
+          s.left = s.left.filter((k) => k !== s.cur);
+          s.cur = -1;
           s.wait = 0.25;
-          if (s.i >= s.steps.length) { this.hide(s); markTutorial(this.game, [s.p], this.id); this.onDone?.(s.p); continue; }
+          if (!s.left.length) { this.finish(s); continue; }
         }
-      } else if (s.wait > 0) {
-        s.wait -= dt;
-        if (s.wait <= 0) this.shown(s);
       } else {
-        const st = s.steps[s.i];
+        const st = s.steps[s.cur];
         if (st.time && (s.shownT = (s.shownT || 0) + dt) >= st.time) { s.ok = 0.01; s.shownT = 0; }
       }
       this.render(s);
@@ -214,7 +242,7 @@ export class StepTeacher {
 
   /** A new step appears: read it aloud (once per text in a game with several players). */
   shown(s) {
-    const st = s.steps[s.i];
+    const st = s.steps[s.cur];
     s.shownT = 0;
     const key = typeof st.key === 'function' ? st.key(s.p) : st.key;
     if (!voiceOn()) return;
@@ -225,17 +253,17 @@ export class StepTeacher {
   }
 
   render(s) {
-    const st = s.steps[s.i];
-    const visible = st && (s.wait <= 0 || s.ok > 0) && this.scene.state !== 'results' && !this.hidden; // (hidden: the game has a panel open)
+    const st = s.cur >= 0 ? s.steps[s.cur] : null;
+    const visible = st && this.scene.state !== 'results' && !this.hidden; // (hidden: the game has a panel open)
     if (!visible) { if (s.el) s.el.style.display = 'none'; return; }
     if (!s.el) {
       s.el = document.createElement('div');
       s.el.className = this.where ? 'teach-tip' : 'teach-tip teach-box';
       s.el.style.setProperty('--c', s.p?.css || '#8a45e0');
-      (this.where ? this.game.ui.labels : this.game.ui.root).appendChild(s.el);
+      this.game.ui.labels.appendChild(s.el);
     }
     const ok = s.ok > 0;
-    const n = this.list.length > 1 || s.steps.length < 2 ? '' : `<b class="tt-n">${s.i + 1}/${s.steps.length}</b>`;
+    const n = this.list.length > 1 || s.total < 2 || this.anyOrder ? '' : `<b class="tt-n">${s.total - s.left.length + 1}/${s.total}</b>`;
     const html = ok ? `✓ ${esc(t('tut.nice'))}` : `${n}${esc(this.textOf(s, st))}`;
     if (html !== s.html) { s.el.innerHTML = html; s.html = html; s.el.classList.toggle('ok', ok); }
     if (this.where) {
