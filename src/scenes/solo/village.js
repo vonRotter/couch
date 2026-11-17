@@ -32,8 +32,14 @@ const PROJECTS = {
   garden: { who: 'hazel', x: -8, z: 12 },
   lookout: { who: 'pip', x: 36, z: -22 },
   bandstand: { who: 'rosa', x: -4, z: 30 },
+  // later, slowly (about one every three weeks once the first four are done): the island keeps changing for months
+  birdhide: { who: 'hoot', x: -16, z: -24 }, // a bird-watching hut on the hill above your cottage (north-west)
+  windmill: { who: 'hazel', x: 22, z: -30 }, // a little windmill under the north cliffs
+  course: { who: 'coach', x: 46, z: 18 }, // Coach Bo's obstacle course below the mech garage (east)
+  boatshed: { who: 'grumbleton', x: 26, z: 32 }, // a boat shed by the south beach
 };
-const PROJ_ORDER = ['gazebo', 'garden', 'lookout', 'bandstand'];
+const PROJ_ORDER = ['gazebo', 'garden', 'lookout', 'bandstand', 'birdhide', 'windmill', 'course', 'boatshed'];
+const PROJ_GAP = (n) => (n < 4 ? 3 : 21); // days between one project and the next (slowly after the first four)
 const STAGE_DAYS = [0, 2, 4, 6];
 const DRAMAS = {
   rivalry: { cast: ['pip', 'grumbleton'], at: { x: 2.4, z: 41.6 }, icon: '🎣' },
@@ -109,7 +115,7 @@ export class Village {
     if (V.proj) {
       const k = this.stageOf(V.proj, di);
       if (k !== V.proj.stage) { V.proj.stage = k; V.proj.news = di; }
-      if (k >= 3) { V.built.push(V.proj.id); V.doneNews = { id: V.proj.id, di }; V.proj = null; V.nextProj = di + 3; }
+      if (k >= 3) { V.built.push(V.proj.id); V.doneNews = { id: V.proj.id, di }; V.proj = null; V.nextProj = di + PROJ_GAP(V.projN); }
     }
     if (!V.proj && S.intro && di >= V.nextProj && V.projN < PROJ_ORDER.length) {
       V.proj = { id: PROJ_ORDER[V.projN], start: di, stage: 0, help: false, asked: false, news: di };
@@ -572,6 +578,8 @@ export class Village {
     this.updateChat(dt);
     this.updateClimax();
     const V = this.S.village, P = this.host.player;
+    const mill = this.props.get('windmill');
+    if (mill?.visible && mill.userData.sails) mill.userData.sails.rotation.z += dt * 0.6;
     if (V?.proj && P) {
       const Q = PROJECTS[V.proj.id], n = this.host.npc(Q.who);
       if (n && n.spotName === 'v:proj' && !n.route.length && !n.talking && Math.hypot(n.x - Q.x - 2.2, n.z - Q.z - 1.4) < 0.5) {
@@ -615,6 +623,35 @@ function makeProject(id) {
     for (let i = 0; i < 10; i++) { const x = -1.0 + (i % 5) * 0.5, z = -0.5 + Math.floor(i / 5) * 0.9; stages[2].add(mesh(cyl(0.02, 0.02, 0.3, 4), 0x5aa02c, x, 0.18, z, false), mesh(sph(0.07, 6, 4), 0x7ac943, x, 0.34, z, false)); }
     for (let i = 0; i < 10; i++) { const x = -1.0 + (i % 5) * 0.5, z = -0.5 + Math.floor(i / 5) * 0.9; stages[3].add(mesh(sph(0.14, 8, 6), [0xff7eb6, 0xffd23f, 0xc9a8ff, 0xff9f40][i % 4], x, 0.42, z, false)); }
     stages[3].add(mesh(box(1.0, 0.1, 0.35), 0xc68a52, 2.0, 0.45, 1.6), mesh(box(0.08, 1.4, 0.08), 0x8a5a32, -2.0, 0.7, -1.6), mesh(box(0.35, 0.35, 0.35), 0xff9f40, -2.0, 1.5, -1.6));
+  } else if (id === 'birdhide') {
+    for (const [x, z] of [[-0.7, -0.6], [0.7, -0.6], [-0.7, 0.6], [0.7, 0.6]]) stages[1].add(mesh(box(0.12, 1.0, 0.12), 0x8a5a32, x, 0.5, z));
+    stages[2].add(mesh(box(1.7, 0.1, 1.5), 0xc68a52, 0, 1.05, 0), mesh(box(1.7, 0.9, 0.08), 0x7a8a4a, 0, 1.55, -0.72), mesh(box(0.08, 0.9, 1.5), 0x7a8a4a, -0.82, 1.55, 0), mesh(box(0.08, 0.9, 1.5), 0x7a8a4a, 0.82, 1.55, 0), mesh(box(1.7, 0.45, 0.08), 0x7a8a4a, 0, 1.33, 0.72));
+    const roof = mesh(box(2.0, 0.08, 1.8), 0x5a7a2a, 0, 2.1, 0);
+    roof.rotation.x = -0.15;
+    stages[3].add(roof, mesh(box(0.08, 0.6, 0.08), 0x8a5a32, 1.1, 1.3, 0.8), mesh(box(0.3, 0.3, 0.3), 0xffd23f, 1.1, 1.75, 0.8));
+    for (let i = 0; i < 4; i++) stages[3].add(mesh(box(0.1, 0.1 + i * 0.03, 0.4), 0xc68a52, -1.0 + i * 0.12, 0.05 + i * 0.25, 1.1)); // a little ladder
+  } else if (id === 'windmill') {
+    stages[1].add(mesh(cyl(0.95, 1.05, 0.6, 12), 0xc9c3d6, 0, 0.3, 0));
+    stages[2].add(mesh(cyl(0.7, 0.95, 2.4, 12), 0xf3ead2, 0, 1.8, 0), mesh(box(0.5, 0.8, 0.06), 0x8a5a32, 0, 0.75, 0.93));
+    const cap = mesh(cone(0.85, 0.9, 12), 0xd9583a, 0, 3.45, 0);
+    const sails = new THREE.Group();
+    sails.position.set(0, 3.0, 0.82);
+    for (let i = 0; i < 4; i++) { const arm = new THREE.Group(); arm.rotation.z = (i / 4) * Math.PI * 2; arm.add(mesh(box(0.08, 1.6, 0.04), 0x8a5a32, 0, 0.8, 0, false), mesh(box(0.42, 1.2, 0.02), 0xfff6e0, 0.24, 0.95, 0, false)); sails.add(arm); }
+    stages[3].add(cap, sails);
+    g.userData.sails = sails;
+  } else if (id === 'course') {
+    const beam = mesh(box(2.4, 0.12, 0.25), 0xc68a52, 0, 0.45, -0.9);
+    stages[1].add(beam, mesh(box(0.12, 0.4, 0.12), 0x8a5a32, -1.0, 0.2, -0.9), mesh(box(0.12, 0.4, 0.12), 0x8a5a32, 1.0, 0.2, -0.9));
+    for (const x of [-0.9, 0, 0.9]) stages[2].add(mesh(box(0.08, 0.5, 0.08), 0xffffff, x - 0.3, 0.25, 0.2), mesh(box(0.08, 0.5, 0.08), 0xffffff, x + 0.3, 0.25, 0.2), mesh(box(0.7, 0.08, 0.06), 0xff5d73, x, 0.48, 0.2));
+    for (const x of [-0.7, 0, 0.7]) { const tire = mesh(cyl(0.3, 0.3, 0.16, 12), 0x2b2340, x, 0.08, 1.1); stages[3].add(tire); }
+    stages[3].add(mesh(box(0.05, 1.4, 0.05), 0x5a5a6a, 1.5, 0.7, 1.1), mesh(box(0.4, 0.26, 0.03), 0xe07a10, 1.7, 1.25, 1.1), mesh(box(2.6, 0.02, 0.1), 0xffffff, 0, 0.02, 1.6, false));
+  } else if (id === 'boatshed') {
+    for (const [x, z] of [[-1.1, -0.8], [1.1, -0.8], [-1.1, 0.8], [1.1, 0.8]]) stages[1].add(mesh(box(0.14, 1.8, 0.14), 0x8a5a32, x, 0.9, z));
+    stages[2].add(mesh(box(2.3, 1.5, 0.08), 0x6b9ac4, 0, 0.9, -0.85), mesh(box(0.08, 1.5, 1.7), 0x6b9ac4, -1.15, 0.9, 0), mesh(box(0.08, 1.5, 1.7), 0x6b9ac4, 1.15, 0.9, 0));
+    const r1 = mesh(box(2.5, 0.08, 1.1), 0xd9583a, 0, 2.05, -0.45), r2 = mesh(box(2.5, 0.08, 1.1), 0xd9583a, 0, 2.05, 0.45);
+    r1.rotation.x = 0.45; r2.rotation.x = -0.45;
+    const boat = mesh(box(1.6, 0.3, 0.6), 0xffffff, 0, 0.2, 0.4);
+    stages[3].add(r1, r2, boat, mesh(box(0.05, 0.05, 1.2), 0xc68a52, 0.9, 0.5, 1.1, false));
   } else {
     for (const [x, z] of [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]]) stages[1].add(mesh(box(0.14, 2.4, 0.14), 0x9a94b2, x, 1.2, z));
     stages[2].add(mesh(box(2.0, 0.14, 2.0), 0xc68a52, 0, 2.45, 0));
