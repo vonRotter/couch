@@ -433,6 +433,7 @@ export class Hops {
     const first = old == null;
     const best = first || time < old;
     if (best) S.hops.best[r.id] = time;
+    if (best && !first) host.village?.note('hopRecord', { trail: `@hop.trail.${r.id}` }); // a villager heard about it
     host.confetti.burst(new THREE.Vector3(P.x, P.fy + 1.4, P.z), 0, { count: 40, speed: 6, up: 5, life: 1.3, gravity: -6, colors: [0xffd23f, 0xff5d73, 0x3ddc97, 0x4cc9f0] });
     host.game.audio.play('fanfare');
     const lines = [t('hop.t.time', { name: t(`hop.trail.${r.id}`), time: fmtTime(time) })];

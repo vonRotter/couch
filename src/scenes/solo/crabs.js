@@ -293,6 +293,7 @@ export class CrabCare {
     if (o.bubble) o.bubble.visible = false;
     host.game.audio.play('rescue');
     if (npcState(this.S, 'shelby').met) host.addPts('shelby', 2); // Shelby looks after the crabs
+    host.village?.note('crab'); // someone saw you help it (village.js)
     if (r.museum) host.later(2.0, () => { this.sayT('crab.t.museum', { item: t(`isl.i.${r.museum}`) }); host.museum?.checkMilestones(); });
     if (r.friend) host.later(r.museum ? 4.4 : 2.0, () => this.sayT('crab.t.friend', { name: this.friendName(r.friend) }));
     this.applyLevel(true);

@@ -1154,6 +1154,32 @@ only a few a day, every reaction to you said once by one villager, and one tomor
   moonbell, a sunburst daisy or a star lily (a bouquet and a seed or an acorn); a **letter from Marlo or
   Skye** says on which day they come, and they do (`surpriseOn` already knows). The menu shows a
   **Tomorrow:** line under its title, and walking into the cottage in the evening says it once.
+- **Villagers with their own lives** (`village.js`, strings in `strings14.js`). Their schedules, homes,
+  hearts and voices stay as they were; on top of that:
+  - **Conversations:** one to three a day, in a morning, afternoon or evening slot (by date), one at a time
+    and always near you: one villager walks over to another, they face each other and talk in speech
+    bubbles (a 💬 from afar). Walk up (7 m) and the bubbles show the words, each line said in the speaker's
+    own voice type (babble works too). A conversation you have heard does not come back for four weeks:
+    24 everyday topics (gulls stealing sandwiches, a letter to the moon, a flying-pancake dream...) and news
+    topics (rain or snow, tomorrow's festival or birthday, Marlo or Skye in town, a storm, fog or a rainbow,
+    the drama or the project going on). No conversations on festival days (the festival is the day's thing).
+  - **Reactions:** things you did are noticed once, by one villager (the first you talk to who would know;
+    each kind at most once a week): standing on the game hall roof, a new hop trail record, a crab you
+    helped, a new trophy, a new kind of fish, a big harvest (10 crops in a day).
+  - **Running dramas**, one at a time with five quiet days between: **Pip and Grumbleton's fishing contest**
+    (each asks whose side you are on; every fish you catch until the weigh-in counts for that side, the
+    chalk board at the pier shows the score), **Aunt Hazel's prize pumpkin** by her cottage (water it, once
+    a day, with [B]: it grows, and the ribbon depends on it), **Rosa's secret cake** (she asks what goes in
+    it: bring a strawberry or a carrot, or let her choose). Each has a start (a rumor on the Today board, the
+    villagers' "!"), a middle two days later and a **big moment** on the first free day from the fourth day on
+    (no festival, surprise or rare event that day): the cast waits at the place 10-18 and it plays out when
+    you walk up (rewards and hearts if you took part). Missed it? The next day's board says how it ended.
+  - **Week-long projects**, one at a time, in different corners: **Keeper Bram's gazebo** (south-east road),
+    **Aunt Hazel's new garden** (west meadow), **Pip's star lookout** (north-east, by the pad) and **Rosa's
+    bandstand** (south-west, by the school). Four stages two days apart (a pile of planks and a sign, then
+    the frame, then more, then done; finished ones stay); the builder works on the site 13-15 (a soft
+    hammering when you are close); talk to them and 5 wood makes it a day faster. The Today board and the
+    tomorrow line tell the stages; the map marks the site.
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock

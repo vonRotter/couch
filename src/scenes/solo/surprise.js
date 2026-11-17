@@ -145,7 +145,8 @@ export class Surprises {
     // the news, once a day when it starts (read aloud)
     if ((merchant || balloon || bottle || meteor) && !D.told && this.host.mode === 'walk') {
       D.told = true;
-      this.host.later(1.4, () => this.news(`sur.news.${this.kind}`));
+      const kind = this.kind; // (the day may change before the toast)
+      this.host.later(1.4, () => this.news(`sur.news.${kind}`));
     }
   }
 
