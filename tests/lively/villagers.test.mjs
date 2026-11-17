@@ -158,8 +158,14 @@ await test('Coach Bo asks for wood while he builds his obstacle course (again an
   await setTime(page, D0 + 3 * 3600e3 + DAY);
   await sim(page, 1.5, 0.1);
   await closeBoard();
+  const nextDay = await ask();
+  assert(!nextDay.includes('vp.ask'), `next day (too soon): ${nextDay}`);
+  await dismiss(page, 6);
+  await setTime(page, D0 + 3 * 3600e3 + 3 * DAY);
+  await sim(page, 1.5, 0.1);
+  await closeBoard();
   const next = await ask();
-  assert(next.includes('vp.ask'), `next day: ${next}`);
+  assert(next.includes('vp.ask'), `three days later: ${next}`);
   await island(page, (I, S) => { S.inv.push({ id: 'wood', n: 5 }); I.dlg.choice = 0; });
   await dismiss(page, 4);
   assert(await island(page, (I, S) => S.village.proj.help), 'helped');

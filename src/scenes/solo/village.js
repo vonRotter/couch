@@ -41,6 +41,7 @@ const PROJECTS = {
 const PROJ_ORDER = ['gazebo', 'garden', 'lookout', 'bandstand', 'birdhide', 'windmill', 'course', 'boatshed'];
 const PROJ_GAP = (n) => (n < 4 ? 3 : 21); // days between one project and the next (slowly after the first four)
 const STAGE_DAYS = [0, 2, 4, 6];
+const ASK_EVERY = 3; // days between a builder's asks for wood after "Not now"
 const DRAMAS = {
   rivalry: { cast: ['pip', 'grumbleton'], at: { x: 2.4, z: 41.6 }, icon: '🎣' },
   pumpkin: { cast: ['hazel'], at: { x: 4.6, z: -23.0 }, icon: '🎃' },
@@ -257,10 +258,10 @@ export class Village {
       host.say(lines, last.choices ? undefined : done);
       return true;
     }
-    // the builder asks for wood (once a project)
+    // the builder asks for wood
     const P = V.proj;
-    // (once a day while it runs and nobody helped yet: "Not now" today, ask again another day)
-    if (P && PROJECTS[P.id].who === id && !P.help && P.askedDay !== di && P.stage < 3 && P.stage >= 0) {
+    // (while it runs and nobody helped yet; after "Not now" they ask again every third day, not daily)
+    if (P && PROJECTS[P.id].who === id && !P.help && (P.askedDay == null || di - P.askedDay >= ASK_EVERY) && P.stage < 3 && P.stage >= 0) {
       P.askedDay = di;
       host.say([{ who: id, key: 'vp.ask', vars: { thing: t(`vp.thing.${P.id}`) }, choices: ['vp.give', 'vp.later'], onChoice: (i) => {
         if (i !== 0) { host.say([{ who: id, key: 'vp.ok' }], done); return; }

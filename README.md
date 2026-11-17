@@ -1214,7 +1214,7 @@ three to four weeks; one project (eight over six months) and one hook at a time.
     garage: a balance beam, hurdles, tires and a flag) and **Grumbleton's boat shed** (the south beach). Four stages two days apart (a pile of planks and a sign, then
     the frame, then more, then done; finished ones stay); the builder works on the site 13-15 (a soft
     hammering when you are close); talk to them and 5 wood makes it a day faster (they ask
-    once a day until someone helps; Coach Bo asks in his first chat of the day). The Today board and the
+    every third day until someone helps; Coach Bo asks in his first chat of such a day). The Today board and the
     tomorrow line tell the stages; the map marks the site.
 - **Rare weather events** (`events.js`; `rareEventOn(date)` in `calendar.js`): once a week, on a Tuesday to
   Saturday with no festival and no daily surprise (so never two days in a row and never on top of another

@@ -140,8 +140,9 @@ await test('priority: the late play replaces that day\'s own surprise or rare ev
   assert(s.fest === p.e.what && !s.sur && !s.rare && count(s) === 1, JSON.stringify({ p, s }));
   assert(climax > p.late, `climax moved: ${climax} vs ${p.late}`);
   // the calendar is back to normal the next day, and other days were never changed
-  const next = await cal((C, d) => C.festivalOn(C.dayMs(d)), p.late);
-  assert(next === null, 'the late play only changes the island of this profile, that day');
+  // (the test may share the page's calendar module, where the late play is set for that day: read the calendar's own values)
+  const next = await cal((C, d) => ({ native: C.festivalNative(C.dayMs(d)), after: C.festivalOn(C.dayMs(d + 1)), afterNative: C.festivalNative(C.dayMs(d + 1)) }), p.late);
+  assert(next.native === null && next.after === next.afterNative, `the late play only changes the island of this profile, that day: ${JSON.stringify(next)}`);
 });
 
 await test('expiry: unplayed for three days, the lock ends with a gentle note', async () => {
