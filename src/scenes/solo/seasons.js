@@ -155,7 +155,7 @@ export class Seasons {
       if (dayRand(`letter:${today}:${id}`) > 0.35) continue;
       const k = dayRand(`letterk:${today}:${id}`) < 0.5 ? 1 : 2;
       const [gid, n] = LETTER_GIFTS[id][k - 1];
-      S.mail.push({ id: `f.${id}.${k}`, from: id, items: gid === 'coins' ? [] : [[gid, n]], coins: gid === 'coins' ? n : 0 });
+      S.mail.push({ id: `f.${id}.${k}`, day: today, from: id, items: gid === 'coins' ? [] : [[gid, n]], coins: gid === 'coins' ? n : 0 });
       sent++;
     }
     if (sent) { this.host.later(1.5, () => this.host.mailToast()); this.host.markDirty(); }

@@ -1131,6 +1131,30 @@ night match yours and crops grow while you are away.
   | Snowball fight | jump (over snowballs) | throw | keyboard: the menu |
   | Hide-and-seek | jump | look in a bush | keyboard: the menu |
 
+### A livelier island (each visit differs from the last)
+
+The solo island is the main game, so every real day should bring something new, but never too much of the
+same (the owner's budget): **at most one special world thing a day** (a festival, a daily surprise, a rare
+event or a drama's big moment), one week-long project at a time, one villager conversation at a time and
+only a few a day, every reaction to you said once by one villager, and one tomorrow hook at a time.
+`tests/lively/` checks these budgets over eight simulated weeks (see `tests/README.md`).
+
+- **The Today board** (`today.js`): the first time you walk about on a new real day a card shows up to
+  **three things that are new today**: a rumor (something coming: a festival or a birthday tomorrow, Marlo's
+  cart bells, a storm Grumbleton can feel in his knee), a visitor (Marlo, Skye, a ghost ship tonight) and
+  something that changed (a festival, a season's first day, a birthday, a drama or a project moving on, what a
+  storm washed ashore, the egg by your door wobbling). It only tells what really happens, so a quiet day
+  shows fewer things, never filler; the same text never comes back within three weeks (another wording, or
+  it is left out). Deterministic by date for the same save. [OK], [B] or [C] closes it (read aloud by the
+  narrator). The journal's **Tasks** tab starts with **Today** and tomorrow's line; things with a place
+  are marked on the map's Today glow.
+- **Tomorrow hooks** (one at a time, a few days apart): a **speckled egg** in a basket by your cottage
+  (Aunt Hazel left it) hatches the next day ([B] at the basket: a chick for the barn, or a duckling that
+  waddles off to the river and leaves a shell); a **mystery pot** opens the day after tomorrow into a
+  moonbell, a sunburst daisy or a star lily (a bouquet and a seed or an acorn); a **letter from Marlo or
+  Skye** says on which day they come, and they do (`surpriseOn` already knows). The menu shows a
+  **Tomorrow:** line under its title, and walking into the cottage in the evening says it once.
+
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock
 forward to the next 06:00, 18:00 and so on, skips hours, days or a week, or jumps to the next new season, festival or

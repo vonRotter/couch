@@ -69,10 +69,73 @@ export function festivalOn(ms = now()) {
   return null;
 }
 
-/** Rain on about one day in five, never on a festival day. */
-export function rainyOn(ms = now()) {
+/** The plain rain of a date (about one day in five, never on a festival day), before the rare events. */
+function baseRain(ms) {
   if (festivalOn(ms)) return false;
   return dayRand(`rain:${dayKey(ms)}`) < 0.2;
+}
+
+/** Rain on about one day in five, never on a festival day (a storm or a rainbow day is a rainy day too). */
+export function rainyOn(ms = now()) {
+  if (baseRain(ms)) return true;
+  const r = rareEventOn(ms);
+  return r === 'storm' || r === 'rainbow';
+}
+
+/**
+ * The daily surprise of a date (surprise.js shows them), or null: ~17% meteor shower (not on rainy days), 17%
+ * merchant, 15% balloon, 17% bottle. The owner's budget (one special thing a day): never on a festival day.
+ */
+export function surpriseOn(ms = now()) {
+  if (festivalOn(ms)) return null;
+  const r = dayRand(`surprise:${dayKey(ms)}`);
+  if (r < 0.17) return baseRain(ms) ? null : 'meteor';
+  if (r < 0.34) return 'merchant';
+  if (r < 0.49) return 'balloon';
+  if (r < 0.66) return 'bottle';
+  return null;
+}
+
+/** Noon of a day index (local calendar). */
+export const dayMs = (di) => new Date(1970, 0, 1 + di, 12).getTime();
+
+/**
+ * Rare weather events (events.js): a storm that washes treasure and stranded crabs ashore, fog that brings a
+ * ghost ship at night, a rainbow that ends at a dig spot. At most one a week (in about nine weeks in ten), on a
+ * Monday to Thursday that has no festival and no daily surprise (one special thing a day), so never two days in
+ * a row. Never the same kind two weeks running; no rainbows in winter (it snows).
+ */
+export function rareEventOn(ms = now()) {
+  const di = dayIndex(ms), w = Math.floor((di - 4) / 7);
+  return rareDayOfWeek(w) === di ? rareKind(w) : null;
+}
+
+const rareCache = new Map();
+/** The day index of week w's rare event, or null. */
+export function rareDayOfWeek(w) {
+  if (rareCache.has(w)) return rareCache.get(w);
+  let out = null;
+  if (dayRand(`rare:${w}`) < 0.9) {
+    const free = [];
+    for (let k = 0; k < 4; k++) { const d = w * 7 + 4 + k, t = dayMs(d); if (!festivalOn(t) && !surpriseOn(t)) free.push(d); }
+    if (free.length) out = free[Math.floor(dayRand(`rareday:${w}`) * free.length)];
+  }
+  rareCache.set(w, out);
+  return out;
+}
+
+const RARE_KINDS = ['storm', 'fog', 'rainbow'];
+/** The kind of week w's rare event: they take turns (never the same kind two weeks running); in winter a storm or fog. */
+export function rareKind(w) {
+  const k = RARE_KINDS[((w % 3) + 3) % 3];
+  if (seasonOf(dayMs(w * 7 + 4)) !== 'winter' || k !== 'rainbow') return k;
+  const prev = RARE_KINDS[(((w - 1) % 3) + 3) % 3];
+  return prev === 'storm' ? 'fog' : 'storm';
+}
+
+/** A day with no festival, no daily surprise and no rare event (a drama's big moment waits for one). */
+export function freeDay(ms = now()) {
+  return !festivalOn(ms) && !surpriseOn(ms) && !rareEventOn(ms);
 }
 
 /** The days of a month with their events, for the calendar board. */

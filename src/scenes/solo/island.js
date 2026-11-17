@@ -59,6 +59,7 @@ import { LightTop } from './lighttop.js';
 import { mesh, box, sph, makeDeco, makeBranch, makeSign } from './models.js';
 import { Hops } from './hops.js';
 import { Surprises } from './surprise.js';
+import { TodayBoard, rv } from './today.js';
 import { IslandGames } from './games.js';
 import { Play } from './play.js';
 import { SeeThrough } from './seethrough.js';
@@ -259,6 +260,7 @@ export class SoloIslandScene extends BaseScene {
     this.seasons = new Seasons(this);
     this.spawnNpcs();
     this.surprise = new Surprises(this); // daily surprises: meteor shower, merchant, balloon visitor, bottle map
+    this.todayBoard = new TodayBoard(this); // the Today board and the tomorrow hooks (today.js)
     this.games = new IslandGames(this); // skipping stones, kites, hide-and-seek, snowballs, leaf piles
     this.play = new Play(this); // villagers play: tag, waves, sunset and stars together, little tasks
     // emotes: [EMOTE] (Y / G) opens a wheel over the bean; villagers, animals and crab friends nearby react
@@ -443,6 +445,10 @@ export class SoloIslandScene extends BaseScene {
     this.play.tick(at);
     this.photo.check();
     this.story.tick(at);
+    this.todayBoard.tick(at); // (after the others: it tells what they did on a new day)
+    const ind = this.indoors;
+    if (ind && !this.wasIndoors) this.todayBoard.onEnterHome(); // the evening: what tomorrow brings
+    this.wasIndoors = ind;
     this.applySky(false);
     this.chooseLamps();
   }
@@ -843,7 +849,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map', 'school', 'pier', 'shelf'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map', 'school', 'pier', 'shelf', 'today'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   picture3d(key, make) {
@@ -922,6 +928,11 @@ export class SoloIslandScene extends BaseScene {
     const id = kinds.find((k) => !S.museum.got[k] && !owns(S, k) && !S.mail.some((m) => m.items?.[0]?.[0] === k)) || kinds[Math.floor(dayRand(`cave:${today}`) * 3)];
     S.mail.push({ id: 'cave', from: 'cave', items: [[id, 1]] });
     this.markDirty();
+  }
+
+  /** Today's things with a place, for the map (atlas.js): the Today board, the villagers' projects, rare events. */
+  mapToday() {
+    return [...this.todayBoard.mapItems(), ...(this.village?.mapItems?.() || []), ...(this.events?.mapItems?.() || [])];
   }
 
   markDirty() { this.dirty = true; }
@@ -1211,6 +1222,7 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.crabs.interactions(P, out, nm); // crabs to help, Crab Cove's sign and dance
     if (!out.b) this.hops.interactions(P, out, nm, false); // hop trails, chests, the lookout (hops.js)
     if (!out.b) this.surprise.interactions(P, out, nm); // the day's surprise (surprise.js)
+    if (!out.b) this.todayBoard.interactions(P, out, nm); // the egg basket or the mystery pot (today.js)
     if (!out.b) this.games.interactions(P, out, nm); // island mini-games (games.js)
     if (!out.b) this.play.interactions(P, out, nm); // villagers at play (play.js)
     // the Party Pier: the ferry to play together, and the badge board (ferry.js)
@@ -1806,14 +1818,14 @@ export class SoloIslandScene extends BaseScene {
     this.letterT = 0;
     const gifts = [...(r.items || []).map(([id, n]) => `<div>${icon(id)}${n > 1 ? `${n} ` : ''}${esc(itemName(id))}</div>`),
       ...(r.deco ? [`<div>${icon('deco')}${esc(t(`isl.d.${r.deco}`))}</div>`] : []), ...(r.coins ? [`<div>${icon('coin')}${r.coins}</div>`] : [])].join('') + coopBadgeGifts(r);
-    const body = t(`isl.mail.${r.id}`, { name: this.playerName, ...(r.games || r.badges ? coopMailVars(r) : {}) });
+    const body = t(`isl.mail.${r.id}`, { name: this.playerName, ...(r.games || r.badges ? coopMailVars(r) : {}), ...(rv(r.vars) || {}) });
     const card = r.id === 'postcard' ? this.photo.letterHtml(r) : '';
     this.hud.setPanel(`<h2>${esc(t(r.id === 'postcard' ? 'isl.photo.title' : 'isl.mail.title', { name: this.playerName }))}</h2>
       ${card}<div class="isl-letter">${esc(body)}<div class="from">${esc(t('isl.mail.from', { name: t(`isl.from.${r.from}`) }))}</div></div>
       <div class="isl-gifts">${gifts}</div><div class="isl-foot">${esc(tFor(this.player?.p, r.id === 'postcard' || !gifts ? 'isl.ok' : 'isl.mail.hint'))}</div>`);
     // a letter is read in its writer's voice (games' letters: the villager who runs that game)
     const from = r.from === 'lh' || r.from === 'cave' ? 'bram' : r.from === 'adv' ? 'grumbleton' : r.from === 'hop' ? 'pip' : r.from;
-    speak(body, NPCS[from] ? `isl.${from}` : 'narrator');
+    speak(body, NPCS[from] ? `isl.${from}` : from === 'merchant' || from === 'skye' ? `isl.${from}` : 'narrator');
     this.game.audio.play('select');
     const mb = this.map.mailbox.userData;
     mb.letter.visible = false;
@@ -1971,7 +1983,8 @@ export class SoloIslandScene extends BaseScene {
   renderMode() {
     if (!this.modeEl) return;
     const items = this.menuItems().map((k, i) => `<div class="pause-item ${i === this.modeIndex ? 'on' : ''}">${esc(this.menuLabel(k))}</div>`).join('');
-    this.modeEl.innerHTML = `<div class="results-title">${esc(t('isl.mn.title'))}</div>
+    const tm = this.todayBoard?.tomorrowLine();
+    this.modeEl.innerHTML = `<div class="results-title">${esc(t('isl.mn.title'))}</div>${tm ? `<div class="isl-tomorrow" style="text-align:center;opacity:.85;margin:-4px 0 8px">🌙 ${esc(t('td.tomorrow', { text: tm }))}</div>` : ''}
       <div class="pause-list">${items}</div><div class="results-footer">${esc(tFor(this.player?.p, 'isl.mn.hint'))}</div>`;
   }
 
@@ -2380,6 +2393,7 @@ export class SoloIslandScene extends BaseScene {
         case 'journal': this.journal.update(inp, dt); break; // Friends, Tasks, Calendar, Fish log, Museum
         case 'crabs': this.crabs.updatePicker(panel, dt); break;
         case 'hopgo': this.hops.updateCount(dt); break; // 3, 2, 1 before a hop trail
+        case 'today': this.todayBoard.updateBoard(panel); break; // the Today board (today.js)
         case 'map': break; // the treasure map from a bottle (surprise.js closes it)
         case 'game': this.games.updateMode(inp, dt); break; // a mini-game with its own controls (games.js)
         case 'school': this.school.update(panel, dt); break; // the school house's game picker (school.js)
@@ -2414,6 +2428,7 @@ export class SoloIslandScene extends BaseScene {
     this.crabs.update(dt);
     this.hops.update(dt);
     this.surprise.update(dt);
+    this.todayBoard.update(dt);
     this.games.update(dt);
     this.play.update(dt);
     this.zipzap.update(dt, ia);

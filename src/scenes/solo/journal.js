@@ -111,7 +111,7 @@ export class Journal {
   renderTasks(read) {
     const host = this.host;
     const list = host.allTasks();
-    host.hud.setPanel(`<h2>${esc(t('isl.jn.tasksTitle'))}</h2>
+    host.hud.setPanel(`${host.todayBoard?.journalHtml() || ''}<h2>${esc(t('isl.jn.tasksTitle'))}</h2>
       ${list.length ? `<ul class="isl-jtasks">${list.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>` : `<div class="isl-foot" style="opacity:1">${esc(t('isl.jn.noTasks'))}</div>`}`);
     const dot = (x) => (/[.!?…]$/.test(x.trim()) ? x : `${x}.`); // one sentence per task when read aloud
     if (read) speak(list.length ? [t('isl.jn.tasksSay'), ...list.map(dot)].join(' ') : t('isl.jn.noTasks'), 'narrator');

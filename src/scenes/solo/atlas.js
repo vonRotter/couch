@@ -328,6 +328,7 @@ export class IslandAtlas {
       if (S.unlocks.barn && R?.animals?.length && (R.nest > 0 || R.trough <= 0 || R.animals.some((a) => a.ready || a.petDay !== today))) {
         out.push({ key: 'animals', icon: '🐔', name: t('map.a.animals'), x: (PADDOCK.x0 + PADDOCK.x1) / 2, z: (PADDOCK.z0 + PADDOCK.z1) / 2, r: 5 });
       }
+      out.push(...(host.mapToday?.() || [])); // the Today board's things, projects, rare events (island.mapToday)
       if (S.mail?.length) out.push({ key: 'mail', icon: '📫', name: t('map.a.mail'), x: MAILBOX.x, z: MAILBOX.z });
       // leaf piles in autumn
       const G = S.games;

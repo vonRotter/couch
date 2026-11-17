@@ -3,7 +3,7 @@ import { t, tFor } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now, hourOf, give } from './save.js';
-import { dayKey, dayRand, rainyOn } from './calendar.js';
+import { dayKey, dayRand, surpriseOn } from './calendar.js';
 import { heightAt, SEA_Y, PLACES } from './map.js';
 import { makeMerchantCart, makeMerchant, makeVisitorBalloon, makeExplorer, makeBottle, makeDigX, makeStarBit, makeLostThing } from './models9.js';
 import { ITEMS } from './items.js';
@@ -14,15 +14,8 @@ import { ITEMS } from './items.js';
 // explorer (who lost her goggles on landing), and a bottle on the beach with a treasure map to a dig spot.
 // About two days in three have one. surpriseOn(ms) tells which (tests use it to find a date).
 
-/** The surprise of a date (or null): ~17% meteor shower (not on rainy days), 17% merchant, 15% balloon, 17% bottle. */
-export function surpriseOn(ms = now()) {
-  const r = dayRand(`surprise:${dayKey(ms)}`);
-  if (r < 0.17) return rainyOn(ms) ? null : 'meteor';
-  if (r < 0.34) return 'merchant';
-  if (r < 0.49) return 'balloon';
-  if (r < 0.66) return 'bottle';
-  return null;
-}
+/** The surprise of a date (or null): now in calendar.js (the day's budget: never on a festival or a rare event day). */
+export { surpriseOn };
 /** When each surprise is on (hours of the day). */
 export const SURPRISE_HOURS = { meteor: [20, 24], merchant: [9, 18], balloon: [10, 17], bottle: [6, 21] };
 
@@ -215,6 +208,7 @@ export class Surprises {
   }
 
   itemName(id) { return t(ITEMS[id] ? `isl.i.${id}` : `isl.d.${id}`); }
+  itemKey(id) { return ITEMS[id] ? `isl.i.${id}` : `isl.d.${id}`; }
 
   // the balloon visitor: hello, the lost goggles, the thank-you
   talkSkye() {
