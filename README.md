@@ -1208,6 +1208,15 @@ only a few a day, every reaction to you said once by one villager, and one tomor
   crickets on warm clear nights, rain or a soft snow hush, the café's murmur and clinks; indoors only a quarter
   comes through; the dive has an underwater hum with bubbles. The menu has **Island music** and **Island
   sounds** on/off (per profile, `S.sound`); **Sound** still mutes everything.
+- **Pip's robot helper, Bolt** (`robot.js`): once the greenhouse is fixed Pip writes that she is building a
+  helper; the next day Bolt (a small hover robot, robot voice type) stands on its charging pad by the greenhouse
+  and Pip pops over to show it when you come near (a short scene). Each day from 7 to 20, while you are on the
+  island, Bolt hovers **once** along a visible route: it waters the dry crops on the field and in the greenhouse
+  (ripe ones are left for you: **you still harvest**), takes the eggs from the nest (it keeps them in its basket:
+  [B] at Bolt hands them over) and, when the trough is low, tops it up with hay from the cottage chest; then it
+  goes back to its pad and charges quietly (a slow blink). [B] at Bolt: **Do the chores**, **Rest today** or
+  **Rest until I say**. Old saves have no `S.robot` until the greenhouse is fixed (a save with a fixed
+  greenhouse gets Pip's letter on its next visit).
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock

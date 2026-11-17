@@ -83,6 +83,7 @@ export const SPEAKERS = {
   'isl.visitor': 'friendly', // café guests who are not villagers
   'isl.merchant': { type: 'sleepy', pitch: 0.2, rate: 0.12, seed: 'marlo' }, // Marlo, the traveling merchant (surprise.js)
   'isl.skye': { type: 'cheerful', pitch: -0.15, seed: 'skye' }, // Skye, the balloon explorer (surprise.js)
+  'isl.robot': { type: 'robot', seed: 'bolt' }, // Bolt, Pip's robot helper (robot.js)
   'isl.wisp': { type: 'sleepy', pitch: 0.25, rate: -0.05, seed: 'wisp' }, // Captain Wisp, the friendly ghost on foggy nights (events.js)
   // Pudding Island (src/scenes/adventure*)
   'adv.pip': { type: 'child', pitch: -0.1 },

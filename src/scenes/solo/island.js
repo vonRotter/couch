@@ -64,6 +64,7 @@ import './strings14.js';
 import { Village } from './village.js';
 import { IslandEvents } from './events.js';
 import { musicFor, ambienceFor } from './soundscape.js';
+import { Robot } from './robot.js';
 import { IslandGames } from './games.js';
 import { Play } from './play.js';
 import { SeeThrough } from './seethrough.js';
@@ -266,6 +267,7 @@ export class SoloIslandScene extends BaseScene {
     this.surprise = new Surprises(this); // daily surprises: meteor shower, merchant, balloon visitor, bottle map
     this.village = new Village(this); // the villagers' own lives: conversations, reactions, dramas, projects (village.js)
     this.events = new IslandEvents(this); // rare weather events and the seasonal mystery (events.js)
+    this.robot = new Robot(this); // Bolt, Pip's chore robot after the greenhouse (robot.js)
     this.todayBoard = new TodayBoard(this); // the Today board and the tomorrow hooks (today.js)
     this.games = new IslandGames(this); // skipping stones, kites, hide-and-seek, snowballs, leaf piles
     this.play = new Play(this); // villagers play: tag, waves, sunset and stars together, little tasks
@@ -453,6 +455,7 @@ export class SoloIslandScene extends BaseScene {
     this.story.tick(at);
     this.village.tick(at);
     this.events.tick(at);
+    this.robot.tick(at);
     if (this.player?.on?.secret === 'roof') this.village.note('roof'); // up on the game hall roof: someone saw you
     this.todayBoard.tick(at); // (after the others: it tells what they did on a new day)
     const ind = this.indoors;
@@ -942,7 +945,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** Today's things with a place, for the map (atlas.js): the Today board, the villagers' projects, rare events. */
   mapToday() {
-    return [...this.todayBoard.mapItems(), ...(this.village?.mapItems?.() || []), ...(this.events?.mapItems?.() || [])];
+    return [...this.todayBoard.mapItems(), ...(this.village?.mapItems?.() || []), ...(this.events?.mapItems?.() || []), ...(this.robot?.mapItems?.() || [])];
   }
 
   /** The island's music and ambience switches (per profile; old saves: both on). */
@@ -1263,6 +1266,7 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.surprise.interactions(P, out, nm); // the day's surprise (surprise.js)
     if (!out.b) this.todayBoard.interactions(P, out, nm);
     if (!out.b) this.village.interactions(P, out, nm); // Aunt Hazel's prize pumpkin
+    if (!out.b) this.robot.interactions(P, out, nm); // Bolt: eggs for you, chores or rest
     if (!out.b) this.events.interactions(P, out, nm); // a storm's finds, the ghost captain, the rainbow, the mystery // the egg basket or the mystery pot (today.js)
     if (!out.b) this.games.interactions(P, out, nm); // island mini-games (games.js)
     if (!out.b) this.play.interactions(P, out, nm); // villagers at play (play.js)
@@ -2477,6 +2481,7 @@ export class SoloIslandScene extends BaseScene {
     this.todayBoard.update(dt);
     this.village.update(dt);
     this.events.update(dt);
+    this.robot.update(dt);
     this.games.update(dt);
     this.play.update(dt);
     this.zipzap.update(dt, ia);

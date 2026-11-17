@@ -16,8 +16,8 @@ import { makeChicken, makeCow, makeTrough, makeNest } from './models2.js';
 // has had 5 hearts for two days has a baby. Babies are small, need no hay, and grow up after three days.
 
 export const PADDOCK = { x0: -18.6, x1: -9.4, z0: 3.4, z1: 8.6 };
-const TROUGH = { x: -11, z: 4 };
-const NEST = { x: -17.6, z: 9.3 };
+export const TROUGH = { x: -11, z: 4 };
+export const NEST = { x: -17.6, z: 9.3 };
 const BARN_DOOR = { x: -14, z: 10.3 };
 export const LIMITS = { chicken: 6, goat: 2, cow: 2 }; // the store sells up to 4 / 1 / 1: babies fill the rest
 const NAMES = { chicken: ['Clucky', 'Nugget', 'Pebble', 'Sunny', 'Popcorn', 'Dotty', 'Peep', 'Chirpy'], goat: ['Billy', 'Clover', 'Button'], cow: ['Daisy', 'Bella', 'Buttercup'] };
