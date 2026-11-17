@@ -905,9 +905,13 @@ night match yours and crops grow while you are away.
   start on Monday). Each season has its own look (blossoms, bright summer, orange leaves, snow on the
   ground, roofs and trees and an icy river rim), its own crops (14 crops; radishes and carrots grow all
   year, the rest only in their season outdoors; planted crops never wither) and some seasonal fish and
-  dive critters (the fish log shows when). Every season has a festival from Friday to Sunday of its
-  week: the Spring Planting Fair (plant 5 seeds for Rosa), the Summer Beach Day (find 4 shells for
-  Pip), the Harvest Fair and Lantern Night; the Fishing Derby keeps the first Saturday of each month and the Sunday after.
+  dive critters (the fish log shows when). **Festivals are two weekends a month** (Saturday and Sunday, so a
+  festival weekend comes every second week or so): the **Fishing Derby** on the first weekend of the month (the
+  first Saturday and the Sunday after: never two in a month) and **the season's festival** on the third
+  weekend (the third Saturday and the Sunday after; the season of that week): the Spring Planting Fair (plant 5
+  seeds for Rosa), the Summer Beach Day (find 4 shells for Pip), the Harvest Fair or Lantern Night. Months are
+  not whole weeks, so the third weekend's season moves on: every season's festival comes round two to four
+  times a year. The time machine's "next festival" finds them.
   In winter you can ride a sled down kite hill (hot cocoa for the first ride each winter week), and
   snowy days water the crops like rain. The calendar board colors the weeks by season.
 - **The island grows:** the museum east of the square (donate fish, sea finds and crystals to Curator
@@ -1027,7 +1031,7 @@ night match yours and crops grow while you are away.
     back on the last one). **Pip races you on the Stump Hop and Grumbleton on the Barrel Run** (when they are
     up and about): they hop the trail beside you, and every time you beat them they get a little faster.
     Ringing all three bells brings a golden bell for the yard.
-- **Daily surprises** (by date, the same for everyone; about two days in three have one): a **meteor
+- **Daily surprises** (by date, the same for everyone; about one non-festival day in three has one): a **meteor
   shower** at night (20-24, not on rainy days): star bits fall near you, catch them, two at once if you
   jump and catch one in the air; **Marlo the traveling merchant** by the square (9-18) with three odd
   things a day (mystery seeds, a single sock, a golden acorn, moon cheese, a rubber duck pond, a cloud in a
@@ -1139,9 +1143,12 @@ same (the owner's budget): **at most one special world thing a day** (a festival
 event or a drama's big moment), one week-long project at a time, one villager conversation at a time and
 only a few a day, every reaction to you said once by one villager, and one tomorrow hook at a time.
 `tests/lively/density.test.mjs` checks these budgets over eight simulated weeks of daily visits (see
-`tests/README.md`); measured: 52 of 56 days have one special thing (24 festival days, 18 surprises, 7 rare
-events, 3 drama climaxes), never two; about one conversation heard a day (at most three), none again within four
-weeks; no reaction or Today text again within three to four weeks; one project and one hook at a time.
+`tests/README.md`). Measured over the eight weeks from 16 November 2026: 36 days with one special thing (8
+festival days, 15 surprises, 8 rare events, 5 drama climaxes), never two, and 20 ordinary days (36 %); over a
+whole year the calendar alone gives festivals on 13 % of days, surprises 27 %, rare events 14 % and 45 %
+ordinary, before the dramas' big days. Dramas reach their big moment 4-5 days after they start; about 1.3
+conversations heard a day (at most three), none again within four weeks; no reaction or Today text again within
+three to four weeks; one project (eight over six months) and one hook at a time.
 
 - **The Today board** (`today.js`): the first time you walk about on a new real day a card shows up to
   **three things that are new today**: a rumor (something coming: a festival or a birthday tomorrow, Marlo's
@@ -1181,26 +1188,31 @@ weeks; no reaction or Today text again within three to four weeks; one project a
     you walk up (rewards and hearts if you took part). Missed it? The next day's board says how it ended.
   - **Week-long projects**, one at a time, in different corners: **Keeper Bram's gazebo** (south-east road),
     **Aunt Hazel's new garden** (west meadow), **Pip's star lookout** (north-east, by the pad) and **Rosa's
-    bandstand** (south-west, by the school). Four stages two days apart (a pile of planks and a sign, then
+    bandstand** (south-west, by the school), three days apart; then slowly, about one every three weeks, so the
+    island keeps changing for months: **Curator Hoot's bird hide** (on the hill above your cottage), **Aunt
+    Hazel's windmill** (under the north cliffs; its sails turn), **Coach Bo's obstacle course** (below the mech
+    garage: a balance beam, hurdles, tires and a flag) and **Grumbleton's boat shed** (the south beach). Four stages two days apart (a pile of planks and a sign, then
     the frame, then more, then done; finished ones stay); the builder works on the site 13-15 (a soft
     hammering when you are close); talk to them and 5 wood makes it a day faster. The Today board and the
     tomorrow line tell the stages; the map marks the site.
-- **Rare weather events** (`events.js`; `rareEventOn(date)` in `calendar.js`): about once a week (0.83 a week
-  over a year: at most one a week, on a Monday to Thursday with no festival and no daily surprise, so never two
-  days in a row and never on top of another special thing); the kinds take turns, never the same twice running.
+- **Rare weather events** (`events.js`; `rareEventOn(date)` in `calendar.js`): once a week, on a Tuesday to
+  Saturday with no festival and no daily surprise (so never two days in a row and never on top of another
+  special thing); the kinds take turns, never the same twice running.
   The day before, a rumor may warn (Grumbleton's knee aches; Bram smells fog).
   - **Storm:** it stormed in the night. From 6 the beach has three things washed ashore ([B]: an old coin, sea
     glass, wood, a pearl or a starfish) and two stranded crabs to carry back to the water ([B]; they stay friends
     and never count as the day's crab job, which stays one crab a day). In winter the storm brings snow.
   - **Fog:** the view closes in all day (not indoors or on Shell Isle). From 20 to midnight a **ghost ship**
-    lies off the west beach and **Captain Wisp**, a friendly ghost (sleepy voice type), waits by the water: the
+    lies side-on just off the west beach, where the usual view shows it from the sand, wrapped in a soft green
+    glow that shows through the fog from far away (it breathes slowly; steady with "Reduce flashing"), and **Captain Wisp**, a friendly ghost (sleepy voice type), waits by the water: the
     view swings to his ship while he tells where the fog took him, and he gives 40 coins and a pearl.
   - **Rainbow:** rain until 13, then a rainbow until 19 whose end touches the ground somewhere (four spots around
     the island): dig there for coins, a golden acorn and a star fruit seed. No rainbows in winter.
 - **The seasonal mystery, "The old keeper's chest"** (`events.js`): in a season's week Curator Hoot has a "!": he
-  found a **torn page** in an old book (a map with an X and three pictures). Dig at the X for an **old key**; its
-  tag points to the **old door under the north cliffs** (above your cottage); its lock wants the three pictures
-  in the page's order (a one-screen puzzle: ◀ ▶ choose, [OK] puts one in, [C] takes one back; after a wrong try
+  found a **torn page** in an old book (a map with an X and some pictures). Dig at the X for an **old key**; its
+  tag points to the **old door under the north cliffs** (above your cottage); its lock wants the pictures in the
+  page's order: **three**, or **two** when the profile's Help me play has forgiving timing on or the child has
+  used a skip in any game (a one-screen puzzle: ◀ ▶ choose, [OK] puts one in, [C] takes one back; after a wrong try
   the lock shows the pictures). Behind it, a chest with the season's gift (star fruit seeds, pearls, golden
   acorns or cocoa) and 80 coins. Each season's chapter comes back at most every eight weeks; an unfinished
   chapter ends with its week. The Tasks list shows the next step.

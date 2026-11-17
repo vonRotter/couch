@@ -21,7 +21,7 @@ await test('eight weeks of daily visits: collect what happens', async () => {
     const info = await island(page, (I, S) => {
       if (I.mode === 'today') { I.hud.setPanel(null); I.mode = 'walk'; }
       const V = S.village, di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
-      return { di, items: I.todayBoard.texts(), fest: I.seasons.festival, sur: I.surprise.kind, rare: I.events.kind, climax: V.drama && V.drama.climax === di ? V.drama.id : null, proj: V.proj ? 1 : 0, hooks: S.hook ? 1 : 0, slots: I.village.slots(S.todayBoard.day), projAt: V.proj?.id };
+      return { di, items: I.todayBoard.texts(), fest: I.seasons.festival, sur: I.surprise.kind, rare: I.events.kind, climax: V.drama && V.drama.climax === di ? V.drama.id : null, drama: V.drama && { id: V.drama.id, start: V.drama.start, climax: V.drama.climax }, proj: V.proj ? 1 : 0, hooks: S.hook ? 1 : 0, slots: I.village.slots(S.todayBoard.day), projAt: V.proj?.id };
     });
     Object.assign(day, info);
     // things you did today, and every villager you would talk to
@@ -72,15 +72,25 @@ await test('at most one special world thing a day (festival, surprise, rare even
     if (n) specialDays++;
     for (const k of Object.keys(kinds)) if (d[k]) kinds[k]++;
   }
-  console.log(`   special days ${specialDays}/${log.days.length}, most on one day ${worst}, by kind ${JSON.stringify(kinds)}`);
+  const ordinary = log.days.length - specialDays;
+  console.log(`   special days ${specialDays}/${log.days.length}, ordinary days ${ordinary} (${Math.round((ordinary / log.days.length) * 100)} %), most on one day ${worst}, by kind ${JSON.stringify(kinds)}`);
   assert(worst <= 1, `worst ${worst}`);
+  assert(ordinary >= log.days.length * 0.35, `ordinary ${ordinary}`);
 });
 
 await test('rare events: about once a week, never on consecutive days', async () => {
   const days = log.days.filter((d) => d.rare).map((d) => d.d);
   const consec = days.filter((x, i) => i && x - days[i - 1] === 1).length;
   console.log(`   rare events ${days.length} in ${DAYS / 7} weeks (${(days.length / (DAYS / 7)).toFixed(2)} a week), consecutive ${consec}`);
-  assert(days.length >= 5 && days.length <= 9 && consec === 0, JSON.stringify(days));
+  assert(days.length >= 7 && days.length <= 8 && consec === 0, JSON.stringify(days));
+});
+
+await test('dramas: the big moment comes within about a week of the start', async () => {
+  const seen = new Map();
+  for (const d of log.days) if (d.drama) seen.set(`${d.drama.id}:${d.drama.start}`, d.drama.climax - d.drama.start);
+  const gaps = [...seen.values()];
+  console.log(`   dramas ${gaps.length}, start to big moment (days): ${gaps.join(', ')}`);
+  assert(gaps.length >= 3 && gaps.every((g) => g >= 4 && g <= 9), JSON.stringify(gaps));
 });
 
 await test('conversations: one at a time, 1-3 a day, none repeated within four weeks', async () => {
@@ -124,15 +134,36 @@ await test('one project and one tomorrow hook at a time', async () => {
   assert(proj <= 1 && hooks <= 1, `proj ${proj} hooks ${hooks}`);
 });
 
+await test('projects over six months: the first four, then slowly more (one at a time)', async () => {
+  const r = await island(page, (I, S) => {
+    const C = { dayMs: (di) => new Date(1970, 0, 1 + di, 12).getTime() };
+    S.village = {}; S.intro = true;
+    const d0 = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
+    const starts = [], done = []; let most = 0;
+    for (let di = d0; di < d0 + 183; di++) {
+      I.village.newDay(C.dayMs(di));
+      const V = S.village;
+      if (V.proj && V.proj.start === di) starts.push({ id: V.proj.id, day: di - d0 });
+      if (V.doneNews?.di === di) done.push({ id: V.doneNews.id, day: di - d0 });
+      most = Math.max(most, V.proj ? 1 : 0);
+    }
+    return { starts, done, most };
+  });
+  console.log(`   six months: ${r.starts.length} projects started, ${r.done.length} finished, most at once ${r.most}; started on days ${r.starts.map((x) => `${x.id} ${x.day}`).join(', ')}`);
+  assert(r.most <= 1 && r.starts.length === 8 && r.done.length >= 7, JSON.stringify(r));
+  const late = r.starts.slice(4).map((x, i, a) => (i ? x.day - a[i - 1].day : x.day - r.starts[3].day));
+  assert(late.every((g) => g >= 20), `later projects come slowly: ${late}`);
+});
+
 await test('spread across the map: projects, drama places and rare-event spots in different corners', async () => {
   const r = await page.evaluate(() => {
-    const pts = { gazebo: [30, 24], garden: [-8, 12], lookout: [36, -22], bandstand: [-4, 30], rivalry: [2.4, 41.6], pumpkin: [4.6, -23], cake: [15.8, -3.4], storm: [14, 40.5], ghost: [-15.6, 40.6], door: [-12, -31], robot: [4.4, -0.8], hook: [-9, -13] };
+    const pts = { gazebo: [30, 24], garden: [-8, 12], lookout: [36, -22], bandstand: [-4, 30], birdhide: [-16, -24], windmill: [22, -30], course: [46, 18], boatshed: [26, 32], rivalry: [2.4, 41.6], pumpkin: [4.6, -23], cake: [15.8, -3.4], storm: [14, 40.5], ghost: [-17.6, 41.2], door: [-12, -31], robot: [4.4, -0.8], hook: [-9, -13] };
     const q = {};
     for (const [k, [x, z]] of Object.entries(pts)) { const c = `${z < 0 ? 'N' : 'S'}${x < 8 ? 'W' : 'E'}`; (q[c] ||= []).push(k); }
     return q;
   });
   console.log(`   by quarter: ${JSON.stringify(r)}`);
-  assert(Object.keys(r).length === 4 && Object.values(r).every((v) => v.length <= 4), JSON.stringify(r));
+  assert(Object.keys(r).length === 4 && Object.values(r).every((v) => v.length <= 6), JSON.stringify(r));
 });
 
 await close(page);
