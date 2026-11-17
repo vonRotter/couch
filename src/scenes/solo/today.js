@@ -382,7 +382,13 @@ export class TodayBoard {
     if (H.due > di + 7 || H.made > di) { S.hook = null; return; } // (the clock went backwards a lot)
     if (di < H.due) return;
     if (H.kind === 'letter') { this.endHook(di, { who: H.who }); return; }
-    if (!H.ready) { H.ready = true; H.readyDi = di; }
+    if (!H.ready) { H.ready = true; H.readyDi = di; return; }
+    // not looked at for two days: the chick or duckling finds its own way, the flower is picked by the wind (one hook at a time,
+    // and never one that waits forever)
+    if (di - H.readyDi >= 2) {
+      if (H.kind === 'egg' && this.S.unlocks?.barn) this.host.ranch?.addAnimal('chicken', di);
+      this.endHook(di, { result: 'self' });
+    }
   }
 
   endHook(di, extra = {}) {

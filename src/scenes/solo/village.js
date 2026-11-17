@@ -413,10 +413,10 @@ export class Village {
     const host = this.host, P = host.player, V = this.V, di = dayIndex(at), day = dayKey(at);
     const free = host.npcs.filter((n) => this.available(n) && Math.hypot(n.x - P.x, n.z - P.z) < 30);
     if (free.length < 2) return null;
-    const recent = new Set(V.heard.filter((h) => di - h.di < CHAT_GAP).map((h) => h.id));
+    const recent = new Set(V.heard.filter((h) => di - h.di < CHAT_GAP).flatMap((h) => [h.id, `k:${h.key || h.id}`])); // (a topic's words, whatever the festival or the pair)
     const every = EVERYDAY.map((k) => ({ id: k, key: k, r: dayRand(`topic:${day}:${k}`) })).sort((a, b) => a.r - b.r);
     for (const tp of [...this.newsTopics(at), ...every]) {
-      if (recent.has(tp.id)) continue;
+      if (recent.has(tp.id) || recent.has(`k:${tp.key}`)) continue;
       let best = null;
       for (const a of free) for (const b of free) {
         if (a === b) continue;
@@ -464,7 +464,7 @@ export class Village {
     for (const n of [C.a, C.b]) { n.busy = false; n.spotName = null; }
     if (!abort && C.heard >= 2) {
       const V = this.V, di = dayIndex();
-      V.heard = [...V.heard.filter((h) => di - h.di < 60), { id: C.tp.id, di, pair: `${C.a.id}+${C.b.id}`, texts: C.texts }];
+      V.heard = [...V.heard.filter((h) => di - h.di < 60), { id: C.tp.id, key: C.tp.key, di, pair: `${C.a.id}+${C.b.id}`, texts: C.texts }];
       this.host.markDirty();
     }
     this.lastChat = { ...C, abort };

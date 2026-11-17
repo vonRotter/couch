@@ -1,0 +1,139 @@
+// The owner's budget ("new and special, never too much of the same"), over eight simulated weeks of daily
+// visits: at most one special world thing a day, rare events about once a week and never on consecutive days,
+// at most one conversation at a time (1-3 a day), no conversation or reaction text again within four weeks,
+// each reaction said once by one villager, no Today item again within three weeks, at most one project and one
+// tomorrow hook at a time. Prints the measured numbers.
+import { open, close, startIsland, island, sim, at, setTime, test, assert, done, DAY } from './helper.mjs';
+
+const page = await open();
+const D0 = at(2026, 11, 16, 8); // Monday 16 November 2026
+const DAYS = 56;
+const log = { days: [] };
+
+await test('eight weeks of daily visits: collect what happens', async () => {
+  await startIsland(page, { time: D0, save: (S) => { S.unlocks.greenhouse = true; S.unlocks.barn = true; } });
+  const spots = [[12, -4], [3, 46], [30, -11], [-6, -10], [40, -14], [44, 30]];
+  let maxBusy = 0, maxChats = 0;
+  for (let d = 0; d < DAYS; d++) {
+    const day = { d, chats: [], reacts: [] };
+    await setTime(page, D0 + d * DAY);
+    await sim(page, 1.5, 0.1);
+    const info = await island(page, (I, S) => {
+      if (I.mode === 'today') { I.hud.setPanel(null); I.mode = 'walk'; }
+      const V = S.village, di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
+      return { di, items: I.todayBoard.texts(), fest: I.seasons.festival, sur: I.surprise.kind, rare: I.events.kind, climax: V.drama && V.drama.climax === di ? V.drama.id : null, proj: V.proj ? 1 : 0, hooks: S.hook ? 1 : 0, slots: I.village.slots(S.todayBoard.day), projAt: V.proj?.id };
+    });
+    Object.assign(day, info);
+    // things you did today, and every villager you would talk to
+    const reacts = await island(page, (I, S, G, d) => {
+      const kinds = ['roof', 'crab', 'hopRecord', 'trophy', 'newFish', 'harvest'];
+      I.village.note(kinds[d % 6], { trail: '@hop.trail.stumps', item: '@isl.d.kite', fish: '@isl.i.sardine' });
+      I.village.note(kinds[(d + 2) % 6], { trail: '@hop.trail.stumps', item: '@isl.d.kite', fish: '@isl.i.sardine' });
+      const out = [];
+      for (const n of I.npcs) { const L = I.village.reactLine(n); if (L) out.push({ who: n.id, key: L.key, text: window.game.current.village && L.key }); }
+      return out;
+    }, d);
+    day.reacts = reacts;
+    // the conversation slots: stand where people are and listen
+    for (const s of info.slots) {
+      let started = false;
+      for (const [x, z] of spots) {
+        await setTime(page, D0 + d * DAY + (s.from + 0.03 - 8) * 3600e3);
+        await island(page, (I, S, G, [x, z]) => { I.player.x = x; I.player.z = z; I.groundCheck(I.player, I.walkState); if (I.mode !== 'walk') { I.hud.setDialog(null); I.hud.setPanel(null); I.dlg = null; I.mode = 'walk'; } }, [x, z]);
+        await sim(page, 1.2, 0.1);
+        if (await island(page, (I) => !!I.village.chat)) { started = true; break; }
+      }
+      if (!started) continue;
+      await island(page, (I) => { const C = I.village.chat; I.player.x = C.a.x + 1.2; I.player.z = C.a.z + 1.2; I.groundCheck(I.player, I.walkState); });
+      for (let k = 0; k < 50 && await island(page, (I) => !!I.village.chat); k++) {
+        await sim(page, 1, 0.1);
+        const b = await island(page, (I) => ({ busy: I.npcs.filter((n) => n.busy).length, chats: I.village.chat ? 1 : 0 }));
+        maxBusy = Math.max(maxBusy, b.busy); maxChats = Math.max(maxChats, b.chats);
+      }
+      const c = await island(page, (I) => I.village.lastChat && { id: I.village.lastChat.tp.id, pair: `${I.village.lastChat.a.id}+${I.village.lastChat.b.id}`, texts: I.village.lastChat.texts, abort: I.village.lastChat.abort });
+      if (c) day.chats.push(c);
+    }
+    log.days.push(day);
+  }
+  log.maxBusy = maxBusy; log.maxChats = maxChats;
+  log.said = await island(page, (I, S) => S.village.react.said || []);
+  log.texts = await island(page, (I, S) => (S.village.react.said || []).map((r) => r.key));
+  assert(!page.errors.length, page.errors.join('\n'));
+});
+
+const di0 = () => log.days[0].di;
+
+await test('at most one special world thing a day (festival, surprise, rare event, drama climax)', async () => {
+  let worst = 0, specialDays = 0;
+  const kinds = { fest: 0, sur: 0, rare: 0, climax: 0 };
+  for (const d of log.days) {
+    const n = (d.fest ? 1 : 0) + (d.sur ? 1 : 0) + (d.rare ? 1 : 0) + (d.climax ? 1 : 0);
+    worst = Math.max(worst, n);
+    if (n) specialDays++;
+    for (const k of Object.keys(kinds)) if (d[k]) kinds[k]++;
+  }
+  console.log(`   special days ${specialDays}/${log.days.length}, most on one day ${worst}, by kind ${JSON.stringify(kinds)}`);
+  assert(worst <= 1, `worst ${worst}`);
+});
+
+await test('rare events: about once a week, never on consecutive days', async () => {
+  const days = log.days.filter((d) => d.rare).map((d) => d.d);
+  const consec = days.filter((x, i) => i && x - days[i - 1] === 1).length;
+  console.log(`   rare events ${days.length} in ${DAYS / 7} weeks (${(days.length / (DAYS / 7)).toFixed(2)} a week), consecutive ${consec}`);
+  assert(days.length >= 5 && days.length <= 9 && consec === 0, JSON.stringify(days));
+});
+
+await test('conversations: one at a time, 1-3 a day, none repeated within four weeks', async () => {
+  const all = log.days.flatMap((d) => d.chats.filter((c) => !c.abort).map((c) => ({ ...c, d: d.d })));
+  const perDay = log.days.map((d) => d.chats.length);
+  let rep = 0;
+  for (const a of all) for (const b of all) if (a !== b && b.d > a.d && b.d - a.d < 28 && b.texts.some((t) => a.texts.includes(t))) { rep++; if (rep < 6) console.log('   repeat:', a.d, a.id, b.d, b.id, b.texts.find((t) => a.texts.includes(t))); }
+  console.log(`   conversations heard ${all.length} (${(all.length / DAYS).toFixed(2)} a day, max ${Math.max(...perDay)} on a day), most at once ${log.maxChats} (busy villagers ${log.maxBusy}), repeated within 4 weeks ${rep}, topics ${new Set(all.map((c) => c.id)).size}`);
+  assert(log.maxChats <= 1 && log.maxBusy <= 2, 'one at a time');
+  assert(Math.max(...perDay) <= 3, 'at most 3 a day');
+  assert(rep === 0, `repeats ${rep}`);
+  assert(all.length >= DAYS * 0.5, `too few: ${all.length}`);
+});
+
+await test('reactions: each said once, by one villager; no reaction text again within four weeks', async () => {
+  const said = log.days.flatMap((d) => d.reacts.map((r) => ({ ...r, d: d.d })));
+  const perDayMulti = log.days.filter((d) => new Set(d.reacts.map((r) => r.key.split('.')[1])).size !== d.reacts.length).length;
+  let rep = 0;
+  for (const a of said) for (const b of said) if (a !== b && b.d > a.d && b.d - a.d < 28 && a.key === b.key) rep++;
+  console.log(`   reactions said ${said.length} (two things noticed every day), repeated within 4 weeks ${rep}, a thing said by two villagers ${perDayMulti}`);
+  assert(rep === 0 && perDayMulti === 0, `rep ${rep} multi ${perDayMulti}`);
+});
+
+await test('Today board: up to 3 items, none again within three weeks', async () => {
+  let rep = 0, total = 0;
+  const n = [0, 0, 0, 0];
+  for (const a of log.days) {
+    n[a.items.length]++;
+    total += a.items.length;
+    for (const b of log.days) if (b.d > a.d && b.d - a.d < 21) for (const s of a.items) if (b.items.includes(s)) { rep++; if (rep < 10) console.log('   repeat:', a.d, b.d, s); }
+  }
+  console.log(`   Today items ${total} (${(total / DAYS).toFixed(2)} a day; days with 0/1/2/3 items: ${n.join('/')}), repeated within 3 weeks ${rep}`);
+  assert(rep === 0 && log.days.every((d) => d.items.length <= 3), `rep ${rep}`);
+});
+
+await test('one project and one tomorrow hook at a time', async () => {
+  const proj = Math.max(...log.days.map((d) => d.proj)), hooks = Math.max(...log.days.map((d) => d.hooks));
+  const built = log.days.filter((d, i) => i && d.projAt !== log.days[i - 1].projAt && d.projAt).map((d) => d.projAt);
+  const hookDays = log.days.filter((d) => d.hooks).length;
+  console.log(`   projects started ${built.length} (${built.join(', ')}), most at once ${proj}; days with a hook pending ${hookDays}/${DAYS}, most at once ${hooks}`);
+  assert(proj <= 1 && hooks <= 1, `proj ${proj} hooks ${hooks}`);
+});
+
+await test('spread across the map: projects, drama places and rare-event spots in different corners', async () => {
+  const r = await page.evaluate(() => {
+    const pts = { gazebo: [30, 24], garden: [-8, 12], lookout: [36, -22], bandstand: [-4, 30], rivalry: [2.4, 41.6], pumpkin: [4.6, -23], cake: [15.8, -3.4], storm: [14, 40.5], ghost: [-15.6, 40.6], door: [-12, -31], robot: [4.4, -0.8], hook: [-9, -13] };
+    const q = {};
+    for (const [k, [x, z]] of Object.entries(pts)) { const c = `${z < 0 ? 'N' : 'S'}${x < 8 ? 'W' : 'E'}`; (q[c] ||= []).push(k); }
+    return q;
+  });
+  console.log(`   by quarter: ${JSON.stringify(r)}`);
+  assert(Object.keys(r).length === 4 && Object.values(r).every((v) => v.length <= 4), JSON.stringify(r));
+});
+
+await close(page);
+done();

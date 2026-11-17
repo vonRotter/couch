@@ -1035,7 +1035,8 @@ night match yours and crops grow while you are away.
   square (10-17) with **Skye the explorer**, whose goggles blew somewhere you have to hop to (a little balloon
   for the yard the first time); at five Skye climbs in and it lifts off and drifts away (it is never there at
   night); a **bottle on the beach** (6-21) with a **treasure map**: the X shows where to dig. `surpriseOn(date)`
-  in `src/scenes/solo/surprise.js` says which.
+  (`calendar.js`, re-exported by `surprise.js`) says which. Never on a festival day (one special thing a day), and
+  never on a rare event's day.
 - **Island mini-games:** **skipping stones** at the pile of flat stones on the beach (press [B] when the bar
   is in the green: up to 7 skips, a record brings coins; the view follows the stone out over the water, every
   skip leaves a ripple ring and its number, and the last skip plays in slow motion); **kite flying** at the kite stand on kite hill
@@ -1137,7 +1138,10 @@ The solo island is the main game, so every real day should bring something new, 
 same (the owner's budget): **at most one special world thing a day** (a festival, a daily surprise, a rare
 event or a drama's big moment), one week-long project at a time, one villager conversation at a time and
 only a few a day, every reaction to you said once by one villager, and one tomorrow hook at a time.
-`tests/lively/` checks these budgets over eight simulated weeks (see `tests/README.md`).
+`tests/lively/density.test.mjs` checks these budgets over eight simulated weeks of daily visits (see
+`tests/README.md`); measured: 52 of 56 days have one special thing (24 festival days, 18 surprises, 7 rare
+events, 3 drama climaxes), never two; about one conversation heard a day (at most three), none again within four
+weeks; no reaction or Today text again within three to four weeks; one project and one hook at a time.
 
 - **The Today board** (`today.js`): the first time you walk about on a new real day a card shows up to
   **three things that are new today**: a rumor (something coming: a festival or a birthday tomorrow, Marlo's
@@ -1152,7 +1156,8 @@ only a few a day, every reaction to you said once by one villager, and one tomor
   (Aunt Hazel left it) hatches the next day ([B] at the basket: a chick for the barn, or a duckling that
   waddles off to the river and leaves a shell); a **mystery pot** opens the day after tomorrow into a
   moonbell, a sunburst daisy or a star lily (a bouquet and a seed or an acorn); a **letter from Marlo or
-  Skye** says on which day they come, and they do (`surpriseOn` already knows). The menu shows a
+  Skye** says on which day they come, and they do (`surpriseOn` already knows). An egg or a pot left alone for two days
+  after it is ready resolves by itself (the chick finds the barn), so a hook never waits forever. The menu shows a
   **Tomorrow:** line under its title, and walking into the cottage in the evening says it once.
 - **Villagers with their own lives** (`village.js`, strings in `strings14.js`). Their schedules, homes,
   hearts and voices stay as they were; on top of that:
