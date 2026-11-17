@@ -1199,6 +1199,15 @@ only a few a day, every reaction to you said once by one villager, and one tomor
   the lock shows the pictures). Behind it, a chest with the season's gift (star fruit seeds, pearls, golden
   acorns or cocoa) and 80 coins. Each season's chapter comes back at most every eight weeks; an unfinished
   chapter ends with its week. The Tasks list shows the next step.
+- **Calm music and ambience** (`soundscape.js`, `core/audio.js`): the island plays a calm track for the time
+  of day (morning 5-11, day 11-17, evening 17-21, night), with a winter version of each in winter weeks
+  (slower, higher, soft bells); changes crossfade over a few seconds. Calm tracks have no hi-hats, a half-note
+  bass and a sparse melody (`SONGS['isl.<phase>']`, `playMusic(name, { fade, level })`). **Ambience** by place,
+  time and season, kept quiet under everything (`audio.setAmbience(levels)`): waves near the shore (swelling),
+  wind (more on kite hill and the cliff tops, in winter and rain), birds by day (few in winter, none in rain),
+  crickets on warm clear nights, rain or a soft snow hush, the café's murmur and clinks; indoors only a quarter
+  comes through; the dive has an underwater hum with bubbles. The menu has **Island music** and **Island
+  sounds** on/off (per profile, `S.sound`); **Sound** still mutes everything.
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock

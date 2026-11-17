@@ -414,6 +414,8 @@ export class DiveScene extends BaseScene {
   }
 
   update(dt) {
+    // the underwater hum and bubbles (the island's sounds setting, core/audio.js setAmbience)
+    if ((this.ambT = (this.ambT || 0) - dt) <= 0) { this.ambT = 0.3; this.game.audio.setAmbience({ under: 1 }, { level: this.save.sound?.amb === false ? 0 : 1 }); }
     const P = this.players[0];
     const inp = P ? this.input(P) : null;
     this.toasts.update(dt, this.ending === 'summary');
@@ -726,6 +728,7 @@ export class DiveScene extends BaseScene {
   idle(dt) { this.animate(dt); }
 
   dispose() {
+    this.game.audio.stopAmbience();
     this.toasts.dispose();
     setPictures(null);
     super.dispose();

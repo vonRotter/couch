@@ -124,6 +124,13 @@ level's restarts and reset when you leave the game.
    XAG 104 / GAG "provide visual means of communicating in-game sound": needs a per-game pass, or a generic
    "sound cues" indicator at the screen edge.
 3. **Volume.** *Not chosen for now (owner's decision).* Only mute (M) and read-aloud on/off. XAG asks for separate music / effects / voice volumes.
+   *Partly done (the livelier island round):* on the solo island the menu has **Island music** and **Island
+   sounds** (the ambience: waves, wind, birds, crickets, rain, the café, the dive's hum) as their own on/off
+   switches, saved per profile; Sound on/off still silences everything (and M opens the map there). Island music
+   and ambience are calm and quiet by design (no hi-hats, low levels), so sound effects and voices stay clear.
+   The new events never flash: no lightning in storms (calm by default, so "Reduce flashing" has nothing to do
+   there), the rainbow and the ghost ship fade in softly. Conversations show their words in speech bubbles as
+   well as saying them, so nothing is sound only.
 4. **Colour as identity.** *Done (owner's decision): a symbol per player and team, always shown.* Players are told apart by colour plus name tags and hats; teams (Sun / Sea) by
    colour rings plus team names; Paint Party scores painted floor by colour. Suggestion: a symbol per
    player and team (like Portal Pals' portal symbols) on rings and paint, shown with strong outlines on.

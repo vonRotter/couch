@@ -50,7 +50,7 @@ import { StoryScene, STORY_GAMES } from './scenes/story.js';
 import { activateProfile, updateProfile, soloSaveKey, getProfile } from './core/profiles.js';
 import { StartScene } from './scenes/start.js';
 import { coopReward, nameList } from './core/coop.js';
-import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio } from './core/voice.js';
+import { setVoice, voiceOn, say, setBabble, babbleMode, setVoiceAudio, voiceLog } from './core/voice.js';
 import * as assist from './core/assist.js';
 import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES, setCalm } from './core/assist.js';
 import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
@@ -137,6 +137,7 @@ class Game {
     document.addEventListener('visibilitychange', () => { if (document.hidden) flushPlayTime(); });
 
     this.assist = assist; // "Help me play" settings (core/assist.js), also for tests
+    this.voiceLog = voiceLog; // what was said last (tests)
     this.current = null;
     this.switching = false;
     // Story campaign: the stage being played ({ id, opts, stats }), or null in free play.

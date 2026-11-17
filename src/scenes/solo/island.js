@@ -63,6 +63,7 @@ import { TodayBoard, rv } from './today.js';
 import './strings14.js';
 import { Village } from './village.js';
 import { IslandEvents } from './events.js';
+import { musicFor, ambienceFor } from './soundscape.js';
 import { IslandGames } from './games.js';
 import { Play } from './play.js';
 import { SeeThrough } from './seethrough.js';
@@ -84,7 +85,7 @@ const PR = 0.42;
 const CAM_UP = 14.8, CAM_BACK = 13; // a little higher up (a more top-down view) and never closer than before (12.5 / 13)
 // the menu ([MENU]: Q or Start): keep playing, the other ways to play, and the settings a gamepad has no key for
 // 'island' is "Play together" (the shared island, like the Party Pier ferry); the story is a place there now
-const MENU = ['resume', 'deco', 'island', 'solo', 'assist', 'voice', 'chars', 'sound', 'lang', 'help']; // assist: Help me play // (sound: M is the map here)
+const MENU = ['resume', 'deco', 'island', 'solo', 'assist', 'voice', 'chars', 'sound', 'music', 'amb', 'lang', 'help']; // assist: Help me play // (sound: M is the map here)
 const BRIDGE_WOOD = 10;
 const FARM_OBJS = ['sprinkler', 'scarecrow'];
 const SELLABLE = new Set(['crop', 'fish', 'sea', 'treasure', 'dish', 'produce', 'crystal', 'forage']);
@@ -299,7 +300,7 @@ export class SoloIslandScene extends BaseScene {
     if (fromGame === 'cave') this.caveCrystal();
     if (!S.intro) this.later(0.9, () => this.startIntro());
     else if (S.mail.length) this.later(1.2, () => this.mailToast());
-    game.audio.playMusic('hub');
+    this.updateSound(0, true); // calm island music and ambience (soundscape.js)
   }
 
   // ---------- building ----------
@@ -942,6 +943,26 @@ export class SoloIslandScene extends BaseScene {
   /** Today's things with a place, for the map (atlas.js): the Today board, the villagers' projects, rare events. */
   mapToday() {
     return [...this.todayBoard.mapItems(), ...(this.village?.mapItems?.() || []), ...(this.events?.mapItems?.() || [])];
+  }
+
+  /** The island's music and ambience switches (per profile; old saves: both on). */
+  get soundPrefs() {
+    const S = this.save;
+    if (!S.sound || typeof S.sound !== 'object') S.sound = { music: true, amb: true };
+    return S.sound;
+  }
+
+  /** Music for the time of day and season (a soft crossfade), ambience for where you are (a few times a second). */
+  updateSound(dt, first = false) {
+    if (!first && (this.soundT = (this.soundT || 0) - dt) > 0) return;
+    this.soundT = 0.25;
+    const pr = this.soundPrefs, P = this.player, h = this.forceHour ?? hourOf();
+    const season = this.seasons?.season || 'summer';
+    const music = musicFor(h, this.isle2?.here() ? 'summer' : season);
+    this.game.audio.playMusic(music, { fade: first ? 0 : 4, level: pr.music ? 1 : 0 });
+    const amb = P ? ambienceFor({ x: P.x, z: P.z, y: P.fy, h, season, rainy: !!this.seasons?.rainy, indoors: this.indoors, isle: !!this.isle2?.here() }) : {};
+    this.game.audio.setAmbience(amb, { level: pr.amb ? 1 : 0 });
+    this.soundState = { music, amb, musicOn: pr.music, ambOn: pr.amb };
   }
 
   markDirty() { this.dirty = true; }
@@ -1994,6 +2015,7 @@ export class SoloIslandScene extends BaseScene {
     if (k === 'lang') return `${t('isl.mn.lang')}: ${t('isl.mn.langName')}`;
     if (k === 'assist') return t('assist.title');
     if (k === 'sound') return `${t('isl.mn.sound')}: ${t(this.game.audio.muted ? 'isl.mn.off' : 'isl.mn.on')}`;
+    if (k === 'music' || k === 'amb') return `${t(`isl.mn.${k}`)}: ${t(this.soundPrefs[k] ? 'isl.mn.on' : 'isl.mn.off')}`;
     return t(`isl.mn.${k}`);
   }
 
@@ -2021,7 +2043,7 @@ export class SoloIslandScene extends BaseScene {
     const start = !!(this.playerDevice?.btnPressed?.start || this.playerDevice?.btnPressed?.view);
     if (inp.cPressed || start) { this.closeMode(); return; }
     // settings switch with left/right too, and the menu stays open
-    const setting = k === 'voice' || k === 'chars' || k === 'sound' || k === 'lang';
+    const setting = k === 'voice' || k === 'chars' || k === 'sound' || k === 'music' || k === 'amb' || k === 'lang';
     if (setting && inp.stepX) { this.menuSetting(k); return; }
     if (!(inp.aPressed || inp.bPressed)) return;
     if (setting) { this.menuSetting(k); return; }
@@ -2048,6 +2070,7 @@ export class SoloIslandScene extends BaseScene {
     if (k === 'voice') this.game.toggleVoice();
     else if (k === 'chars') this.game.toggleBabble();
     else if (k === 'sound') this.game.audio.toggleMute();
+    else if (k === 'music' || k === 'amb') { this.soundPrefs[k] = !this.soundPrefs[k]; this.markDirty(); this.updateSound(0, false); }
     else this.game.toggleLanguage();
     this.renderMode();
   }
@@ -2470,6 +2493,7 @@ export class SoloIslandScene extends BaseScene {
     for (const f of Object.values(this.finds)) if (f.g.visible) { f.g.userData.glint.rotation.y += dt * 3; f.g.userData.glint.scale.y = 0.6 + Math.sin(this.time * 5) * 0.4; }
     this.updateCamera(dt);
     this.atlas.updateCompass(dt); // the arrow to the place picked on the map
+    this.updateSound(dt);
     // tall things between the camera and the bean turn see-through around it (seethrough.js)
     if (!this.seeThrough) this.seeThrough = new SeeThrough(this.scene, this.game.renderer);
     if (P) this.seeThrough.update(dt, this.camera, _bean.set(P.x, P.y + (P.jy || 0) + 0.6, P.z), P.y + (P.jy || 0), !this.camView);
@@ -2499,6 +2523,7 @@ export class SoloIslandScene extends BaseScene {
     this.hops?.dispose();
     this.surprise?.dispose();
     this.village?.dispose();
+    this.game.audio.stopAmbience();
     this.games?.dispose();
     this.play?.dispose();
     this.zipzap?.dispose();

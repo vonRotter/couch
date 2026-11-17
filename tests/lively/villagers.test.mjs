@@ -32,7 +32,7 @@ await test('conversations: one to three slots a day, one at a time, and you can 
   }
   assert(seen >= 1, 'a conversation started');
   assert(heard && heard.heard === 3 && heard.texts.length === 3, JSON.stringify(heard));
-  const log = await page.evaluate(async () => (await import('/src/core/voice.js')).voiceLog.slice(-12).map((e) => e.speaker));
+  const log = await page.evaluate(() => window.game.voiceLog.slice(-12).map((e) => e.speaker));
   assert(log.includes(`isl.${heard.a}`) && log.includes(`isl.${heard.b}`), `voices: ${log}`);
   const saved = await island(page, (I, S) => S.village.heard.length);
   assert(saved === 1, 'remembered as heard');
