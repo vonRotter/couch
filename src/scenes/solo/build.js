@@ -15,6 +15,7 @@ import { makeDeco7, DECO7, makeShell } from './models7.js';
 import { SHELLS, CRAFT_SHELLS, isShell } from './crabdata.js';
 import { isTrophy } from './shelf.js';
 import { makeDeco9, DECO9 } from './models9.js';
+import { makeDeco10, DECO10 } from './models10.js';
 
 // Building and decorating (milestone B2).
 // - Gathering (rock piles, tall grass, trees) moved to zipzap.js: Pip's Zip-Zap does it all.
@@ -52,7 +53,8 @@ export const UPGRADE = { wood: 30, stone: 20, coins: 500 };
 // (Old saves keep every piece where it stands.)
 export const INSIDE_ONLY = new Set(['bed', 'table', 'chair', 'rug', 'shelf', 'quilt', 'portrait', 'photo']);
 export const ANYWHERE = new Set(['plant', 'bottle', 'lantern', 'spyglass', 'snowGlobe', 'starLamp', 'moonrock', 'crystalLamp', 'goldShell', 'scope', 'shipWheel',
-  'ribbon', 'paperLantern', 'robotToy', 'rubberDuck', 'cloudJar', 'musicBox', 'balloonModel', 'starJar', 'starGlobe', 'crabPlush', 'shellChime', 'glowShroom', 'pumpkinLamp', 'rocket']);
+  'ribbon', 'paperLantern', 'robotToy', 'rubberDuck', 'cloudJar', 'musicBox', 'balloonModel', 'starJar', 'starGlobe', 'crabPlush', 'shellChime', 'glowShroom', 'pumpkinLamp', 'rocket',
+  'minerLamp', 'sleepyLantern', 'bellChime', 'shipBottle', 'blockTower', 'acornLamp', 'wormPlush', 'spaceRock']);
 /** Can this piece go inside the cottage (indoors) or in the yard (!indoors)? */
 export const fitsHere = (id, indoors) => (indoors ? INSIDE_ONLY.has(id) || ANYWHERE.has(id) : !INSIDE_ONLY.has(id));
 
@@ -236,6 +238,7 @@ export class Builder {
     if (DECO5.has(id)) return makeDeco5(id);
     if (DECO6.has(id)) return makeDeco6(id);
     if (DECO9.has(id)) return makeDeco9(id); // (hidden-area and surprise keepsakes: they showed as a plain gem)
+    if (DECO10.has(id)) return makeDeco10(id); // the puzzle prizes and the puzzle trophy (puzzles.js)
     if (CRAFTS[id]) return makeCraft(id, this.host.M);
     if (DECO2.has(id)) return makeDeco2(id, this.host.M);
     return makeDeco(id, this.host.M);

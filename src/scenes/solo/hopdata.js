@@ -51,7 +51,19 @@ export const KEEP_CLEAR = [
   { x0: 12.6, x1: 20, z0: -34, z1: -30.5 }, // the foot of the cliff path
   { x0: 33.2, x1: 36.2, z0: -18.4, z1: -12.4 }, // the crates up to the game hall roof
   { x0: -29.6, x1: -20.6, z0: 0.4, z1: 3.8 }, // the river stepping stones
+  // the puzzle doors (PUZZLE_DOORS below): the cliff door, the boulder on the east shore, the stump in the west wood
+  { x: 5, z: -32.4, r: 2.6 }, { x: 51.5, z: 16.6, r: 3.4 }, { x: -35, z: 20.2, r: 4.6 },
 ];
+
+/**
+ * The three puzzle doors (solo/puzzles.js): where they stand and which way they face (rot 0 faces south, +z).
+ * map.js keeps their spots free of spawns (Zip-Zap rocks, visitors) and random trees (KEEP_CLEAR above).
+ */
+export const PUZZLE_DOORS = {
+  cliff: { x: 5, z: -32.1, rot: 0 }, // in the cliff behind Aunt Hazel's cottage (north)
+  rock: { x: 51.5, z: 17.5, rot: 0 }, // in a mossy boulder on the east shore
+  tree: { x: -35, z: 20.5, rot: 0 }, // in a giant old stump in the west wood (over the river: the bridge)
+};
 
 export const inKeepClear = (x, z) => KEEP_CLEAR.some((k) => (k.r !== undefined ? Math.hypot(x - k.x, z - k.z) < k.r : x > k.x0 && x < k.x1 && z > k.z0 && z < k.z1)) || cliffWallDist(x, z) < 3;
 

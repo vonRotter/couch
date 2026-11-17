@@ -59,6 +59,7 @@ import { LightTop } from './lighttop.js';
 import { mesh, box, sph, makeDeco, makeBranch, makeSign } from './models.js';
 import { Hops } from './hops.js';
 import { HallArcade } from './arcade.js';
+import { Puzzles } from './puzzles.js';
 import { Surprises } from './surprise.js';
 import { TodayBoard, rv } from './today.js';
 import './strings14.js';
@@ -188,6 +189,14 @@ function screenAt(pos, cam) {
 export class SoloIslandScene extends BaseScene {
   // hold to toggle ("Help me play", input.js): decorating's "hold [A]: next thing" (a tap turns): a double tap holds
   get tapHoldButtons() { return this.mode === 'deco' ? ['a'] : null; }
+  // a puzzle lock's held buttons (Rock Patrol's push)
+  get holdButtons() { return this.mode === 'puzzle' ? this.puzzles?.holds || null : null; }
+
+  /** A puzzle lock is drawn over the island (puzzles.js). */
+  render(renderer) {
+    renderer.render(this.scene, this.camera);
+    this.puzzles?.render(renderer);
+  }
 
   constructor(game, { fromGame = null } = {}) {
     super(game);
@@ -266,6 +275,7 @@ export class SoloIslandScene extends BaseScene {
     this.zipzap = new ZipZap(this); // Pip's Zip-Zap: rocks, grass and trees to zap, the beam, the scan, upgrades
     this.hops = new Hops(this); // jumping: stepping stones, hidden areas with chests, hop trails and races
     this.arcade = new HallArcade(this); // the Game Hall's classic games: the high-score board, Coach's lines (arcade.js)
+    this.puzzles = new Puzzles(this); // puzzle locks on chests and three puzzle doors, about one a week (puzzles.js)
     this.bagUi = new BagUi(this); // the bag panel (bag rows + hotbar) and the cottage chest
     this.farm.objModel = (id) => this.builder.model(id); // sprinklers and scarecrows on the field
     this.seasons = new Seasons(this);
@@ -458,6 +468,7 @@ export class SoloIslandScene extends BaseScene {
     this.surprise.tick(at);
     this.games.tick(at);
     this.arcade?.tick();
+    this.puzzles?.tick();
     this.play.tick(at);
     this.photo.check();
     this.story.tick(at);
@@ -1245,6 +1256,7 @@ export class SoloIslandScene extends BaseScene {
       return out;
     }
     // knocking on the door of someone who is at home (homes.js)
+    if (this.puzzles.interactions(P, out, nm)) return this.fillDefaults(out, held); // a puzzle door (puzzles.js)
     if (this.homes.interactions(P, out, nm)) return this.fillDefaults(out, held);
     // a crab right at your feet that needs a hand wins over a villager standing by (crabs.js)
     if (this.crabs.interactions(P, out, nm, 1.25)) return this.fillDefaults(out, held);
@@ -1440,12 +1452,12 @@ export class SoloIslandScene extends BaseScene {
    * a hop trail run, fishing, the mini-games, sledding.
    */
   get speedable() {
-    return !!(this.hops?.run && !this.hops.run.done) || ['fish', 'game', 'sled', 'hopgo'].includes(this.mode);
+    return !!(this.hops?.run && !this.hops.run.done) || ['fish', 'game', 'sled', 'hopgo', 'puzzle'].includes(this.mode);
   }
 
   /** Gamepad layout (input.js): the island's own, except while the profile picker (a shared menu) is up. */
   get padLayout() {
-    return this.profilePicker ? 'default' : 'island';
+    return this.profilePicker ? 'default' : this.mode === 'puzzle' ? 'arcade' : 'island';
   }
 
   /**
@@ -2462,6 +2474,7 @@ export class SoloIslandScene extends BaseScene {
         case 'mystery': this.events.updatePanel(panel, dt); break; // the torn page and the old lock (events.js)
         case 'map': break; // the treasure map from a bottle (surprise.js closes it)
         case 'game': this.games.updateMode(inp, dt); break; // a mini-game with its own controls (games.js)
+        case 'puzzle': this.puzzles.update(dt); break; // a puzzle lock, played over the island (puzzles.js)
         case 'school': this.school.update(panel, dt); break; // the school house's game picker (school.js)
         case 'pier': this.ferry.updateBoard(inp, dt); break; // the Party Pier's badge board (ferry.js)
         default: {
@@ -2493,6 +2506,7 @@ export class SoloIslandScene extends BaseScene {
     this.isle2.update(dt, this.time);
     this.crabs.update(dt);
     this.hops.update(dt);
+    this.puzzles.animate(dt);
     this.surprise.update(dt);
     this.todayBoard.update(dt);
     this.village.update(dt);

@@ -282,6 +282,8 @@ export class IslandAtlas {
       add({ key: 'boat', kind: 'place', icon: '⛵', name: t('map.boatHome'), x: ISLE2_DOCK.x, z: ISLE2_DOCK.z0 + 2, tx: ISLE2_DOCK.x, tz: ISLE2_DOCK.z0 + 2 });
       add({ key: 'home:shelby', kind: 'place', icon: '🐚', name: t('map.home.shelby'), x: HUT.x, z: HUT.z, tx: HOME_DOORS.shelby.spot.x, tz: HOME_DOORS.shelby.spot.z });
     }
+    // a puzzle lock waiting somewhere (puzzles.js: one at a time)
+    if (region === 'main') for (const m of host.puzzles?.markers() || []) add(m);
     // the villagers: where they are now ("!" wants to talk; asleep or in: at their home)
     for (const n of host.npcs || []) {
       if (n.away) continue;

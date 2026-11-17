@@ -19,7 +19,7 @@ const ROW_COLORS = [0xff5d73, 0xff9f1c, 0xffd23f, 0x3ddc97, 0x4cc9f0, 0x9b5de5];
 
 export function bonkWall(n, small = false) {
   const out = [];
-  const cols = small ? 6 : 10, rows = small ? 3 : 5;
+  const cols = small ? 6 : 10, rows = small ? 2 : 5;
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
     const k = n % 3;
     if (!small && k === 1 && (r + c) % 2) continue; // a checkerboard

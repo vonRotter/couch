@@ -11,7 +11,7 @@ import {
 } from './models.js';
 import { isle2Height, ISLE2_SPOTS } from './isle2geo.js';
 import { makeGarage } from './models5.js';
-import { POND, inKeepClear, CLIFF_WALLS, WALL_R } from './hopdata.js';
+import { POND, inKeepClear, CLIFF_WALLS, WALL_R, PUZZLE_DOORS } from './hopdata.js';
 import { makeSchool } from './school.js';
 import { makeFerry } from '../ferry-model.js';
 import { ARCADE } from '../arcade/defs.js';
@@ -1365,6 +1365,7 @@ export class IslandMap {
     add(PIER.x, PIER.z0, 2.0, 'pier');
     add(FERRY.jetty.x1 - 0.8, FERRY.jetty.z, 1.6, 'ferry');
     add(FERRY.board.x, FERRY.board.z + 0.9, 1.4, 'ferry board');
+    for (const [id, d] of Object.entries(PUZZLE_DOORS)) add(d.x, d.z, 3.4, `puzzle door:${id}`); // (solo/puzzles.js)
   }
 
   /** Something else you use, added by the module that builds it (trail signs, chests, benches...). */

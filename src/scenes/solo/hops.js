@@ -276,6 +276,7 @@ export class Hops {
     // a chest you stand next to (and at its height)
     for (const c of Object.values(this.chests)) {
       if (Math.hypot(P.x - c.x, P.z - c.z) > 1.35 || Math.abs(P.fy - c.y) > 0.9) continue;
+      if (this.host.puzzles?.chestInteraction(c.id, c.full, out, nm)) return true; // a puzzle lock on it (puzzles.js)
       out.b = c.full ? { text: nm('hop.h.chest'), fn: () => this.openChest(c.id) } : { text: t('hop.h.chestEmpty', { when: t(CHESTS[c.id].refill ? 'hop.when.monday' : 'hop.when.never') }), fn: () => this.sayT('hop.t.empty') };
       return true;
     }

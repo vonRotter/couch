@@ -19,7 +19,7 @@ export const TROPHIES = [
   'duckTrophy', 'duckGold', 'banner', 'statue',
   'bugPlush', 'mechStatue', 'pillowFort', 'featherTrophy',
   'fishTrophy', 'derbyTrophy', 'coopPennants', 'coopTrophy',
-  'castleTrophy', 'guidesTrophy',
+  'castleTrophy', 'guidesTrophy', 'puzzleTrophy',
 ];
 const LEGACY = new Set(['castleTrophy', 'guidesTrophy']);
 const TROPHY_SET = new Set(TROPHIES);
@@ -58,6 +58,7 @@ addStrings({
     'shelf.from.coopTrophy': 'Playing together on the Party Island, for 10 badges!',
     'shelf.from.castleTrophy': 'Knights & Builders, for the Golden Bean.',
     'shelf.from.guidesTrophy': 'Grumble Guides, a prize from Mumble.',
+    'shelf.from.puzzleTrophy': 'The puzzle locks around your island, for opening every one!',
   },
   no: {
     'shelf.name': 'Trofehylle',
@@ -88,6 +89,7 @@ addStrings({
     'shelf.from.coopTrophy': 'Spill sammen på Festøya, for 10 merker!',
     'shelf.from.castleTrophy': 'Riddere og byggere, for Gullbønna.',
     'shelf.from.guidesTrophy': 'Krypeførerne, en premie fra Mumle.',
+    'shelf.from.puzzleTrophy': 'Gåtelåsene rundt på øya di, for å ha åpnet hver eneste en!',
   },
 });
 

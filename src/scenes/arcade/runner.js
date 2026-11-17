@@ -433,7 +433,7 @@ export class ArcadeRunner {
     const st = G.stats?.() || {};
     const score = G.score || 0;
     const rec = recordScore(this.game, this.key, score);
-    this.report({ proper: score > 0, mastery: st.mastery || [], trials: st.trials || [] });
+    this.report({ proper: G.proper ? G.proper() : score > 0, mastery: st.mastery || [], trials: st.trials || [] });
     if (G.poorGame ? G.poorGame() : score < 3) this.fail(G.failKind || 'timing');
     else overcame(this.host, this.part);
     this.game.roster.addStars(score > 0 ? 1 : 0);

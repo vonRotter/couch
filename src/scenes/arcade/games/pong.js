@@ -200,6 +200,7 @@ export class PongGame {
     return t(this.mine > this.theirs ? 'arc.pong.youWin' : 'arc.pong.pipWins');
   }
   poorGame() { return this.mine < 2; }
+  proper() { return this.mine + this.theirs > 0; } // a match played (the high score is the longest rally)
 
   steps() {
     return [
