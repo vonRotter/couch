@@ -6,7 +6,7 @@ const D0 = at(2026, 11, 16, 12); // Monday 16 November 2026
 const closeBoard = () => island(page, (I) => { if (I.mode === 'today') { I.hud.setPanel(null); I.mode = 'walk'; } });
 const cal = (fn, arg) => page.evaluate(async ([src, arg]) => { const C = await import('/src/scenes/solo/calendar.js'); return (0, eval)(`(${src})`)(C, arg); }, [String(fn), arg]);
 
-await test('rare events over a simulated year: about once a week, never two days in a row, never with a festival or a surprise', async () => {
+await test('rare events over a simulated year: once a week, never two days in a row, never with a festival or a surprise', async () => {
   const r = await cal((C, t0) => {
     const d0 = C.dayIndex(t0), days = [];
     for (let d = d0; d < d0 + 364; d++) { const ms = C.dayMs(d), k = C.rareEventOn(ms); if (k) days.push({ d, k, fest: C.festivalOn(ms), sur: C.surpriseOn(ms) }); }
@@ -18,7 +18,7 @@ await test('rare events over a simulated year: about once a week, never two days
     return { n: days.length, perWeek: +(days.length / 52).toFixed(2), consec, clash, kinds, sameKindRun, winterRainbow };
   }, D0);
   console.log('   rare events in a year:', JSON.stringify(r));
-  assert(r.perWeek >= 0.7 && r.perWeek <= 1.1, `per week ${r.perWeek}`);
+  assert(r.perWeek >= 0.95 && r.perWeek <= 1.0, `per week ${r.perWeek}`);
   assert(r.consec === 0 && r.clash === 0 && r.sameKindRun === 0 && r.winterRainbow === 0, JSON.stringify(r));
 });
 
@@ -51,9 +51,14 @@ await test('fog: thick fog, and at night a ghost ship with a friendly captain', 
   await sim(page, 3);
   const st = await island(page, (I, S) => ({ items: S.todayBoard.items.map((i) => i.k), ship: I.events.ship.visible, far: I.scene.fog.far }));
   assert(st.items.includes('td.ev.fog') && st.ship && st.far < 80, JSON.stringify(st));
-  await island(page, (I) => { I.player.x = -15.2; I.player.z = 39.2; I.groundCheck(I.player, I.walkState); });
+  await island(page, (I) => { I.player.x = -17.6; I.player.z = 40.2; I.groundCheck(I.player, I.walkState); I.snapCamera(); });
   await sim(page, 0.4);
   await shot(page, 'lively-ghost-ship');
+  // the usual view from the beach shows the ship (its middle and its glow are on screen)
+  const onScreen = await island(page, (I) => { const v = I.events.ship.position.clone().setY(1.5).project(I.camera); return { x: +v.x.toFixed(2), y: +v.y.toFixed(2), glow: I.events.glow.visible }; });
+  assert(Math.abs(onScreen.x) < 0.9 && Math.abs(onScreen.y) < 0.9 && onScreen.glow, JSON.stringify(onScreen));
+  // from far away at night: the glow ignores the fog
+  assert(await island(page, (I) => I.events.glow.material.fog === false), 'glow through fog');
   const r = await island(page, (I) => { const ia = I.interactions(); const txt = ia.b?.text; ia.b?.fn(); return { txt, mode: I.mode, speaker: I.dlg?.lines[0].speaker }; });
   assert(/ghost/.test(r.txt) && r.speaker === 'isl.wisp', JSON.stringify(r));
   const coins = await island(page, (I, S) => S.coins);
@@ -113,6 +118,20 @@ await test('mystery: Hoot\'s torn page -> dig for the key -> the old door\'s loc
   assert(!(await island(page, (I) => I.hasNews('hoot'))), 'no news now');
   const later = await island(page, (I) => [1, 2, 3, 4, 8].map((w) => I.events.chapterOpen(Date.now() + window.__islandTimeOffset + w * 7 * 86400000)));
   assert(JSON.stringify(later) === JSON.stringify([true, true, true, false, true]), JSON.stringify(later));
+});
+
+await test('mystery lock follows Help me play: two pictures with forgiving timing or after a skip, else three', async () => {
+  await startIsland(page, { time: D0 + 2 * DAY, name: 'Lock3' });
+  const three = await island(page, (I) => ({ n: I.events.lockLen(), code: I.events.code.length }));
+  await startIsland(page, { time: D0 + 2 * DAY, name: 'Lock2' });
+  await page.evaluate(() => { const A = window.game.assist; A.saveSettings(window.__testProfile.id, { ...A.DEFAULTS, timing: true }); });
+  const timing = await island(page, (I) => ({ n: I.events.lockLen(), code: I.events.code.length }));
+  await startIsland(page, { time: D0 + 2 * DAY, name: 'Skip2' });
+  const skip = await island(page, (I, S, G) => { G.roster.progress.skipped = { lighthouse: ['room3'] }; return { n: I.events.lockLen() }; });
+  assert(three.n === 3 && three.code === 3 && timing.n === 2 && timing.code === 2 && skip.n === 2, JSON.stringify({ three, timing, skip }));
+  // the two-picture lock opens with two, and the page shows two
+  const r = await island(page, (I, S) => { S.mystery = { week: null, step: 0, done: {} }; I.events.tickMystery(Date.now() + window.__islandTimeOffset); S.mystery.week = I.events.keyW; S.mystery.step = 2; I.events.openLock(); const code = I.events.code; const SYM = ['🐟', '⭐', '🌸', '🐚']; for (const c of code) { const L = I.events.panel; L.pick = SYM.indexOf(c); L.t = 1; I.events.updatePanel({ aPressed: true }, 0.01); } return { step: S.mystery.step, n: code.length }; });
+  assert(r.step === 3 && r.n === 2, JSON.stringify(r));
 });
 
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });

@@ -10,10 +10,11 @@ import { makeShip } from '../adventure/props.js';
 import { makeCrab } from './models7.js';
 import { makeTreasure, makeDigX } from './models9.js';
 import { ITEMS } from './items.js';
+import { settingsFor, calmOn } from '../../core/assist.js';
 
 // Rare weather events and the seasonal mystery (the "livelier island" round, part 3).
 //
-// Rare events (calendar.js rareEventOn: about once a week, Monday to Thursday, never on a day with a festival or a
+// Rare events (calendar.js rareEventOn: once a week, Tuesday to Saturday, never on a day with a festival or a
 // daily surprise, so never two days in a row; the kinds take turns):
 // - Storm: it stormed in the night; from 6 the beach has three things washed ashore (pick them up) and two
 //   stranded crabs to carry back to the water (they stay friends; they never count as the day's crab job).
@@ -23,13 +24,15 @@ import { ITEMS } from './items.js';
 //
 // The seasonal mystery, "The old keeper's chest": in each season's week Curator Hoot finds a torn page (the "!"
 // over him). It is a map: dig at its X for an old key; the key's tag points to the old door under the north
-// cliffs; its lock wants the three pictures from the page in order (a one-screen puzzle); behind it a chest with
+// cliffs; its lock wants the pictures from the page in order (two or three: Help me play); behind it a chest with
 // the season's gift. Each season's chapter comes back at most every eight weeks (S.mystery).
 
 const BEACH_FINDS = [[-2, 41], [23, 41], [14.5, 40.6]];
 const STRANDED = [[9, 40.5], [-8, 40.8]];
-const SHIP = { x: -18.5, z: 50, rot: 0.35 };
-const WISP = { x: -15.6, z: 40.6 };
+// the ghost ship lies close to the west beach, side-on, so the usual view shows it from the sand (about 5 m out);
+// Captain Wisp waits at the water's edge in front of it
+const SHIP = { x: -19.5, z: 46.2, rot: 0 };
+const WISP = { x: -17.6, z: 41.2 };
 const RAINBOW_ENDS = [{ x: 46, z: 18 }, { x: -16, z: -24 }, { x: 18, z: 8 }, { x: 2, z: -14 }];
 const KEY_SPOTS = [{ x: -16, z: -24, near: 'home' }, { x: 46, z: 18, near: 'garage' }, { x: 2, z: -14, near: 'greenhouse' }, { x: 22, z: -30, near: 'cliff' }];
 const DOOR = { x: -12, z: cliffZ(-12) + 0.2 };
@@ -61,14 +64,14 @@ addStrings({
     'ev.wisp.3': 'Take this, from my old sea chest. Now I must sail on... ooooh!',
     'ev.wisp.again': 'Ooooh... thank you for visiting again. The fog is calling me.',
     'mys.hoot.1': 'Oh! Look what fell out of an old book: a torn page with a map!',
-    'mys.hoot.2': 'An X, and three little pictures. The old keeper hid something, I am sure. Take it!',
+    'mys.hoot.2': 'An X, and some little pictures. The old keeper hid something, I am sure. Take it!',
     'mys.map.title': 'The torn page',
     'mys.map.text': 'Dig at the X ({where}). The pictures: {code}',
     'mys.where.home': 'on the hill above your cottage', 'mys.where.garage': 'below the mech garage', 'mys.where.greenhouse': 'by the greenhouse', 'mys.where.cliff': 'by the woodpile under the cliffs',
     'mys.task.dig': '🗝️ The torn page: dig at the X {where}', 'mys.task.door': '🗝️ Try the old key in the door under the north cliffs', 'mys.task.chest': '🗝️ Open the chest behind the old door',
-    'mys.lock.title': 'The old lock', 'mys.lock.text': 'Three pictures, in the order from the torn page ({code}).',
+    'mys.lock.title': 'The old lock', 'mys.lock.text': '{n} pictures, in the order from the torn page ({code}).', 'mys.n.2': 'Two', 'mys.n.3': 'Three',
     'mys.lock.hint': '[OK]: put in the picture · ◀ ▶: choose · [C]: step back',
-    'mys.lock.say': 'The old lock wants three pictures, in the order from the torn page.',
+    'mys.lock.say': 'The old lock wants {n} pictures, in the order from the torn page.',
     'mys.lock.wrong': 'Clunk. Not quite. Look at the torn page again!',
     'mys.lock.open': 'Click! The old door creaks open.',
     'mys.chest': 'The old keeper\'s chest! Something for {season} inside.',
@@ -97,14 +100,14 @@ addStrings({
     'ev.wisp.3': 'Ta denne, fra den gamle sjøkista mi. Nå må jeg seile videre... uuuh!',
     'ev.wisp.again': 'Uuuh... takk for at du besøker meg igjen. Tåka kaller på meg.',
     'mys.hoot.1': 'Å! Se hva som falt ut av en gammel bok: en revet side med et kart!',
-    'mys.hoot.2': 'Et kryss, og tre små bilder. Den gamle fyrvokteren gjemte noe, det er jeg sikker på. Ta den!',
+    'mys.hoot.2': 'Et kryss, og noen små bilder. Den gamle fyrvokteren gjemte noe, det er jeg sikker på. Ta den!',
     'mys.map.title': 'Den revne siden',
     'mys.map.text': 'Grav ved krysset ({where}). Bildene: {code}',
     'mys.where.home': 'på bakken over huset ditt', 'mys.where.garage': 'nedenfor robotverkstedet', 'mys.where.greenhouse': 'ved drivhuset', 'mys.where.cliff': 'ved vedstabelen under klippene',
     'mys.task.dig': '🗝️ Den revne siden: grav ved krysset {where}', 'mys.task.door': '🗝️ Prøv den gamle nøkkelen i døra under nordklippene', 'mys.task.chest': '🗝️ Åpne kista bak den gamle døra',
-    'mys.lock.title': 'Den gamle låsen', 'mys.lock.text': 'Tre bilder, i rekkefølgen fra den revne siden ({code}).',
+    'mys.lock.title': 'Den gamle låsen', 'mys.lock.text': '{n} bilder, i rekkefølgen fra den revne siden ({code}).', 'mys.n.2': 'To', 'mys.n.3': 'Tre',
     'mys.lock.hint': '[OK]: sett inn bildet · ◀ ▶: velg · [C]: gå tilbake',
-    'mys.lock.say': 'Den gamle låsen vil ha tre bilder, i rekkefølgen fra den revne siden.',
+    'mys.lock.say': 'Den gamle låsen vil ha {n} bilder, i rekkefølgen fra den revne siden.',
     'mys.lock.wrong': 'Klonk. Ikke helt. Se på den revne siden igjen!',
     'mys.lock.open': 'Klikk! Den gamle døra knirker opp.',
     'mys.chest': 'Kista til den gamle fyrvokteren! Noe for {season} ligger oppi.',
@@ -133,8 +136,15 @@ export class IslandEvents {
     this.ship.rotation.y = SHIP.rot;
     this.wisp = makeWisp();
     this.wisp.position.set(WISP.x, heightAt(WISP.x, WISP.z) + 0.1, WISP.z);
-    this.ship.visible = this.wisp.visible = false;
-    this.group.add(this.ship, this.wisp);
+    // a soft glow around it, seen from far away at night and through the fog (it breathes slowly; steady with
+    // "Reduce flashing")
+    this.glow = new THREE.Mesh(new THREE.SphereGeometry(3.4, 20, 14), new THREE.MeshBasicMaterial({ color: 0x9fffe0, transparent: true, opacity: 0.12, depthWrite: false, fog: false }));
+    this.glow.scale.set(1.35, 0.7, 0.55);
+    this.glow.position.set(SHIP.x, 1.6, SHIP.z);
+    this.lanterns = [-2.2, 0.4, 2.6].map((x, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), new THREE.MeshBasicMaterial({ color: 0xb8ffd8, fog: false })); m.position.set(SHIP.x + x, 2.2 + (i % 2) * 1.2, SHIP.z); return m; });
+    this.ship.visible = this.wisp.visible = this.glow.visible = false;
+    this.group.add(this.ship, this.wisp, this.glow, ...this.lanterns);
+    for (const l of this.lanterns) l.visible = false;
     // the rainbow and its end
     this.rainbow = makeRainbow();
     this.rainbow.visible = false;
@@ -189,7 +199,8 @@ export class IslandEvents {
     this.finds.forEach((f) => { f.g.visible = storm && !D.finds.includes(f.i); });
     this.crabs.forEach((c) => { if (!c.go) c.g.visible = storm && !D.crabs.includes(c.i); });
     const ghost = this.kind === 'fog' && h >= 20 && !away;
-    this.ship.visible = this.wisp.visible = ghost;
+    this.ship.visible = this.wisp.visible = this.glow.visible = ghost;
+    for (const l of this.lanterns) l.visible = ghost;
     const rb = this.kind === 'rainbow' && h >= 13 && h < 19 && !away;
     this.rainbow.visible = rb;
     this.dig.visible = rb && !D.dug;
@@ -272,7 +283,7 @@ export class IslandEvents {
     const L = (key) => ({ key, speaker: 'isl.wisp', css: '#7fb8d8', name: t('isl.npc.wisp') });
     if (D.wisp) { host.say([L('ev.wisp.again')]); return; }
     D.wisp = true;
-    host.camView = { pos: new THREE.Vector3(WISP.x + 3, 4.5, WISP.z - 3.5), look: new THREE.Vector3(SHIP.x, 1.6, SHIP.z), fov: 50 };
+    host.camView = { pos: new THREE.Vector3(WISP.x + 3.5, 4.2, WISP.z - 4.5), look: new THREE.Vector3(SHIP.x, 1.6, SHIP.z), fov: 50 };
     host.say([L('ev.wisp.1'), L('ev.wisp.2'), L('ev.wisp.3')], () => {
       host.camView = null;
       host.grant({ coins: 40, items: [['pearl', 1]] });
@@ -295,6 +306,20 @@ export class IslandEvents {
 
   // ---------- the seasonal mystery ----------
 
+  /**
+   * How many pictures the lock wants (Help me play): two when this profile has forgiving timing on or has
+   * used a skip (in any game), else three.
+   */
+  lockLen() {
+    const p = this.host.player?.p;
+    const s = p ? settingsFor(p) : null;
+    const skipped = Object.values(this.host.game.roster.progress?.skipped || {}).some((l) => l?.length);
+    return s?.timing || skipped ? 2 : 3;
+  }
+
+  /** The pictures on this week's page, in order. */
+  get code() { return (this.code3 || []).slice(0, this.lockLen()); }
+
   /** Is this week's chapter open (a season whose chapter was not done in the last eight weeks)? */
   chapterOpen(at = now()) {
     const M = this.M, w = weekIndex(at), s = seasonOf(at);
@@ -308,7 +333,7 @@ export class IslandEvents {
     if (M.week === w || M.week === null) {
       const k = Math.floor(dayRand(`mkey:${w}`) * KEY_SPOTS.length);
       if (!this.keyAt || this.keyW !== w) { this.keyW = w; this.keyAt = { ...this.host.map.findSpot(KEY_SPOTS[k].x, KEY_SPOTS[k].z, 0.5), near: KEY_SPOTS[k].near }; }
-      this.code = [0, 1, 2].map((i) => SYMBOLS[Math.floor(dayRand(`mcode:${w}:${i}`) * SYMBOLS.length)]);
+      this.code3 = [0, 1, 2].map((i) => SYMBOLS[Math.floor(dayRand(`mcode:${w}:${i}`) * SYMBOLS.length)]);
     }
     this.mound.visible = M.week === w && M.step === 1 && !this.host.isle2?.here();
     if (this.mound.visible) this.mound.position.set(this.keyAt.x, heightAt(this.keyAt.x, this.keyAt.z) + 0.02, this.keyAt.z);
@@ -366,15 +391,15 @@ export class IslandEvents {
     this.host.mode = 'mystery';
     this.panel = { kind: 'lock', t: 0, pick: 0, got: [] };
     this.renderLock();
-    speak(t('mys.lock.say'), 'narrator');
+    speak(t('mys.lock.say', { n: t(`mys.n.${this.code.length}`).toLowerCase() }), 'narrator');
   }
 
   renderLock() {
     const host = this.host, L = this.panel;
-    const slots = [0, 1, 2].map((i) => `<span style="display:inline-block;width:2.2em;height:2.2em;line-height:2.2em;margin:4px;border-radius:12px;background:#5a3a24;font-size:1.6em">${L.got[i] || ''}</span>`).join('');
+    const slots = this.code.map((_, i) => `<span style="display:inline-block;width:2.2em;height:2.2em;line-height:2.2em;margin:4px;border-radius:12px;background:#5a3a24;font-size:1.6em">${L.got[i] || ''}</span>`).join('');
     const opts = SYMBOLS.map((s, i) => `<span style="display:inline-block;padding:4px 12px;margin:4px;border-radius:12px;font-size:1.8em;${i === L.pick ? 'background:#ffd84a;box-shadow:0 3px 0 rgba(43,35,64,.2)' : 'background:rgba(138,90,50,.13)'}">${s}</span>`).join('');
     host.hud.setPanel(`<h2>${esc(t('mys.lock.title'))}</h2><div style="text-align:center">${slots}</div><div style="text-align:center;margin:8px 0">${opts}</div>
-      <div class="isl-letter">${esc(t('mys.lock.text', { code: L.wrong ? this.code.join(' ') : '…' }))}</div><div class="isl-foot">${esc(tFor(host.player?.p, 'mys.lock.hint'))}</div>`);
+      <div class="isl-letter">${esc(t('mys.lock.text', { n: t(`mys.n.${this.code.length}`), code: L.wrong ? this.code.join(' ') : '…' }))}</div><div class="isl-foot">${esc(tFor(host.player?.p, 'mys.lock.hint'))}</div>`);
   }
 
   /** The mystery's panels (island.js mode 'mystery'): inp is the panel input ([OK] as aPressed, [C] as bPressed). */
@@ -395,7 +420,7 @@ export class IslandEvents {
     if (!inp.aPressed) return;
     L.got.push(SYMBOLS[L.pick]);
     host.game.audio.play('pop');
-    if (L.got.length < 3) { this.renderLock(); return; }
+    if (L.got.length < this.code.length) { this.renderLock(); return; }
     if (L.got.join() === this.code.join()) {
       this.M.step = 3;
       host.hud.setPanel(null); host.mode = 'walk'; this.panel = null;
@@ -456,6 +481,7 @@ export class IslandEvents {
       const P = host.player;
       if (P) this.wisp.rotation.y = Math.atan2(P.x - WISP.x, P.z - WISP.z);
       this.ship.position.y = SEA_Y - 0.1 + Math.sin(this.t * 0.8) * 0.08;
+      this.glow.material.opacity = calmOn() ? 0.12 : 0.1 + Math.sin(this.t * 0.7) * 0.035; // a slow breath (0.1 Hz), never a flash
     }
     if (this.dig.visible) this.dig.rotation.y += dt * 0.5;
     if (this.mound.visible) this.mound.rotation.y += dt * 0.5;
