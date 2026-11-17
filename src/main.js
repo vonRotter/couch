@@ -47,6 +47,8 @@ import { LighthouseScene } from './scenes/lighthouse.js';
 import { BreachScene } from './scenes/breach.js';
 import { KeepSoloScene } from './scenes/keepsolo.js';
 import { StoryScene, STORY_GAMES } from './scenes/story.js';
+import { ArcadeScene } from './scenes/arcade/scene.js';
+import { ARCADE_KEYS } from './scenes/arcade/defs.js';
 import { activateProfile, updateProfile, soloSaveKey, getProfile } from './core/profiles.js';
 import { StartScene } from './scenes/start.js';
 import { coopReward, nameList } from './core/coop.js';
@@ -99,6 +101,8 @@ export const GAMES = {
   spelling: { Scene: SpellingScene, edu: true },
   math: { Scene: MathScene, edu: true },
   learnmix: { Scene: LearnMixScene, edu: true },
+  // the Game Hall's nine classic arcade games (solo island only: scenes/arcade)
+  ...Object.fromEntries(ARCADE_KEYS.map((k) => [k, { Scene: ArcadeScene, arcade: true }])),
 };
 
 class Game {

@@ -14,6 +14,8 @@ import { makeGarage } from './models5.js';
 import { POND, inKeepClear, CLIFF_WALLS, WALL_R } from './hopdata.js';
 import { makeSchool } from './school.js';
 import { makeFerry } from '../ferry-model.js';
+import { ARCADE } from '../arcade/defs.js';
+import { makeArcadeEmblem } from '../arcade/emblems.js';
 
 // The hand-made island town. North is -z (the cliffs), south is +z (the beach and the dock), the camera
 // looks north. A river runs from the waterfall in the cliffs down to the sea and cuts off the west bank
@@ -52,6 +54,18 @@ export const PLAZA = { x: 12, z: -5, r: 7.5 };
 export const STORE = { x: 12, z: -16.4 };
 export const HALL = { x: 27, z: -15 };
 export const PAD = { x: 40, z: -16 };
+/**
+ * The Game Hall's cabinets (hall-local): the nine classic games in a row along the back wall (scenes/arcade), the
+ * four guest games on the side walls, two a side, facing in. door: where you stand to play; face: from the cabinet
+ * toward you.
+ */
+export const HALL_CABS = [
+  ...ARCADE.map((g, i) => ({ key: g.key, kind: 'classic', color: g.color, accent: g.accent, i, x: -4.4 + i * 1.1, z: -1.95, rot: 0, door: { x: -4.4 + i * 1.1, z: -0.85 }, face: { x: 0, z: 1 } })),
+  ...['tachyon', 'starlite', 'foothold', 'starhop'].map((key, i) => {
+    const sx = i < 2 ? -1 : 1, z = i % 2 ? 1.85 : 0.45;
+    return { key, kind: 'guest', i, x: sx * 4.72, z, rot: -sx * Math.PI / 2, door: { x: sx * 3.6, z }, face: { x: -sx, z: 0 } };
+  }),
+];
 export const BRIDGE = { x: -24.2, z: -19, len: 11.5 };
 export const ROCKFALL = { x: 26, z: -32.4 };
 export const PIER = { x: 4, z0: 40.5, len: 19 };
@@ -77,8 +91,12 @@ export const PLACES = [
   { id: 'garage', key: 'breach', x: 46, z: 3.2, door: { x: 46, z: 6.8 } }, // Bean Brigade's mech garage on the east hill
   // the school house on the meadow south-west of the square: its door opens the learning games' picker (school.js)
   { id: 'school', key: 'school', school: true, x: -1.5, z: 16.2, door: { x: -1.5, z: 19.6 } },
-  // the four arcade cabinets in the game hall (filled in by build)
-  ...['tachyon', 'starlite', 'foothold', 'starhop'].map((g, i) => ({ id: g, key: g, guest: g, x: HALL.x - 3.9 + i * 2.6, z: HALL.z - 1.2, door: { x: HALL.x - 3.9 + i * 2.6, z: HALL.z + 0.2 }, cabinet: i })),
+  // the game hall's cabinets: the nine classic games (arcade: scenes/arcade) and the four guest games (their ids
+  // stay the game names: saves remember the last place)
+  ...HALL_CABS.map((cb, i) => ({
+    id: cb.kind === 'guest' ? cb.key : `arc-${cb.key}`, key: cb.key, ...(cb.kind === 'guest' ? { guest: cb.key } : { arcade: true }),
+    x: HALL.x + cb.x, z: HALL.z + cb.z, door: { x: HALL.x + cb.door.x, z: HALL.z + cb.door.z }, face: cb.face, cabinet: i,
+  })),
 ];
 
 // Paths (smoothed): dirt roads between the places. NPCs walk on these.
@@ -767,13 +785,14 @@ export class IslandMap {
     this.boxObs(-7.5, -27.5, 1.0, 0.85);
 
     // game hall
-    const hall = makeHall(M, ['tachyon', 'starlite', 'foothold', 'starhop']);
+    const hall = makeHall(M, HALL_CABS, makeArcadeEmblem);
     this.live(hall, HALL.x, HALL.z, 0, 0);
     this.hall = hall;
     // (the walls end under the roof: up there you can walk over them, see hops.js)
     this.boxObs(HALL.x, HALL.z - 2.5, 5.7, 0.35, { top: 4.0 });
     for (const sx of [-1, 1]) this.boxObs(HALL.x + sx * 5.5, HALL.z, 0.35, 2.7, { top: 4.0 });
-    for (const c of hall.userData.cabinets) this.boxObs(HALL.x + c.x, HALL.z - 1.2, 0.7, 0.55);
+    this.boxObs(HALL.x, HALL.z - 1.95, 4.95, 0.42); // the row of classic cabinets
+    for (const c of hall.userData.cabinets) if (c.kind === 'guest') this.boxObs(HALL.x + c.x, HALL.z + c.z, 0.55, 0.68);
     this.lamp(HALL.x - 6.6, HALL.z + 3.2);
     this.lamp(HALL.x + 5.6, HALL.z + 3.4); // (not closing the gap between the hall and the crates up to its roof)
     // Pip's launch pad

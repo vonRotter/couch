@@ -58,6 +58,7 @@ import { Story } from './story.js';
 import { LightTop } from './lighttop.js';
 import { mesh, box, sph, makeDeco, makeBranch, makeSign } from './models.js';
 import { Hops } from './hops.js';
+import { HallArcade } from './arcade.js';
 import { Surprises } from './surprise.js';
 import { TodayBoard, rv } from './today.js';
 import './strings14.js';
@@ -96,6 +97,7 @@ const BRANCH_RESPAWN = 15 * MIN;
 const NPC_SPEED = 2.6;
 const TALK_R = 2.0;
 const DOOR_R = 1.9;
+const CAB_R = 1.2; // a Game Hall cabinet (the nearest one: they stand 1.1 apart)
 // The solo island's buttons: [A] jumps, [B] is the one "use" button (tools, talking, picking up, going in),
 // [C] is back in panels. Keyboard: Space / E / Q, Q opens the menu, Tab the bag, F the journal, 1-9 the
 // hotbar. Gamepad (padLayout 'island', input.js): A jumps, X uses, B is back (it never picks), Start opens
@@ -263,6 +265,7 @@ export class SoloIslandScene extends BaseScene {
     this.crabs = new CrabCare(this); // crab friends: help crabs, Crab Cove, a crab who follows you (crabs.js)
     this.zipzap = new ZipZap(this); // Pip's Zip-Zap: rocks, grass and trees to zap, the beam, the scan, upgrades
     this.hops = new Hops(this); // jumping: stepping stones, hidden areas with chests, hop trails and races
+    this.arcade = new HallArcade(this); // the Game Hall's classic games: the high-score board, Coach's lines (arcade.js)
     this.bagUi = new BagUi(this); // the bag panel (bag rows + hotbar) and the cottage chest
     this.farm.objModel = (id) => this.builder.model(id); // sprinklers and scarecrows on the field
     this.seasons = new Seasons(this);
@@ -285,7 +288,7 @@ export class SoloIslandScene extends BaseScene {
     // the player
     this.player = null;
     const place = this.map.places.find((p) => p.key === fromGame) || (S.last.place && !since(S.last.at, 6 * HOUR) && this.map.places.find((p) => p.id === S.last.place));
-    this.spawnAt = place ? { x: place.door.x, z: place.door.z + (place.cabinet !== undefined ? 1.6 : 1.2) } : { x: HOME.x + 0.8, z: HOME.z + 4.2 };
+    this.spawnAt = place ? (place.face ? { x: place.door.x + place.face.x * 0.7, z: place.door.z + place.face.z * 0.7 } : { x: place.door.x, z: place.door.z + 1.2 }) : { x: HOME.x + 0.8, z: HOME.z + 4.2 };
     if (fromGame === 'dive') this.spawnAt = { x: DIVE_BOAT.x - 1.0, z: DIVE_BOAT.z + 1.0 };
     if (fromGame === 'ferry') this.spawnAt = { x: FERRY.jetty.x0 + 1.2, z: FERRY.jetty.z }; // home from playing together
     if (this.players.length) this.spawn(this.players[0]);
@@ -454,6 +457,7 @@ export class SoloIslandScene extends BaseScene {
     this.hops.tick(at);
     this.surprise.tick(at);
     this.games.tick(at);
+    this.arcade?.tick();
     this.play.tick(at);
     this.photo.check();
     this.story.tick(at);
@@ -1162,6 +1166,7 @@ export class SoloIslandScene extends BaseScene {
   placeInfo(pl) {
     const p = this.game.roster.progress;
     if (pl.guest) return t('isl.guest');
+    if (pl.arcade) return this.arcade.info(pl.key); // a classic game's cabinet: your best (solo/arcade.js)
     switch (pl.key) {
       case 'lighthouse': return p.lighthouse?.flags?.finale ? t('isl.best.lhDone') : p.lighthouse ? t('isl.best.lh', { n: p.lighthouse.crystals || 0 }) : t('isl.best.new');
       case 'adventure': return p.adventure?.done2 ? t('isl.best.adv2') : p.adventure?.done ? t('isl.best.adv1') : p.adventure ? t('isl.best.adv', { n: p.adventure.scene || 1 }) : t('isl.best.new');
@@ -1222,11 +1227,16 @@ export class SoloIslandScene extends BaseScene {
       if (!out.a) out.a = { text: '', fn: () => this.doTool(held?.id, null) };
       return out;
     }
-    // game places
+    // game places (the nearest: the Game Hall's cabinets stand side by side)
+    let door = null, nd = Infinity;
     for (const pl of this.map.places) {
       if (pl.id === 'burrow' && !S.unlocks.burrow) continue;
-      if (Math.hypot(P.x - pl.door.x, P.z - pl.door.z) > DOOR_R) continue;
+      const d = Math.hypot(P.x - pl.door.x, P.z - pl.door.z);
+      if (d > (pl.cabinet !== undefined ? CAB_R : DOOR_R) || d >= nd) continue;
       if (pl.lock === 'mine' && !S.unlocks.mine) continue; // the rockfall below says what to do
+      door = pl; nd = d;
+    }
+    for (const pl of door ? [door] : []) {
       if (this.placeOpen(pl)) {
         const fn = () => this.enterPlace(pl);
         out.a = { text: `${nm('isl.enter')} · ${t(`game.${pl.key}`)}`, fn };

@@ -2,7 +2,7 @@ import { t, addStrings } from '../../core/i18n.js';
 import { now } from './save.js';
 import { npcState, canTalkBonus, TALK_PTS } from './npcs.js';
 import {
-  GENRES, GAMES, LEVEL_NAMES, loadPassport, savePassport, syncProfile, suggestNext, openTrials, trialById, gameName, skillLevel, announce,
+  GENRES, GAMES, SKILL_IDS, LEVEL_NAMES, loadPassport, savePassport, syncProfile, suggestNext, openTrials, trialById, gameName, skillLevel, announce,
 } from '../../core/passport.js';
 
 // Coach Bo, the solo island's game coach (development step 3). Lives in the Game Hall (a little door on its west
@@ -106,6 +106,7 @@ export class Coach {
     if (!G) return { open: false, hidden: true };
     if (key === 'coop') return { open: true }; // the Party Pier ferry
     if (G.where === 'coop') return { open: false, hidden: true };
+    if (G.where === 'arcade') return { open: true }; // a cabinet in the Game Hall
     if (G.where === 'solo' || G.where === 'school') {
       const pl = host.map.places.find((p) => `place:${p.id}` === G.place);
       if (!pl) return { open: false, hidden: true };
@@ -184,7 +185,7 @@ export class Coach {
     // nothing new: a bit of coaching first (isl.coach.chat1-5, in turn)
     if (!lines.length) { n.chatI = ((n.chatI || 0) % 5) + 1; lines.push(C(`isl.coach.chat${n.chatI}`)); }
     if (canTalkBonus(st, at)) { st.talkAt = at; host.addPts('coach', TALK_PTS); }
-    lines.push({ ...C('ask'), choices: ['coach.c.next', 'coach.c.trial', 'coach.c.genres', 'coach.c.bye'], onChoice: (i) => this.answer(n, i) });
+    lines.push({ ...C('ask'), choices: ['coach.c.next', 'coach.c.trial', 'coach.c.arcade', 'coach.c.genres', 'coach.c.bye'], onChoice: (i) => this.answer(n, i === 2 ? 'arcade' : i > 2 ? i - 1 : i) });
     host.say(lines, () => this.done(n));
   }
 
@@ -220,6 +221,12 @@ export class Coach {
       host.say([C('trial', { trial: t(`pp.tr.${tr.id}`), skill: t(`pp.skill.${tr.skill}`).toLowerCase(), level: t(`pp.lv.${LEVEL_NAMES[tr.level]}`) })], () => this.done(n));
       return;
     }
+    if (i === 'arcade') {
+      // one of the Game Hall's classic games, with its line (solo/arcade.js)
+      const sg = host.arcade.suggestion();
+      host.say([C('arcSuggest', { game: t(`game.${sg.key}`), line: t(`coach.arc.${sg.key}`) })], () => this.done(n));
+      return;
+    }
     if (i === 2) {
       host.say([C('genres')], () => {
         this.done(n);
@@ -241,7 +248,7 @@ export class Coach {
   /** The skill levels, for tests and the parent page. */
   levels() {
     const P = this.P;
-    return Object.fromEntries(['timing', 'aiming', 'steering', 'exploring', 'puzzles', 'planning', 'building', 'reading', 'teamwork'].map((s) => [s, skillLevel(P, s)]));
+    return Object.fromEntries(SKILL_IDS.map((s) => [s, skillLevel(P, s)]));
   }
 }
 

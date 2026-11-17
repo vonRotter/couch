@@ -49,11 +49,15 @@ export const PAD_LABELS = {
  * the D-pad does not walk there (left/right: hotbar, up: bag, down: journal) and Y opens the emote wheel.
  * 'walk' (the shared island and Pillow Keep Solo's town): 'default' without Y as a second A, so Y opens the
  * emote wheel there (core/emotes.js); menus still pick with A.
+ * 'arcade' (the classic arcade games and the island's puzzles): A, then X for the second button, B is back.
  */
 export const PAD_LAYOUTS = {
   default: { a: ['a', 'y'], b: ['b', 'rb', 'rt'], c: ['x', 'lb', 'lt'], dpadMoves: true },
   island: { a: ['a'], b: ['x'], c: ['b'], dpadMoves: false },
   walk: { a: ['a'], b: ['b', 'rb', 'rt'], c: ['x', 'lb', 'lt'], dpadMoves: true },
+  // the Game Hall's classic arcade games (scenes/arcade): A the main button, X (or Y, the bumpers) the second one,
+  // B is back (it never picks); the D-pad moves like the stick
+  arcade: { a: ['a'], b: ['x', 'y', 'rb', 'lb'], c: ['b'], dpadMoves: true },
 };
 let layoutNow = 'default';
 /** The scene's gamepad layout ('default' | 'island'): main.js sets it every frame from scene.padLayout. */

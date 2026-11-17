@@ -39,6 +39,7 @@ export const SKILLS = [
   { id: 'building', icon: '🧱' },
   { id: 'reading', icon: '👀' },
   { id: 'teamwork', icon: '🤝' },
+  { id: 'memory', icon: '🧠' }, // the classic games round: remembering a tune, a pattern or the way (Echo Bells, Tunnel Trek)
 ];
 export const SKILL_IDS = SKILLS.map((s) => s.id);
 export const MEDALS = ['', '🥉', '🥈', '🥇'];
@@ -61,12 +62,14 @@ export const GENRES = [
   { id: 'party', icon: '🎉', css: '#9b5de5', pic: 'party' },
   { id: 'life', icon: '🌱', css: '#6aa82a', pic: null },
   { id: 'learning', icon: '📚', css: '#2f7fd0', pic: 'spelling' },
+  { id: 'arcade', icon: '🕹️', css: '#c2185b', pic: null }, // the classic arcade games in the Game Hall
 ];
 export const GENRE_IDS = GENRES.map((g) => g.id);
 
 /**
  * Every game -> { genre, skills, where, name? }. where: 'solo' (a place on the solo island), 'island' (an island
- * activity), 'hall' (a Game Hall guest game: only the launch is seen), 'school', 'coop' (the shared island).
+ * activity), 'hall' (a Game Hall guest game: only the launch is seen), 'arcade' (a classic game on a Game Hall
+ * cabinet, scenes/arcade), 'school', 'coop' (the shared island).
  * name: an i18n key for things that are not a game in GAMES (main.js); else 'game.<key>'.
  * after: what it builds on (suggestions: Coach and the map suggest a game once these are played, never forced).
  * place: the solo island place id or map marker key (suggestions show the way there).
@@ -90,6 +93,16 @@ export const GAMES = {
   starlite: { genre: 'tactics', skills: ['planning', 'building'], where: 'hall', place: 'place:hall', after: ['breach'] }, // a real-time strategy game (StarCraft-like)
   foothold: { genre: 'tactics', skills: ['planning', 'reading'], where: 'hall', place: 'place:hall', after: ['breach'] }, // an XCOM-style tactics game
   starhop: { genre: 'adventure', skills: ['exploring', 'steering'], where: 'hall', place: 'place:hall', after: ['lighthouse'] },
+  // the Game Hall's classic arcade games (scenes/arcade): each teaches one basic skill
+  snake: { genre: 'arcade', skills: ['timing', 'planning'], where: 'arcade', place: 'place:hall' }, // Wiggle Worm: reacting, planning ahead
+  blocks: { genre: 'puzzle', skills: ['puzzles', 'planning'], where: 'arcade', place: 'place:hall', after: ['snake'] }, // Block Drop: shapes and where they fit
+  maze: { genre: 'puzzle', skills: ['exploring', 'memory'], where: 'arcade', place: 'place:hall' }, // Tunnel Trek: finding a way, reading a map
+  crates: { genre: 'puzzle', skills: ['planning', 'puzzles'], where: 'arcade', place: 'place:hall', after: ['maze'] }, // Crate Shove: planning, undo
+  simon: { genre: 'arcade', skills: ['memory', 'timing'], where: 'arcade', place: 'place:hall' }, // Echo Bells: remembering a sequence
+  lights: { genre: 'puzzle', skills: ['puzzles', 'planning'], where: 'arcade', place: 'place:hall', after: ['crates'] }, // Sleepy Lanterns: logic
+  bonk: { genre: 'arcade', skills: ['timing', 'aiming'], where: 'arcade', place: 'place:hall', after: ['snake'] }, // Brick Bonk: timing, angles
+  pong: { genre: 'sports', skills: ['timing', 'aiming'], where: 'arcade', place: 'place:hall', after: ['bonk'] }, // Paddle Pals: timing, angles
+  rocks: { genre: 'shooter', skills: ['aiming', 'steering'], where: 'arcade', place: 'place:hall', after: ['duckhunt'] }, // Rock Patrol: aiming, momentum
   // island activities
   farm: { genre: 'life', skills: ['planning'], where: 'island', place: 'home', name: 'pp.g.farm' },
   fishing: { genre: 'life', skills: ['timing'], where: 'island', place: 'npc:grumbleton', name: 'pp.g.fishing' },
@@ -130,8 +143,9 @@ export const GAMES = {
 };
 
 /** The order Coach suggests things in on the solo island (each after what it builds on; nothing is ever locked by it). */
-export const PATH = ['farm', 'platformer', 'fishing', 'duckhunt', 'school', 'stones', 'adventure', 'hops', 'kite', 'guides', 'cave', 'lighthouse',
-  'breach', 'build', 'dive', 'cafe', 'castle', 'keepsolo', 'tachyon', 'starlite', 'foothold', 'starhop'];
+export const PATH = ['farm', 'platformer', 'snake', 'fishing', 'duckhunt', 'simon', 'school', 'stones', 'maze', 'adventure', 'hops', 'bonk', 'kite',
+  'guides', 'crates', 'blocks', 'cave', 'lighthouse', 'lights', 'pong', 'rocks', 'breach', 'build', 'dive', 'cafe', 'castle', 'keepsolo', 'tachyon',
+  'starlite', 'foothold', 'starhop'];
 
 export const gameName = (key) => t(GAMES[key]?.name || `game.${key}`);
 export const genreOf = (key) => GAMES[key]?.genre || null;
@@ -159,6 +173,17 @@ export const TRIALS = [
   { id: 'lh.crystals', skill: 'reading', level: 3, game: 'lighthouse' }, // Lighthouse Caves: two lamp crystals back
   { id: 'coop.one', skill: 'teamwork', level: 2, game: 'coop' }, // finish a game together on the shared island
   { id: 'coop.five', skill: 'teamwork', level: 3, game: 'coop' }, // finish 5 different games together
+  // the Game Hall's classic games (scenes/arcade: each game says which trials a finished game earned)
+  { id: 'snake.twenty', skill: 'planning', level: 2, game: 'snake' }, // Wiggle Worm: 20 berries in one game
+  { id: 'blocks.ten', skill: 'puzzles', level: 2, game: 'blocks' }, // Block Drop: 10 rows in one game
+  { id: 'maze.clean', skill: 'exploring', level: 2, game: 'maze' }, // Tunnel Trek: a maze (level 3 or later) without a bump
+  { id: 'crates.noundo', skill: 'planning', level: 2, game: 'crates' }, // Crate Shove: a level (4 or later) without undo or starting over
+  { id: 'simon.eight', skill: 'memory', level: 2, game: 'simon' }, // Echo Bells: a tune of 8 notes
+  { id: 'simon.twelve', skill: 'memory', level: 3, game: 'simon' }, // Echo Bells: a tune of 12 notes
+  { id: 'lights.par', skill: 'puzzles', level: 3, game: 'lights' }, // Sleepy Lanterns: a 5x5 square in par
+  { id: 'bonk.wall', skill: 'aiming', level: 2, game: 'bonk' }, // Brick Bonk: a whole wall
+  { id: 'pong.win', skill: 'timing', level: 2, game: 'pong' }, // Paddle Pals: beat Pip
+  { id: 'rocks.wave', skill: 'steering', level: 2, game: 'rocks' }, // Rock Patrol: clear two waves
 ];
 export const trialById = (id) => TRIALS.find((x) => x.id === id) || null;
 
@@ -293,6 +318,7 @@ export function apply(P, ev, d = {}) {
         if (Object.keys(P.coop).length >= 5) trial(P, 'coop.five');
       }
       for (const w of d.mastery || []) master(P, key, w);
+      if (proper) for (const id of d.trials || []) trial(P, id); // (games that name their own trials: the arcade)
       if (key === 'platformer' && d.cleared && d.falls === 0) trial(P, 'sky.clean');
       if (key === 'duckhunt' && d.round >= 3) trial(P, 'duck.r3');
       if (key === 'duckhunt' && d.perfects > 0) trial(P, 'duck.perfect');

@@ -340,10 +340,12 @@ export function makeCastleGate() {
 }
 
 /**
- * The game hall: an open-fronted arcade with four cabinets for the guest games.
- * userData.cabinets = [{ key, x, z }] local positions in front of each cabinet.
+ * The game hall: an open-fronted arcade. cabs (map.js HALL_CABS): the classic games' cabinets in a row along the
+ * back wall (kind 'classic', slimmer, a marquee with the game's emblem) and the guest games' cabinets on the side
+ * walls (kind 'guest', the game's 3D icon on top). userData.cabinets = [{ key, x, z, icon }] (the cabinet's local
+ * spot); userData.board: the high-score board on the back wall, over the row (solo/arcade.js draws it).
  */
-export function makeHall(M, keys) {
+export function makeHall(M, cabs, emblem = null) {
   const g = new THREE.Group();
   const W = 11, D = 5;
   g.add(mesh(box(W + 0.4, 0.3, D + 0.4), STONE_DARK, 0, 0.15, 0));
@@ -355,30 +357,60 @@ export function makeHall(M, keys) {
   for (let i = 0; i < 10; i++) for (let k = 0; k < 4; k++) g.add(mesh(box(1.05, 0.04, 1.1), (i + k) % 2 ? 0xffffff : 0x2b2340, -W / 2 + 0.6 + i * 1.08, 0.32, -D / 2 + 0.7 + k * 1.15, false));
   // sign with lights
   g.add(mesh(box(5.0, 1.0, 0.2), 0x2b2340, 0, 4.6, D / 2 + 0.3));
-  for (let i = 0; i < 9; i++) g.add(mesh(sph(0.1, 8, 6), M.lamp, -2.2 + i * 0.55, 4.6, D / 2 + 0.45, false));
+  for (let i = 0; i < 9; i++) g.add(mesh(sph(0.08, 8, 6), M.lamp, -2.2 + i * 0.55, 5.02, D / 2 + 0.42, false));
+  // the sign's display: the classic games' best scores, one after the other (solo/arcade.js draws it)
+  const marquee = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.72), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  marquee.position.set(0, 4.55, D / 2 + 0.41);
+  g.add(marquee);
+  g.userData.marquee = marquee;
   for (const sx of [-1, 1]) g.add(mesh(cyl(0.15, 0.15, 3.6, 8), 0xffc93c, sx * (W / 2 - 0.2), 1.9, D / 2));
   const cabinets = [];
-  keys.forEach((key, i) => {
-    const x = -3.9 + i * 2.6;
+  for (const cb of cabs) {
     const c = new THREE.Group();
-    const col = [0xff5d73, 0x4cc9f0, 0x3ddc97, 0xffc93c][i % 4];
-    c.add(mesh(box(1.3, 2.2, 1.0), col, 0, 1.1, 0));
-    c.add(mesh(box(1.1, 0.8, 0.1), M.screen, 0, 1.6, 0.48, false));
-    c.add(mesh(box(1.3, 0.25, 0.6), 0x2b2340, 0, 1.05, 0.55));
-    c.add(mesh(cyl(0.05, 0.05, 0.2, 6), COLORS.ink, -0.3, 1.25, 0.6, false));
-    c.add(mesh(sph(0.08, 8, 6), 0xff5d73, -0.3, 1.38, 0.6, false));
-    c.add(mesh(sph(0.07, 8, 6), 0x3ddc97, 0.15, 1.2, 0.65, false));
-    c.add(mesh(sph(0.07, 8, 6), 0xffc93c, 0.38, 1.2, 0.65, false));
-    c.add(mesh(box(1.4, 0.4, 1.05), 0x2b2340, 0, 2.35, 0));
-    const ic = makeGameIcon(key);
-    ic.scale.setScalar(0.42);
-    ic.position.set(0, 3.0, 0.1);
+    let ic;
+    if (cb.kind === 'classic') {
+      // a slim upright: body, a tilted screen, the controls, a lit marquee with the game's emblem in front
+      c.add(mesh(box(0.92, 1.9, 0.75), cb.color, 0, 0.95, 0));
+      c.add(mesh(box(0.96, 0.08, 0.79), 0x2b2340, 0, 1.92, 0, false));
+      const scr = mesh(box(0.72, 0.56, 0.06), M.screen, 0, 1.42, 0.36, false);
+      scr.rotation.x = -0.18;
+      c.add(scr);
+      c.add(mesh(box(0.92, 0.16, 0.42), 0x2b2340, 0, 0.98, 0.5));
+      c.add(mesh(cyl(0.035, 0.035, 0.16, 6), COLORS.ink, -0.2, 1.12, 0.52, false), mesh(sph(0.06, 8, 6), cb.accent ?? 0xff5d73, -0.2, 1.22, 0.52, false));
+      c.add(mesh(sph(0.055, 8, 6), 0x3ddc97, 0.1, 1.08, 0.56, false), mesh(sph(0.055, 8, 6), 0xffc93c, 0.27, 1.08, 0.5, false));
+      c.add(mesh(box(0.92, 0.36, 0.2), 0x2b2340, 0, 2.15, 0.22));
+      c.add(mesh(box(0.84, 0.28, 0.04), M.screen, 0, 2.15, 0.33, false));
+      ic = emblem ? emblem(cb.key) : new THREE.Group();
+      ic.scale.setScalar(0.32);
+      ic.position.set(0, 2.06, 0.42);
+    } else {
+      const col = [0xff5d73, 0x4cc9f0, 0x3ddc97, 0xffc93c][cb.i % 4];
+      c.add(mesh(box(1.3, 2.2, 1.0), col, 0, 1.1, 0));
+      c.add(mesh(box(1.1, 0.8, 0.1), M.screen, 0, 1.6, 0.48, false));
+      c.add(mesh(box(1.3, 0.25, 0.6), 0x2b2340, 0, 1.05, 0.55));
+      c.add(mesh(cyl(0.05, 0.05, 0.2, 6), COLORS.ink, -0.3, 1.25, 0.6, false));
+      c.add(mesh(sph(0.08, 8, 6), 0xff5d73, -0.3, 1.38, 0.6, false));
+      c.add(mesh(sph(0.07, 8, 6), 0x3ddc97, 0.15, 1.2, 0.65, false));
+      c.add(mesh(sph(0.07, 8, 6), 0xffc93c, 0.38, 1.2, 0.65, false));
+      c.add(mesh(box(1.4, 0.4, 1.05), 0x2b2340, 0, 2.35, 0));
+      ic = makeGameIcon(cb.key);
+      ic.scale.setScalar(0.42);
+      ic.position.set(0, 3.0, 0.1);
+    }
     c.add(ic);
     c.userData.icon = ic;
-    c.position.set(x, 0.3, -1.2);
+    c.position.set(cb.x, 0.3, cb.z);
+    c.rotation.y = cb.rot || 0;
     g.add(c);
-    cabinets.push({ key, x, z: 0.4, icon: ic });
-  });
+    cabinets.push({ key: cb.key, x: cb.x, z: cb.z, icon: ic, kind: cb.kind });
+  }
+  // the high-score board over the row of classic cabinets (a canvas: solo/arcade.js)
+  const bw = 9.9, bh = 0.95;
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  board.position.set(0, 2.98, -D / 2 + 0.17);
+  g.add(mesh(box(bw + 0.2, bh + 0.2, 0.05), 0x2b2340, 0, 2.98, -D / 2 + 0.15, false));
+  g.add(board);
+  g.userData.board = board;
   g.userData.cabinets = cabinets;
   return g;
 }

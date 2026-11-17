@@ -257,7 +257,7 @@ export class Surprises {
     const X = this.dig;
     const sx = (x) => ((x + 62) / 124) * 300, sz = (z) => ((z + 48) / 96) * 200;
     const ico = (x, z, s) => `<text x="${sx(x)}" y="${sz(z)}" font-size="13" text-anchor="middle">${s}</text>`;
-    const places = PLACES.filter((p) => !p.cabinet).map((p) => ico(p.x, p.z + 1, { lighthouse: '🗼', ship: '⛵', tent: '🎪', balloon: '🎈', mine: '⛏', keep: '🏰', castle: '🏰', burrow: '🕳', garage: '🤖' }[p.id] || '•')).join('');
+    const places = PLACES.filter((p) => p.cabinet === undefined).map((p) => ico(p.x, p.z + 1, { lighthouse: '🗼', ship: '⛵', tent: '🎪', balloon: '🎈', mine: '⛏', keep: '🏰', castle: '🏰', burrow: '🕳', garage: '🤖' }[p.id] || '•')).join('');
     const svg = `<svg viewBox="0 0 300 200" style="width:100%;max-height:52vh;background:#f3d9a4;border-radius:14px">
       <ellipse cx="150" cy="100" rx="142" ry="94" fill="#9fd77a" stroke="#c99a5e" stroke-width="4"/>
       <path d="M${sx(-23)} ${sz(-48)} Q${sx(-24)} ${sz(-6)} ${sx(-26)} ${sz(6)} T${sx(-33)} ${sz(60)}" fill="none" stroke="#5ab8e8" stroke-width="6"/>

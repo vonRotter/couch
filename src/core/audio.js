@@ -14,6 +14,7 @@ export const SONGS = {
   adventure: { bpm: 92, root: 57, chords: [0, 5, 7, 3], seed: 64, lead: 'triangle' },
   party: { bpm: 132, root: 65, chords: [0, 5, 9, 7], seed: 33, lead: 'square' },
   results: { bpm: 96, root: 60, chords: [0, 5, 9, 7], seed: 5, lead: 'triangle' },
+  arcade: { bpm: 120, root: 62, chords: [0, 7, 5, 9], seed: 88, lead: 'square' }, // the Game Hall's classic games
 };
 
 // Calm island tracks (the solo island, src/scenes/solo/soundscape.js picks one): one per time of day, and a
