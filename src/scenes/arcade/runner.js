@@ -406,7 +406,7 @@ export class ArcadeRunner {
 
   renderHud() {
     const G = this.g;
-    const pills = [`<div class="pill name" style="--c:${this.css}">${esc(this.puzzle ? t('arc.puzzle') : this.name)}</div>`];
+    const pills = [`<div class="pill name" style="--c:${this.css}">${esc(this.puzzle ? `🧩 ${this.name}` : this.name)}</div>`];
     for (const [label, value] of G.hud?.() || []) pills.push(`<div class="pill">${esc(label)} <b>${esc(String(value))}</b></div>`);
     if (!this.puzzle && this.def.kind === 'score') pills.push(`<div class="pill">${esc(t('arc.best'))} <b>${bestOf(this.game.roster.progress, this.key)}</b></div>`);
     const goal = this.puzzle ? G.goalText?.() : null;

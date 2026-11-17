@@ -9,7 +9,7 @@ import {
 
 // The Passport tab of the journal (journal.js): the genre passport of core/passport.js for the profile playing.
 // Pages (the stick or the arrow keys turn them, like the Friends book):
-//   0  the passport: a stamp per genre (coloured once earned), the nine skills with their medal, and what Coach
+//   0  the passport: a stamp per genre (coloured once earned), the ten skills with their medal, and what Coach
 //      suggests next;
 //   1  Coach's trials: every trial, done or not, the one Coach gave you marked;
 //   2+ one card per genre: a picture, one paragraph (what kind of game it is, what you practise, a famous
@@ -17,7 +17,7 @@ import {
 // Read aloud (the passport is help, like the Tasks): the narrator reads each page when it is turned to.
 
 const CSS = `
-.pp-stamps { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px 8px; margin: 2px auto 6px; width: min(100%, calc(48vh * 7 / 2.2)); }
+.pp-stamps { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px 8px; margin: 2px auto 6px; width: min(100%, calc(46vh * 8 / 2.2)); } /* (15 genres: two rows) */
 .pp-stamp { aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px dashed rgba(138,90,50,.3); color: rgba(138,90,50,.45); text-align: center; font-size: clamp(9px, .85vw, 13px); line-height: 1.05; padding: 3px; }
 .pp-stamp i { font-style: normal; font-size: clamp(18px, 2.2vw, 32px); filter: grayscale(1) opacity(.35); }
 .pp-stamp.on { border: 3px solid var(--c); color: var(--c); background: radial-gradient(circle, #fff 0, #fff6e4 70%); transform: rotate(-6deg); box-shadow: 0 2px 0 rgba(43,35,64,.12); font-weight: 700; }
