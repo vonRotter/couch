@@ -65,6 +65,7 @@ import { Village } from './village.js';
 import { IslandEvents } from './events.js';
 import { musicFor, ambienceFor } from './soundscape.js';
 import { Robot } from './robot.js';
+import { EventLock } from './lock.js';
 import { IslandGames } from './games.js';
 import { Play } from './play.js';
 import { SeeThrough } from './seethrough.js';
@@ -200,6 +201,8 @@ export class SoloIslandScene extends BaseScene {
     this.camera.updateProjectionMatrix();
     this.save = loadIsland(game.roster);
     const S = this.save;
+    this.lock = new EventLock(this); // a coming event saved for later (lock.js): first, so today's calendar knows what plays late
+    this.lock.prepare(now());
 
     // night-aware materials: windows, lamps, the lighthouse beam, arcade screens
     const gm = toon(0xffffff).gradientMap;
@@ -431,6 +434,7 @@ export class SoloIslandScene extends BaseScene {
 
   secondTick() {
     const at = now();
+    this.lock.prepare(at); // (first: a locked event played late changes today's calendar)
     // the genre passport: what island life shows (a first harvest, yard pieces, chests found, dishes served...)
     if ((this.ppT = (this.ppT || 0) + 1) % 5 === 0) syncProfile(this.game, { quiet: false });
     fixSlots(this.save); // every stack keeps its own slot (a full bag sends extras to the chest)
@@ -2528,6 +2532,7 @@ export class SoloIslandScene extends BaseScene {
     this.hops?.dispose();
     this.surprise?.dispose();
     this.village?.dispose();
+    this.lock?.dispose();
     this.game.audio.stopAmbience();
     this.games?.dispose();
     this.play?.dispose();

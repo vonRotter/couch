@@ -11,8 +11,8 @@ import { say as speak } from '../../core/voice.js';
 // their tab.
 // Read-aloud: the Friends pages (a book you open), the Tasks and the Passport pages (help) are read; the lists are not.
 
-export const TABS = ['map', 'friends', 'tasks', 'cal', 'fish', 'museum', 'passport']; // (the passport came last: the keys 1-6 stay)
-const ICONS = { map: '🗺️', friends: '💛', tasks: '📝', passport: '🏷️', cal: '📅', fish: '🐟', museum: '🏛️' };
+export const TABS = ['map', 'friends', 'tasks', 'cal', 'fish', 'museum', 'passport', 'coming']; // (new tabs go last, so the keys of the old ones stay)
+const ICONS = { map: '🗺️', friends: '💛', tasks: '📝', passport: '🏷️', cal: '📅', fish: '🐟', museum: '🏛️', coming: '🔒' };
 
 addStrings({
   en: {
@@ -105,6 +105,7 @@ export class Journal {
       case 'cal': host.seasons.renderCalendar(); break;
       case 'fish': host.log ||= { i: 0, t: 0 }; host.renderLog(); break;
       case 'museum': host.museum.renderList(); break;
+      case 'coming': host.lock.render(read); break; // save a coming event for later (lock.js)
     }
   }
 
@@ -131,7 +132,7 @@ export class Journal {
     if (this.t > 0.25 && (keys.has('KeyM') || P.view)) { if (this.tab === 'map') this.close(); else this.setTab('map'); return; }
     // close: [C] (Q / gamepad B), F, Tab; on a keyboard Space and E close as before (a gamepad's A and X do nothing),
     // but on the Map they pick
-    const kb = !host.onPad, map = this.tab === 'map';
+    const kb = !host.onPad, map = this.tab === 'map' || this.tab === 'coming'; // (on the Map and Coming up, Space and E pick)
     if (this.t > 0.25 && (inp.cPressed || keys.has('KeyF') || keys.has('Tab') || (kb && !map && (inp.aPressed || inp.bPressed)))) { this.close(); return; }
     // the page itself: turn pages, look through the lists
     switch (this.tab) {
@@ -140,6 +141,7 @@ export class Journal {
       case 'passport': host.passport.flip(inp); break;
       case 'fish': host.logStep(inp); break;
       case 'museum': host.museum.listStep(inp); break;
+      case 'coming': if (this.t > 0.25) host.lock.update(inp); break;
     }
   }
 

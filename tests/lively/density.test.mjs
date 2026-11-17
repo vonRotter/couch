@@ -14,16 +14,25 @@ await test('eight weeks of daily visits: collect what happens', async () => {
   await startIsland(page, { time: D0, save: (S) => { S.unlocks.greenhouse = true; S.unlocks.barn = true; } });
   const spots = [[12, -4], [3, 46], [30, -11], [-6, -10], [40, -14], [44, 30]];
   let maxBusy = 0, maxChats = 0;
+  const skip = new Set();
+  let locks = 0;
   for (let d = 0; d < DAYS; d++) {
+    // a child who saved a coming event (lock.js) and could not come on its days
+    if (skip.has(d)) { log.days.push({ d, skipped: true, chats: [], reacts: [], items: [], keys: [] }); continue; }
     const day = { d, chats: [], reacts: [] };
     await setTime(page, D0 + d * DAY);
     await sim(page, 1.5, 0.1);
     const info = await island(page, (I, S) => {
       if (I.mode === 'today') { I.hud.setPanel(null); I.mode = 'walk'; }
       const V = S.village, di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
-      return { di, items: I.todayBoard.texts(), fest: I.seasons.festival, sur: I.surprise.kind, rare: I.events.kind, climax: V.drama && V.drama.climax === di ? V.drama.id : null, drama: V.drama && { id: V.drama.id, start: V.drama.start, climax: V.drama.climax }, proj: V.proj ? 1 : 0, hooks: S.hook ? 1 : 0, slots: I.village.slots(S.todayBoard.day), projAt: V.proj?.id };
+      return { di, keys: S.todayBoard.items.map((i) => i.k), late: S.lockPlay?.di === di ? S.lockPlay.kind : null, items: I.todayBoard.texts(), fest: I.seasons.festival, sur: I.surprise.kind, rare: I.events.kind, climax: V.drama && V.drama.climax === di ? V.drama.id : null, drama: V.drama && { id: V.drama.id, start: V.drama.start, climax: V.drama.climax }, proj: V.proj ? 1 : 0, hooks: S.hook ? 1 : 0, slots: I.village.slots(S.todayBoard.day), projAt: V.proj?.id };
     });
     Object.assign(day, info);
+    // every ten days: save the next thing coming, stay away on its days and come back 1, 2 or 3 days after
+    if (d % 10 === 2 && d < DAYS - 10) {
+      const e = await island(page, (I) => { const c = I.lock.coming(); if (c[0]) I.lock.lock(c[0]); return c[0] || null; });
+      if (e) { locks++; const k = 1 + (locks % 3); for (let x = e.day; x < e.last + k; x++) skip.add(x - info.di + d); }
+    }
     // things you did today, and every villager you would talk to
     const reacts = await island(page, (I, S, G, d) => {
       const kinds = ['roof', 'crab', 'hopRecord', 'trophy', 'newFish', 'harvest'];
@@ -66,23 +75,31 @@ const di0 = () => log.days[0].di;
 await test('at most one special world thing a day (festival, surprise, rare event, drama climax)', async () => {
   let worst = 0, specialDays = 0;
   const kinds = { fest: 0, sur: 0, rare: 0, climax: 0 };
-  for (const d of log.days) {
+  const visited = log.days.filter((d) => !d.skipped);
+  for (const d of visited) {
     const n = (d.fest ? 1 : 0) + (d.sur ? 1 : 0) + (d.rare ? 1 : 0) + (d.climax ? 1 : 0);
     worst = Math.max(worst, n);
     if (n) specialDays++;
     for (const k of Object.keys(kinds)) if (d[k]) kinds[k]++;
   }
-  const ordinary = log.days.length - specialDays;
-  console.log(`   special days ${specialDays}/${log.days.length}, ordinary days ${ordinary} (${Math.round((ordinary / log.days.length) * 100)} %), most on one day ${worst}, by kind ${JSON.stringify(kinds)}`);
+  const ordinary = visited.length - specialDays;
+  const late = visited.filter((d) => d.late);
+  console.log(`   visited ${visited.length} of ${log.days.length} days (stayed away ${log.days.length - visited.length} days after saving ${late.length + 0} things); special days ${specialDays}/${visited.length}, ordinary days ${ordinary} (${Math.round((ordinary / visited.length) * 100)} %), most on one day ${worst}, by kind ${JSON.stringify(kinds)}`);
+  console.log(`   late-play days ${late.length} (${late.map((d) => `day ${d.d}: ${d.late} ${d.fest || d.rare || d.sur}`).join(', ')}), each the only special thing that day`);
   assert(worst <= 1, `worst ${worst}`);
-  assert(ordinary >= log.days.length * 0.35, `ordinary ${ordinary}`);
+  assert(late.length >= 3, `late plays ${late.length}`);
+  assert(ordinary >= visited.length * 0.3, `ordinary ${ordinary}`);
 });
 
 await test('rare events: about once a week, never on consecutive days', async () => {
-  const days = log.days.filter((d) => d.rare).map((d) => d.d);
+  const days = log.days.filter((d) => d.rare && !d.late).map((d) => d.d);
   const consec = days.filter((x, i) => i && x - days[i - 1] === 1).length;
-  console.log(`   rare events ${days.length} in ${DAYS / 7} weeks (${(days.length / (DAYS / 7)).toFixed(2)} a week), consecutive ${consec}`);
-  assert(days.length >= 7 && days.length <= 8 && consec === 0, JSON.stringify(days));
+  const native = await page.evaluate(async ([d0, n]) => { const C = await import('/src/scenes/solo/calendar.js'); let k = 0; for (let d = 0; d < n; d++) if (C.rareEventOn(d0 + d * 86400000)) k++; return k; }, [D0, DAYS]);
+  // warnings: a rare day whose day before (visited) had a warning on the Today board
+  const rareDays = log.days.filter((d) => d.rare && !d.late && log.days[d.d - 1] && !log.days[d.d - 1].skipped);
+  const warned = rareDays.filter((d) => log.days[d.d - 1].keys.some((k) => k.startsWith('td.ev.r.'))).length;
+  console.log(`   rare events ${native} in ${DAYS / 7} weeks by the calendar (${(native / (DAYS / 7)).toFixed(2)} a week), ${days.length} seen on visited days, consecutive ${consec}; warned the day before: ${warned} of ${rareDays.length}`);
+  assert(native >= 7 && native <= 8 && consec === 0, JSON.stringify(days));
 });
 
 await test('dramas: the big moment comes within about a week of the start', async () => {
@@ -117,7 +134,7 @@ await test('reactions: each said once, by one villager; no reaction text again w
 await test('Today board: up to 3 items, none again within three weeks', async () => {
   let rep = 0, total = 0;
   const n = [0, 0, 0, 0];
-  for (const a of log.days) {
+  for (const a of log.days.filter((x) => !x.skipped)) {
     n[a.items.length]++;
     total += a.items.length;
     for (const b of log.days) if (b.d > a.d && b.d - a.d < 21) for (const s of a.items) if (b.items.includes(s)) { rep++; if (rep < 10) console.log('   repeat:', a.d, b.d, s); }
@@ -127,10 +144,11 @@ await test('Today board: up to 3 items, none again within three weeks', async ()
 });
 
 await test('one project and one tomorrow hook at a time', async () => {
-  const proj = Math.max(...log.days.map((d) => d.proj)), hooks = Math.max(...log.days.map((d) => d.hooks));
-  const built = log.days.filter((d, i) => i && d.projAt !== log.days[i - 1].projAt && d.projAt).map((d) => d.projAt);
-  const hookDays = log.days.filter((d) => d.hooks).length;
-  console.log(`   projects started ${built.length} (${built.join(', ')}), most at once ${proj}; days with a hook pending ${hookDays}/${DAYS}, most at once ${hooks}`);
+  const vis = log.days.filter((d) => !d.skipped);
+  const proj = Math.max(...vis.map((d) => d.proj)), hooks = Math.max(...vis.map((d) => d.hooks));
+  const built = vis.filter((d, i) => i && d.projAt !== vis[i - 1].projAt && d.projAt).map((d) => d.projAt);
+  const hookDays = vis.filter((d) => d.hooks).length;
+  console.log(`   projects started ${built.length} (${built.join(', ')}), most at once ${proj}; days with a hook pending ${hookDays}/${vis.length} visited, most at once ${hooks}`);
   assert(proj <= 1 && hooks <= 1, `proj ${proj} hooks ${hooks}`);
 });
 

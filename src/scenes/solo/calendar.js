@@ -65,6 +65,12 @@ export function birthdayOf(npc, ms = now()) {
  * (lantern night by the lighthouse, winter).
  */
 export function festivalOn(ms = now()) {
+  const L = latePlay(ms);
+  return L ? L.fest || null : festivalNative(ms);
+}
+
+/** The calendar's own festival of a date (without a locked event played late: lock.js). */
+export function festivalNative(ms = now()) {
   const d = new Date(ms);
   const day = d.getDate(), dow = d.getDay();
   // the first Saturday of the month and the Sunday after it (never two derbies in one month)
@@ -76,7 +82,7 @@ export function festivalOn(ms = now()) {
 
 /** The plain rain of a date (about one day in five, never on a festival day), before the rare events. */
 function baseRain(ms) {
-  if (festivalOn(ms)) return false;
+  if (festivalNative(ms)) return false;
   return dayRand(`rain:${dayKey(ms)}`) < 0.2;
 }
 
@@ -93,7 +99,13 @@ export function rainyOn(ms = now()) {
  * thing a day): never on a festival day.
  */
 export function surpriseOn(ms = now()) {
-  if (festivalOn(ms)) return null;
+  const L = latePlay(ms);
+  return L ? L.sur || null : surpriseNative(ms);
+}
+
+/** The calendar's own surprise of a date (without a locked event played late). */
+export function surpriseNative(ms = now()) {
+  if (festivalNative(ms)) return null;
   const r = dayRand(`surprise:${dayKey(ms)}`);
   if (r < 0.09) return baseRain(ms) ? null : 'meteor';
   if (r < 0.18) return 'merchant';
@@ -101,6 +113,15 @@ export function surpriseOn(ms = now()) {
   if (r < 0.34) return 'bottle';
   return null;
 }
+
+/**
+ * A locked event played late (lock.js): on that one day (a day index) the island shows the locked festival, rare
+ * event or visitor instead of the day's own (one special thing a day). The island sets it for the profile
+ * playing (setLatePlay), and clears it when it closes; everything else stays a pure function of the date.
+ */
+let late = null; // { di, fest, rare, sur }
+export function setLatePlay(o) { late = o && Number.isFinite(o.di) ? o : null; }
+export function latePlay(ms) { return late && dayIndex(ms) === late.di ? late : null; }
 
 /** Noon of a day index (local calendar). */
 export const dayMs = (di) => new Date(1970, 0, 1 + di, 12).getTime();
@@ -112,6 +133,12 @@ export const dayMs = (di) => new Date(1970, 0, 1 + di, 12).getTime();
  * (never the same twice running); no rainbows in winter (it snows).
  */
 export function rareEventOn(ms = now()) {
+  const L = latePlay(ms);
+  return L ? L.rare || null : rareNative(ms);
+}
+
+/** The calendar's own rare event of a date (without a locked event played late). */
+export function rareNative(ms = now()) {
   const di = dayIndex(ms), w = Math.floor((di - 4) / 7);
   return rareDayOfWeek(w) === di ? rareKind(w) : null;
 }
@@ -124,7 +151,7 @@ export function rareDayOfWeek(w) {
   {
     // Tuesday to Saturday (so a Saturday and the next Tuesday are never two days in a row)
     const free = [];
-    for (let k = 1; k <= 5; k++) { const d = w * 7 + 4 + k, t = dayMs(d); if (!festivalOn(t) && !surpriseOn(t)) free.push(d); }
+    for (let k = 1; k <= 5; k++) { const d = w * 7 + 4 + k, t = dayMs(d); if (!festivalNative(t) && !surpriseNative(t)) free.push(d); }
     if (free.length) out = free[Math.floor(dayRand(`rareday:${w}`) * free.length)];
   }
   rareCache.set(w, out);

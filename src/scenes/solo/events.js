@@ -47,6 +47,10 @@ addStrings({
     'td.ev.rainbow': 'Rain this morning, sun this afternoon: watch out for a rainbow!',
     'td.ev.r.storm': 'Grumbleton\'s knee aches. He says a storm is coming tonight.',
     'td.ev.r.fog': 'Keeper Bram says the sea smells of fog. Tomorrow, maybe?',
+    'td.ev.r.storm.2': 'The gulls are flying low. Grumbleton says: a storm tonight, mark my words!',
+    'td.ev.r.fog.2': 'A grey haze sits far out at sea. Bram thinks fog rolls in tomorrow.',
+    'td.ev.r.rainbow': 'Aunt Hazel\'s hens are fussing: rain in the morning, sun after. A rainbow tomorrow?',
+    'td.ev.r.rainbow.2': 'Pip\'s weather gadget beeps: showers, then sunshine tomorrow. Rainbow weather!',
     'td.ev.mystery.spring': 'Curator Hoot found a torn page in an old book of spring flowers. A map?',
     'td.ev.mystery.summer': 'A torn page fell out of Hoot\'s old sea book. He is flapping with excitement!',
     'td.ev.mystery.autumn': 'Hoot found a torn page tucked in an old book of harvest songs. Mysterious!',
@@ -83,6 +87,10 @@ addStrings({
     'td.ev.rainbow': 'Regn i formiddag, sol i ettermiddag: se etter en regnbue!',
     'td.ev.r.storm': 'Grumbleton har vondt i kneet. Han sier at det kommer en storm i natt.',
     'td.ev.r.fog': 'Fyrvokter Bram sier at havet lukter tåke. I morgen, kanskje?',
+    'td.ev.r.storm.2': 'Måkene flyr lavt. Grumbleton sier: storm i natt, bare vent!',
+    'td.ev.r.fog.2': 'Et grått dis ligger langt ute på havet. Bram tror tåka kommer i morgen.',
+    'td.ev.r.rainbow': 'Hønene til tante Hassel er urolige: regn om morgenen, sol etterpå. Regnbue i morgen?',
+    'td.ev.r.rainbow.2': 'Værdingsen til Pip piper: byger, så sol i morgen. Regnbuevær!',
     'td.ev.mystery.spring': 'Kurator Hu fant en revet side i en gammel bok om vårblomster. Et kart?',
     'td.ev.mystery.summer': 'En revet side falt ut av den gamle sjøboka til Hu. Han flakser av spenning!',
     'td.ev.mystery.autumn': 'Hu fant en revet side i en gammel bok med høstsanger. Mystisk!',
@@ -221,7 +229,8 @@ export class IslandEvents {
     if (k === 'fog') out.push({ kind: 'visitor', pri: 9, icon: '👻', keys: ['td.ev.fog'], x: WISP.x, z: WISP.z });
     if (k === 'rainbow') out.push({ kind: 'rumor', pri: 9, icon: '🌈', keys: ['td.ev.rainbow'] });
     const tk = rareEventOn(at + 86400000);
-    if (tk === 'storm' || tk === 'fog') out.push({ kind: 'rumor', pri: 5.5, icon: tk === 'storm' ? '⛈️' : '🌫️', keys: [`td.ev.r.${tk}`] });
+    // a warning the day before (then it can be saved for later: lock.js)
+    if (tk) out.push({ kind: 'rumor', pri: 8.5, icon: { storm: '⛈️', fog: '🌫️', rainbow: '🌦️' }[tk], keys: [`td.ev.r.${tk}`, `td.ev.r.${tk}.2`] });
     const M = this.M;
     if (this.chapterOpen(at) && M.step === 0 && M.toldW !== weekIndex(at) && this.S.intro) { M.toldW = weekIndex(at); out.push({ kind: 'rumor', pri: 4.5, icon: '📜', keys: [`td.ev.mystery.${seasonOf(at)}`] }); }
     void day;

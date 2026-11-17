@@ -235,7 +235,7 @@ export class TodayBoard {
     else if (sur === 'bottle') C.push({ kind: 'changed', pri: 7, icon: '🍾', keys: [1, 2, 3].map((i) => `td.sur.bottle.${i}`) });
     else if (sur === 'meteor') C.push({ kind: 'rumor', pri: 7, icon: '🌠', keys: [1, 2, 3].map((i) => `td.sur.meteor.${i}`) });
     // the rare events, the villagers' dramas and projects, the robot (their own modules)
-    for (const src of [host.events, host.village, host.robot]) for (const c of src?.todayNews?.(at) || []) C.push(c);
+    for (const src of [host.events, host.village, host.robot, host.lock]) for (const c of src?.todayNews?.(at) || []) C.push(c);
     // the season's first day
     const season = seasonOf(at);
     if (seasonOf(at - 86400000) !== season) C.push({ kind: 'changed', pri: 6, icon: '🌦️', keys: [`td.season.${season}`] });
@@ -311,14 +311,18 @@ export class TodayBoard {
     const d = new Date(now());
     const date = `${t(`td.wd.${d.getDay()}`)} ${d.getDate()}.${d.getMonth() + 1}.`;
     const cards = items.map((it) => `<div class="isl-row" style="grid-template-columns:auto 1fr;align-items:center"><span style="font-size:1.8em">${it.icon}</span><div><small style="opacity:.7">${KIND_ICON[it.kind]} ${esc(t(`td.kind.${it.kind}`))}</small><br>${esc(itemText(it))}</div></div>`).join('');
-    host.hud.setPanel(`<h2>${esc(t('td.title'))} <small style="font-size:.5em;opacity:.7">${esc(date)}</small></h2><div class="isl-rows">${cards}</div><div class="isl-foot">${esc(tFor(host.player?.p, 'td.hint'))}</div>`);
-    speak([t('td.title'), ...items.map(itemText)].join('. '), 'narrator');
+    this.offer = host.lock?.boardOffer() || null; // a warning or a visitor's letter: [OK] saves it for later (lock.js)
+    host.hud.setPanel(`<h2>${esc(t('td.title'))} <small style="font-size:.5em;opacity:.7">${esc(date)}</small></h2><div class="isl-rows">${cards}</div><div class="isl-foot">${esc(tFor(host.player?.p, this.offer ? 'lk.boardHint' : 'td.hint'))}</div>`);
+    speak([t('td.title'), ...items.map(itemText), ...(this.offer ? [tFor(host.player?.p, 'lk.boardHint')] : [])].join('. '), 'narrator');
     host.game.audio.play('join');
   }
 
   /** In 'today' mode: [OK], [B] or [C] closes the board. */
   updateBoard(inp) {
     if (this.t < 0.5 || !(inp.aPressed || inp.bPressed || inp.cPressed)) return;
+    // [OK] saves the offered event for later; [BACK] only closes (it never locks)
+    if (this.offer && inp.aPressed && !inp.bPressed) this.host.lock.lock(this.offer);
+    this.offer = null;
     this.host.hud.setPanel(null);
     this.host.mode = 'walk';
   }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { t } from '../../core/i18n.js';
 import { say as speak } from '../../core/voice.js';
 import { now, hourOf, count, take } from './save.js';
-import { dayKey, dayIndex, dayMs, dayRand, festivalOn, surpriseOn, rareEventOn, freeDay, rainyOn, seasonOf, birthdayOf, BIRTHDAYS } from './calendar.js';
+import { latePlay, dayKey, dayIndex, dayMs, dayRand, festivalOn, surpriseOn, rareEventOn, freeDay, rainyOn, seasonOf, birthdayOf, BIRTHDAYS } from './calendar.js';
 import { heightAt } from './map.js';
 import { mesh, box, sph, cyl, cone } from './models.js';
 import { EVERYDAY } from './strings14.js';
@@ -103,6 +103,8 @@ export class Village {
       V.nextDrama = di + DRAMA_GAP;
       V.dramaN++;
     }
+    // a locked event plays late today (lock.js): the big moment waits for the next free day (one special thing a day)
+    if (V.drama && V.drama.climax === di && !V.drama.res && latePlay(at)) { let c = di + 1; while (c < di + 30 && !freeDay(dayMs(c))) c++; V.drama.climax = c; }
     if (!V.drama && S.intro && di >= V.nextDrama) {
       const id = DRAMA_ORDER[V.dramaN % DRAMA_ORDER.length];
       let climax = di + 4;

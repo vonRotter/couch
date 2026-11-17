@@ -1166,6 +1166,24 @@ three to four weeks; one project (eight over six months) and one hook at a time.
   Skye** says on which day they come, and they do (`surpriseOn` already knows). An egg or a pot left alone for two days
   after it is ready resolves by itself (the chick finds the barn), so a hook never waits forever. The menu shows a
   **Tomorrow:** line under its title, and walking into the cottage in the evening says it once.
+- **Saving a coming event for later** (`lock.js`, for children who cannot play that day): the journal's
+  **Coming up** tab (the last tab, key 8; read aloud as help) lists what can be saved in the next two weeks:
+  festival weekends (the Derby and the season's festival), tomorrow's rare event **when the Today board warned
+  about it** (Grumbleton's aching knee, Bram's fog, Hazel's fussing hens or Pip's weather gadget; in the
+  eight-week test every rare event was warned the day before) and a visitor announced by letter (Marlo, Skye).
+  Not the dramas' big moments and not the daily surprises. ▲▼ choose, **[OK] saves it** (🔒), [C] closes and
+  never saves. The Today board offers it too when it shows a warning or a visitor's letter ("[OK]: save it, in
+  case you cannot come"). **One lock at a time**: saving another moves the lock (and says so). If the child
+  comes on the event's day, the lock is simply used up. If not, the event **plays on the next visit within three
+  days after it** (the festival with its stalls, villagers, tasks and rewards; the storm's finds, the fog and the
+  ghost ship, the rainbow; Marlo or Skye), and the Today board says "Saved for you: …". That day it is the one
+  special thing: the day's own surprise or rare event is skipped, and a drama's big moment moves to the next free
+  day; a festival day of its own waits (the late play goes to the next day in the window). After three days
+  unplayed it expires with a gentle note. The calendar stays a pure function of the date
+  (`setLatePlay` only changes that profile's island on that one day; `festivalNative` / `surpriseNative` /
+  `rareNative` are the calendar's own); the time machine works with it. (The story's Lamp Festival is a story
+  step, not a calendar festival, so it is never locked or replayed: it waits for you anyway.) Save: `S.lock`,
+  `S.lockPlay`, `S.lockNote` (old saves have none).
 - **Villagers with their own lives** (`village.js`, strings in `strings14.js`). Their schedules, homes,
   hearts and voices stay as they were; on top of that:
   - **Conversations:** one to three a day, in a morning, afternoon or evening slot (by date), one at a time
