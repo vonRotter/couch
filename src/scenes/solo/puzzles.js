@@ -61,7 +61,7 @@ addStrings({
     'pz.reward': 'Inside: {prize}', 'pz.rewardSkip': 'The lock opens: {prize}',
     'isl.d.minerLamp': 'Old miner\'s lamp', 'isl.d.sleepyLantern': 'Sleepy lantern', 'isl.d.bellChime': 'Bell chime', 'isl.d.shipBottle': 'Ship in a bottle',
     'isl.d.blockTower': 'Toy block tower', 'isl.d.acornLamp': 'Acorn lamp', 'isl.d.wormPlush': 'Wiggle worm plush', 'isl.d.spaceRock': 'Glowing space rock',
-    'isl.d.puzzleTrophy': 'Puzzle trophy',
+    'isl.d.puzzleTrophy': 'Puzzle trophy', 'pg.puzzles': 'Puzzle locks on the island',
   },
   no: {
     'pz.new': '🧩 Noe nytt på øya: {where}! Det står på kartet ditt.',
@@ -78,7 +78,7 @@ addStrings({
     'pz.reward': 'Inni: {prize}', 'pz.rewardSkip': 'Låsen åpner seg: {prize}',
     'isl.d.minerLamp': 'Gammel gruvelampe', 'isl.d.sleepyLantern': 'Søvnig lykt', 'isl.d.bellChime': 'Bjelleklokkespill', 'isl.d.shipBottle': 'Skip i flaske',
     'isl.d.blockTower': 'Lekeklosstårn', 'isl.d.acornLamp': 'Eikenøttlampe', 'isl.d.wormPlush': 'Vrikkeorm-kosedyr', 'isl.d.spaceRock': 'Lysende romstein',
-    'isl.d.puzzleTrophy': 'Gåtetrofé',
+    'isl.d.puzzleTrophy': 'Gåtetrofé', 'pg.puzzles': 'Gåtelåser på øya',
   },
 });
 

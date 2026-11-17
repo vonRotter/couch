@@ -149,7 +149,7 @@ export class SnakeGame {
   draw(k) {
     const n = this.body.length;
     while (this.segs.length < n - 1) {
-      const s = M(SPH(0.4), this.segs.length % 2 ? BODY2 : BODY);
+      const s = M(SPH(0.47), this.segs.length % 2 ? BODY2 : BODY);
       this.kit.root.add(s);
       this.segs.push(s);
     }
@@ -166,7 +166,7 @@ export class SnakeGame {
       const [x, z] = at(i);
       const s = this.segs[i - 1];
       s.position.set(x, 0.4, z);
-      s.scale.setScalar(1 - Math.min(0.35, (i / n) * 0.35));
+      s.scale.set(1 - Math.min(0.35, (i / n) * 0.35), 0.8, 1 - Math.min(0.35, (i / n) * 0.35));
     }
     this.bump.visible = this.grace > 0;
     if (this.grace > 0) this.bump.position.set(hx + this.dir[0] * 0.6, 1.2 + Math.sin(this.wob * 8) * 0.1, hz + this.dir[1] * 0.6);

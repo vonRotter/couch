@@ -352,6 +352,8 @@ export class ArcadeRunner {
 
   update(dt) {
     this.t += dt;
+    // strong outlines on what spawned since (split rocks, new bricks: main.js does this only for the scene on screen)
+    if (this.game.contrastOn && (this.outT = (this.outT || 0) + dt) > 0.5) { this.outT = 0; refreshOutlines(this.scene, true); }
     this.puffs.update(dt);
     this.confetti.update(dt);
     const G = this.g;

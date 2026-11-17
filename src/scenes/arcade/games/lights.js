@@ -49,21 +49,21 @@ export class LightsGame {
     root.add(M(BOX(this.w, 0.12, this.h), 0x3a3160, 0, -0.08, 0));
     this.lamps = [];
     for (let r = 0; r < this.n; r++) for (let c = 0; c < this.n; c++) {
+      // a round paper lantern seen from above: its glow, a rim, and a sun (awake) or a moon (asleep) on top
       const g = new THREE.Group();
-      g.add(M(CYL(0.42, 0.48, 0.12, 18), 0x2b2340, 0, 0.0, 0));
+      g.add(M(CYL(0.5, 0.54, 0.12, 20), 0x2b2340, 0, 0.0, 0));
       const mat = toon(0xffd23f, { emissive: 0x000000 }).clone();
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.62, 16), mat);
-      body.position.y = 0.4;
-      g.add(body, M(CONE(0.42, 0.3, 16), 0x5a4a3a, 0, 0.86, 0), M(TOR(0.12, 0.03), 0x5a4a3a, 0, 1.06, 0));
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.42, 20), mat);
+      body.position.y = 0.27;
+      g.add(body, M(TOR(0.45, 0.04), 0x5a4a3a, 0, 0.48, 0).rotateX(Math.PI / 2), M(TOR(0.45, 0.04), 0x5a4a3a, 0, 0.08, 0).rotateX(Math.PI / 2));
       const sun = new THREE.Group();
-      sun.add(M(SPH(0.13, 10, 8), 0xffffff));
-      for (let i = 0; i < 6; i++) sun.add(M(SPH(0.05, 6, 4), 0xffffff, Math.cos(i * 1.05) * 0.21, 0, Math.sin(i * 1.05) * 0.21));
-      sun.position.set(0, 0.42, 0.36);
-      sun.rotation.x = Math.PI / 2;
+      sun.add(M(CYL(0.13, 0.13, 0.05, 14), 0xffffff));
+      for (let i = 0; i < 8; i++) { const ray = M(BOX(0.06, 0.04, 0.12), 0xffffff, Math.cos(i * 0.785) * 0.24, 0, Math.sin(i * 0.785) * 0.24); ray.rotation.y = -i * 0.785 + Math.PI / 2; sun.add(ray); }
+      sun.position.y = 0.5;
       const moon = new THREE.Group();
-      moon.add(M(SPH(0.13, 10, 8), 0xdfe6ff), M(SPH(0.11, 10, 8), 0x2b3a70, 0.07, 0.02, 0));
-      moon.position.set(0, 0.42, 0.36);
-      moon.rotation.x = Math.PI / 2;
+      moon.add(M(CYL(0.17, 0.17, 0.04, 16), 0xdfe6ff), M(CYL(0.15, 0.15, 0.05, 16), 0x2b3a70, 0.08, 0.005, -0.04));
+      moon.add(M(SPH(0.03, 6, 4), 0xdfe6ff, -0.26, 0.02, -0.18), M(SPH(0.025, 6, 4), 0xdfe6ff, 0.22, 0.02, 0.24));
+      moon.position.y = 0.5;
       g.add(sun, moon);
       g.position.set((c - (this.n - 1) / 2) * S, 0, (r - (this.n - 1) / 2) * S);
       markA11y(g, 'target', [body]);
@@ -71,7 +71,7 @@ export class LightsGame {
       this.lamps.push({ g, mat, body, sun, moon, glow: 0 });
     }
     this.cursor = new THREE.Group();
-    this.cursor.add(M(TOR(0.58, 0.07), 0xffffff).rotateX(Math.PI / 2));
+    this.cursor.add(M(TOR(0.62, 0.07), 0xffffff).rotateX(Math.PI / 2));
     this.cursor.add(M(CONE(0.16, 0.3, 4), 0xff5d73, 0, 1.5, 0).rotateX(Math.PI));
     root.add(this.cursor);
     this.reset();

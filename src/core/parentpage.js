@@ -146,7 +146,7 @@ export class ParentPage {
     const offers = P.assists.slice(-6).reverse().map((a) => `<li>${esc(t(`pg.offer.${a.kind}`))}${a.game && GAMES[a.game] ? ` · ${esc(gameName(a.game))}` : ''} · ${esc(new Date(a.at).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }))}</li>`).join('');
     const sk = skippedOf(prof.id);
     const tutSk = profileSettings(prof.id).tutSkipped; // tutorials skipped with "I know how to play" (core/tutorial.js)
-    const skips = Object.entries(sk).filter(([, l]) => l?.length).map(([g, l]) => `<span>${esc(GAMES[g] || g === 'skyhop' ? gameName(g === 'skyhop' ? 'platformer' : g) : g)}: ${l.length}</span>`).join('')
+    const skips = Object.entries(sk).filter(([, l]) => l?.length).map(([g, l]) => `<span>${esc(g === 'puzzles' ? t('pg.puzzles') : GAMES[g] || g === 'skyhop' ? gameName(g === 'skyhop' ? 'platformer' : g) : g)}: ${l.length}</span>`).join('')
       + (tutSk.length ? `<span>${esc(t('pg.tutSkipped'))}: ${tutSk.length}</span>` : '');
     this.el.innerHTML = `${head}
       <div class="pg-grid" style="--c:${css}">

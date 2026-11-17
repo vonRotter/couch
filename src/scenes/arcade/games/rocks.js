@@ -42,6 +42,7 @@ export class RocksGame {
     this.bubble = new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 12), new THREE.MeshBasicMaterial({ color: 0x8fd8ff, transparent: true, opacity: 0.25, depthWrite: false }));
     ship.add(this.bubble);
     markA11y(ship, 'player', [hull]);
+    ship.scale.setScalar(1.3);
     root.add(ship);
     this.ship = ship;
     this.rockG = new THREE.Group();
