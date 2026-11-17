@@ -56,6 +56,7 @@ covered. Verdicts: **good** (one thing at a time already), **mixed** (a good sta
 | Lighthouse Caves | solo | good | items gate new actions one at a time (Zelda structure); signs name what is needed |
 | Pudding Island | solo | good | point and click with one help line; looking and using items come naturally |
 | Laser Ducks | solo + co-op | good | one action |
+| The Game Hall's nine classics, and the island's puzzle locks | solo | good (built to it) | each game's controls one step at a time (the next when the last was used), its goal last |
 | Bean Brigade | solo | good | a read-aloud first battle and a one-time deploy explanation; the battle menu has many options |
 | Grumble Guides | solo + co-op | good | one job per level |
 | Golden Bean campaign | solo + co-op | good | one new thing per level; solo players get the Knight-Builder's two jobs at once |
@@ -221,12 +222,26 @@ every tutorial again). The parent page lists "Tutorials and tips: off" and how m
 | Lighthouse Caves' welcome (Keeper Bram) | the first card on a new game | the intro is done (`flags.intro`), the keeper says where the sword is and goes to the lighthouse |
 | Pudding Island's hello and help line | the first card on a new game | Pip stands on the dock; nothing in the story waits for it |
 | Læringsmiks' how-to cards (also the School House's Klokka, Pengebutikken, Rimord) | the first card | quick cards: shown 4 s, any jump starts |
+| The Game Hall's classics (`arc.<game>`: Wiggle Worm, Block Drop, Tunnel Trek, Crate Shove, Echo Bells, Sleepy Lanterns, Brick Bonk, Paddle Pals, Rock Patrol), also from a puzzle lock | the first card (per game, the first time it is played, in the hall or at a lock); the pause menu in the hall | – (the game is the same) |
 | First-time tips: Grumble Guides' level tips, Spacefall's ship tips, Snowball Fort's tips, Paint Pilots' stall tip, Rooftop Rush's signs | Tutorials and tips off | – |
 
 Not tutorials (not skippable on purpose): Party Mix's ready cards (everyone taps when ready), the learning
 games' level pickers, Lighthouse Caves' signs and item texts (world content you read when you want).
 Once per save: the farming steps and Bean Brigade's tips follow the game's own save, so turning tutorials
 back on does not replay them (Bean Brigade's battle menu has "Tips" any time).
+
+### The Game Hall's classic games (built to the rule)
+
+The nine classics of the classic games round (README, *The Game Hall's classic games*) were made after this
+audit and follow its rule: the first card asks, then **one action at a time** (core/tutorial.js StepTeacher, in a
+box under the board, read aloud, each in the player's own buttons and moving on only when it is used), the goal
+last: Wiggle Worm turn, eat a berry, then "do not bump"; Block Drop move, turn, drop faster, then "fill a row";
+Tunnel Trek walk, peek at the map, then "find the lantern"; Crate Shove push, undo, then "every crate on a spot";
+Echo Bells watch and listen, ring a bell, then "the tune grows"; Sleepy Lanterns move the ring, tap, then "all
+asleep"; Brick Bonk move, launch, then "hit with the edge"; Paddle Pals move, serve, then the edge; Rock Patrol
+turn, push, zap, then "the field wraps". The island's puzzle locks use the same games and the same tutorial, so
+a child meeting Tunnel Trek first at the cliff door gets its steps there. Levels grow slowly (Crate Shove one
+crate before two, Sleepy Lanterns 3 x 3 before 4 x 4 before 5 x 5, Tunnel Trek's mazes a room wider at a time).
 
 ### Not covered
 

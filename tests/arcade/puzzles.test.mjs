@@ -158,6 +158,22 @@ await test('a puzzle lock on a hidden chest (only once the chest was found), sol
   assert(!s.cur && s.done && s.deco, JSON.stringify(s));
 });
 
+await test('every puzzle starts over the island with its goal on screen, and [C] leaves it for later', async () => {
+  const ids = await page.evaluate(async () => (await import('/src/scenes/solo/puzzles.js')).PUZZLE_IDS);
+  for (const id of ids) {
+    await dismiss(page);
+    await island(page, (I, S, G, id) => { I.mode = 'walk'; I.puzzles.start(id); }, id);
+    await sim(page, 0.3);
+    await page.evaluate(() => window.game.tutorialCard?.answer('skip'));
+    await sim(page, 1.3);
+    const r = await R(page, (r, g) => ({ key: r.key, st: r.state, goal: g.goalText?.() || '', hud: r.hudEl.textContent }));
+    assert(r.st === 'play' && r.goal.length > 3 && r.hud.includes(r.goal), `${id}: ${JSON.stringify(r)}`);
+    await press(page, 'KeyQ');
+    await sim(page, 0.2);
+    assert(await island(page, (I) => I.mode) !== 'puzzle', `${id}: left`);
+  }
+});
+
 await test('the last one brings the puzzle trophy to the shelf', async () => {
   await island(page, (I, S) => { for (const id of ['islet', 'grove', 'treedoor', 'ledge']) S.puzzles.done[id] = { at: 1, skipped: false }; S.hops.chests.roof = { n: 1 }; S.puzzles.cur = 'roof'; I.puzzles.refresh(); I.puzzles.start('roof'); });
   await sim(page, 0.3);

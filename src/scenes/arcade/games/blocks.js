@@ -64,12 +64,13 @@ export class BlocksGame {
   reset() {
     this.grid = Array.from({ length: this.rows }, () => Array(this.cols).fill(null));
     const P = this.kit.puzzle;
-    // a puzzle starts with a few rows already there, one gap each
+    // a puzzle starts with a few rows already there, with a gap in the same column ("keep the well open for the
+    // long piece"), and its first pieces given (the long one comes fourth)
     for (let i = 0; i < (P?.garbage || 0); i++) {
-      const r = this.rows - 1 - i, gap = Math.floor(this.kit.rng() * this.cols);
+      const r = this.rows - 1 - i, gap = P.well ?? 7;
       for (let c = 0; c < this.cols; c++) if (c !== gap) this.grid[r][c] = 'G';
     }
-    this.bag = [];
+    this.bag = P?.pieces ? [...P.pieces].reverse() : [];
     this.next = this.draw();
     this.lines = 0;
     this.score = 0;

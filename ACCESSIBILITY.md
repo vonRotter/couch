@@ -65,10 +65,28 @@ Paint Party's bars), the **Help me play** page in every pause menu and both isla
 | Ice Hockey | – | – | charge a shot | – | – | – |
 | Rooftop Rush | – | – | balloon swing | – | – | – |
 | Kitchen (cook) | – | – | chopping | – | – | – |
+| Game Hall: Wiggle Worm | stops at a bump and waits for a turn | – | – | early game overs: timing, speed | – | instant retry |
+| Game Hall: Block Drop | longer moment before a piece locks | – (the landing ghost is always shown) | – | early game overs: timing, speed | – | instant retry |
+| Game Hall: Tunnel Trek | (no timer) | – | – | long on a level: skip (5) | level | try the level again |
+| Game Hall: Crate Shove | (turn-based) | – | – | starting over, long on a level: skip (5) | level | undo as often as you like; [B] twice starts over |
+| Game Hall: Echo Bells | slower tune, longer wait | – | – | lost hearts: timing, speed | – | instant retry |
+| Game Hall: Sleepy Lanterns | (turn-based) | – | – | many taps over par, long on a level: skip (5) | level | [B] takes a tap back |
+| Game Hall: Brick Bonk | catches a little past the paddle's ends | the ball's path ahead (a lot: further, leans to the bricks) | – | lost balls: timing, speed | – | instant retry |
+| Game Hall: Paddle Pals | catches a little past the paddle's ends | marks where the ball comes | – | lost points: timing, speed | – | instant retry |
+| Game Hall: Rock Patrol | smaller bump, longer safe bubble | zaps bend (a lot: they curve) | push | bumps: timing; missed zaps: aim; speed | – | instant retry |
+| Your island: puzzle locks and doors | as their game | as their game | as their game | sooner: the assist at 2, speed at 3, skip at 4 tries | the lock (opens, reward given, marked skipped, playable again) | try again at once; leave and come back |
 | Mattejakt, Bokstavballonger, learning rounds | more time to answer | – | – | – | – | – |
 | Party Mix: quiz, Spot the Difference | more time | – | – | – | – | – |
 | Party Mix: Count the Critters | – | – | – | – | – | – (now shapes as well as colours) |
 | Other games (Bubble Buddies, Paint Party, Bonk Brawl, Kart, Mega Ball, Slalom, Hide & Seek, Cave, other Party Mix rounds; Dig and Paint by Numbers: hold to toggle) | – | – | – | – | – | pause menu Retry; the games' own (Cave: fresh cave) |
+
+**The Game Hall's classics and the island's puzzles** (the classic games round) were built with the assists
+in: the mouse plays Brick Bonk, Sleepy Lanterns and Echo Bells; every bell, lantern, block and crate has a shape
+or symbol as well as its colour (a sun or a moon on the lanterns, a sticker per block kind, a star on a crate
+on its spot); with "Reduce flashing" the bells and lanterns glow and fade softly and nothing shakes; strong
+outlines mark the player's worm, piece, bean, paddle or rocket and the targets; the HUD and cards grow with the
+text size; Paddle Pals plays against a gentle computer player who goes easier when you are behind, or with a
+friend. Assists never cost a stamp, a medal, a trial or a high score.
 
 ## How help is offered
 

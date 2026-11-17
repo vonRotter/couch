@@ -643,6 +643,61 @@ number). Nobody is ever knocked out of a round.
   seconds. Bumping into a stripe or the wall is a splat and a short respawn; points for time on
   the road and for others splatting into your stripe.
 
+## The Game Hall's classic games
+
+Nine classic arcade games stand in a row of cabinets along the Game Hall's back wall on each child's own island
+(`src/scenes/arcade/`). The aim: the game teaches children to play video games, and each classic teaches one
+basic skill, accessible but not necessarily easy. Each has its own name and the island's toon look (nothing
+from the originals but the idea). Walk up to a cabinet and press [B] (the nearest cabinet is the one you use);
+its sign shows your best. Coach Bo says one line about a game the first time you walk up to its cabinet (his
+voice), and his talk has *Which arcade game?* (one you have not played that trains your weakest skill, else one
+with a trial open).
+
+| Cabinet (English / Norsk) | Like | Teaches | Genre, skills | Controls |
+| --- | --- | --- | --- | --- |
+| Wiggle Worm / Vrikkeormen | Snake | reacting in time, planning ahead | Arcade classic: timing, thinking ahead | stick, D-pad, WASD or arrows steer |
+| Block Drop / Klossregn | falling blocks | seeing shapes and where they fit | Puzzle game: puzzles, thinking ahead | left/right move, [A]/[B] turn, down faster, up drops |
+| Tunnel Trek / Tunneltur | a maze | finding a way, reading a map | Puzzle game: exploring, remembering | walk; [B] peeks at the whole map (three a maze) |
+| Crate Shove / Kassedytt | box pushing | planning, and that undo is a tool | Puzzle game: thinking ahead, puzzles | walk into crates; [A] undo; [B] twice starts over |
+| Echo Bells / Ekkobjeller | "repeat after me" | remembering a sequence | Arcade classic: remembering, timing | push toward a bell, or click it |
+| Sleepy Lanterns / Søvnige lykter | lights out | logic | Puzzle game: puzzles, thinking ahead | move the ring, [A] or click taps, [B] takes back |
+| Brick Bonk / Murbonk | breakout | timing, angles | Arcade classic: timing, aiming | stick, arrows or mouse move, [A] or click launches |
+| Paddle Pals / Racketvenner | bat and ball | timing, angles | Sports: timing, aiming | up/down, [A] serves; a friend: A on another pad or Enter |
+| Rock Patrol / Steinpatruljen | space rocks | aiming, steering with momentum | Aim and shoot: aiming, steering | left/right turn, [A] or up pushes (held), [B] zaps |
+
+- **Controls** follow the house rules: the arcade gamepad layout (`input.js` 'arcade': A the main button, X
+  (or Y, the bumpers) the second, B is back and never picks, Start the pause menu); on a keyboard WASD or the
+  arrow keys with Space and E, Q back; the mouse where it is natural (Brick Bonk's paddle, Sleepy Lanterns,
+  Echo Bells). [C] while playing opens the pause menu (resume, retry, Help me play, end).
+- **Flow:** the first time, the tutorial's card ("Show me how" / "I know how to play"), then its steps one at
+  a time (each moves on when you do it, read aloud, skippable from the pause menu); a short Ready... go!; play.
+  A game over (score games) or a level done (level games: Tunnel Trek, Crate Shove, Sleepy Lanterns, the same
+  levels every time) shows a card with the score, "New best!" and **every child's best on this device**, and
+  [A] plays again at once (instant retry) or the next level, [C] goes back to the hall by that cabinet. Level
+  games carry on at the first level not cleared yet.
+- **High scores** are per child (`progress.arcade` in the profile's solo save: best, plays). The hall's front
+  sign shows the high scores, one game after another (the text changes every few seconds, nothing blinks),
+  and a board on the back wall over the row has each game's name, your best and a higher best of another child.
+- **Help me play:** game speed in all; forgiving timing (Wiggle Worm stops at a bump and waits for a turn,
+  Block Drop's pieces wait longer before they lock, Echo Bells plays slower and waits longer, Brick Bonk and
+  Paddle Pals catch balls a little past the paddle's ends, Rock Patrol's bump is smaller and the safe bubble
+  longer); aim help (Brick Bonk: the ball's path ahead, a lot: further and the ball leans toward the bricks;
+  Paddle Pals: where the ball will reach your side; Rock Patrol: zaps bend toward rocks, a lot: they curve
+  too); hold to toggle (Rock Patrol's push); reduce flashing and shake (no camera shake, the bells and lanterns
+  glow softly); text size; strong outlines (the worm, pieces, bells, lanterns, crates, paddles, ball, rocket
+  and rocks); symbols as well as colours (each block kind has a sticker, each bell a shape, sleeping lanterns
+  a moon and awake ones a sun, a crate on its spot a star). After repeated trouble the usual offers come
+  (`assist.js`): the matching assist, a slower game (not in the turn-based ones), and in the level games a
+  skip (the level is marked skipped and the next one opens).
+- **The passport:** a new genre, **Arcade classic** (Wiggle Worm, Echo Bells, Brick Bonk), and a tenth skill,
+  **Remembering** (Echo Bells, Tunnel Trek); the others count as puzzle games, sports and aim and shoot. A game
+  finished counts as played properly; mastery points for good games (20 berries, 10 rows, a level 3...);
+  ten **Coach's trials**: 20 berries in Wiggle Worm, 10 rows in Block Drop, a Tunnel Trek maze (level 3 or
+  later) without a bump, a Crate Shove level (4 or later) without undo, a tune of 8 and of 12 notes in Echo
+  Bells, a 5 x 5 Sleepy Lanterns square in par, a whole wall in Brick Bonk, beating Pip at Paddle Pals and two
+  waves in Rock Patrol. Coach's suggested order now has the classics in it (GENRES.md).
+- The guest games' four cabinets moved to the hall's side walls, two a side (same place ids: saves keep them).
+
 ## Learning games (LÆRING)
 
 Three educational games in Norwegian (bokmål), marked with a green **LÆRING** badge on the
@@ -715,7 +770,8 @@ night match yours and crops grow while you are away.
 - **Places:** the School House (learning games), the Party Pier (the ferry to play together), Lighthouse Caves (the lighthouse), The Secret of Pudding Island (the pirate ship at
   the dock), Laser Ducks (the fairground tent), Bean Brigade (the mech garage on the east hill),
   Sky Hop (the hot-air balloon on kite hill) and the
-  Game Hall with cabinets for the guest games (Tachyon, Starlite, Foothold, Starhop). Repair the
+  Game Hall with the nine classic arcade games in a row (see *The Game Hall's classic games* above) and
+  cabinets for the guest games on its side walls (Tachyon, Starlite, Foothold, Starhop). Repair the
   bridge with 10 wood to reach Knights & Builders: The Golden Bean and Pillow Keep Solo (the keep
   tower; its sign shows the best hero or the deepest Deep Keep floor); trade Keeper Bram
   a carrot for the Zip-Zap's rock buster and clear the rockfall to open Crystal Caves; give Mumble the grumble three
@@ -788,14 +844,14 @@ night match yours and crops grow while you are away.
   can click a tab. F and the D-pad open it at the last book page (Friends at first), never at the Map,
   which has its own button.
 - **Genre passport** (development step 3: the game teaches children to play video games). Every game, island
-  activity and guest game belongs to one of 14 **genres** (platformer, adventure, point and click, puzzle,
-  tactics, role-playing, roguelite, aim and shoot, racing, sports, building, party, life sim, learning) and
-  trains two or three of 9 **skills** (timing, aiming, moving and steering, exploring, puzzles, thinking ahead,
-  building, reading the enemy, teamwork); the table is in `src/core/passport.js` and written out in
+  activity and guest game belongs to one of 15 **genres** (platformer, adventure, point and click, puzzle,
+  tactics, role-playing, roguelite, aim and shoot, racing, sports, building, party, life sim, learning, arcade
+  classic) and trains two or three of 10 **skills** (timing, aiming, moving and steering, exploring, puzzles,
+  thinking ahead, building, reading the enemy, teamwork, remembering); the table is in `src/core/passport.js` and written out in
   [GENRES.md](GENRES.md). Playing a game *properly* (a level cleared, a match finished, a first fish) stamps
   its genre and gives **bronze** in its skills; **silver** comes with 3 mastery points (one thing done well,
   counted once: a level, a battle, a crystal, a fish species...) and **gold** with 8 from two games, or
-  straight from one of **Coach's trials** (18 short optional challenges, two per skill: "Clear a Sky Hop level
+  straight from one of **Coach's trials** (28 short optional challenges, two or more per skill: "Clear a Sky Hop level
   without anyone falling", "Win a Bean Brigade battle without a house getting hit", "Catch 3 fish in a row,
   every press in the green"...). A toast says what is new. The journal's **Passport** tab has the stamps and
   medals with what Coach suggests next, the trials (done ones ticked, Coach's own marked), and one card per
@@ -808,8 +864,9 @@ night match yours and crops grow while you are away.
   hall's open front 8-20). Talking to him: the first time he explains the passport; then he hands out the
   stamps you earned (each with its genre card, 10 coins a stamp), cheers for finished trials (25 coins), and
   asks: *What should I try next?* (a suggestion that builds on what you learned, e.g. Sky Hop before the hop
-  trails, the caves and Lighthouse Caves, with the way there on the map), *Give me a trial!*, *Kinds of games*
-  (the passport's cards) or *Bye*. He has a Friends-book page, a map marker (📣, "!" when he has stamps to hand
+  trails, the caves and Lighthouse Caves, with the way there on the map), *Give me a trial!*, *Which arcade
+  game?* (one of the Game Hall's classics, with his line about it), *Kinds of games* (the passport's cards) or
+  *Bye*. He has a Friends-book page, a map marker (📣, "!" when he has stamps to hand
   out) and his own voice. The map stars his suggestion (⭐ "Coach: try this next"). Nothing is ever locked or
   forced: every place stays open as before.
 - **The parent page:** in a menu (the start screen, the island's menu or a game's pause menu) hold **View +
@@ -1023,6 +1080,26 @@ night match yours and crops grow while you are away.
     hollow. **The tiny islet** west of the dock: stepping stones out into the sea, a palm and a chest. The
     grove, Gull Rock, the hollow tree and the islet chests fill up again every Monday (coins and seeds of the
     season); friends drop hints in their chats about spots you have not found.
+  - **Puzzles in the world** (`solo/puzzles.js`): five of the hidden chests get a **puzzle lock** now and then
+    (once you have found the chest), and three new **doors** stand around the island with something worth
+    finding behind them: an old door in the cliff behind Aunt Hazel's cottage (north), a round door in a mossy
+    boulder on the east shore, and a little door in a giant stump in the west wood (once the bridge is fixed).
+    Each is a one-screen version of a Game Hall classic with a set goal, short (well under two minutes) and
+    played right there over the dimmed island: the cliff door a maze, the hollow tree sleepy lanterns, the
+    boulder door a tune of five bells, the islet crates to push, the grove three rows of blocks (keep the well
+    open for the long piece), the stump door a small wall of bricks, Gull Rock eight berries for the worm, and
+    Pip's box on the hall roof three space rocks. **Special, never crowded:** a new one appears about once a
+    week, on a quiet day of the week (no festival, surprise or rare event), never while another one is still
+    waiting, in an order that goes round the map; one that cannot be reached yet lets the next one go first;
+    all from the date and the save. The waiting one has a puzzle lock floating over it (a slow bob, no
+    blinking), a 🧩 on the map and a toast the day it comes. [B] tries it, [C] leaves it for later. Solved:
+    the lock clicks open, coins and a keepsake for the yard (an old miner's lamp, a sleepy lantern, a bell
+    chime, a ship in a bottle, a toy block tower, an acorn lamp, a wiggle worm plush, a glowing space rock),
+    some with seeds or coconuts; the last one also brings the **puzzle trophy** to the shelf. Help me play
+    applies (forgiving timing, game speed...) and after a few tries a **skip** is offered: the lock opens
+    anyway with the reward, it is marked skipped (the parent page lists it) and it can be played again, like
+    every lock. Measured over 8 simulated weeks (tests/arcade/puzzles.test.mjs): eight puzzles, one a week,
+    3 to 11 days apart (7 on average), all on quiet days, none while one waited.
   - **Hop trails with a timer:** the **Stump Hop** (easy, the meadow east of the launch pad), the **Barrel
     Run** (crates, barrels and a wobbly plank by the dock; its start flag stands beside the beach road) and the **Cliff Climb** (tricky: rock by rock up
     the cliff north of kite hill to the **lookout** deck). [B] at the start sign: 3, 2, 1, go; land on the
@@ -1317,7 +1394,7 @@ src/
     emotes.js        the emote wheel (Y / G) and the heart, wave, dance and laugh moves on any bean, with
                      onEmote for villagers, animals and crabs to react (solo island, shared island, Pillowby)
     input.js         keyboard schemes + gamepads -> one controller shape; gamepad layouts ('default',
-                     'island', 'walk': Y free for emotes), menu pick/back (okPressed/backPressed), button names per pad kind,
+                     'island', 'walk': Y free for emotes, 'arcade': the classic games and puzzles), menu pick/back (okPressed/backPressed), button names per pad kind,
                      remapped keys / pad buttons and hold to toggle (scene.holdButtons, held(); a double
                      tap holds scene.tapHoldButtons)
     assist.js        "Help me play" settings per profile / device default, game speed, timingScale,
@@ -1351,7 +1428,13 @@ src/
     ferry-model.js   the Party Pier ferry (shared by both islands)
     solo/            the solo island (island.js, map.js, ...; ferry.js: the Party Pier and badge board;
                      school.js: the School House and its picker; atlas.js: the island map and its arrow;
-                     journal.js: the journal's tabs; passport.js: its Passport tab; coach.js: Coach Bo)
+                     journal.js: the journal's tabs; passport.js: its Passport tab; coach.js: Coach Bo;
+                     arcade.js: the Game Hall's board, sign and Coach's lines; puzzles.js: the puzzle locks
+                     and doors and their pace; models10.js: the doors, the lock, the prizes)
+    arcade/          the Game Hall's classic games: defs.js (the nine), runner.js (one game in its own board
+                     view: tutorial, assists, cards, high scores, passport; a scene or over the island),
+                     scene.js (a cabinet's scene), scores.js (per child), emblems.js, strings.js, and
+                     games/ (snake, blocks, maze, crates, simon, lights, bonk, pong, rocks: logic and toon boards)
     hub.js  hub-icons.js  bubble.js  platformer.js  skyhop-levels.js  paint.js
     spacefall.js  spacefall/  brawl.js  kart.js  portal.js  football.js  hockey.js  slalom.js
     space.js  runner.js  cook.js  golf.js  snowball.js  hideseek.js  castle.js

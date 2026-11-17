@@ -33,7 +33,7 @@ export const PUZZLES = [
   { id: 'hollow', chest: 'hollow', game: 'lights', lights: { n: 4, taps: [[0, 0], [3, 1], [1, 2], [2, 3]] }, reward: { coins: 40, deco: 'sleepyLantern' } },
   { id: 'rockdoor', door: 'rock', game: 'simon', goal: { notes: 5 }, reward: { coins: 60, deco: 'bellChime' } },
   { id: 'islet', chest: 'islet', game: 'crates', crates: ['#######', '#.  $ #', '# #   #', '#  $@.#', '#######'], reward: { coins: 50, deco: 'shipBottle', items: [['coconut', 2]] } },
-  { id: 'grove', chest: 'grove', game: 'blocks', goal: { lines: 3 }, rows: 12, garbage: 4, reward: { coins: 50, deco: 'blockTower', items: [['starfruitSeed', 1]] } },
+  { id: 'grove', chest: 'grove', game: 'blocks', goal: { lines: 3 }, rows: 12, garbage: 3, well: 7, pieces: ['O', 'T', 'L', 'I'], reward: { coins: 50, deco: 'blockTower', items: [['starfruitSeed', 1]] } },
   { id: 'treedoor', door: 'tree', game: 'bonk', need: 'bridge', reward: { coins: 60, deco: 'acornLamp' } },
   { id: 'ledge', chest: 'ledge', game: 'snake', goal: { eat: 8 }, cols: 11, rows: 9, reward: { coins: 50, deco: 'wormPlush', items: [['strawberrySeed', 2]] } },
   { id: 'roof', chest: 'roof', game: 'rocks', goal: { rocks: 3 }, reward: { coins: 60, deco: 'spaceRock' } },
