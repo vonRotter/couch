@@ -12,7 +12,7 @@ import { ITEMS } from './items.js';
 // date (calendar.js dayRand): a meteor shower at night (catch the falling star bits, also by jumping), the
 // traveling merchant Marlo with odd things in the square, a hot-air balloon that lands with Skye the
 // explorer (who lost her goggles on landing), and a bottle on the beach with a treasure map to a dig spot.
-// About two days in three have one. surpriseOn(ms) tells which (tests use it to find a date).
+// About one non-festival day in three has one. surpriseOn(ms) (calendar.js) tells which (tests use it to find a date).
 
 /** The surprise of a date (or null): now in calendar.js (the day's budget: never on a festival or a rare event day). */
 export { surpriseOn };

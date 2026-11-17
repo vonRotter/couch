@@ -5,9 +5,12 @@ import { now } from './save.js';
 // everyone, needs no saved state and simply follows the clock (also when it goes backwards).
 //
 // Seasons (milestone B3, the owner's choice): ONE SEASON PER REAL WEEK. Weeks start on Monday; spring,
-// summer, autumn and winter take turns week by week. Each season has its festival from Friday to Sunday of
-// its week: the Spring Planting Fair, the Summer Beach Day, the Harvest Fair and Lantern Night. The
-// Fishing Derby keeps the first Saturday of every month and the Sunday after (it wins on its days), birthdays keep their dates.
+// summer, autumn and winter take turns week by week. Festivals (the owner's "rarer" round): one festival weekend
+// every second week, Saturday and Sunday: the Fishing Derby on the first weekend of the month (the first Saturday
+// and the Sunday after: never two in a month) and the season's own festival on the third (the third Saturday and
+// the Sunday after; the season of that week: the Spring Planting Fair, the Summer Beach Day, the Harvest Fair or
+// Lantern Night). Months are not whole weeks, so the third weekend's season moves on and every season's festival
+// comes round a few times a year. Birthdays keep their dates.
 
 /** Local date key "YYYY-MM-DD". */
 export function dayKey(ms = now()) {
@@ -56,16 +59,18 @@ export function birthdayOf(npc, ms = now()) {
 }
 
 /**
- * Festivals: derby (the first Saturday of every month and the Sunday after, fishing at the pier), and each season's festival on
- * Friday, Saturday and Sunday of its week: plant (spring planting fair in the square), beach (summer beach
- * day), fair (harvest fair, autumn) and lanterns (lantern night by the lighthouse, winter).
+ * Festivals, two weekends a month: derby (the first Saturday of the month and the Sunday after, fishing at the
+ * pier) and the season's festival on the third Saturday and the Sunday after (the season of that week): plant
+ * (spring planting fair in the square), beach (summer beach day), fair (harvest fair, autumn) and lanterns
+ * (lantern night by the lighthouse, winter).
  */
 export function festivalOn(ms = now()) {
   const d = new Date(ms);
   const day = d.getDate(), dow = d.getDay();
   // the first Saturday of the month and the Sunday after it (never two derbies in one month)
   if ((dow === 6 && day <= 7) || (dow === 0 && day >= 2 && day <= 8)) return 'derby';
-  if (dow === 5 || dow === 6 || dow === 0) return SEASON_FEST[seasonOf(ms)];
+  // the third Saturday and the Sunday after it (Saturday and Sunday are in the same Monday week: one season)
+  if ((dow === 6 && day >= 15 && day <= 21) || (dow === 0 && day >= 16 && day <= 22)) return SEASON_FEST[seasonOf(ms)];
   return null;
 }
 
@@ -83,16 +88,17 @@ export function rainyOn(ms = now()) {
 }
 
 /**
- * The daily surprise of a date (surprise.js shows them), or null: ~17% meteor shower (not on rainy days), 17%
- * merchant, 15% balloon, 17% bottle. The owner's budget (one special thing a day): never on a festival day.
+ * The daily surprise of a date (surprise.js shows them), or null: about one non-festival day in three: ~9%
+ * meteor shower (not on rainy days), 9% merchant, 8% balloon, 8% bottle. The owner's budget (one special
+ * thing a day): never on a festival day.
  */
 export function surpriseOn(ms = now()) {
   if (festivalOn(ms)) return null;
   const r = dayRand(`surprise:${dayKey(ms)}`);
-  if (r < 0.17) return baseRain(ms) ? null : 'meteor';
-  if (r < 0.34) return 'merchant';
-  if (r < 0.49) return 'balloon';
-  if (r < 0.66) return 'bottle';
+  if (r < 0.09) return baseRain(ms) ? null : 'meteor';
+  if (r < 0.18) return 'merchant';
+  if (r < 0.26) return 'balloon';
+  if (r < 0.34) return 'bottle';
   return null;
 }
 
@@ -101,9 +107,9 @@ export const dayMs = (di) => new Date(1970, 0, 1 + di, 12).getTime();
 
 /**
  * Rare weather events (events.js): a storm that washes treasure and stranded crabs ashore, fog that brings a
- * ghost ship at night, a rainbow that ends at a dig spot. At most one a week (in about nine weeks in ten), on a
- * Monday to Thursday that has no festival and no daily surprise (one special thing a day), so never two days in
- * a row. Never the same kind two weeks running; no rainbows in winter (it snows).
+ * ghost ship at night, a rainbow that ends at a dig spot. One a week, on a Tuesday to Saturday that has no
+ * festival and no daily surprise (one special thing a day), so never two days in a row. The kinds take turns
+ * (never the same twice running); no rainbows in winter (it snows).
  */
 export function rareEventOn(ms = now()) {
   const di = dayIndex(ms), w = Math.floor((di - 4) / 7);
@@ -115,9 +121,10 @@ const rareCache = new Map();
 export function rareDayOfWeek(w) {
   if (rareCache.has(w)) return rareCache.get(w);
   let out = null;
-  if (dayRand(`rare:${w}`) < 0.9) {
+  {
+    // Tuesday to Saturday (so a Saturday and the next Tuesday are never two days in a row)
     const free = [];
-    for (let k = 0; k < 4; k++) { const d = w * 7 + 4 + k, t = dayMs(d); if (!festivalOn(t) && !surpriseOn(t)) free.push(d); }
+    for (let k = 1; k <= 5; k++) { const d = w * 7 + 4 + k, t = dayMs(d); if (!festivalOn(t) && !surpriseOn(t)) free.push(d); }
     if (free.length) out = free[Math.floor(dayRand(`rareday:${w}`) * free.length)];
   }
   rareCache.set(w, out);
