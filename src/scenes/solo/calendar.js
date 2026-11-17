@@ -125,12 +125,24 @@ export function rareDayOfWeek(w) {
 }
 
 const RARE_KINDS = ['storm', 'fog', 'rainbow'];
-/** The kind of week w's rare event: they take turns (never the same kind two weeks running); in winter a storm or fog. */
+const RARE_W0 = 2922; // the week of Monday 2026-01-05: the kinds are counted from here
+const rareKinds = []; // week (from RARE_W0) -> kind or null
+let rareN = 0;
+/**
+ * The kind of week w's rare event: the events take turns storm, fog, rainbow (never the same kind twice in a
+ * row, also across a week without one); in winter a rainbow's turn goes to the next kind (it snows).
+ */
 export function rareKind(w) {
-  const k = RARE_KINDS[((w % 3) + 3) % 3];
-  if (seasonOf(dayMs(w * 7 + 4)) !== 'winter' || k !== 'rainbow') return k;
-  const prev = RARE_KINDS[(((w - 1) % 3) + 3) % 3];
-  return prev === 'storm' ? 'fog' : 'storm';
+  if (w < RARE_W0) return RARE_KINDS[((w % 3) + 3) % 3];
+  while (rareKinds.length <= w - RARE_W0) {
+    const ww = RARE_W0 + rareKinds.length;
+    if (rareDayOfWeek(ww) === null) { rareKinds.push(null); continue; }
+    let k = RARE_KINDS[rareN % 3];
+    if (k === 'rainbow' && seasonOf(dayMs(ww * 7 + 4)) === 'winter') { rareN++; k = RARE_KINDS[rareN % 3]; }
+    rareN++;
+    rareKinds.push(k);
+  }
+  return rareKinds[w - RARE_W0];
 }
 
 /** A day with no festival, no daily surprise and no rare event (a drama's big moment waits for one). */

@@ -1180,6 +1180,25 @@ only a few a day, every reaction to you said once by one villager, and one tomor
     the frame, then more, then done; finished ones stay); the builder works on the site 13-15 (a soft
     hammering when you are close); talk to them and 5 wood makes it a day faster. The Today board and the
     tomorrow line tell the stages; the map marks the site.
+- **Rare weather events** (`events.js`; `rareEventOn(date)` in `calendar.js`): about once a week (0.83 a week
+  over a year: at most one a week, on a Monday to Thursday with no festival and no daily surprise, so never two
+  days in a row and never on top of another special thing); the kinds take turns, never the same twice running.
+  The day before, a rumor may warn (Grumbleton's knee aches; Bram smells fog).
+  - **Storm:** it stormed in the night. From 6 the beach has three things washed ashore ([B]: an old coin, sea
+    glass, wood, a pearl or a starfish) and two stranded crabs to carry back to the water ([B]; they stay friends
+    and never count as the day's crab job, which stays one crab a day). In winter the storm brings snow.
+  - **Fog:** the view closes in all day (not indoors or on Shell Isle). From 20 to midnight a **ghost ship**
+    lies off the west beach and **Captain Wisp**, a friendly ghost (sleepy voice type), waits by the water: the
+    view swings to his ship while he tells where the fog took him, and he gives 40 coins and a pearl.
+  - **Rainbow:** rain until 13, then a rainbow until 19 whose end touches the ground somewhere (four spots around
+    the island): dig there for coins, a golden acorn and a star fruit seed. No rainbows in winter.
+- **The seasonal mystery, "The old keeper's chest"** (`events.js`): in a season's week Curator Hoot has a "!": he
+  found a **torn page** in an old book (a map with an X and three pictures). Dig at the X for an **old key**; its
+  tag points to the **old door under the north cliffs** (above your cottage); its lock wants the three pictures
+  in the page's order (a one-screen puzzle: ◀ ▶ choose, [OK] puts one in, [C] takes one back; after a wrong try
+  the lock shows the pictures). Behind it, a chest with the season's gift (star fruit seeds, pearls, golden
+  acorns or cocoa) and 80 coins. Each season's chapter comes back at most every eight weeks; an unfinished
+  chapter ends with its week. The Tasks list shows the next step.
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock

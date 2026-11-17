@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { t, getLang } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
-import { now, count, give, take } from './save.js';
+import { now, hourOf, count, give, take } from './save.js';
+import { rareEventOn } from './calendar.js';
 import { dayKey, dayRand, birthdayOf, festivalOn, rainyOn, monthDays, seasonOf, weekIndex, SEASONS, SEASON_ICON, SEASON_FEST } from './calendar.js';
 import { wetEnd } from './farm.js';
 import { CROP_IDS, CROPS, inSeason, isHardy } from './items.js';
@@ -127,6 +128,8 @@ export class Seasons {
       if (bday) news.push(t('isl.t.bday', { name: t(`isl.npc.${bday}`) }));
       if (news.length) this.host.later(first ? 2.2 : 0.2, () => { for (const s of news) this.host.dayToast(s); });
     }
+    // a rainbow day: the rain stops at 13 (events.js shows the rainbow)
+    this.rainy = rainyOn(at) && !(rareEventOn(at) === 'rainbow' && hourOf(at) >= 13);
     if (this.rainy) {
       // rain waters every planted tile all day long (like a watering that never stops; it lasts into the night)
       const end = wetEnd(at);

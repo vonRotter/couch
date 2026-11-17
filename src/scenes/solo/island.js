@@ -62,6 +62,7 @@ import { Surprises } from './surprise.js';
 import { TodayBoard, rv } from './today.js';
 import './strings14.js';
 import { Village } from './village.js';
+import { IslandEvents } from './events.js';
 import { IslandGames } from './games.js';
 import { Play } from './play.js';
 import { SeeThrough } from './seethrough.js';
@@ -263,6 +264,7 @@ export class SoloIslandScene extends BaseScene {
     this.spawnNpcs();
     this.surprise = new Surprises(this); // daily surprises: meteor shower, merchant, balloon visitor, bottle map
     this.village = new Village(this); // the villagers' own lives: conversations, reactions, dramas, projects (village.js)
+    this.events = new IslandEvents(this); // rare weather events and the seasonal mystery (events.js)
     this.todayBoard = new TodayBoard(this); // the Today board and the tomorrow hooks (today.js)
     this.games = new IslandGames(this); // skipping stones, kites, hide-and-seek, snowballs, leaf piles
     this.play = new Play(this); // villagers play: tag, waves, sunset and stars together, little tasks
@@ -449,6 +451,7 @@ export class SoloIslandScene extends BaseScene {
     this.photo.check();
     this.story.tick(at);
     this.village.tick(at);
+    this.events.tick(at);
     if (this.player?.on?.secret === 'roof') this.village.note('roof'); // up on the game hall roof: someone saw you
     this.todayBoard.tick(at); // (after the others: it tells what they did on a new day)
     const ind = this.indoors;
@@ -786,6 +789,7 @@ export class SoloIslandScene extends BaseScene {
     out.push(...this.games.tasks()); // (leaf piles in autumn, last)
     out.unshift(...this.tour.tasks());
     out.unshift(...this.story.tasks());
+    out.unshift(...this.events.tasks()); // the seasonal mystery's next step
     if (this.isle2.here()) out.unshift(t('isl.task.isle'));
     if (count(S, 'seaChart') && !S.isle2.chart) out.unshift(t('isl.task.chart'));
     return out;
@@ -854,7 +858,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** True while a full panel (or the bag) covers the screen: the toast queue waits. */
   get panelOpen() {
-    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map', 'school', 'pier', 'shelf', 'today'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
+    return this.hud.panel.style.display !== 'none' || ['bag', 'zzbench', 'shop', 'letter', 'cook', 'log', 'bench', 'cal', 'menu', 'photo', 'album', 'museum', 'sail', 'board', 'tourEnd', 'festival', 'journal', 'crabs', 'map', 'school', 'pier', 'shelf', 'today', 'mystery'].includes(this.mode) || !!this.helpEl || !!this.story?.fest;
   }
 
   picture3d(key, make) {
@@ -981,6 +985,7 @@ export class SoloIslandScene extends BaseScene {
     if (this.story?.hasNews(id)) return true;
     if (this.play?.hasNews(id)) return true; // today's little task
     if (this.village?.hasNews(id)) return true; // a drama's news (village.js)
+    if (this.events?.hasNews(id)) return true; // Hoot's torn page (events.js)
     if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3) || (count(S, 'seaChart') && !S.isle2?.chart) || this.tour?.available(now()))) return true;
     const ev = def.events[st.ev];
     if (ev && heartsOf(st) >= ev.at) return true;
@@ -1010,7 +1015,7 @@ export class SoloIslandScene extends BaseScene {
       return;
     }
     // a drama's news or a project's ask (village.js), once each
-    if (st.met && this.village.talk(n, () => { n.talking = false; this.markDirty(); })) {
+    if (st.met && (this.village.talk(n, () => { n.talking = false; this.markDirty(); }) || this.events.talk(n, () => { n.talking = false; this.markDirty(); }))) {
       if (canTalkBonus(st, at)) { st.talkAt = at; this.addPts(id, TALK_PTS); }
       return;
     }
@@ -1236,7 +1241,8 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.hops.interactions(P, out, nm, false); // hop trails, chests, the lookout (hops.js)
     if (!out.b) this.surprise.interactions(P, out, nm); // the day's surprise (surprise.js)
     if (!out.b) this.todayBoard.interactions(P, out, nm);
-    if (!out.b) this.village.interactions(P, out, nm); // Aunt Hazel's prize pumpkin // the egg basket or the mystery pot (today.js)
+    if (!out.b) this.village.interactions(P, out, nm); // Aunt Hazel's prize pumpkin
+    if (!out.b) this.events.interactions(P, out, nm); // a storm's finds, the ghost captain, the rainbow, the mystery // the egg basket or the mystery pot (today.js)
     if (!out.b) this.games.interactions(P, out, nm); // island mini-games (games.js)
     if (!out.b) this.play.interactions(P, out, nm); // villagers at play (play.js)
     // the Party Pier: the ferry to play together, and the badge board (ferry.js)
@@ -2410,6 +2416,7 @@ export class SoloIslandScene extends BaseScene {
         case 'crabs': this.crabs.updatePicker(panel, dt); break;
         case 'hopgo': this.hops.updateCount(dt); break; // 3, 2, 1 before a hop trail
         case 'today': this.todayBoard.updateBoard(panel); break; // the Today board (today.js)
+        case 'mystery': this.events.updatePanel(panel, dt); break; // the torn page and the old lock (events.js)
         case 'map': break; // the treasure map from a bottle (surprise.js closes it)
         case 'game': this.games.updateMode(inp, dt); break; // a mini-game with its own controls (games.js)
         case 'school': this.school.update(panel, dt); break; // the school house's game picker (school.js)
@@ -2446,6 +2453,7 @@ export class SoloIslandScene extends BaseScene {
     this.surprise.update(dt);
     this.todayBoard.update(dt);
     this.village.update(dt);
+    this.events.update(dt);
     this.games.update(dt);
     this.play.update(dt);
     this.zipzap.update(dt, ia);
