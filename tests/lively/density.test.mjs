@@ -88,18 +88,20 @@ await test('at most one special world thing a day (festival, surprise, rare even
   console.log(`   late-play days ${late.length} (${late.map((d) => `day ${d.d}: ${d.late} ${d.fest || d.rare || d.sur}`).join(', ')}), each the only special thing that day`);
   assert(worst <= 1, `worst ${worst}`);
   assert(late.length >= 3, `late plays ${late.length}`);
-  assert(ordinary >= visited.length * 0.3, `ordinary ${ordinary}`);
+  assert(ordinary >= visited.length * 0.4, `ordinary ${ordinary}`);
 });
 
 await test('rare events: about once a week, never on consecutive days', async () => {
   const days = log.days.filter((d) => d.rare && !d.late).map((d) => d.d);
   const consec = days.filter((x, i) => i && x - days[i - 1] === 1).length;
   const native = await page.evaluate(async ([d0, n]) => { const C = await import('/src/scenes/solo/calendar.js'); let k = 0; for (let d = 0; d < n; d++) if (C.rareEventOn(d0 + d * 86400000)) k++; return k; }, [D0, DAYS]);
+  const share = await page.evaluate(async (d0) => { const C = await import('/src/scenes/solo/calendar.js'); let n = 0, warned = 0; for (let d = 0; d < 728; d++) { const ms = d0 + d * 86400000; if (C.rareEventOn(ms)) { n++; if (C.rareWarned(ms)) warned++; } } return { n, warned }; }, D0);
   // warnings: a rare day whose day before (visited) had a warning on the Today board
   const rareDays = log.days.filter((d) => d.rare && !d.late && log.days[d.d - 1] && !log.days[d.d - 1].skipped);
   const warned = rareDays.filter((d) => log.days[d.d - 1].keys.some((k) => k.startsWith('td.ev.r.'))).length;
-  console.log(`   rare events ${native} in ${DAYS / 7} weeks by the calendar (${(native / (DAYS / 7)).toFixed(2)} a week), ${days.length} seen on visited days, consecutive ${consec}; warned the day before: ${warned} of ${rareDays.length}`);
+  console.log(`   rare events ${native} in ${DAYS / 7} weeks by the calendar (${(native / (DAYS / 7)).toFixed(2)} a week), ${days.length} seen on visited days, consecutive ${consec}; warned the day before: ${warned} of ${rareDays.length} (unwarned ${rareDays.length - warned}); by the calendar over two years: ${share.warned} of ${share.n} (${Math.round((share.warned / share.n) * 100)} %)`);
   assert(native >= 7 && native <= 8 && consec === 0, JSON.stringify(days));
+  assert(share.warned / share.n > 0.58 && share.warned / share.n < 0.75, JSON.stringify(share));
 });
 
 await test('dramas: the big moment comes within about a week of the start', async () => {

@@ -94,8 +94,8 @@ export function rainyOn(ms = now()) {
 }
 
 /**
- * The daily surprise of a date (surprise.js shows them), or null: about one non-festival day in three: ~9%
- * meteor shower (not on rainy days), 9% merchant, 8% balloon, 8% bottle. The owner's budget (one special
+ * The daily surprise of a date (surprise.js shows them), or null: about one non-festival day in four: ~6.5%
+ * meteor shower (not on rainy days), 6.5% merchant, 6% balloon, 6% bottle. The owner's budget (one special
  * thing a day): never on a festival day.
  */
 export function surpriseOn(ms = now()) {
@@ -107,10 +107,10 @@ export function surpriseOn(ms = now()) {
 export function surpriseNative(ms = now()) {
   if (festivalNative(ms)) return null;
   const r = dayRand(`surprise:${dayKey(ms)}`);
-  if (r < 0.09) return baseRain(ms) ? null : 'meteor';
-  if (r < 0.18) return 'merchant';
-  if (r < 0.26) return 'balloon';
-  if (r < 0.34) return 'bottle';
+  if (r < 0.065) return baseRain(ms) ? null : 'meteor';
+  if (r < 0.13) return 'merchant';
+  if (r < 0.19) return 'balloon';
+  if (r < 0.25) return 'bottle';
   return null;
 }
 
@@ -177,6 +177,14 @@ export function rareKind(w) {
     rareKinds.push(k);
   }
   return rareKinds[w - RARE_W0];
+}
+
+/**
+ * Is a date's rare event warned about the day before (a rumor on the Today board; only then can it be saved for
+ * later, lock.js)? About two in three are; the rest arrive unannounced. By date.
+ */
+export function rareWarned(ms = now()) {
+  return !!rareNative(ms) && dayRand(`rarewarn:${dayKey(ms)}`) < 2 / 3;
 }
 
 /** A day with no festival, no daily surprise and no rare event (a drama's big moment waits for one). */

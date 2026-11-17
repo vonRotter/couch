@@ -18,6 +18,9 @@ await test('rare events over a simulated year: once a week, never two days in a 
     return { n: days.length, perWeek: +(days.length / 52).toFixed(2), consec, clash, kinds, sameKindRun, winterRainbow };
   }, D0);
   console.log('   rare events in a year:', JSON.stringify(r));
+  const w = await cal((C, t0) => { const d0 = C.dayIndex(t0); let n = 0, warned = 0; for (let d = d0; d < d0 + 728; d++) { const ms = C.dayMs(d); if (C.rareEventOn(ms)) { n++; if (C.rareWarned(ms)) warned++; } } return { n, warned, share: +(warned / n).toFixed(2) }; }, D0);
+  console.log('   warned the day before (two years):', JSON.stringify(w));
+  assert(w.share >= 0.58 && w.share <= 0.75, JSON.stringify(w));
   assert(r.perWeek >= 0.95 && r.perWeek <= 1.0, `per week ${r.perWeek}`);
   assert(r.consec === 0 && r.clash === 0 && r.sameKindRun === 0 && r.winterRainbow === 0, JSON.stringify(r));
 });
@@ -120,7 +123,7 @@ await test('mystery: Hoot\'s torn page -> dig for the key -> the old door\'s loc
   assert(JSON.stringify(later) === JSON.stringify([true, true, true, false, true]), JSON.stringify(later));
 });
 
-await test('mystery lock follows Help me play: two pictures with forgiving timing or after a skip, else three', async () => {
+await test('mystery lock follows Help me play: two pictures with forgiving timing (or a skips setting), else three; a used skip does not count', async () => {
   await startIsland(page, { time: D0 + 2 * DAY, name: 'Lock3' });
   const three = await island(page, (I) => ({ n: I.events.lockLen(), code: I.events.code.length }));
   await startIsland(page, { time: D0 + 2 * DAY, name: 'Lock2' });
@@ -128,7 +131,10 @@ await test('mystery lock follows Help me play: two pictures with forgiving timin
   const timing = await island(page, (I) => ({ n: I.events.lockLen(), code: I.events.code.length }));
   await startIsland(page, { time: D0 + 2 * DAY, name: 'Skip2' });
   const skip = await island(page, (I, S, G) => { G.roster.progress.skipped = { lighthouse: ['room3'] }; return { n: I.events.lockLen() }; });
-  assert(three.n === 3 && three.code === 3 && timing.n === 2 && timing.code === 2 && skip.n === 2, JSON.stringify({ three, timing, skip }));
+  await page.evaluate(() => { const A = window.game.assist; A.saveSettings(window.__testProfile.id, { ...A.DEFAULTS, skips: true }); });
+  const skips = await island(page, (I) => I.events.lockLen());
+  await page.evaluate(() => { const A = window.game.assist; A.saveSettings(window.__testProfile.id, { ...A.DEFAULTS, timing: true }); });
+  assert(three.n === 3 && three.code === 3 && timing.n === 2 && timing.code === 2 && skip.n === 3 && skips === 2, JSON.stringify({ three, timing, skip, skips }));
   // the two-picture lock opens with two, and the page shows two
   const r = await island(page, (I, S) => { S.mystery = { week: null, step: 0, done: {} }; I.events.tickMystery(Date.now() + window.__islandTimeOffset); S.mystery.week = I.events.keyW; S.mystery.step = 2; I.events.openLock(); const code = I.events.code; const SYM = ['🐟', '⭐', '🌸', '🐚']; for (const c of code) { const L = I.events.panel; L.pick = SYM.indexOf(c); L.t = 1; I.events.updatePanel({ aPressed: true }, 0.01); } return { step: S.mystery.step, n: code.length }; });
   assert(r.step === 3 && r.n === 2, JSON.stringify(r));

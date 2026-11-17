@@ -138,6 +138,33 @@ await test('projects: four stages two days apart, visible, one at a time; 5 wood
   assert(helped.help && helped.wood === 0 && helped.at1 === 1, JSON.stringify(helped));
 });
 
+await test('Coach Bo asks for wood while he builds his obstacle course (again another day after "Not now")', async () => {
+  await startIsland(page, { time: D0 + 3 * 3600e3, name: 'Coach' });
+  await closeBoard();
+  const ask = async () => {
+    await island(page, (I, S) => { const n = I.npc('coach'); n.sleep = false; n.inside = false; I.player.x = n.x + 1; I.player.z = n.z; I.talkTo(n); });
+    const keys = await island(page, (I) => (I.dlg ? I.dlg.lines.map((l) => l.key) : []));
+    return keys;
+  };
+  await island(page, (I, S) => { S.npcs.coach = { pts: 0, talkAt: 0, giftAt: 0, ev: 0, q: 0, met: true }; const di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000); S.village.proj = { id: 'course', start: di - 1, stage: 0, help: false, askedDay: null, news: di - 1 }; S.village.projN = 7; });
+  const first = await ask();
+  assert(first.includes('vp.ask'), `first: ${first}`);
+  // "Not now" (the second choice)
+  await island(page, (I) => { I.dlg.choice = 1; });
+  await dismiss(page, 4);
+  const again = await ask();
+  assert(!again.includes('vp.ask'), `same day: ${again}`);
+  await dismiss(page, 6);
+  await setTime(page, D0 + 3 * 3600e3 + DAY);
+  await sim(page, 1.5, 0.1);
+  await closeBoard();
+  const next = await ask();
+  assert(next.includes('vp.ask'), `next day: ${next}`);
+  await island(page, (I, S) => { S.inv.push({ id: 'wood', n: 5 }); I.dlg.choice = 0; });
+  await dismiss(page, 4);
+  assert(await island(page, (I, S) => S.village.proj.help), 'helped');
+});
+
 await test('reactions: something you did is said once, by one villager', async () => {
   await startIsland(page, { time: D0 + 3 * 3600e3 });
   await closeBoard();

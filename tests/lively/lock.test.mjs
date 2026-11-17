@@ -48,6 +48,18 @@ await test('one lock at a time: locking another moves it (and says so)', async (
   assert(/moved/.test(said), said);
 });
 
+await test('an unwarned rare event is not on the board and cannot be saved', async () => {
+  const e = await cal((C, di) => { for (let d = di + 2; d < di + 120; d++) { const ms = C.dayMs(d); if (C.rareEventOn(ms) && !C.rareWarned(ms) && !C.festivalOn(C.dayMs(d - 1))) return { d, kind: C.rareEventOn(ms) }; } return null; }, di0);
+  await startIsland(page, { time: D0, name: 'Unwarned' });
+  await toDay(e.d - 1, 10);
+  const r = await island(page, (I, S) => ({ warn: S.todayBoard.items.some((i) => i.k.startsWith('td.ev.r.')), coming: I.lock.coming().filter((x) => x.kind === 'rare'), offer: I.lock.boardOffer() }));
+  assert(!r.warn && !r.coming.length && !r.offer, JSON.stringify(r));
+  const w = await cal((C, di) => { for (let d = di + 2; d < di + 120; d++) { const ms = C.dayMs(d); if (C.rareEventOn(ms) && C.rareWarned(ms) && !C.festivalOn(C.dayMs(d - 1))) return d; } return null; }, di0);
+  await toDay(w - 1, 10);
+  const r2 = await island(page, (I, S) => ({ warn: S.todayBoard.items.some((i) => i.k.startsWith('td.ev.r.')), coming: I.lock.coming().filter((x) => x.kind === 'rare').length }));
+  assert(r2.warn && r2.coming === 1, JSON.stringify(r2));
+});
+
 await test('Today board: a warning about tomorrow\'s rare event (or a visitor\'s letter) can be locked with [OK]', async () => {
   await startIsland(page, { time: D0, name: 'Board' });
   // walk the days until the board warns about tomorrow's rare event
@@ -91,7 +103,7 @@ await test('late play: a festival weekend you missed plays 1, 2 or 3 days after'
 
 await test('late play: a warned rare event (storm, fog, rainbow) plays late, with its finds, ship or rainbow', async () => {
   for (const [kind, k, h] of [['storm', 1, 10], ['fog', 2, 21], ['rainbow', 3, 14]]) {
-    const e = await cal((C, [di, kind]) => { for (let d = di + 1; d < di + 60; d++) if (C.rareEventOn(C.dayMs(d)) === kind && !C.festivalOn(C.dayMs(d + 1)) && !C.festivalOn(C.dayMs(d + 2)) && !C.festivalOn(C.dayMs(d + 3))) return { kind: 'rare', what: kind, day: d, last: d }; return null; }, [di0, kind]);
+    const e = await cal((C, [di, kind]) => { for (let d = di + 1; d < di + 120; d++) if (C.rareEventOn(C.dayMs(d)) === kind && C.rareWarned(C.dayMs(d)) && !C.festivalOn(C.dayMs(d + 1)) && !C.festivalOn(C.dayMs(d + 2)) && !C.festivalOn(C.dayMs(d + 3))) return { kind: 'rare', what: kind, day: d, last: d }; return null; }, [di0, kind]);
     const s = await latePlay(e, k, `Rare${kind}`, h);
     const shown = await island(page, (I) => ({ finds: I.events.finds.filter((f) => f.g.visible).length, ship: I.events.ship.visible, rainbow: I.events.rainbow.visible }));
     const ok = kind === 'storm' ? shown.finds === 3 : kind === 'fog' ? shown.ship : shown.rainbow;

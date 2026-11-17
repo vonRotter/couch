@@ -3,7 +3,7 @@ import { t, tFor, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now, hourOf } from './save.js';
-import { dayKey, dayIndex, dayRand, rareEventOn, seasonOf, weekIndex } from './calendar.js';
+import { dayKey, dayIndex, dayRand, rareEventOn, rareWarned, seasonOf, weekIndex } from './calendar.js';
 import { heightAt, cliffZ, SEA_Y, PLACES } from './map.js';
 import { mesh, box, sph, cyl, cone } from './models.js';
 import { makeShip } from '../adventure/props.js';
@@ -230,7 +230,7 @@ export class IslandEvents {
     if (k === 'rainbow') out.push({ kind: 'rumor', pri: 9, icon: '🌈', keys: ['td.ev.rainbow'] });
     const tk = rareEventOn(at + 86400000);
     // a warning the day before (then it can be saved for later: lock.js)
-    if (tk) out.push({ kind: 'rumor', pri: 8.5, icon: { storm: '⛈️', fog: '🌫️', rainbow: '🌦️' }[tk], keys: [`td.ev.r.${tk}`, `td.ev.r.${tk}.2`] });
+    if (tk && rareWarned(at + 86400000)) out.push({ kind: 'rumor', pri: 8.5, icon: { storm: '⛈️', fog: '🌫️', rainbow: '🌦️' }[tk], keys: [`td.ev.r.${tk}`, `td.ev.r.${tk}.2`] });
     const M = this.M;
     if (this.chapterOpen(at) && M.step === 0 && M.toldW !== weekIndex(at) && this.S.intro) { M.toldW = weekIndex(at); out.push({ kind: 'rumor', pri: 4.5, icon: '📜', keys: [`td.ev.mystery.${seasonOf(at)}`] }); }
     void day;
@@ -316,14 +316,13 @@ export class IslandEvents {
   // ---------- the seasonal mystery ----------
 
   /**
-   * How many pictures the lock wants (Help me play): two when this profile has forgiving timing on or has
-   * used a skip (in any game), else three.
+   * How many pictures the lock wants (this profile's Help me play): two with forgiving timing on (or a "skips"
+   * setting, should Help me play get one: there is none yet), else three.
    */
   lockLen() {
     const p = this.host.player?.p;
     const s = p ? settingsFor(p) : null;
-    const skipped = Object.values(this.host.game.roster.progress?.skipped || {}).some((l) => l?.length);
-    return s?.timing || skipped ? 2 : 3;
+    return s?.timing || s?.skips === true ? 2 : 3;
   }
 
   /** The pictures on this week's page, in order. */

@@ -1031,7 +1031,7 @@ night match yours and crops grow while you are away.
     back on the last one). **Pip races you on the Stump Hop and Grumbleton on the Barrel Run** (when they are
     up and about): they hop the trail beside you, and every time you beat them they get a little faster.
     Ringing all three bells brings a golden bell for the yard.
-- **Daily surprises** (by date, the same for everyone; about one non-festival day in three has one): a **meteor
+- **Daily surprises** (by date, the same for everyone; about one non-festival day in four has one): a **meteor
   shower** at night (20-24, not on rainy days): star bits fall near you, catch them, two at once if you
   jump and catch one in the air; **Marlo the traveling merchant** by the square (9-18) with three odd
   things a day (mystery seeds, a single sock, a golden acorn, moon cheese, a rubber duck pond, a cloud in a
@@ -1143,10 +1143,11 @@ same (the owner's budget): **at most one special world thing a day** (a festival
 event or a drama's big moment), one week-long project at a time, one villager conversation at a time and
 only a few a day, every reaction to you said once by one villager, and one tomorrow hook at a time.
 `tests/lively/density.test.mjs` checks these budgets over eight simulated weeks of daily visits (see
-`tests/README.md`). Measured over the eight weeks from 16 November 2026: 36 days with one special thing (8
-festival days, 15 surprises, 8 rare events, 5 drama climaxes), never two, and 20 ordinary days (36 %); over a
-whole year the calendar alone gives festivals on 13 % of days, surprises 27 %, rare events 14 % and 45 %
-ordinary, before the dramas' big days. Dramas reach their big moment 4-5 days after they start; about 1.3
+`tests/README.md`). Measured over the eight weeks from 16 November 2026 (a child who saved an event four times
+and stayed away 13 days): of 43 visited days, 24 had one special thing (5 festival days, 11 surprises, 6 rare
+events, 2 drama climaxes; 4 of them late plays), never two, and 19 were ordinary (44 %); by the calendar alone
+those eight weeks are 50 % ordinary and a whole year 53 % (festivals 13 % of days, surprises 20 %, rare events
+14 %), before the dramas' big days. Dramas reach their big moment 4-8 days after they start; about 1.1
 conversations heard a day (at most three), none again within four weeks; no reaction or Today text again within
 three to four weeks; one project (eight over six months) and one hook at a time.
 
@@ -1169,8 +1170,9 @@ three to four weeks; one project (eight over six months) and one hook at a time.
 - **Saving a coming event for later** (`lock.js`, for children who cannot play that day): the journal's
   **Coming up** tab (the last tab, key 8; read aloud as help) lists what can be saved in the next two weeks:
   festival weekends (the Derby and the season's festival), tomorrow's rare event **when the Today board warned
-  about it** (Grumbleton's aching knee, Bram's fog, Hazel's fussing hens or Pip's weather gadget; in the
-  eight-week test every rare event was warned the day before) and a visitor announced by letter (Marlo, Skye).
+  about it** (Grumbleton's aching knee, Bram's fog, Hazel's fussing hens or Pip's weather gadget). About two
+  rare events in three are warned the day before (`rareWarned(date)`, by date: 68 % over two years); the rest
+  arrive unannounced and cannot be saved and a visitor announced by letter (Marlo, Skye).
   Not the dramas' big moments and not the daily surprises. ▲▼ choose, **[OK] saves it** (🔒), [C] closes and
   never saves. The Today board offers it too when it shows a warning or a visitor's letter ("[OK]: save it, in
   case you cannot come"). **One lock at a time**: saving another moves the lock (and says so). If the child
@@ -1211,7 +1213,8 @@ three to four weeks; one project (eight over six months) and one hook at a time.
     Hazel's windmill** (under the north cliffs; its sails turn), **Coach Bo's obstacle course** (below the mech
     garage: a balance beam, hurdles, tires and a flag) and **Grumbleton's boat shed** (the south beach). Four stages two days apart (a pile of planks and a sign, then
     the frame, then more, then done; finished ones stay); the builder works on the site 13-15 (a soft
-    hammering when you are close); talk to them and 5 wood makes it a day faster. The Today board and the
+    hammering when you are close); talk to them and 5 wood makes it a day faster (they ask
+    once a day until someone helps; Coach Bo asks in his first chat of the day). The Today board and the
     tomorrow line tell the stages; the map marks the site.
 - **Rare weather events** (`events.js`; `rareEventOn(date)` in `calendar.js`): once a week, on a Tuesday to
   Saturday with no festival and no daily surprise (so never two days in a row and never on top of another
@@ -1229,8 +1232,8 @@ three to four weeks; one project (eight over six months) and one hook at a time.
 - **The seasonal mystery, "The old keeper's chest"** (`events.js`): in a season's week Curator Hoot has a "!": he
   found a **torn page** in an old book (a map with an X and some pictures). Dig at the X for an **old key**; its
   tag points to the **old door under the north cliffs** (above your cottage); its lock wants the pictures in the
-  page's order: **three**, or **two** when the profile's Help me play has forgiving timing on or the child has
-  used a skip in any game (a one-screen puzzle: ◀ ▶ choose, [OK] puts one in, [C] takes one back; after a wrong try
+  page's order: **three**, or **two** when the profile's Help me play has forgiving timing on (or a `skips`
+  setting, which Help me play does not have yet) (a one-screen puzzle: ◀ ▶ choose, [OK] puts one in, [C] takes one back; after a wrong try
   the lock shows the pictures). Behind it, a chest with the season's gift (star fruit seeds, pearls, golden
   acorns or cocoa) and 80 coins. Each season's chapter comes back at most every eight weeks; an unfinished
   chapter ends with its week. The Tasks list shows the next step.

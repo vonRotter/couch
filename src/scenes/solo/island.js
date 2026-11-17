@@ -1035,6 +1035,8 @@ export class SoloIslandScene extends BaseScene {
     // today's little task (asking, or the thing you bring back: play.js)
     if (this.play.talk(n)) return;
     n.talking = true;
+    // Coach Bo: while he builds his obstacle course, his first chat of the day asks for wood (village.js)
+    if (id === 'coach' && st.met && this.village.talk(n, () => { n.talking = false; this.markDirty(); })) return;
     if (id === 'coach') { this.coach.talk(n); return; } // Coach Bo: stamps, suggestions, trials (coach.js)
     // the lighthouse story first (milestone B4)
     if (this.story.talk(n, () => { n.talking = false; this.markDirty(); })) {

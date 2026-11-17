@@ -120,7 +120,7 @@ export class Village {
       if (k >= 3) { V.built.push(V.proj.id); V.doneNews = { id: V.proj.id, di }; V.proj = null; V.nextProj = di + PROJ_GAP(V.projN); }
     }
     if (!V.proj && S.intro && di >= V.nextProj && V.projN < PROJ_ORDER.length) {
-      V.proj = { id: PROJ_ORDER[V.projN], start: di, stage: 0, help: false, asked: false, news: di };
+      V.proj = { id: PROJ_ORDER[V.projN], start: di, stage: 0, help: false, askedDay: null, news: di };
       V.projN++;
     }
     this.refreshProps();
@@ -259,11 +259,12 @@ export class Village {
     }
     // the builder asks for wood (once a project)
     const P = V.proj;
-    if (P && PROJECTS[P.id].who === id && !P.asked && P.stage < 3 && P.stage >= 0) {
-      P.asked = true;
+    // (once a day while it runs and nobody helped yet: "Not now" today, ask again another day)
+    if (P && PROJECTS[P.id].who === id && !P.help && P.askedDay !== di && P.stage < 3 && P.stage >= 0) {
+      P.askedDay = di;
       host.say([{ who: id, key: 'vp.ask', vars: { thing: t(`vp.thing.${P.id}`) }, choices: ['vp.give', 'vp.later'], onChoice: (i) => {
         if (i !== 0) { host.say([{ who: id, key: 'vp.ok' }], done); return; }
-        if (!take(this.S, 'wood', 5)) { P.asked = false; host.say([{ who: id, key: 'vp.noWood' }], done); return; }
+        if (!take(this.S, 'wood', 5)) { host.say([{ who: id, key: 'vp.noWood' }], done); return; }
         P.help = true;
         host.addPts(id, 6);
         host.say([{ who: id, key: 'vp.thanks' }], done);
