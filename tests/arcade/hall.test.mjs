@@ -1,7 +1,7 @@
 // The Game Hall (src/scenes/solo/arcade.js, map.js HALL_CABS, models.js makeHall): the row of nine classic cabinets
 // and the four guest cabinets, the nearest cabinet is the one you use, Coach Bo's line at a cabinet the first time,
 // the high-score board and the front sign, Coach's "Which arcade game?", and the passport's new genre, skill and trials.
-import { open, close, startIsland, island, sim, test, assert, done, press, dismiss } from '../lively/helper.mjs';
+import { open, close, startIsland, island, sim, test, assert, done, press, dismiss, shot } from '../lively/helper.mjs';
 import { D0 } from './arcade.mjs';
 
 const page = await open();
@@ -30,6 +30,19 @@ await test('standing at a cabinet uses that one (the nearest), with its name and
     const name = await page.evaluate(async (k) => (await import('/src/core/i18n.js')).t(`game.${k}`), key);
     assert(t.a.includes(name), `${key}: ${t.a}`);
   }
+});
+
+await test('inside the hall the camera goes low and close and the roof hides; outside it is the usual view', async () => {
+  const view = () => island(page, (I) => ({ up: +(I.camera.position.y - I.player.y).toFixed(2), back: +(I.camera.position.z - I.player.z).toFixed(2), roof: I.map.hall.userData.roof.every((r) => r.visible) }));
+  await island(page, (I) => { const pl = I.map.places.find((p) => p.id === 'arc-simon'); I.player.x = pl.door.x; I.player.z = pl.door.z; I.mode = 'walk'; });
+  await sim(page, 2.5);
+  const inside = await view();
+  await shot(page, 'arcade-hall-camera');
+  assert(inside.up < 7 && inside.back < 9 && !inside.roof, `inside: ${JSON.stringify(inside)}`);
+  await island(page, (I, S, G, H) => { I.player.z += 6; }, null);
+  await sim(page, 2.5);
+  const out = await view();
+  assert(out.up > 13 && out.back > 12 && out.roof, `outside: ${JSON.stringify(out)}`);
 });
 
 await test('Coach Bo says one line about a game the first time you walk up to its cabinet (once)', async () => {

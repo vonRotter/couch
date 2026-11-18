@@ -351,18 +351,22 @@ export function makeHall(M, cabs, emblem = null) {
   g.add(mesh(box(W + 0.4, 0.3, D + 0.4), STONE_DARK, 0, 0.15, 0));
   g.add(mesh(box(W, 3.4, 0.3), 0x5a3fd0, 0, 2.0, -D / 2));
   for (const sx of [-1, 1]) g.add(mesh(box(0.3, 3.4, D), 0x5a3fd0, sx * W / 2, 2.0, 0));
-  g.add(mesh(box(W + 0.8, 0.4, D + 0.8), 0x2b2340, 0, 3.85, 0));
-  g.add(mesh(roofGeo(W + 1, D + 1.2, 1.4), 0x9b5de5, 0, 4.0, 0));
+  // the roof and the front sign: hidden while you are inside (island.js), so the low camera sees the cabinets
+  const roof = [mesh(box(W + 0.8, 0.4, D + 0.8), 0x2b2340, 0, 3.85, 0), mesh(roofGeo(W + 1, D + 1.2, 1.4), 0x9b5de5, 0, 4.0, 0)];
+  for (const r of roof) g.add(r);
   // floor: checkered
   for (let i = 0; i < 10; i++) for (let k = 0; k < 4; k++) g.add(mesh(box(1.05, 0.04, 1.1), (i + k) % 2 ? 0xffffff : 0x2b2340, -W / 2 + 0.6 + i * 1.08, 0.32, -D / 2 + 0.7 + k * 1.15, false));
   // sign with lights
-  g.add(mesh(box(5.0, 1.0, 0.2), 0x2b2340, 0, 4.6, D / 2 + 0.3));
-  for (let i = 0; i < 9; i++) g.add(mesh(sph(0.08, 8, 6), M.lamp, -2.2 + i * 0.55, 5.02, D / 2 + 0.42, false));
+  roof.push(mesh(box(5.0, 1.0, 0.2), 0x2b2340, 0, 4.6, D / 2 + 0.3));
+  g.add(roof[2]);
+  for (let i = 0; i < 9; i++) { const l = mesh(sph(0.08, 8, 6), M.lamp, -2.2 + i * 0.55, 5.02, D / 2 + 0.42, false); roof.push(l); g.add(l); }
   // the sign's display: the classic games' best scores, one after the other (solo/arcade.js draws it)
   const marquee = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.72), new THREE.MeshBasicMaterial({ color: 0xffffff }));
   marquee.position.set(0, 4.55, D / 2 + 0.41);
   g.add(marquee);
+  roof.push(marquee);
   g.userData.marquee = marquee;
+  g.userData.roof = roof;
   for (const sx of [-1, 1]) g.add(mesh(cyl(0.15, 0.15, 3.6, 8), 0xffc93c, sx * (W / 2 - 0.2), 1.9, D / 2));
   const cabinets = [];
   for (const cb of cabs) {

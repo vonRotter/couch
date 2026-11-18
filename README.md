@@ -649,7 +649,8 @@ Nine classic arcade games stand in a row of cabinets along the Game Hall's back 
 (`src/scenes/arcade/`). The aim: the game teaches children to play video games, and each classic teaches one
 basic skill, accessible but not necessarily easy. Each has its own name and the island's toon look (nothing
 from the originals but the idea). Walk up to a cabinet and press [B] (the nearest cabinet is the one you use);
-its sign shows your best. Coach Bo says one line about a game the first time you walk up to its cabinet (his
+its sign shows your best. Inside the hall the camera eases lower and closer and the roof and front sign hide, so the
+cabinets' emblems and the high-score board can be read. Coach Bo says one line about a game the first time you walk up to its cabinet (his
 voice), and his talk has *Which arcade game?* (one you have not played that trains your weakest skill, else one
 with a trial open).
 

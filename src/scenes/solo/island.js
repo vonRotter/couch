@@ -87,6 +87,7 @@ import { syncProfile } from '../../core/passport.js';
 const SPEED = 6.2;
 const PR = 0.42;
 const CAM_UP = 14.8, CAM_BACK = 13; // a little higher up (a more top-down view) and never closer than before (12.5 / 13)
+const HALL_UP = 5.6, HALL_BACK = 7.6, HALL_LOOK = 1.6; // inside the Game Hall: lower and closer, so the cabinets' emblems read (the roof hides)
 // the menu ([MENU]: Q or Start): keep playing, the other ways to play, and the settings a gamepad has no key for
 // 'island' is "Play together" (the shared island, like the Party Pier ferry); the story is a place there now
 const MENU = ['resume', 'deco', 'island', 'solo', 'assist', 'voice', 'chars', 'sound', 'music', 'amb', 'lang', 'help']; // assist: Help me play // (sound: M is the map here)
@@ -2291,11 +2292,18 @@ export class SoloIslandScene extends BaseScene {
     if (P) {
       const k = dt ? Math.min(1, dt * 4) : 1;
       const ox = this.camOffset?.x || 0, oz = this.camOffset?.z || 0; // photo mode slides the view (same distance)
+      // inside the Game Hall (on its floor, not up on the roof): ease to the low, close view
+      const inHall = this.mode === 'walk' && Math.abs(P.x - HALL.x) < 5.4 && P.z - HALL.z > -2.4 && P.z - HALL.z < 2.6 && (P.fy ?? P.y) < 1.2;
+      const want = inHall ? 1 : 0, was = this.hallCam || 0;
+      this.hallCam = dt ? was + (want - was) * Math.min(1, dt * 3) : want;
+      const h = this.hallCam, up = CAM_UP + (HALL_UP - CAM_UP) * h, back = CAM_BACK + (HALL_BACK - CAM_BACK) * h;
+      const roof = this.map.hall?.userData.roof;
+      if (roof && roof[0].visible !== h < 0.5) for (const r of roof) r.visible = h < 0.5;
       this.camTarget.lerp(new THREE.Vector3(P.x + ox, P.y, P.z + oz), k);
-      this.camPos.lerp(new THREE.Vector3(P.x + ox, P.y + CAM_UP, P.z + oz + CAM_BACK), k);
+      this.camPos.lerp(new THREE.Vector3(P.x + ox, P.y + up, P.z + oz + back), k);
     }
     this.camera.position.copy(this.camPos);
-    this.camera.lookAt(this.camTarget.x, this.camTarget.y + 0.6, this.camTarget.z);
+    this.camera.lookAt(this.camTarget.x, this.camTarget.y + 0.6 + HALL_LOOK * (this.hallCam || 0), this.camTarget.z);
     const sun = this.lights.sun;
     const d = this.sunDir || new THREE.Vector3(-0.5, 1, 0.6);
     sun.position.copy(this.camTarget).add(d.clone().normalize().multiplyScalar(40));
