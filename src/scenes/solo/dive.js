@@ -67,7 +67,7 @@ export class DiveScene extends BaseScene {
     super(game);
     this.toasts = new ToastQueue(game.ui);
     this.key = 'dive';
-    this.ownMenu = true;
+    this.ownMenu = true; // Start / Esc: the game's pause (freezePause), [C] goes up early
     this.padLayout = 'island'; // the island's gamepad buttons: A kick, X pick up / net, B swim up (input.js)
     setPadLayout('island');
     this.save = loadIsland(game.roster);
@@ -425,7 +425,7 @@ export class DiveScene extends BaseScene {
       return;
     }
     const D = this.diver;
-    if (this.game.input.escPressed || inp?.cPressed) { if (!this.ending) this.ascend('early'); }
+    if (inp?.cPressed) { if (!this.ending) this.ascend('early'); } // (Esc and Start pause: freezePause)
     // air
     if (!this.ending) {
       this.air = Math.max(0, this.air - dt);
@@ -733,4 +733,7 @@ export class DiveScene extends BaseScene {
     setPictures(null);
     super.dispose();
   }
+
+  /** Start (Esc) pauses the dive (main.js), except on the summary card. */
+  freezePause() { return this.ending !== 'summary'; }
 }

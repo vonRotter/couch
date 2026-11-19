@@ -19,6 +19,20 @@ const SIZES = { 3: { r: 1.25, pts: 20, sp: 1.6 }, 2: { r: 0.78, pts: 50, sp: 2.3
 const ROCK_GEO = {};
 const rockGeo = (s) => (ROCK_GEO[s] ||= (() => { const g = faceted(new THREE.IcosahedronGeometry(SIZES[s].r, 0)); g.userData.shared = true; return g; })());
 const wrap = (v, L) => ((v + L / 2) % L + L) % L - L / 2;
+// what crosses the field's edge is cut off there and shows on the other side at once (a copy one field over:
+// up to four copies of a rock or the rocket near a corner, all clipped to the board)
+const COPIES = [[0, 0], [1, 0], [0, 1], [1, 1]];
+function placeCopies(group, x, z, r) {
+  const dx = x > W / 2 - r ? -W : x < -W / 2 + r ? W : 0, dz = z > H / 2 - r ? -H : z < -H / 2 + r ? H : 0;
+  group.position.set(x, 0.3, z);
+  group.children.forEach((c, i) => {
+    const [cx, cz] = COPIES[i];
+    c.visible = (!cx || dx !== 0) && (!cz || dz !== 0);
+    c.position.set(cx * dx, 0, cz * dz);
+  });
+}
+const clipMat = (mat, planes) => { mat.clippingPlanes = planes; return mat; };
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _m = new THREE.Vector3(), _u = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
 
 export class RocksGame {
   constructor(kit) {
@@ -29,20 +43,36 @@ export class RocksGame {
     root.add(M(BOX(W, 0.1, H), 0x1b1640, 0, -0.1, 0));
     const r = kit.rng;
     for (let i = 0; i < 70; i++) root.add(M(SPH(0.04 + r() * 0.05, 6, 4), basic(0xfff4b8), (r() - 0.5) * W, 0, (r() - 0.5) * H));
-    // the rocket: a flat three-cornered ship with a window and a flame
+    // the field's edges as seen from the camera (each frame: draw()): a plane through each edge of the board and
+    // the camera, so nothing shows past the frame on screen (not even a tall rock's top); rocks, the rocket and
+    // zaps are clipped to them
+    this.edges = [[-W / 2, -H / 2, -W / 2, H / 2], [W / 2, H / 2, W / 2, -H / 2], [W / 2, -H / 2, -W / 2, -H / 2], [-W / 2, H / 2, W / 2, H / 2]];
+    this.clip = this.edges.map(() => new THREE.Plane());
+    // the rocket: a flat three-cornered ship with a window and a flame (four copies for the wrap: placeCopies)
+    const C = this.clip;
+    const hullMat = clipMat(toon(kit.p?.color ?? 0xffffff), C), winMat = clipMat(toon(0x8fd8ff), C);
+    const flameMat = clipMat(toon(0xff9f1c, { emissive: 0x804000 }), C);
+    const bubMat = clipMat(new THREE.MeshBasicMaterial({ color: 0x8fd8ff, transparent: true, opacity: 0.25, depthWrite: false }), C);
+    const bubGeo = new THREE.SphereGeometry(1.0, 16, 12);
     const ship = new THREE.Group();
-    const hull = M(CONE(0.5, 1.3, 3), kit.p?.color ?? 0xffffff);
-    hull.rotation.x = Math.PI / 2;
-    hull.rotation.y = Math.PI;
-    hull.scale.set(1, 1, 0.45);
-    ship.add(hull, M(SPH(0.18, 10, 8), 0x8fd8ff, 0, 0.18, 0.05));
-    this.flame = M(CONE(0.22, 0.6, 8), toon(0xff9f1c, { emissive: 0x804000 }), 0, 0, -0.85);
-    this.flame.rotation.x = -Math.PI / 2;
-    ship.add(this.flame);
-    this.bubble = new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 12), new THREE.MeshBasicMaterial({ color: 0x8fd8ff, transparent: true, opacity: 0.25, depthWrite: false }));
-    ship.add(this.bubble);
-    markA11y(ship, 'player', [hull]);
-    ship.scale.setScalar(1.3);
+    this.flames = []; this.bubbles = []; this.hulls = [];
+    for (let i = 0; i < COPIES.length; i++) {
+      const body = new THREE.Group();
+      const hull = M(CONE(0.5, 1.3, 3), hullMat);
+      hull.rotation.x = Math.PI / 2;
+      hull.rotation.y = Math.PI;
+      hull.scale.set(1, 1, 0.45);
+      body.add(hull, M(SPH(0.18, 10, 8), winMat, 0, 0.18, 0.05));
+      const flame = M(CONE(0.22, 0.6, 8), flameMat, 0, 0, -0.85);
+      flame.rotation.x = -Math.PI / 2;
+      const bubble = new THREE.Mesh(bubGeo, bubMat);
+      body.add(flame, bubble);
+      body.scale.setScalar(1.3);
+      this.flames.push(flame); this.bubbles.push(bubble); this.hulls.push(hull);
+      ship.add(body);
+    }
+    markA11y(ship, 'player', this.hulls);
+    ship.userData.clip = C;
     root.add(ship);
     this.ship = ship;
     this.rockG = new THREE.Group();
@@ -85,8 +115,11 @@ export class RocksGame {
   addRock(size, x, z, ang) {
     const S = SIZES[size];
     const sp = S.sp * (0.8 + this.kit.rng() * 0.4) * (1 + Math.min(0.5, (this.wave - 1) * 0.08));
-    const m = new THREE.Mesh(rockGeo(size), toon([0x9a8fc0, 0xb39ad8, 0x8a7ab8][size - 1]));
-    markA11y(m, 'target');
+    const mat = clipMat(toon([0x9a8fc0, 0xb39ad8, 0x8a7ab8][size - 1]), this.clip);
+    const m = new THREE.Group();
+    for (let i = 0; i < COPIES.length; i++) m.add(new THREE.Mesh(rockGeo(size), mat));
+    markA11y(m, 'target', [...m.children]);
+    m.userData.clip = this.clip;
     this.rockG.add(m);
     this.rocks.push({ size, x, z, vx: Math.cos(ang) * sp, vz: Math.sin(ang) * sp, r: S.r, m, spin: (this.kit.rng() - 0.5) * 2 });
   }
@@ -127,8 +160,7 @@ export class RocksGame {
     for (const r of this.rocks) {
       r.x = wrap(r.x + r.vx * dt, W);
       r.z = wrap(r.z + r.vz * dt, H);
-      r.m.rotation.x += r.spin * dt;
-      r.m.rotation.y += r.spin * 0.7 * dt;
+      for (const c of r.m.children) { c.rotation.x += r.spin * dt; c.rotation.y += r.spin * 0.7 * dt; }
       const hitR = 0.5 * (this.kit.timing() > 1 ? 0.7 : 1);
       if (this.safe <= 0 && Math.hypot(s.x - r.x, s.z - r.z) < r.r + hitR) this.bumped();
     }
@@ -151,7 +183,7 @@ export class RocksGame {
     let dir = { x: Math.sin(s.a), y: Math.cos(s.a) };
     dir = aimAt({ x: s.x, y: s.z }, dir, this.rocks.map((r) => ({ x: r.x, y: r.z })), this.kit.aim(), { maxDist: 12 });
     const L = Math.hypot(dir.x, dir.y) || 1;
-    const m = M(SPH(0.13, 8, 6), basic(0xfff07a));
+    const m = M(SPH(0.13, 8, 6), clipMat(basic(0xfff07a), this.clip));
     this.shotG.add(m);
     this.shots.push({ x: s.x + dir.x / L * 0.7, z: s.z + dir.y / L * 0.7, vx: dir.x / L * 15 + s.vx * 0.3, vz: dir.y / L * 15 + s.vz * 0.3, life: 0.85, m });
     this.kit.tone(88, 0.06, { type: 'square', vol: 0.04, slide: 0.5 });
@@ -191,12 +223,22 @@ export class RocksGame {
 
   draw(dt, push = false) {
     const s = this.s;
-    this.ship.position.set(s.x, 0.3, s.z);
-    this.ship.rotation.y = s.a;
-    this.flame.visible = push;
-    this.flame.scale.setScalar(0.8 + Math.random() * 0.3);
-    this.bubble.visible = this.safe > 0;
-    for (const r of this.rocks) r.m.position.set(r.x, 0.3, r.z);
+    const root = this.kit.root;
+    root.updateWorldMatrix(true, false);
+    const cam = this.kit.camera;
+    const C = cam ? cam.getWorldPosition(_c) : null, mid = _m.set(0, 0, 0).applyMatrix4(root.matrixWorld);
+    this.edges.forEach(([x0, z0, x1, z1], i) => {
+      const a = _a.set(x0, 0, z0).applyMatrix4(root.matrixWorld), b = _b.set(x1, 0, z1).applyMatrix4(root.matrixWorld);
+      const p = this.clip[i];
+      if (C) p.setFromCoplanarPoints(a, b, C); else p.setFromCoplanarPoints(a, b, _u.copy(a).add(_up));
+      if (p.distanceToPoint(mid) < 0) p.negate(); // keep the board's side
+    });
+    placeCopies(this.ship, s.x, s.z, 1.3 * (this.safe > 0 ? 1.0 : 0.8));
+    const fl = 0.8 + Math.random() * 0.3;
+    for (const b of this.ship.children) b.rotation.y = s.a;
+    for (const f of this.flames) { f.visible = push; f.scale.setScalar(fl); }
+    for (const b of this.bubbles) b.visible = this.safe > 0;
+    for (const r of this.rocks) placeCopies(r.m, r.x, r.z, r.r);
     for (const b of this.shots) b.m.position.set(b.x, 0.3, b.z);
     this.livesM.forEach((l, i) => { l.visible = !this.puzzle && i < this.lives; });
   }

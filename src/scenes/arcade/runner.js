@@ -216,6 +216,8 @@ export class ArcadeRunner {
       sfx: (n) => this.game.audio.play(n),
       tone: (midi, dur = 0.3, o = {}) => this.game.audio.tone(440 * Math.pow(2, (midi - 69) / 12), dur, { type: 'triangle', vol: 0.12, ...o }),
       did: (ev) => this.teach?.did(this.p, ev),
+      teaching: () => !!this.teach?.active, // the step-by-step tutorial is on (and not done)
+      stepKey: () => { const st = this.teach?.step(this.p); return st ? (typeof st.key === 'function' ? st.key(this.p) : st.key) : null; },
       fail: (kind, part) => host.fail(kind, part),
       puff: (x, z, color = 0xffffff, o = {}) => this.puffs.burst(new THREE.Vector3(x, o.y ?? 0.5, z), color, { count: 12, speed: 3, up: 2, size: 0.3, life: 0.6, ...o }),
       confetti: (x, z, o = {}) => this.confetti.burst(new THREE.Vector3(x, 1, z), 0, { count: 40, speed: 6, up: 5, life: 1.3, gravity: -9, colors: [0xffd23f, 0xff5d73, 0x4cc9f0, 0x3ddc97, 0xffffff], ...o }),
@@ -224,6 +226,7 @@ export class ArcadeRunner {
       join2: () => this.secondPlayer(),
       takeArrows: () => { this.arrowsTaken = true; },
       get time() { return host.t; },
+      get camera() { return host.camera; },
     };
     const G = new GAME_CLASSES[this.key](kit);
     G.root = root;

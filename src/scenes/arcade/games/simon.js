@@ -63,7 +63,9 @@ export class SimonGame {
     this.score = 0;
     this.state = 'play';
     this.add();
-    this.listen(1.0);
+    // the first tune waits for the tutorial's "watch and listen" step (so "Your turn" never shows under it)
+    this.phase = 'ready';
+    this.pt = 0;
   }
 
   add() { this.seq.push(Math.floor(this.kit.rng() * 4)); }
@@ -87,11 +89,15 @@ export class SimonGame {
   }
 
   update(dt, I) {
-    if (this.phase === 'listen') {
+    if (this.phase === 'ready') {
+      this.pt += dt;
+      const k = this.kit.stepKey?.();
+      if (!this.kit.teaching?.() || k === 'arc.simon.t1' || (k && k !== 'arc.simon.t1') || this.pt > 4) this.listen(k === 'arc.simon.t1' ? 0.6 : 1.0 - Math.min(1, this.pt));
+    } else if (this.phase === 'listen') {
       this.pt += dt;
       const step = 0.62 * this.slow;
       if (this.idx < this.seq.length && this.pt >= this.idx * step) { this.ring(this.seq[this.idx]); this.idx++; }
-      if (this.idx >= this.seq.length && this.pt > this.seq.length * step + 0.1) { this.phase = 'answer'; this.idx = 0; this.waitT = 0; }
+      if (this.idx >= this.seq.length && this.pt > this.seq.length * step + 0.1) { this.phase = 'answer'; this.idx = 0; this.waitT = 0; this.kit.did('heard'); }
     } else if (this.phase === 'answer') {
       this.waitT += dt;
       let pick = -1;
@@ -150,7 +156,7 @@ export class SimonGame {
   idle(dt) { this.draw(dt); }
 
   hud() {
-    return [[t('arc.simon.tune'), this.seq.length], ['❤', this.hearts], [this.phase === 'listen' || this.phase === 'pause' ? t('arc.simon.listen') : t('arc.simon.yourTurn'), '']];
+    return [[t('arc.simon.tune'), this.seq.length], ['❤', this.hearts], [this.phase !== 'answer' ? t('arc.simon.listen') : t('arc.simon.yourTurn'), '']];
   }
   goalText() { return t('arc.simon.goal', { n: this.goal }); }
   keys() { return 'arc.simon.keys'; }
@@ -159,7 +165,7 @@ export class SimonGame {
 
   steps() {
     return [
-      { key: 'arc.simon.t1', time: 3.5 },
+      { key: 'arc.simon.t1', on: 'heard' }, // moves on when the tune has played: then it is your turn
       { key: 'arc.simon.t2', on: 'ring' },
       { key: 'arc.simon.t3', on: 'round' },
     ];

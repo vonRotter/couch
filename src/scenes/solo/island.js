@@ -930,6 +930,18 @@ export class SoloIslandScene extends BaseScene {
     this.shownBurrow = U.burrow;
   }
 
+  /**
+   * Start (Esc) pauses the whole game (main.js) during anything that runs on its own: an activity or a mini-game,
+   * a puzzle lock, a panel, a hop trail's run. Out walking (no run) Start opens the island's own menu instead and
+   * Esc its help; in that menu Start closes it.
+   */
+  freezePause() {
+    if (this.launching || this.profilePicker || this.camView && this.mode === 'walk') return false;
+    if (this.mode === 'menu') return false;
+    if (this.mode === 'walk') return !!(this.hops?.run && !this.hops.run.done);
+    return true;
+  }
+
   /** True while the player is inside the cottage. */
   get indoors() {
     return !!(this.player && this.builder?.inside(this.player));

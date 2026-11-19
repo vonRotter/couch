@@ -235,7 +235,11 @@ to spend. Progress is saved per profile.
 **Story** (the co-op campaign): the big book on the meadow south-west of the playground on the shared
 island (or Story in the C menu); leaving the Story returns to the shared island at the book.
 - On the island: tap B next to a ball to pick it up; hold B and let go to throw (longer hold, further throw). Hold B when you are not carrying anything to leave.
-- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level, with a quick title and countdown), Help me play or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help. `M` toggles sound (on your own island `M` is the map; Sound is in its menu).
+- In a game, `Esc` (or Start on a gamepad) opens the menu: Resume, Retry (same game, same Sky Hop level, with a quick title and countdown), Help me play or End game (back to the island). Pick with A (on a keyboard also E); a gamepad's B, `Esc` or Start closes it. On the island `Esc` shows help.
+  **Start always pauses** (`main.js`): every game, and on your own island anything that runs on its own (an activity
+  or mini-game, a puzzle lock, a panel, a hop trail's run) and the dive freeze under a short pause menu (Resume,
+  Help me play, characters); out walking the island Start opens the island's menu instead (a hop trail's clock
+  waits there too) and `Esc` its help. In the dive `Esc` and Start pause, [C] goes up early. `M` toggles sound (on your own island `M` is the map; Sound is in its menu).
 - `N` switches between English and Norwegian (bokmål), or jump on the flag on the island. The choice is saved.
 - Jump on the green book button to show or hide the learning games (`G` opens the emote wheel here now).
 
@@ -669,7 +673,10 @@ with a trial open).
 - **Controls** follow the house rules: the arcade gamepad layout (`input.js` 'arcade': A the main button, X
   (or Y, the bumpers) the second, B is back and never picks, Start the pause menu); on a keyboard WASD or the
   arrow keys with Space and E, Q back; the mouse where it is natural (Brick Bonk's paddle, Sleepy Lanterns,
-  Echo Bells). [C] while playing opens the pause menu (resume, retry, Help me play, end).
+  Echo Bells). [C] while playing opens the pause menu (resume, retry, Help me play, end); Start pauses any time,
+  in a puzzle lock over the island too. Rock Patrol's field wraps like the classic: what crosses an edge is cut
+  off at the frame (clipped along the view from the camera) and shows on the other side at once. Echo Bells'
+  first tune waits for the tutorial's "watch and listen" step, which moves on once the tune has played.
 - **Flow:** the first time, the tutorial's card ("Show me how" / "I know how to play"), then its steps one at
   a time (each moves on when you do it, read aloud, skippable from the pause menu); a short Ready... go!; play.
   A game over (score games) or a level done (level games: Tunnel Trek, Crate Shove, Sleepy Lanterns, the same
@@ -1162,7 +1169,7 @@ night match yours and crops grow while you are away.
   | journal | D-pad ↓ | F |
   | journal tabs | LB / RB (L1 / R1) | 1–6, `[` `]` |
   | map | View (Create, −) | M |
-  | menu | Start (Options) | Q |
+  | menu (out walking; anything else: the pause) | Start (Options) | Q |
   | help | the menu's Help | `Esc` |
   | (free) | Y / △ | – |
 

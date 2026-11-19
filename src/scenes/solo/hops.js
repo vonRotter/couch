@@ -533,9 +533,10 @@ export class Hops {
     if (this.goT > 0) { this.goT -= dt; if (this.goT <= 0) this.countEl.style.display = 'none'; }
     const r = this.run;
     if (r) {
-      if (host.mode !== 'hopgo' && !r.done) r.t += dt;
+      const still = host.mode === 'hopgo' || host.mode === 'menu'; // the count-in, or the island menu open (Q): the clock waits
+      if (!still && !r.done) r.t += dt;
       if (P) this.updateCheckpoint(r, P, dt);
-      if (r.racer && host.mode !== 'hopgo') this.updateRacer(r.racer, dt);
+      if (r.racer && !still) this.updateRacer(r.racer, dt);
       // walked far away: the run stops
       if (!r.done && P && Math.hypot(P.x - r.tr.T.start.x, P.z - r.tr.T.start.z) > 30) this.stop();
       if (r.done) { this.endT -= dt; if (this.endT <= 0 && (!r.racer || r.racer.done || this.endT < -6)) this.stop(true); }

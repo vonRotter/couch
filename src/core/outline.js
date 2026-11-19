@@ -25,6 +25,14 @@ function hullMat(kind) {
   return mats[kind];
 }
 
+// a model drawn inside a clipped board (obj.userData.clip: the planes; Rock Patrol's wrap-around field) gets hulls
+// clipped the same way (one material per kind per set of planes, kept on the planes array)
+function clipHullMat(kind, planes) {
+  const c = (planes.hullMats ||= {});
+  if (!c[kind]) { c[kind] = hullMat(kind).clone(); c[kind].clippingPlanes = planes; }
+  return c[kind];
+}
+
 /** Say what a model is, so "Strong outlines" can outline it. meshes: which meshes (default: the biggest few). */
 export function markA11y(obj, kind, meshes = null) {
   obj.userData.a11y = kind;
@@ -56,7 +64,7 @@ export function refreshOutlines(root, on) {
       const st = STYLE[o.userData.a11y] || STYLE.item;
       o.userData.hulls = pickMeshes(o).map((m) => {
         if (!m.geometry.boundingSphere) m.geometry.computeBoundingSphere();
-        const h = new THREE.Mesh(m.geometry, hullMat(o.userData.a11y));
+        const h = new THREE.Mesh(m.geometry, o.userData.clip ? clipHullMat(o.userData.a11y, o.userData.clip) : hullMat(o.userData.a11y));
         h.userData.hull = true;
         h.scale.setScalar(1 + st.grow / Math.max(0.2, (m.geometry.boundingSphere?.radius || 0.5)) * 0.5);
         h.castShadow = false;

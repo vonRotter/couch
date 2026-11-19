@@ -28,7 +28,9 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
 - `tests/arcade/*.test.mjs`: the classic games round: `games` (each of the Game Hall's nine games starts, its
   controls work, it scores or reaches its goal, its card retries at once, the high score is saved for the profile,
   its assists), `puzzles` (the puzzle locks' pace over 8 simulated weeks, one at a time, solve and skip rewards,
-  the trophy, old saves) and `hall` (the cabinets, Coach's lines, the board and the passport); `arcade.mjs` is
+  the trophy, old saves), `hall` (the cabinets, Coach's lines, the board and the passport, the hall's low camera)
+  and `fixes` (Rock Patrol's clipped wrap-around edge, Echo Bells' first tune and its tutorial, and a fake
+  gamepad's Start pausing a hall game, a puzzle lock, a hop trail's run, fishing and the dive); `arcade.mjs` is
   their helper (startArcade, R: the runner and its game, setAssist, answerOffer, screenOf for mouse clicks).
 - `tests/lively/*.test.mjs`: the "livelier island" round (Today board and tomorrow hooks, villagers' own lives,
   rare events and the mystery, music and ambience, Pip's robot, old saves, and the density budget).

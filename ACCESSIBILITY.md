@@ -39,7 +39,8 @@ games), **game speed** in every game (MiniGame) and in the island's activities, 
 pause menu (Retry restarts the same game or level with a quick title and countdown), **reduce flashing and
 shake** (every fast blink: a soft glow on beans, a pulse under 3 Hz elsewhere; no camera shake), **symbols
 for players and teams** (a shape next to every colour: chips, results, name tags, pickers, scoreboards,
-Paint Party's bars), the **Help me play** page in every pause menu and both islands' menus.
+Paint Party's bars), the **Help me play** page in every pause menu and both islands' menus, and **pause any
+time**: Start (`Esc`) freezes every game, the solo island's activities, puzzle locks, hop trails and the dive.
 
 | Game | Timing | Aim help | Hold to toggle | Offers after tries | Skip | Checkpoint / retry near the failure |
 |---|---|---|---|---|---|---|

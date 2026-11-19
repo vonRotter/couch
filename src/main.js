@@ -66,6 +66,7 @@ import './core/devvoices.js'; // dev voice panel, hidden unless ?dev (F10)
 // The pause menu in every game (chars is a setting that switches in place). While a tutorial runs
 // (scene.tutorialActive()) it also has "Skip the tutorial" (core/tutorial.js).
 const PAUSE_ITEMS = ['resume', 'retry', 'assist', 'end', 'chars'];
+const FREEZE_ITEMS = ['resume', 'assist', 'chars']; // a pause in a scene with its own menu (the island, the dive)
 
 export const GAMES = {
   bubble: { Scene: BubbleScene },
@@ -108,6 +109,7 @@ export const GAMES = {
 class Game {
   constructor() {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    this.renderer.localClippingEnabled = true; // boards that clip what crosses their edge (Rock Patrol's wrap-around field)
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
@@ -497,6 +499,7 @@ class Game {
 
   /** The pause menu's items now ("Skip the tutorial" only while one runs). */
   pauseItems() {
+    if (this.current?.ownMenu) return FREEZE_ITEMS; // the island's or the dive's activities: no retry or end here
     if (!this.current?.tutorialActive?.()) return PAUSE_ITEMS;
     const items = [...PAUSE_ITEMS];
     items.splice(items.indexOf('end'), 0, 'skiptut');
@@ -676,9 +679,14 @@ class Game {
     if (this.input.pressed.has('KeyN')) this.toggleLanguage();
     if (this.input.pressed.has('KeyV')) this.toggleVoice();
     if (this.input.pressed.has('KeyB')) this.toggleBabble();
-    if (this.input.menuPressed && !this.switching && this.current && !(this.current instanceof HubScene) && !this.current.ownMenu) {
+    // Start (Esc on a keyboard) pauses every game, any time: a scene with its own menu (the island, the dive) says
+    // when it wants this pause instead (freezePause(): a timed activity, a puzzle, a hop trail...; out walking the
+    // island's own menu opens). Opening or closing it uses up the press (the scene never sees it this frame).
+    if (this.input.menuPressed && !this.switching && this.current && !(this.current instanceof HubScene) && (this.pause || !this.current.ownMenu || this.current.freezePause?.())) {
       if (this.pause) this.closePause();
       else this.openPause();
+      this.input.endFrame();
+      return;
     }
     if (this.pause) {
       this.updatePause();
