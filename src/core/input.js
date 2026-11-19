@@ -147,6 +147,7 @@ export class Input {
     this.pressed = new Set();
     this.escPressed = false;
     this.menuPressed = false;
+    this.menuByView = false; // menuPressed came only from a pad's View (the solo island's map button: main.js)
     this.mutePressed = false;
     this.devices = new Map();
     for (const s of KEYBOARD_SCHEMES) {
@@ -162,7 +163,7 @@ export class Input {
       if (e.repeat) return;
       this.down.add(e.code);
       this.pressed.add(e.code);
-      if (e.code === 'Escape') { this.escPressed = true; this.menuPressed = true; }
+      if (e.code === 'Escape') { this.escPressed = true; this.menuPressed = true; this.menuByView = false; }
       if (e.code === 'KeyM') this.mutePressed = true;
       this.onActivity?.();
     });
@@ -243,7 +244,7 @@ export class Input {
       const P = d.btnPressed;
       this.step(d, L.dpadMoves ? 0 : (P.right ? 1 : 0) - (P.left ? 1 : 0), L.dpadMoves ? 0 : (P.up ? 1 : 0) - (P.down ? 1 : 0));
       const start = btn('start') || btn('view');
-      if (start && !d.prevStart) this.menuPressed = true;
+      if (start && !d.prevStart) { this.menuByView = !this.menuPressed && !btn('start'); this.menuPressed = true; }
       d.prevStart = start;
       const a = any(L.a);
       const b = any(L.b);
@@ -311,6 +312,7 @@ export class Input {
     this.pressed.clear();
     this.escPressed = false;
     this.menuPressed = false;
+    this.menuByView = false;
     this.mutePressed = false;
   }
 

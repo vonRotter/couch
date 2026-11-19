@@ -683,7 +683,9 @@ class Game {
     // Start (Esc on a keyboard) pauses every game, any time: a scene with its own menu (the island, the dive) says
     // when it wants this pause instead (freezePause(): a timed activity, a puzzle, a hop trail...; out walking the
     // island's own menu opens). Opening or closing it uses up the press (the scene never sees it this frame).
-    if (this.input.menuPressed && !this.switching && this.current && !(this.current instanceof HubScene) && (this.pause || !this.current.ownMenu || this.current.freezePause?.())) {
+    // On the solo island a pad's View is the map button (it opens and closes the map), never the pause.
+    const viewMap = this.input.menuByView && !!this.current?.mapKey;
+    if (this.input.menuPressed && !viewMap && !this.switching && this.current && !(this.current instanceof HubScene) && (this.pause || !this.current.ownMenu || this.current.freezePause?.())) {
       if (this.pause) this.closePause();
       else this.openPause();
       this.input.endFrame();

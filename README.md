@@ -884,7 +884,8 @@ night match yours and crops grow while you are away.
   on, the help offers taken and the skipped parts. Esc, H or a gamepad's B closes it. Everything is read from
   this browser's storage; nothing leaves the device.
 - **The map** (the journal's first tab, and its own button: **M** on a keyboard, the **View** button on
-  an Xbox pad, Create on a PlayStation pad, − on a Nintendo pad; the same button or B / Q closes it). A
+  an Xbox pad, Create on a PlayStation pad, − on a Nintendo pad; the same button or B / Q closes it; on the
+  island View is only the map button, never the pause menu: `input.js` menuByView, `main.js`). A
   drawing of the island from above (the land, the river, the paths, the pier) with pictures on it, and a
   legend beside it: **you** (an arrow in your color, pointing the way you face); every **place**: the games
   (a ✨ on the ones you have not tried yet, a 🔒 and the reason on locked ones; the burrow only once
