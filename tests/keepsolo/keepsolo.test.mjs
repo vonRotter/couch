@@ -90,46 +90,70 @@ await test('a fight: attacking a grumble poofs it into fluff (XP, the fluffed co
 await test('the tutorial\'s other steps, each at its moment: the class move near a charger, a potion at half health, picking up gear, a skill', async () => {
   const stepNow = async () => { await sim(page, 1.6); return K((k) => k.teach.step(k.player)?.id || null); };
   const seen = [];
-  // a potion at half health
-  await K((k, hs, e) => { for (const g of k.grumbles) if (!g.dead && Math.hypot(g.x - e.x, g.z - e.z) < 12) { g.x += 40; g.z += 40; } e.hp = e.st.maxHp * 0.4; });
-  let st = await stepNow();
-  assert(st === 'potion', `the potion step at half health: ${st}`);
-  seen.push(st);
-  const col = await K((k, hs) => hs.belt.findIndex((x) => x?.use === 'hp'));
-  await press(page, `Digit${5 + col}`);
-  await sim(page, 1.5);
-  // gear on the floor: the pick-up step, [C] picks it up
-  await page.evaluate(async () => { const I = await import('/src/scenes/keepsolo/items.js'); const k = window.game.current; const g = k.spawnGear(I.rollItem({ ilvl: 1, rarity: 0, slot: 'gloves', cls: k.cls, diff: 0 }), k.hero.x + 0.3, k.hero.z); g.vx = g.vz = 0; });
-  st = await stepNow();
-  assert(st === 'item', `the item step: ${st}`);
-  seen.push(st);
-  await hold(page, 'KeyQ', 0.1);
-  await sim(page, 1.5);
-  // a skill learned and ready: the skill step, its key casts it
-  const id = await page.evaluate(async () => {
-    const C = await import('/src/scenes/keepsolo/classes.js');
-    const k = window.game.current, hs = k.hs;
-    const def = C.TREE[k.cls].find((d) => d.kind === 'active' && d.id !== C.B_MOVE[k.cls] && !k.raiseSkill(d.id));
-    if (!def) return null;
-    k.assignSkill(1, def.id);
-    k.hero.mana = k.hero.st.maxMana;
-    return def.id;
+  // The steps come in whichever order their moments arise, and a shown step stays up until it is done (or 20 s):
+  // the fight before may already have brought up the move step (a charger) or the item step (dropped gear). Such
+  // a step counts as seen at its moment; it is done here by its own event, as the game does when the player acts.
+  for (let i = 0; i < 4; i++) {
+    const pend = await K((k) => { const st = k.teach.step(k.player); if (!st) return null; k.teach.did(k.player, Array.isArray(st.on) ? st.on[0] : st.on); return st.id; });
+    if (!pend) break;
+    seen.push(pend);
+    await sim(page, 1.6);
+  }
+  // a clean room: no gear on the floor, no grumbles near
+  await K((k, hs, e) => {
+    for (const it of k.items) if (!it.taken && it.kind === 'gear') { it.taken = true; it.label?.remove(); it.mesh?.parent?.remove(it.mesh); }
+    for (const g of k.grumbles) if (!g.dead) { g.x = e.x + 60; g.z = e.z + 60; g.state = 'idle'; }
   });
-  assert(id, 'a skill to learn');
-  // (a grumble in front: skills are cast at things)
-  await K((k, hs, e) => { const g = k.grumbles.find((g) => !g.dead); g.x = e.x + 2; g.z = e.z; g.state = 'idle'; });
-  st = await stepNow();
-  assert(st === 'skill', `the skill step: ${st}`);
-  seen.push(st);
-  await press(page, 'Digit2');
-  await sim(page, 1.5);
+  let st;
+  // a potion at half health
+  if (!seen.includes('potion')) {
+    await K((k, hs, e) => { e.hp = e.st.maxHp * 0.4; });
+    st = await stepNow();
+    assert(st === 'potion', `the potion step at half health: ${st}`);
+    seen.push(st);
+    const col = await K((k, hs) => hs.belt.findIndex((x) => x?.use === 'hp'));
+    await press(page, `Digit${5 + col}`);
+    await sim(page, 1.5);
+  }
+  // gear on the floor: the pick-up step, [C] picks it up
+  if (!seen.includes('item')) {
+    await page.evaluate(async () => { const I = await import('/src/scenes/keepsolo/items.js'); const k = window.game.current; const g = k.spawnGear(I.rollItem({ ilvl: 1, rarity: 0, slot: 'gloves', cls: k.cls, diff: 0 }), k.hero.x + 0.3, k.hero.z); g.vx = g.vz = 0; });
+    st = await stepNow();
+    assert(st === 'item', `the item step: ${st}`);
+    seen.push(st);
+    await hold(page, 'KeyQ', 0.1);
+    await sim(page, 1.5);
+  }
+  // a skill learned and ready: the skill step, its key casts it
+  if (!seen.includes('skill')) {
+    const id = await page.evaluate(async () => {
+      const C = await import('/src/scenes/keepsolo/classes.js');
+      const k = window.game.current;
+      const def = C.TREE[k.cls].find((d) => d.kind === 'active' && d.id !== C.B_MOVE[k.cls] && !k.raiseSkill(d.id));
+      if (!def) return null;
+      k.assignSkill(1, def.id);
+      k.hero.mana = k.hero.st.maxMana;
+      return def.id;
+    });
+    assert(id, 'a skill to learn');
+    // (a grumble in front: skills are cast at things)
+    // (a plain one: a charger or a thrower this close would bring up the move step first)
+    await K((k, hs, e) => { const g = k.grumbles.find((g) => !g.dead && g.kind === 'basic') || k.grumbles.find((g) => !g.dead); g.kind = 'basic'; g.x = e.x + 2; g.z = e.z; g.state = 'idle'; });
+    st = await stepNow();
+    assert(st === 'skill', `the skill step: ${st}`);
+    seen.push(st);
+    await press(page, 'Digit2');
+    await sim(page, 1.5);
+  }
   // a charger near: the class move (the knight's block: hold [E])
-  await K((k, hs, e) => { const g = k.grumbles.find((g) => !g.dead); g.kind = 'charger'; g.x = e.x + 4; g.z = e.z; e.hp = e.st.maxHp; });
-  st = await stepNow();
-  assert(st === 'move', `the class move step: ${st}`);
-  seen.push(st);
-  await hold(page, 'KeyE', 0.4);
-  await sim(page, 1.6);
+  if (!seen.includes('move')) {
+    await K((k, hs, e) => { const g = k.grumbles.find((g) => !g.dead); g.kind = 'charger'; g.x = e.x + 4; g.z = e.z; e.hp = e.st.maxHp; });
+    st = await stepNow();
+    assert(st === 'move', `the class move step: ${st}`);
+    seen.push(st);
+    await hold(page, 'KeyE', 0.4);
+    await sim(page, 1.6);
+  }
   const r = await K((k) => ({ active: k.teach.active, left: k.teach.stateOf(k.player)?.left.length }));
   assert(!r.active && r.left === 0, `all done: ${JSON.stringify(r)} after ${seen.join(', ')}`);
 });

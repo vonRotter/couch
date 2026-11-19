@@ -81,6 +81,7 @@ await test('fog: thick fog, and at night a ghost ship with a friendly captain', 
   assert(lum.ship > lum.sea + 40, `bright against the sea: ${JSON.stringify(lum)}`);
   // "Reduce flashing": the halo is steady
   await page.evaluate(() => { const G = window.game, id = G.solo.profile.id; G.assist.saveSettings(id, { ...G.assist.profileSettings(id), calm: true }); G.applyScreenSettings(); });
+  await sim(page, 0.1); // (the setting shows from the next frame)
   const g1 = await island(page, (I) => I.events.glow.material.opacity);
   await sim(page, 2.3);
   const g2 = await island(page, (I) => I.events.glow.material.opacity);

@@ -174,6 +174,8 @@ await test('the dive: Start pauses (no End there), B never picks and does not go
 });
 
 await test('Pillow Keep Solo: A picks the hero; Start pauses, B never picks (on End); B closes a panel', async () => {
+  // (the last test went back to the island: wait until that switch is over; a game asked for mid-switch is dropped)
+  await waitScene('SoloIslandScene');
   await sim(page, 1);
   await page.evaluate(() => window.game.startGame('keepsolo'));
   await waitScene('KeepSoloScene');
