@@ -120,6 +120,7 @@ export class Photo {
     while (S.photos.length > MAX) { S.photos.shift(); full = true; }
     S.mail.push({ id: 'postcard', from: 'photo', pc: u });
     if (!count(S, 'album')) give(S, 'album', 1);
+    host.odd?.onPhoto?.(); // the cloud whale in the picture? (creatures.js)
     this.snapT = 0;
     host.game.audio.play('pop');
     const txt = t(full ? 'isl.photo.sentFull' : 'isl.photo.sent', { n: MAX });

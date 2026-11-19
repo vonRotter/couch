@@ -163,6 +163,9 @@ const SVG = {
   deco: `<path d="M12 3 L14.6 9.2 L21 9.6 L16 13.8 L17.6 20.4 L12 16.8 L6.4 20.4 L8 13.8 L3 9.6 L9.4 9.2 Z" fill="#c9a8ff" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
 };
 
+/** More item icons from a module that brings its own items (the odd-adventure round: odd.js and its parts). */
+export function addIcons(o) { Object.assign(SVG, o); }
+
 // Pictures of 3D models for sea things and dishes (set by the island scene: see thumbs.js).
 let pictureFn = null;
 export function setPictures(fn) { pictureFn = fn; }

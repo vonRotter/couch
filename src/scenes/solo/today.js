@@ -207,6 +207,7 @@ export class TodayBoard {
     host.village?.newDay?.(at); // dramas and projects move on first (the board tells about them)
     host.events?.newDay?.(at);
     host.robot?.newDay?.(at);
+    host.odd?.newDay?.(at); // the odd-adventure round: something new may arrive (odd.js)
     this.resolveHooks(di);
     const fresh = this.issueHook(at);
     const items = S.intro ? this.compute(at, fresh) : [];
@@ -235,7 +236,7 @@ export class TodayBoard {
     else if (sur === 'bottle') C.push({ kind: 'changed', pri: 7, icon: '🍾', keys: [1, 2, 3].map((i) => `td.sur.bottle.${i}`) });
     else if (sur === 'meteor') C.push({ kind: 'rumor', pri: 7, icon: '🌠', keys: [1, 2, 3].map((i) => `td.sur.meteor.${i}`) });
     // the rare events, the villagers' dramas and projects, the robot (their own modules)
-    for (const src of [host.events, host.village, host.robot, host.lock]) for (const c of src?.todayNews?.(at) || []) C.push(c);
+    for (const src of [host.events, host.village, host.robot, host.lock, host.odd]) for (const c of src?.todayNews?.(at) || []) C.push(c);
     // the season's first day
     const season = seasonOf(at);
     if (seasonOf(at - 86400000) !== season) C.push({ kind: 'changed', pri: 6, icon: '🌦️', keys: [`td.season.${season}`] });

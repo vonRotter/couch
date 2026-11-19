@@ -113,7 +113,7 @@ export class Gull {
   update(dt, ctx = {}) {
     this.t += dt;
     const o = this.o, night = ctx.night || 0, P = ctx.player;
-    const scared = P && Math.hypot(P.x - this.pos.x, P.z - this.pos.z) < 2.6 && (P.y ?? 0) + 2 > this.pos.y;
+    const scared = P && Math.hypot(P.x - this.pos.x, P.z - this.pos.z) < (P.sneaky ? 1.0 : 2.6) && (P.y ?? 0) + 2 > this.pos.y; // (Sneaky mode: they stay put)
     if (this.state === 'fly') {
       const d = this.steer(this.target, dt, FLY_SPEED);
       if (d < 1.5) this.target = this.pickTarget();

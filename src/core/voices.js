@@ -85,6 +85,18 @@ export const SPEAKERS = {
   'isl.skye': { type: 'cheerful', pitch: -0.15, seed: 'skye' }, // Skye, the balloon explorer (surprise.js)
   'isl.robot': { type: 'robot', seed: 'bolt' }, // Bolt, Pip's robot helper (robot.js)
   'isl.wisp': { type: 'sleepy', pitch: 0.25, rate: -0.05, seed: 'wisp' }, // Captain Wisp, the friendly ghost on foggy nights (events.js)
+  // the odd-adventure round (solo/odd.js and its parts)
+  'isl.tinka': { type: 'cheerful', pitch: -0.1, rate: 0.06, seed: 'tinka' }, // Tinka the inventor (inventor.js)
+  'isl.wendeline': { type: 'grandma', pitch: 0.12, rate: 0.05, seed: 'wendeline' }, // Wizard Wendeline (wizard.js)
+  'isl.shroom': { type: 'sleepy', pitch: 0.1, rate: -0.08, seed: 'morel' }, // Old Morel, the mushroom merchant (creatures.js)
+  'isl.elephant': { type: 'tiny', pitch: -0.2, seed: 'elephant' }, // the tiny tea elephants (creatures.js)
+  'isl.moss': { type: 'tiny', pitch: 0.1, rate: -0.1, seed: 'moss' }, // the shy moss creature (creatures.js)
+  'isl.lighthouse': { type: 'sleepy', pitch: -0.15, rate: 0.05, seed: 'lighthouse' }, // the talking lighthouse (inventor.js)
+  'isl.vendor': { type: 'robot', pitch: 0.2, seed: 'vendor' }, // the joke vending robot (inventor.js)
+  'isl.bimsa': { type: 'grandma', pitch: -0.1, seed: 'bimsa' }, // the new folk (folk.js): Elder Bimsa
+  'isl.tuko': { type: 'child', pitch: 0.1, seed: 'tuko' }, // Tuko
+  'isl.wenna': { type: 'friendly', pitch: 0.2, seed: 'wenna' }, // Wenna
+  'isl.guard': { type: 'sleepy', pitch: -0.2, seed: 'guard' }, // the secret club's sleepy guard (social.js)
   // Pudding Island (src/scenes/adventure*)
   'adv.pip': { type: 'child', pitch: -0.1 },
   'adv.grum': { type: 'gruff', seed: 'grumbleton' },

@@ -63,6 +63,7 @@ export const GENRES = [
   { id: 'life', icon: '🌱', css: '#6aa82a', pic: null },
   { id: 'learning', icon: '📚', css: '#2f7fd0', pic: 'spelling' },
   { id: 'arcade', icon: '🕹️', css: '#c2185b', pic: null }, // the classic arcade games in the Game Hall
+  { id: 'stealth', icon: '🤫', css: '#5a5f9a', pic: null }, // the odd-adventure round: Sneaky mode on the solo island
 ];
 export const GENRE_IDS = GENRES.map((g) => g.id);
 
@@ -113,6 +114,9 @@ export const GAMES = {
   stones: { genre: 'party', skills: ['timing'], where: 'island', place: 'game:stones', name: 'pp.g.stones' },
   kite: { genre: 'party', skills: ['steering'], where: 'island', place: 'game:kite', name: 'pp.g.kite' },
   islplay: { genre: 'party', skills: ['exploring', 'aiming'], where: 'island', name: 'pp.g.islplay' }, // tag, hide-and-seek, snowballs with villagers
+  // the odd-adventure round (solo/odd.js): sneaking up on shy creatures and past sleepy guards, and the bouncing magic ball
+  sneak: { genre: 'stealth', skills: ['reading', 'steering'], where: 'island', name: 'pp.g.sneak' },
+  magicball: { genre: 'shooter', skills: ['aiming', 'planning'], where: 'island', name: 'pp.g.magicball' },
   // the shared island (co-op; also the learning games there)
   bubble: { genre: 'platformer', skills: ['timing', 'teamwork', 'reading'], where: 'coop' },
   runner: { genre: 'platformer', skills: ['timing', 'steering'], where: 'coop' },
@@ -184,6 +188,9 @@ export const TRIALS = [
   { id: 'bonk.wall', skill: 'aiming', level: 2, game: 'bonk' }, // Brick Bonk: a whole wall
   { id: 'pong.win', skill: 'timing', level: 2, game: 'pong' }, // Paddle Pals: beat Pip
   { id: 'rocks.wave', skill: 'steering', level: 2, game: 'rocks' }, // Rock Patrol: clear two waves
+  // the odd-adventure round (solo/magicball.js, solo/creatures.js)
+  { id: 'ball.bells', skill: 'aiming', level: 3, game: 'magicball' }, // ring all three bells with one throw of the magic ball
+  { id: 'sneak.moss', skill: 'reading', level: 2, game: 'sneak' }, // tiptoe up to the shy moss creature without scaring it away
 ];
 export const trialById = (id) => TRIALS.find((x) => x.id === id) || null;
 
@@ -302,7 +309,7 @@ function trial(P, id) {
  * What one event means for a passport (pure, for tests too). ev: 'finish' (MiniGame results: d.key, d.n players,
  * the scene's passportStats()), 'overcame' (d.part), 'fish' (d.ok, d.clean), 'hop' (d.id, d.falls, d.won),
  * 'breach.win' (d.clean, d.step), 'launch' (d.key: a guest game), 'island' (d.key: an island activity done,
- * d.what: a mastery point, optional).
+ * d.what: a mastery point, optional), 'trial' (d.id: a trial done on the island).
  */
 export function apply(P, ev, d = {}) {
   switch (ev) {
@@ -355,6 +362,7 @@ export function apply(P, ev, d = {}) {
       return;
     }
     case 'launch': played(P, d.key, true); return;
+    case 'trial': { const tr = trialById(d.id); if (tr) { playedOnce(P, tr.game); trial(P, d.id); } return; } // a trial done on the island (the odd-adventure round)
     case 'island': {
       if (!GAMES[d.key]) return;
       played(P, d.key, true);

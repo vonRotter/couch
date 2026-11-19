@@ -42,7 +42,7 @@ table there, then this file. The passport is explained in the README (Solo islan
 | ♟️ Tactics | Into the Breach | Bean Brigade, Starlite, Foothold, Splash Squad |
 | 🛡️ Role-playing game | Pokémon, Diablo | Pillow Keep Solo, Pillow Keep |
 | 💎 Roguelite | Spelunky | Crystal Caves |
-| 🎯 Aim and shoot | Duck Hunt, Splatoon | Laser Ducks, Tachyon, Rock Patrol, Spacefall, Paint Pilots, Snowball Fort, Grumble King (snow fort) |
+| 🎯 Aim and shoot | Duck Hunt, Splatoon | Laser Ducks, Tachyon, Rock Patrol, The magic ball, Spacefall, Paint Pilots, Snowball Fort, Grumble King (snow fort) |
 | 🏁 Racing | Mario Kart | Kart Party, Snow Slalom, Space Race, Grumble King (space) |
 | ⚽ Sports | Rocket League, FIFA | Paddle Pals, Mega Ball, Ice Hockey, Bean Golf |
 | 🧱 Building game | Minecraft | Knights & Builders (Versus and the Golden Bean), Building in your yard |
@@ -50,6 +50,7 @@ table there, then this file. The passport is explained in the README (Solo islan
 | 🌱 Life sim | Animal Crossing, Stardew Valley | Farming, Fishing, Diving, The café |
 | 📚 Learning game | Big Brain Academy | The School House, Bokstavballonger, Mattejakt, Læringsmiks |
 | 🕹️ Arcade classic | Snake, Simon, Breakout | Wiggle Worm, Echo Bells, Brick Bonk |
+| 🤫 Stealth game | Metal Gear, Untitled Goose Game | Sneaking (Sneaky mode on your island) |
 
 Each genre has a read-aloud card in the passport (English and Norwegian, `pp.card.<genre>` in
 `src/core/passport-strings.js`): what kind of game it is, what you practise, a famous example and the games here.
@@ -90,6 +91,8 @@ Each genre has a read-aloud card in the passport (English and Norwegian, `pp.car
 | Skipping stones (`stones`) | island activity | Party game | Timing | a throw in the green |
 | Kite flying (`kite`) | island activity | Party game | Moving and steering | a kite flight finished |
 | Games with villagers (`islplay`) | island activity | Party game | Exploring, Aiming | hide-and-seek or a snowball fight with a villager |
+| Sneaking (`sneak`) | island activity | Stealth game | Reading the enemy, Moving and steering | tiptoeing up to a shy creature or past a sleepy guard in Sneaky mode |
+| The magic ball (`magicball`) | island activity | Aim and shoot | Aiming, Thinking ahead | an apple, a bell, the switch door or a lost thing knocked down with the magic ball |
 | Bubble Buddies (`bubble`) | shared island | Platformer | Timing, Teamwork, Reading the enemy | a game finished (its results screen) |
 | Rooftop Rush (`runner`) | shared island | Platformer | Timing, Moving and steering | a game finished (its results screen) |
 | Portal Pals (`portal`) | shared island | Puzzle game | Puzzles, Teamwork | a game finished (its results screen) |
@@ -158,6 +161,8 @@ name.
 | Bonk a whole wall away in Brick Bonk | Aiming | silver | Brick Bonk: a wall cleared |
 | Beat Pip at Paddle Pals | Timing | silver | Paddle Pals: 7 points first against Pip (not with a friend) |
 | Clear two waves of rocks in Rock Patrol | Moving and steering | silver | Rock Patrol: two waves cleared |
+| Ring all three bells with one throw of the magic ball | Aiming | gold | the magic ball: all three bells rung by one throw (bank shots off the cliff) |
+| Tiptoe up to the shy moss creature without scaring it away | Reading the enemy | silver | the moss creature: a visit in Sneaky mode |
 
 ## Suggested order (Coach and the map, never forced)
 

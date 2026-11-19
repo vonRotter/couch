@@ -67,6 +67,7 @@ import { Village } from './village.js';
 import { IslandEvents } from './events.js';
 import { musicFor, ambienceFor } from './soundscape.js';
 import { Robot } from './robot.js';
+import { Odd } from './odd.js';
 import { EventLock } from './lock.js';
 import { IslandGames } from './games.js';
 import { Play } from './play.js';
@@ -285,6 +286,7 @@ export class SoloIslandScene extends BaseScene {
     this.village = new Village(this); // the villagers' own lives: conversations, reactions, dramas, projects (village.js)
     this.events = new IslandEvents(this); // rare weather events and the seasonal mystery (events.js)
     this.robot = new Robot(this); // Bolt, Pip's chore robot after the greenhouse (robot.js)
+    this.odd = new Odd(this); // the odd-adventure round: behaviour modes, the magic ball and what comes slowly after (odd.js)
     this.todayBoard = new TodayBoard(this); // the Today board and the tomorrow hooks (today.js)
     this.games = new IslandGames(this); // skipping stones, kites, hide-and-seek, snowballs, leaf piles
     this.play = new Play(this); // villagers play: tag, waves, sunset and stars together, little tasks
@@ -476,6 +478,7 @@ export class SoloIslandScene extends BaseScene {
     this.village.tick(at);
     this.events.tick(at);
     this.robot.tick(at);
+    this.odd.tick(at);
     if (this.player?.on?.secret === 'roof') this.village.note('roof'); // up on the game hall roof: someone saw you
     this.todayBoard.tick(at); // (after the others: it tells what they did on a new day)
     const ind = this.indoors;
@@ -811,6 +814,7 @@ export class SoloIslandScene extends BaseScene {
     out.unshift(...this.seasons.tasks());
     out.unshift(...this.surprise.tasks(), ...this.play.tasks()); // (today's surprise and little task)
     out.push(...this.games.tasks()); // (leaf piles in autumn, last)
+    out.push(...this.odd.tasks()); // the odd-adventure round (odd.js)
     out.unshift(...this.tour.tasks());
     out.unshift(...this.story.tasks());
     out.unshift(...this.events.tasks()); // the seasonal mystery's next step
@@ -977,7 +981,7 @@ export class SoloIslandScene extends BaseScene {
 
   /** Today's things with a place, for the map (atlas.js): the Today board, the villagers' projects, rare events. */
   mapToday() {
-    return [...this.todayBoard.mapItems(), ...(this.village?.mapItems?.() || []), ...(this.events?.mapItems?.() || []), ...(this.robot?.mapItems?.() || [])];
+    return [...this.todayBoard.mapItems(), ...(this.village?.mapItems?.() || []), ...(this.events?.mapItems?.() || []), ...(this.robot?.mapItems?.() || []), ...(this.odd?.mapItems?.() || [])];
   }
 
   /** The island's music and ambience switches (per profile; old saves: both on). */
@@ -1037,6 +1041,7 @@ export class SoloIslandScene extends BaseScene {
     const st = npcState(S, id);
     const def = NPCS[id];
     if (!st.met && S.intro) return true;
+    if (this.odd?.hasNews(id)) return true; // a lesson or a happening of the odd-adventure round (odd.js)
     if (id === 'coach') return this.coach.hasNews(); // stamps to hand out, trials to cheer for
     if (this.story?.hasNews(id)) return true;
     if (this.play?.hasNews(id)) return true; // today's little task
@@ -1063,6 +1068,8 @@ export class SoloIslandScene extends BaseScene {
     // today's little task (asking, or the thing you bring back: play.js)
     if (this.play.talk(n)) return;
     n.talking = true;
+    // the odd-adventure round first: a lesson (Coach's Sporty mode, Mumble's Sneaky mode), a clue, a rumour (odd.js)
+    if (this.odd.talk(n, () => { n.talking = false; this.markDirty(); })) { st.met = true; return; }
     // Coach Bo: while he builds his obstacle course, his first chat of the day asks for wood (village.js)
     if (id === 'coach' && st.met && this.village.talk(n, () => { n.talking = false; this.markDirty(); })) return;
     if (id === 'coach') { this.coach.talk(n); return; } // Coach Bo: stamps, suggestions, trials (coach.js)
@@ -1241,6 +1248,7 @@ export class SoloIslandScene extends BaseScene {
     // villagers or fields down below
     if (!this.indoors && (P.air || P.fy > this.map.floorAt(P.x, P.z, S.unlocks.bridge) + 1.0)) {
       if (!this.play.interactions(P, out, nm) && !this.hops.interactions(P, out, nm, true)) this.surprise.interactions(P, out, nm);
+      if (!out.a) out.a = this.odd.heldAction(held?.id, nm); // the magic ball (magicball.js)
       return this.fillDefaults(out, held);
     }
     if (this.indoors) {
@@ -1308,6 +1316,7 @@ export class SoloIslandScene extends BaseScene {
     if (!out.b) this.todayBoard.interactions(P, out, nm);
     if (!out.b) this.village.interactions(P, out, nm); // Aunt Hazel's prize pumpkin
     if (!out.b) this.robot.interactions(P, out, nm); // Bolt: eggs for you, chores or rest
+    if (!out.b) this.odd.interactions(P, out, nm); // the odd-adventure round's places and guests (odd.js)
     if (!out.b) this.events.interactions(P, out, nm); // a storm's finds, the ghost captain, the rainbow, the mystery // the egg basket or the mystery pot (today.js)
     if (!out.b) this.games.interactions(P, out, nm); // island mini-games (games.js)
     if (!out.b) this.play.interactions(P, out, nm); // villagers at play (play.js)
@@ -1361,6 +1370,7 @@ export class SoloIslandScene extends BaseScene {
     }
     if (!out.a && held?.id === 'fishlog') out.a = { text: nm('isl.h.log'), fn: () => this.openLog() };
     if (!out.a && held?.id === 'camera') out.a = { text: nm('isl.h.photo'), fn: () => this.photo.start() };
+    if (!out.a) out.a = this.odd.heldAction(held?.id, nm); // the magic ball (magicball.js)
     if (!out.a && held?.id === 'album') out.a = { text: nm('isl.h.albumBook'), fn: () => this.photo.openAlbum() };
     if (!out.a && held?.id === 'recipes') out.a = { text: nm('isl.h.book'), fn: () => this.cafe.openCook(true) };
     // the field: the tile in front (with the Zip-Zap's long reach also the one behind it, when the first
@@ -1465,7 +1475,7 @@ export class SoloIslandScene extends BaseScene {
    * a hop trail run, fishing, the mini-games, sledding.
    */
   get speedable() {
-    return !!(this.hops?.run && !this.hops.run.done) || ['fish', 'game', 'sled', 'hopgo', 'puzzle'].includes(this.mode);
+    return !!(this.hops?.run && !this.hops.run.done) || ['fish', 'game', 'sled', 'hopgo', 'puzzle', 'tea', 'spell'].includes(this.mode);
   }
 
   /** Gamepad layout (input.js): the island's own, except while the profile picker (a shared menu) is up. */
@@ -1514,12 +1524,13 @@ export class SoloIslandScene extends BaseScene {
     P.air = true;
     P.coyote = 0;
     P.buffer = 0;
-    P.vy = JUMP_V;
+    P.vy = JUMP_V * (this.odd?.modes.fx().jump ?? 1); // (Sporty mode jumps bigger: modes.js)
     P.peak = P.fy;
     P.ch.squash(0.72);
     this.game.audio.play('jump');
     this.crabs?.onJump(); // a crab friend dances when you jump
     this.play?.onJump(); // villagers nearby wave (play.js)
+    this.odd?.modes.onJump();
   }
 
   /** Jump physics in the other modes (talking, a panel...): a hop always lands, nothing moves sideways. */
@@ -1912,7 +1923,7 @@ export class SoloIslandScene extends BaseScene {
       <div class="isl-gifts">${gifts}</div><div class="isl-foot">${esc(tFor(this.player?.p, r.id === 'postcard' || !gifts ? 'isl.ok' : 'isl.mail.hint'))}</div>`);
     // a letter is read in its writer's voice (games' letters: the villager who runs that game)
     const from = r.from === 'lh' || r.from === 'cave' ? 'bram' : r.from === 'adv' ? 'grumbleton' : r.from === 'hop' ? 'pip' : r.from;
-    speak(body, NPCS[from] ? `isl.${from}` : from === 'merchant' || from === 'skye' ? `isl.${from}` : 'narrator');
+    speak(body, NPCS[from] ? `isl.${from}` : from === 'merchant' || from === 'skye' || Odd.speaks(from) ? `isl.${from}` : 'narrator');
     this.game.audio.play('select');
     const mb = this.map.mailbox.userData;
     mb.letter.visible = false;
@@ -2153,10 +2164,16 @@ export class SoloIslandScene extends BaseScene {
     if (len > 1) { mx /= len; mz /= len; }
     const st = this.walkState;
     this.groundCheck(P, st);
+    // behaviour modes (modes.js): Sporty runs faster and keeps sliding a moment after a turn, Sneaky tiptoes slowly
+    const fxm = this.odd?.modes.fx() || { speed: 1, steer: 0 };
+    const wx = len > 0.15 ? mx * SPEED * fxm.speed : 0, wz = len > 0.15 ? mz * SPEED * fxm.speed : 0;
+    if (fxm.steer) { const k = Math.min(1, dt * fxm.steer); P.vx = (P.vx || 0) + (wx - (P.vx || 0)) * k; P.vz = (P.vz || 0) + (wz - (P.vz || 0)) * k; } else { P.vx = wx; P.vz = wz; }
+    if (Math.hypot(P.vx, P.vz) > 0.05) {
+      const dx = P.vx * dt, dz = P.vz * dt;
+      if (this.canMove(P, P.x + dx, P.z, st)) P.x += dx; else P.vx = 0;
+      if (this.canMove(P, P.x, P.z + dz, st)) P.z += dz; else P.vz = 0;
+    }
     if (len > 0.15) {
-      const dx = mx * SPEED * dt, dz = mz * SPEED * dt;
-      if (this.canMove(P, P.x + dx, P.z, st)) P.x += dx;
-      if (this.canMove(P, P.x, P.z + dz, st)) P.z += dz;
       P.fx = mx / Math.max(len, 1e-3);
       P.fz = mz / Math.max(len, 1e-3);
       P.ch.face(mx, mz);
@@ -2409,7 +2426,7 @@ export class SoloIslandScene extends BaseScene {
     const isle = this.isle2.here();
     const weather = isle ? '' : sea.festival ? t(`isl.fest.${sea.festival}`) : sea.rainy ? (sea.season === 'winter' ? `❄ ${t('isl.weather.snow')}` : `☂ ${t('isl.weather.rain')}`) : '';
     const season = isle ? '' : `${SEASON_ICON[sea.season]} ${t(`isl.season.${sea.season}`)}`;
-    this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), season, weather].filter(Boolean).join(' · ') });
+    this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), season, weather].filter(Boolean).join(' · '), mode: this.odd?.modes.badge(), modeKey: tFor(this.player?.p, 'md.key') });
     this.hud.setTasks(this.mode === 'walk' ? this.tasks() : []);
     // the hotbar: nine slots (the bag panel shows its own copy)
     const slots = Array.from({ length: HOTBAR }, (_, i) => { const it = S.inv.find((x) => x.slot === i); return it ? { ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) } : null; });
@@ -2511,6 +2528,8 @@ export class SoloIslandScene extends BaseScene {
           if (keys.has('KeyM') || pb.view) { this.journal.open('map'); break; }
           if (keys.has('KeyF') || pb.down) { this.journal.open(); break; }
           if (keys.has('Tab') || pb.up) { this.openBag(); break; }
+          // [MODE] (R, or RB on a gamepad): the next behaviour mode you know (modes.js)
+          if (keys.has('KeyR') || pb.rb) this.odd.modes.cycle();
           // D-pad left/right: the hotbar slot (what you hold)
           if (pb.left || pb.right) { this.save.sel = ((this.save.sel ?? 0) + (pb.right ? 1 : -1) + HOTBAR) % HOTBAR; this.game.audio.play('select'); }
           if (inp.aPressed) this.jump();
@@ -2532,6 +2551,7 @@ export class SoloIslandScene extends BaseScene {
     this.village.update(dt);
     this.events.update(dt);
     this.robot.update(dt);
+    this.odd.update(dt);
     this.games.update(dt);
     this.play.update(dt);
     this.zipzap.update(dt, ia);
@@ -2579,6 +2599,7 @@ export class SoloIslandScene extends BaseScene {
     this.surprise?.dispose();
     this.village?.dispose();
     this.lock?.dispose();
+    this.odd?.dispose();
     this.game.audio.stopAmbience();
     this.games?.dispose();
     this.play?.dispose();

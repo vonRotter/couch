@@ -144,9 +144,11 @@ export class IslandHud {
     for (const el of [this.top, this.tasks, this.keys, this.hotbar, this.selname]) el.style.visibility = on ? 'hidden' : '';
   }
 
-  setTop({ time, night, coins, phase }) {
+  setTop({ time, night, coins, phase, mode = null, modeKey = '' }) {
+    // the behaviour mode badge (modes.js): a symbol and a word, and the key that switches
+    const badge = mode ? `<div class="isl-pill isl-mode ${mode.mode}">${mode.icon} ${esc(mode.word)}<small>${esc(modeKey)}</small></div>` : '';
     this.set('top', this.top, `<div class="isl-pill"><span class="isl-sun ${night ? 'moon' : ''}"></span>${esc(time)}<small>${esc(phase)}</small></div>
-      <div class="isl-pill"><span class="i">${icon('coin')}</span>${coins}</div>`);
+      <div class="isl-pill"><span class="i">${icon('coin')}</span>${coins}</div>${badge}`);
   }
 
   setTasks(list) {

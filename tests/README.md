@@ -66,6 +66,11 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
   Start opens its own menu (B closes it), View opens the map and closes it again.
 - `tests/strings.mjs`: every text key written out in the code has English and Norwegian, and both languages have the
   same keys (from `window.game.stringKeys()`).
+- `tests/lba2/*.test.mjs` (with `lba2.mjs`: hold a key, stand somewhere, talk a dialog through, answer a tutorial's card):
+  the odd-adventure round (`solo/odd.js` and its parts): `modes` (Coach's Sporty and Mumble's Sneaky mode, [MODE] on a
+  keyboard and a gamepad, the badge, the tutorials, the modes' effects), `ball` (the magic ball: the letter, the
+  tutorial, bounces and returns, the aim line by aim help, the switch door, the bells and the one-throw trial, apples,
+  the lost things it knocks down).
 - `tests/lively/*.test.mjs`: the "livelier island" round (Today board and tomorrow hooks, villagers' own lives,
   rare events and the mystery, music and ambience, Pip's robot, old saves, and the density budget).
 

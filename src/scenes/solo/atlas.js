@@ -284,6 +284,7 @@ export class IslandAtlas {
     }
     // a puzzle lock waiting somewhere (puzzles.js: one at a time)
     if (region === 'main') for (const m of host.puzzles?.markers() || []) add(m);
+    if (region === 'main') for (const m of host.odd?.markers() || []) add(m); // the odd-adventure round's places (odd.js)
     // the villagers: where they are now ("!" wants to talk; asleep or in: at their home)
     for (const n of host.npcs || []) {
       if (n.away) continue;

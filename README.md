@@ -1172,7 +1172,8 @@ night match yours and crops grow while you are away.
   | map | View (Create, −) | M |
   | menu (out walking; anything else: the pause) | Start (Options) | Q |
   | help | the menu's Help | `Esc` |
-  | (free) | Y / △ | – |
+  | emote wheel | Y / △ | G |
+  | behaviour mode (once Coach Bo taught you one: Normal → Sporty → Sneaky) | RB / R1 (R on a Nintendo pad) | R |
 
 - **The bag, the hotbar and the cottage chest** (like Stardew Valley): the 9-slot hotbar at the bottom is
   what you hold (keys 1–9 or the D-pad left/right; an empty slot means empty hands). The bag panel shows the bag rows (9 wide)
@@ -1347,6 +1348,41 @@ three to four weeks; one project (eight over six months) and one hook at a time.
   goes back to its pad and charges quietly (a slow blink). [B] at Bolt: **Do the chores**, **Rest today** or
   **Rest until I say**. Old saves have no `S.robot` until the greenhouse is fixed (a save with a fixed
   greenhouse gets Pip's letter on its next visit).
+
+### Odd adventures (behaviour modes, the magic ball, and strange new things over months)
+
+A round inspired by the *feeling* of a 90s adventure (moods for your hero, a bouncing magic ball, wizards, odd
+machines, strange folk); every name, person, place, look and tune is our own. Code: `solo/odd.js` (the hub and the
+pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
+
+- **The pace (the owner's rule: special, rare, never too much at once).** Nothing of this round is there on day one.
+  Things **arrive one at a time**: at most one a day, at least five days apart, only on a quiet day (no festival,
+  daily surprise, rare event or drama big moment, and not the day a puzzle lock appears), each with a letter and a
+  line on the Today board, in a fixed order where each waits for what it builds on (`ARRIVALS` in `odd.js`;
+  `arrivalDue(S, ms)` is pure, so tests simulate months). Sixteen arrivals over three to four months.
+- **Behaviour modes** (`modes.js`): **Normal**, **Sporty** (runs about 1.45 times as fast, jumps higher, and is a
+  little harder to steer: the run keeps sliding a moment after you let go or turn) and **Sneaky** (tiptoes at half
+  speed, crouched a little, quietly: gulls stay put, shy creatures and sleepy guards notice you less). **[MODE]**
+  (R on a keyboard; RB / R1 / R on a gamepad, the island's free bumper; R is reserved so a key remap never takes
+  it) switches to the next mode you know; a small badge by the clock shows the mode with a symbol and a word
+  (🙂 Normal, 🏃 Sporty, 🤫 Sneaky) and the key. **Coach Bo teaches Sporty mode** (his letter comes first, then
+  talk to him at the Game Hall) and later **Mumble teaches Sneaky mode** (he knows all about being quiet). Each comes
+  with a step-by-step tutorial (the first card asks *Show me how* / *I know how to play*; then one thing at a time:
+  switch, run or tiptoe, a big jump or tiptoeing right up to Mumble, switch back), skippable like every tutorial.
+- **The magic ball** (`magicball.js`): Tinka the inventor mails it ahead of her move. Hold it (a hotbar slot next
+  to the Zip-Zap) and **[B] throws it** the way you face: it flies low, **bounces** off walls, rocks, trees and the
+  cliffs (twice; Tinka's springs later add a third and a fourth bounce) and **always flies back to your hand** (out
+  to sea too). While you hold it a dotted **aim line** shows its way: up to the first wall, or with *Help me play*
+  aim help further (a little: past the first bounce; a lot: every bounce, and the throw bends a little toward a
+  target in front of you). The first time you hold it, its tutorial teaches throw, bounce and catch. It rings
+  **three bells** under the cliffs north of Aunt Hazel's (all three humming at once: 40 coins and tiny bells for
+  the yard; **all three with one throw** is Coach's new trial), wakes the **old switch door** in the cliff by the
+  woodpile (it only wakes for a ball that bounced first: bank it off the cliff; behind it Tinka's old storeroom with
+  a gear clock and 60 coins), knocks an **apple** from each fruit tree (the Zip-Zap's choppable trees, once a day
+  each), and helps in two existing puzzles: a villager's **little lost thing** up on a roof or a rock (the ball
+  knocks it down into your hands) and **Skye's goggles**. The genre passport has a new genre, **Stealth game**
+  (Sneaky mode's sneaking), the magic ball is an aim-and-shoot activity (aiming, thinking ahead), and Coach has two
+  new trials (all three bells with one throw; tiptoe up to the shy moss creature).
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock

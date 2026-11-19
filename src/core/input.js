@@ -69,8 +69,9 @@ export function padLayout() { return layoutNow; }
 // [BACK] closes the pause menu: Esc on a keyboard, B on a gamepad. [MENU] is the solo island's menu (Q / Start).
 // [MAP] is the solo island's map (M / the View button: Create on a PlayStation pad, − on a Nintendo one).
 // [EMOTE] opens the emote wheel (G / Y: △ on a PlayStation pad, X on a Nintendo one; core/emotes.js).
-const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–8', back: 'Esc', map: 'M', emote: 'G' };
-const PAD_EXTRA = { ok: 'a', back: 'b', menu: 'start', tabs: ['lb', 'rb'], map: 'view', emote: 'y' };
+// [MODE] switches the solo island's behaviour mode (R / RB: R1 on a PlayStation pad, R on a Nintendo one; solo/modes.js).
+const KEY_EXTRA = { bag: 'Tab', journal: 'F', items: '1–9', tabs: '1–8', back: 'Esc', map: 'M', emote: 'G', mode: 'R' };
+const PAD_EXTRA = { ok: 'a', back: 'b', menu: 'start', tabs: ['lb', 'rb'], map: 'view', emote: 'y', mode: 'rb' };
 const DPAD = { bag: 'pad.up', journal: 'pad.down', items: 'pad.leftRight' };
 
 /** What a player presses for 'a' | 'b' | 'c' (or 'ok', 'menu', 'bag', 'journal', 'items', 'tabs') on this device. */
@@ -92,7 +93,7 @@ export function buttonLabel(device, btn) {
 // Buttons a pad remap may move around (the D-pad, Start and View stay where they are).
 export const REMAP_PAD = ['a', 'b', 'x', 'y', 'lb', 'rb', 'lt', 'rt'];
 // Keys a keyboard remap may not take: the game's own shortcuts and menu keys.
-export const RESERVED_KEYS = new Set(['Escape', 'KeyM', 'KeyN', 'KeyV', 'KeyB', 'KeyG', 'Tab', 'KeyF', 'F9', 'F10',
+export const RESERVED_KEYS = new Set(['Escape', 'KeyM', 'KeyN', 'KeyV', 'KeyB', 'KeyG', 'KeyR', 'Tab', 'KeyF', 'F9', 'F10',
   'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'BracketLeft', 'BracketRight']);
 
 /**

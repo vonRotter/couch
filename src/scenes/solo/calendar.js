@@ -66,7 +66,23 @@ export function birthdayOf(npc, ms = now()) {
  */
 export function festivalOn(ms = now()) {
   const L = latePlay(ms);
-  return L ? L.fest || null : festivalNative(ms);
+  return L ? L.fest || null : festivalNative(ms) || extraFest?.(ms) || null;
+}
+
+/**
+ * The profile's own festival (folk.js: the new folk's Pebble Day, once they have settled on this island), or none:
+ * (ms) => kind | null. Like the late play, it only changes that profile's island; the calendar stays the same.
+ */
+let extraFest = null;
+export function setExtraFestival(fn) { extraFest = typeof fn === 'function' ? fn : null; }
+
+/**
+ * The fifth Saturday of a month (a month with one: the 29th to the 31st), when no daily surprise and no rare event
+ * falls on it: the day the new folk keep Pebble Day (folk.js). Pure: the same for everyone (a few times a year).
+ */
+export function pebbleDayNative(ms = now()) {
+  const d = new Date(ms);
+  return d.getDay() === 6 && d.getDate() >= 29 && !surpriseNative(ms) && !rareNative(ms);
 }
 
 /** The calendar's own festival of a date (without a locked event played late: lock.js). */
@@ -100,8 +116,19 @@ export function rainyOn(ms = now()) {
  */
 export function surpriseOn(ms = now()) {
   const L = latePlay(ms);
-  return L ? L.sur || null : surpriseNative(ms);
+  if (L) return L.sur || null;
+  const k = surpriseNative(ms);
+  return k && swap ? swap(dayIndex(ms), k) || k : k;
 }
+
+/**
+ * A rare creature that takes a daily surprise's day on one profile's island (creatures.js: the mushroom merchant on
+ * some of Marlo's days, the cloud whale on some meteor nights, once they have come to that island): (di, kind) =>
+ * kind. It never adds a special day: the day keeps exactly one surprise, and the calendar stays the same for
+ * everyone (surpriseNative).
+ */
+let swap = null;
+export function setSurpriseSwap(fn) { swap = typeof fn === 'function' ? fn : null; }
 
 /** The calendar's own surprise of a date (without a locked event played late). */
 export function surpriseNative(ms = now()) {
