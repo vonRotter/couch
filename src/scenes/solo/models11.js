@@ -156,3 +156,88 @@ export function makeVendor() {
   g.userData.eyes = eyes;
   return g;
 }
+
+// ---------- part 3: strange creatures ----------
+
+/** The cloud whale: a big soft whale made of cloud puffs, with a little spout. */
+export function makeCloudWhale() {
+  const g = new THREE.Group();
+  // (self-lit a little: it is seen against the dusk sky, so it reads as a soft cloud and not a dark shape)
+  const white = new THREE.MeshToonMaterial({ color: 0xf4f7ff, emissive: 0x9aa4c8 }), blue = new THREE.MeshToonMaterial({ color: 0xc8d8ff, emissive: 0x7080b0 });
+  const body = new THREE.Group();
+  for (const [x, y, z, r] of [[0, 0, 0, 3.0], [2.6, 0.2, 0, 2.4], [-2.8, -0.1, 0, 2.5], [4.6, 0.3, 0, 1.6], [-5.0, 0.2, 0, 1.6], [0.8, 1.4, 0.4, 1.9], [-1.6, 1.2, -0.3, 1.7]]) {
+    const m = mesh(sph(r, 14, 10), white, x, y, z, false);
+    m.scale.set(1, 0.8, 0.9);
+    body.add(m);
+  }
+  const belly = mesh(sph(3.2, 14, 10), blue, 0.4, -1.0, 0, false);
+  belly.scale.set(1.9, 0.5, 0.85);
+  body.add(belly);
+  for (const s of [-1, 1]) body.add(mesh(sph(0.35, 8, 6), 0x2b2340, 4.8, 0.2, s * 1.3, false));
+  const tail = new THREE.Group();
+  tail.position.set(-6.4, 0.6, 0);
+  for (const s of [-1, 1]) { const f = mesh(sph(1.2, 10, 8), white, -0.6, 0.6, s * 1.2, false); f.scale.set(1.2, 0.35, 0.9); tail.add(f); }
+  body.add(tail);
+  for (const s of [-1, 1]) { const fin = mesh(sph(1.0, 10, 8), white, 1.8, -1.2, s * 2.4, false); fin.scale.set(1.3, 0.3, 0.8); body.add(fin); }
+  g.add(body);
+  g.userData = { tail, body };
+  return g;
+}
+
+/** The tiny elephants' tea stall: a little table with an awning, a teapot and cups, and three tiny elephants. */
+export function makeTeaStall() {
+  const g = new THREE.Group();
+  g.add(mesh(box(1.8, 0.08, 0.8), 0xc68a52, 0, 0.75, 0), mesh(box(0.08, 0.75, 0.08), 0x8a5a32, -0.8, 0.37, -0.3), mesh(box(0.08, 0.75, 0.08), 0x8a5a32, 0.8, 0.37, 0.3), mesh(box(0.08, 0.75, 0.08), 0x8a5a32, -0.8, 0.37, 0.3), mesh(box(0.08, 0.75, 0.08), 0x8a5a32, 0.8, 0.37, -0.3));
+  for (const x of [-0.95, 0.95]) g.add(mesh(box(0.07, 2.0, 0.07), 0x8a5a32, x, 1.0, -0.45));
+  for (let i = 0; i < 6; i++) g.add(mesh(box(0.33, 0.06, 1.1), i % 2 ? 0xffffff : 0xff9fd0, -0.83 + i * 0.33, 2.0, -0.05));
+  g.add(mesh(sph(0.16, 12, 8), 0xffffff, -0.3, 0.92, 0), mesh(cyl(0.05, 0.04, 0.08, 10), 0xffffff, 0.2, 0.83, 0.15), mesh(cyl(0.05, 0.04, 0.08, 10), 0xffffff, 0.45, 0.83, -0.1));
+  const elephants = [];
+  for (const [x, z, s] of [[-1.4, 0.7, 1], [0.0, 0.9, 0.85], [1.4, 0.7, 0.95]]) { const e = makeTinyElephant(s); e.position.set(x, 0, z); g.add(e); elephants.push(e); }
+  g.userData.elephants = elephants;
+  return g;
+}
+
+export function makeTinyElephant(s = 1) {
+  const g = new THREE.Group();
+  const grey = 0xb8b4c8;
+  const b = mesh(sph(0.28, 12, 8), grey, 0, 0.32, 0);
+  b.scale.set(1, 0.85, 1.2);
+  g.add(b, mesh(sph(0.2, 12, 8), grey, 0, 0.52, 0.26));
+  for (const sx of [-1, 1]) { const ear = mesh(sph(0.14, 10, 6), 0xd8c8e8, sx * 0.19, 0.56, 0.2); ear.scale.set(0.3, 1, 0.9); g.add(ear); g.add(mesh(sph(0.03, 6, 4), 0x2b2340, sx * 0.08, 0.58, 0.43, false)); }
+  const trunk = mesh(cyl(0.05, 0.035, 0.26, 8), grey, 0, 0.42, 0.44);
+  trunk.rotation.x = 0.6;
+  g.add(trunk);
+  for (const [x, z] of [[-0.12, -0.15], [0.12, -0.15], [-0.12, 0.15], [0.12, 0.15]]) g.add(mesh(cyl(0.06, 0.06, 0.16, 8), grey, x, 0.08, z));
+  g.add(mesh(cyl(0.14, 0.14, 0.04, 12), 0xff5d73, 0, 0.68, 0.24)); // a tiny hat
+  g.scale.setScalar(s);
+  g.userData.trunk = trunk;
+  return g;
+}
+
+/** The shy moss creature: a round fuzzy green ball with big eyes on a mossy stone. */
+export function makeMossCreature() {
+  const g = new THREE.Group();
+  const stone = mesh(sph(0.7, 10, 8), 0x9a94b2, 0, 0.1, -0.3);
+  stone.scale.set(1.3, 0.5, 1);
+  g.add(stone, mesh(sph(0.72, 10, 8), 0x5aa83a, 0, 0.32, -0.3));
+  g.children[1].scale.set(1.25, 0.25, 0.95);
+  const me = new THREE.Group();
+  const fuzz = mesh(sph(0.34, 12, 10), 0x6fc04a, 0, 0.36, 0);
+  me.add(fuzz);
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; me.add(mesh(sph(0.11, 6, 4), 0x7ad04a, Math.cos(a) * 0.3, 0.36 + Math.sin(a * 2) * 0.12, Math.sin(a) * 0.3, false)); }
+  for (const s of [-1, 1]) me.add(mesh(sph(0.08, 8, 6), 0xffffff, s * 0.11, 0.45, 0.28, false), mesh(sph(0.04, 6, 4), 0x2b2340, s * 0.11, 0.45, 0.35, false));
+  me.add(mesh(sph(0.05, 6, 4), 0xff9fd0, 0, 0.72, 0, false));
+  g.add(me);
+  g.userData.me = me;
+  return g;
+}
+
+/** Old Morel's little handcart with mushrooms and jars. */
+export function makeMushroomCart() {
+  const g = new THREE.Group();
+  g.add(mesh(box(1.2, 0.5, 0.8), 0x8a5a32, 0, 0.55, 0));
+  for (const s of [-1, 1]) { const w = mesh(cyl(0.3, 0.3, 0.08, 12), 0x5a3a24, 0, 0.3, s * 0.45); w.rotation.x = Math.PI / 2; g.add(w); }
+  for (const [x, z, c] of [[-0.35, -0.15, 0xd9583a], [0, 0.15, 0xffc93c], [0.35, -0.1, 0x9b5de5]]) { g.add(mesh(cyl(0.04, 0.05, 0.18, 6), 0xfff6e0, x, 0.88, z)); const cap = mesh(sph(0.14, 10, 6), c, x, 0.98, z); cap.scale.set(1, 0.6, 1); g.add(cap); }
+  g.add(mesh(cyl(0.08, 0.08, 0.22, 8), basic(0x9fffd0), 0.45, 0.9, 0.25, false));
+  return g;
+}

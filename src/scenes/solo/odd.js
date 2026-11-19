@@ -9,6 +9,7 @@ import { Modes } from './modes.js';
 import { MagicBall } from './magicball.js';
 import { Wizard } from './wizard.js';
 import { Inventor } from './inventor.js';
+import { Creatures } from './creatures.js';
 
 // The odd-adventure round (behaviour modes, a bouncing magic ball, a wizard school, an inventor and her odd machines,
 // strange creatures, social happenings and a new folk). This module is its hub: the PACE at which its new things come
@@ -201,6 +202,7 @@ export class Odd {
     this.parts = [this.modes, this.ball];
     this.wizard = this.add(new Wizard(host, this)); // part 2: the little wizard school and its weather spells (wizard.js)
     this.inventor = this.add(new Inventor(host, this)); // part 2: Tinka's workshop, teleport booths, the joke robot, the lighthouse voice
+    this.creatures = this.add(new Creatures(host, this)); // part 3: Old Morel, the cloud whale, the tea elephants, the moss creature
   }
 
   /** The round's own island modes (each runs on its own: Start pauses them, main.js freezePause). */

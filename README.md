@@ -1403,6 +1403,20 @@ pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
   (once a day it asks for a joke: pick one of three, none told in the last four weeks, and it laughs and drops a
   little something), gives the **lighthouse a voice** (walk by its door: one short, kind line a day in its own warm
   voice, never the narrator, none again within four weeks) and sends two **springs** for the magic ball.
+- **Strange creatures** (`creatures.js`): rare sightings, never crowds, each in its own corner, each a small moment.
+  **Old Morel**, a wandering mushroom merchant with a little cart: once his leaf-letter came, some of Marlo's days
+  are his instead (by the fairy ring, 9 to 18: star fruit seeds, mystery seeds, puffballs, a spore lamp). The **cloud
+  whale**: once Hoot's letter came, some meteor-shower nights are its instead; at dusk (18 to 20:30) it drifts slowly
+  over the north of the island, singing low; stand still a moment and the view looks up to watch it (a whale kite
+  the first time; Start pauses the moment), and a photo of it with Pip's camera pleases Hoot. Both only ever *take*
+  a daily surprise's day (`calendar.setSurpriseSwap`: the day keeps exactly one surprise, the calendar is unchanged
+  for everyone), so they never add a special day, never meet on one day, and never take a day Marlo promised by
+  letter (two years: Old Morel 15 days, the whale 20, out of 151 surprise days). The **tiny elephants' tea stall**
+  south of the pond (open 10 to 17): pick mint, berry or honey tea and *say when*: [B] when the cup is full to the
+  line (forgiving timing widens the line; nothing to fail, a cup a day either way; the first perfect pour brings a
+  tiny tea set). The **shy moss creature** in the grass by the river south of the farm: only seen in Sneaky mode;
+  walk up normally (or run) and it hides for the day; tiptoe up and say hello softly (once a day); five visits make
+  it your friend (a moss charm). It is a secret: never on the map.
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock

@@ -71,7 +71,9 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
   keyboard and a gamepad, the badge, the tutorials, the modes' effects), `ball` (the magic ball: the letter, the
   tutorial, bounces and returns, the aim line by aim help, the switch door, the bells and the one-throw trial, apples,
   the lost things it knocks down), `wizard` (Wendeline's lessons, the rune, the rain and sun spells and their daily
-  limits), `inventor` (Tinka's chats, the teleport booths and their misfire spots, the joke robot, the talking lighthouse).
+  limits), `inventor` (Tinka's chats, the teleport booths and their misfire spots, the joke robot, the talking lighthouse),
+  `creatures` (Old Morel's and the cloud whale's days over two years, the whale's moment and photo, the tea game, the moss
+  creature in Sneaky mode).
 - `tests/lively/*.test.mjs`: the "livelier island" round (Today board and tomorrow hooks, villagers' own lives,
   rare events and the mystery, music and ambience, Pip's robot, old saves, and the density budget).
 
