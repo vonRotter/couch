@@ -333,6 +333,11 @@ export function setLang(l) {
   document.documentElement.lang = lang === 'no' ? 'nb' : 'en';
 }
 
+/** Every key each language has (built in and added with addStrings): tests/strings.mjs, the missing-string check. */
+export function stringKeys() {
+  return { en: Object.keys(en), no: Object.keys(no) };
+}
+
 export function getLang() {
   return lang;
 }

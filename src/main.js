@@ -9,7 +9,7 @@ import { PLAYER_COLORS } from './core/palette.js';
 import { Roster } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
-import { t, tFor, setLang, getLang, setButtonSource } from './core/i18n.js';
+import { t, tFor, setLang, getLang, setButtonSource, stringKeys } from './core/i18n.js';
 import { esc } from './core/ui.js';
 import { HubScene } from './scenes/hub.js';
 import { SoloIslandScene } from './scenes/solo/island.js';
@@ -144,6 +144,7 @@ class Game {
 
     this.assist = assist; // "Help me play" settings (core/assist.js), also for tests
     this.voiceLog = voiceLog; // what was said last (tests)
+    this.stringKeys = stringKeys; // every text key per language (tests/strings.mjs)
     this.current = null;
     this.switching = false;
     // Story campaign: the stage being played ({ id, opts, stats }), or null in free play.
