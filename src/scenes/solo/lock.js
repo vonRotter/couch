@@ -2,7 +2,7 @@ import { t, tFor, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now } from './save.js';
-import { dayKey, dayIndex, dayMs, festivalNative, rareNative, setLatePlay } from './calendar.js';
+import { dayKey, dayIndex, dayMs, festivalNative, rareNative, setLatePlay, rareMoveFor, setRareMove } from './calendar.js';
 
 // Saving a coming event for later (the owner's "can't play that day" item). A child who cannot come on a festival
 // weekend, a rare event's day or a visitor's day can lock it: if they miss it, it plays on their next visit within
@@ -18,6 +18,8 @@ import { dayKey, dayIndex, dayMs, festivalNative, rareNative, setLatePlay } from
 // Where: the journal's "Coming up" tab (▲▼ choose, [OK] locks, [BACK] closes: it never locks) and the Today
 // board when it shows a warning or a visitor's letter ([OK] locks it). One lock at a time: locking another moves
 // it. Save: S.lock { kind, what, day, last } and S.lockPlay { di, kind, what } (old saves have neither).
+// A rare event played late never lands the day before the next rare event: an unwarned next one moves to the next
+// allowed day of its week (S.rareMove { from, to, kind }, calendar.js rareMoveFor); a warned one stays (a promise).
 
 export const LATE_DAYS = 3;
 const AHEAD = 14;
@@ -134,11 +136,15 @@ export class EventLock {
     }
     const L = S.lockPlay, di = dayIndex(at);
     setLatePlay(L && L.di === di ? { di, fest: L.kind === 'fest' ? L.what : null, rare: L.kind === 'rare' ? L.what : null, sur: L.kind === 'vis' ? L.what : null } : null);
+    // the next rare event moved off the day after a late rare play (calendar.js rareMoveFor), until it is over
+    const R = S.rareMove;
+    setRareMove(R && di <= Math.max(R.from, R.to ?? R.from) ? R : null);
   }
 
   resolve(di) {
     const S = this.S, L = S.lock;
     if (S.lockPlay && S.lockPlay.di !== di) S.lockPlay = null;
+    if (S.rareMove && di > Math.max(S.rareMove.from, S.rareMove.to ?? S.rareMove.from)) S.rareMove = null;
     if (!L || !Number.isFinite(L.day)) { if (L) S.lock = null; return; }
     if (di < L.day - AHEAD * 2) { S.lock = null; return; } // (the clock went far back)
     if (di < L.day) return;
@@ -150,7 +156,11 @@ export class EventLock {
       const late = di - L.last; // 1, 2 or 3 days after: it plays today (a festival day of its own waits a day)
       if (late > LATE_DAYS || (festivalNative(dayMs(di)) && late === LATE_DAYS)) { S.lock = null; S.lockNote = { di, note: 'expired', ...L }; }
       else if (festivalNative(dayMs(di))) return;
-      else { S.lock = null; S.lockPlay = { di, kind: L.kind, what: L.what, from: L.day }; S.lockNote = { di, note: 'late', ...L }; }
+      else {
+        S.lock = null; S.lockPlay = { di, kind: L.kind, what: L.what, from: L.day }; S.lockNote = { di, note: 'late', ...L };
+        // a rare event played late: the next one never comes the day after (unless it was warned about)
+        if (L.kind === 'rare') S.rareMove = rareMoveFor(di);
+      }
     }
     this.host.markDirty();
   }
@@ -192,5 +202,5 @@ export class EventLock {
   }
 
   /** Every day check for an old lock (also when the island stays open over midnight: prepare does it). */
-  dispose() { setLatePlay(null); }
+  dispose() { setLatePlay(null); setRareMove(null); }
 }

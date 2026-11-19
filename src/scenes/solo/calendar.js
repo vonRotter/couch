@@ -134,8 +134,32 @@ export const dayMs = (di) => new Date(1970, 0, 1 + di, 12).getTime();
  */
 export function rareEventOn(ms = now()) {
   const L = latePlay(ms);
-  return L ? L.rare || null : rareNative(ms);
+  if (L) return L.rare || null;
+  const M = rareMove, di = dayIndex(ms);
+  if (M && di === M.from) return null;
+  if (M && di === M.to) return M.kind;
+  return rareNative(ms);
 }
+
+/**
+ * A locked rare event played late (lock.js) must not land on the day next to the following rare event ("never two
+ * days in a row"). The next rare event after a late rare play on day `lateDi`: if it is the very next day and was
+ * not warned about (rareWarned: no promise on the Today board), it moves to the next allowed day of its own week
+ * (Tuesday to Saturday, no festival, no daily surprise), or skips that week when there is none; a warned one stays
+ * (a promise to the player). Deterministic: { from, to (null: none this week), kind } or null (nothing moves).
+ */
+export function rareMoveFor(lateDi) {
+  const from = lateDi + 1, kind = rareNative(dayMs(from));
+  if (!kind || rareWarned(dayMs(from))) return null;
+  const sat = Math.floor((from - 4) / 7) * 7 + 4 + 5; // the Saturday of its week
+  let to = null;
+  for (let d = from + 1; d <= sat && to === null; d++) if (!festivalNative(dayMs(d)) && !surpriseNative(dayMs(d))) to = d;
+  return { from, to, kind };
+}
+
+/** The moved rare event of the profile playing (lock.js sets it each second, like the late play), or null. */
+let rareMove = null; // { from, to, kind }
+export function setRareMove(o) { rareMove = o && Number.isFinite(o.from) ? o : null; }
 
 /** The calendar's own rare event of a date (without a locked event played late). */
 export function rareNative(ms = now()) {

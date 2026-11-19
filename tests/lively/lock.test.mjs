@@ -175,6 +175,84 @@ await test('old save: no lock fields, the Coming up tab and a new day work', asy
   assert(r.lock === null && r.play === null, JSON.stringify(r));
 });
 
+// The owner's rule (safety round): a late-played rare event never lands the day before the next rare event. If the next
+// one has not been warned about it moves to the next allowed day of its week (deterministic); a warned one stays.
+const nextToLate = (warned) => cal((C, [di, warned]) => {
+  for (let d = di + 1; d < di + 400; d++) {
+    const ms = C.dayMs(d);
+    if (!C.rareNative(ms) || !C.rareWarned(ms)) continue; // (only a warned event can be locked)
+    for (let k = 1; k <= 3; k++) {
+      const L = d + k, nx = C.dayMs(L + 1);
+      if (C.festivalNative(C.dayMs(L)) || C.rareNative(C.dayMs(L))) continue;
+      if (C.rareNative(nx) && C.rareWarned(nx) === warned) return { e: { kind: 'rare', what: C.rareNative(ms), day: d, last: d }, late: L, next: C.rareNative(nx), move: C.rareMoveFor(L) };
+    }
+  }
+  return null;
+}, [di0, warned]);
+
+await test('a late rare event and the next one: an unwarned next one moves off the day after to the next allowed day of its week', async () => {
+  const c = await nextToLate(false);
+  assert(c, 'a case in the calendar');
+  assert(c.move && c.move.from === c.late + 1 && c.move.kind === c.next, `the move: ${JSON.stringify(c)}`);
+  // deterministic: the next allowed day (Tuesday to Saturday of its week, no festival, no surprise)
+  const want = await cal((C, from) => { const sat = Math.floor((from - 4) / 7) * 7 + 9; for (let d = from + 1; d <= sat; d++) if (!C.festivalNative(C.dayMs(d)) && !C.surpriseNative(C.dayMs(d))) return d; return null; }, c.move.from);
+  assert(c.move.to === want, `to ${c.move.to}, want ${want}`);
+  const again = await cal((C, L) => C.rareMoveFor(L), c.late);
+  assert(JSON.stringify(again) === JSON.stringify(c.move), 'the same answer every time');
+  // on the island: lock, miss it, come on the late day
+  const s = await latePlay(c.e, c.late - c.e.last, 'MoveNext');
+  assert(s.rare === c.e.what && s.lockPlay?.kind === 'rare', JSON.stringify(s));
+  const r = await island(page, (I, S) => ({ move: S.rareMove, warn: S.todayBoard.items.filter((i) => i.k.startsWith('td.ev.r.')).map((i) => i.k) }));
+  assert(r.move && r.move.from === c.late + 1 && !r.warn.length, `saved, and no warning for tomorrow: ${JSON.stringify(r)}`);
+  if (c.move.to !== null) assert(c.move.to >= c.late + 2, 'never two days in a row');
+  // the day after: no rare event; the new day: it happens (and the day after that it is over)
+  await toDay(c.late + 1, 21);
+  const t1 = await island(page, (I) => I.events.kind);
+  assert(t1 === null, `the day after the late play: ${t1}`);
+  if (c.move.to !== null) {
+    await toDay(c.move.to, 21);
+    const t2 = await island(page, (I) => ({ kind: I.events.kind, ship: I.events.ship.visible, finds: I.events.finds.filter((f) => f.g.visible).length }));
+    assert(t2.kind === c.next, `on the new day: ${JSON.stringify(t2)}`);
+    await toDay(c.move.to + 1, 12);
+    assert(!(await island(page, (I, S) => S.rareMove)), 'the move is over');
+  }
+});
+
+await test('a late rare event and a warned next one: the warning is a promise, it stays the day after', async () => {
+  const c = await nextToLate(true);
+  assert(c, 'a case in the calendar');
+  assert(c.move === null, JSON.stringify(c));
+  const s = await latePlay(c.e, c.late - c.e.last, 'KeepNext');
+  assert(s.rare === c.e.what, JSON.stringify(s));
+  const r = await island(page, (I, S, G, next) => ({ move: S.rareMove ?? null, warn: S.todayBoard.items.some((i) => i.k.startsWith(`td.ev.r.${next}`)) }), c.next);
+  assert(!r.move && r.warn, `no move, and tomorrow is warned on the board: ${JSON.stringify(r)}`);
+  await toDay(c.late + 1, 21);
+  assert((await island(page, (I) => I.events.kind)) === c.next, 'it stays: it comes the day after');
+});
+
+await test('the rule over two years: every late rare play on every day it can land keeps rare events apart unless warned', async () => {
+  const r = await cal((C, di) => {
+    let n = 0, moved = 0, kept = 0, none = 0, bad = [];
+    for (let L = di; L < di + 730; L++) {
+      const m = C.rareMoveFor(L);
+      const nx = C.rareNative(C.dayMs(L + 1));
+      if (!nx) { if (m) bad.push({ L, m }); continue; }
+      n++;
+      if (C.rareWarned(C.dayMs(L + 1))) { kept++; if (m) bad.push({ L, m, warned: true }); continue; }
+      if (!m || m.from !== L + 1) { bad.push({ L, m }); continue; }
+      if (m.to === null) { none++; continue; }
+      moved++;
+      const wk = (d) => Math.floor((d - 4) / 7);
+      const dow = new Date(C.dayMs(m.to)).getDay();
+      if (m.to < L + 2 || wk(m.to) !== wk(L + 1) || dow < 2 || dow > 6 || C.festivalNative(C.dayMs(m.to)) || C.surpriseNative(C.dayMs(m.to))) bad.push({ L, m, dow });
+      // never next to the following week's rare event either
+      for (let d = m.to - 1; d <= m.to + 1; d += 2) if (d !== L && C.rareNative(C.dayMs(d)) && d !== m.from) bad.push({ L, m, near: d });
+    }
+    return { n, moved, kept, none, bad: bad.slice(0, 5) };
+  }, di0);
+  assert(!r.bad.length && r.n > 10 && r.moved > 0, JSON.stringify(r));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
