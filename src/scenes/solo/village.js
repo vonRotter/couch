@@ -7,6 +7,7 @@ import { heightAt } from './map.js';
 import { mesh, box, sph, cyl, cone } from './models.js';
 import { EVERYDAY } from './strings14.js';
 import { rv } from './today.js';
+import { SOCIAL, socialTasks, memOf } from './social.js';
 
 // The villagers' own lives (the "livelier island" round, part 2), within the owner's budget:
 // - Conversations: one at a time, one to three a day (morning, afternoon, evening slots by date), started near
@@ -46,8 +47,11 @@ const DRAMAS = {
   rivalry: { cast: ['pip', 'grumbleton'], at: { x: 2.4, z: 41.6 }, icon: '🎣' },
   pumpkin: { cast: ['hazel'], at: { x: 4.6, z: -23.0 }, icon: '🎃' },
   cake: { cast: ['rosa'], at: { x: 15.8, z: -3.4 }, icon: '🎂' },
+  // the odd-adventure round's social happenings (social.js): the same one-at-a-time rhythm
+  ...Object.fromEntries(Object.entries(SOCIAL).map(([id, d]) => [id, { cast: d.cast, at: d.at, icon: d.icon }])),
 };
-const DRAMA_ORDER = ['rivalry', 'pumpkin', 'cake'];
+// the first three, then the social happenings join the turn order (one every week and a half or so)
+const DRAMA_ORDER = ['rivalry', 'pumpkin', 'cake', 'fence', 'election', 'club', 'party', 'rumour'];
 const DRAMA_GAP = 5;
 const REACT = {
   roof: ['pip', 'coach', 'rosa', 'hoot'], hopRecord: ['hazel', 'pip', 'coach', 'bram'], crab: ['shelby', 'grumbleton', 'bram', 'hazel'],
@@ -111,6 +115,7 @@ export class Village {
       let climax = di + 4;
       while (climax < di + 60 && !freeDay(dayMs(climax))) climax++;
       V.drama = { id, start: di, climax, told: {}, side: null, fish: 0, water: [], flavor: null, res: null };
+      SOCIAL[id]?.init?.(V.drama);
     }
     // the project
     const P = V.proj;
@@ -153,6 +158,7 @@ export class Village {
   }
 
   outcome(D) {
+    if (SOCIAL[D.id]) return SOCIAL[D.id].outcome(D, this);
     if (D.id === 'rivalry') {
       if (D.side === 'fair') return 'tie';
       const s = this.scores(D);
@@ -169,7 +175,7 @@ export class Village {
     const b = this.beat(D, di);
     if (b) {
       const at2 = DRAMAS[D.id].at;
-      const v = D.id === 'rivalry' && b === 'mid' ? this.scores(D) : undefined;
+      const v = D.id === 'rivalry' && b === 'mid' ? this.scores(D) : SOCIAL[D.id]?.newsVars?.(D, b);
       out.push({ kind: b === 'start' ? 'rumor' : 'changed', pri: b === 'climax' ? 9.5 : 6.5, icon: DRAMAS[D.id].icon, keys: [`vd.${D.id}.news.${b === 'mid' ? 'mid' : b}`], v, x: at2.x, z: at2.z });
     }
     if (V.resNews?.di === di) out.push({ kind: 'changed', pri: 7, icon: DRAMAS[V.resNews.id].icon, keys: [`vd.${V.resNews.id}.news.${V.resNews.res}`] });
@@ -192,7 +198,7 @@ export class Village {
     const V = this.V, di = dayIndex(), out = [];
     if (V.proj) { const P = PROJECTS[V.proj.id]; out.push({ key: 'proj', icon: '🔨', name: t('map.a.proj', { name: t(`vp.${V.proj.id}.name`) }), x: P.x, z: P.z }); }
     const D = V.drama;
-    if (D && (D.id === 'pumpkin' || di === D.climax)) out.push({ key: 'drama', icon: DRAMAS[D.id].icon, name: t(`map.a.${D.id}`), x: DRAMAS[D.id].at.x, z: DRAMAS[D.id].at.z });
+    if (D && (D.id === 'pumpkin' || di === D.climax || (SOCIAL[D.id]?.mapAlways && di < D.climax))) out.push({ key: 'drama', icon: DRAMAS[D.id].icon, name: t(`map.a.${D.id}`), x: DRAMAS[D.id].at.x, z: DRAMAS[D.id].at.z });
     return out;
   }
 
@@ -224,6 +230,7 @@ export class Village {
     if (!V) return false;
     const D = V.drama, st = this.stageNow(D, di);
     if (st && DRAMAS[D.id].cast.includes(id) && !D.told[`${id}:${st}`] && this.dramaLines(D, id, st)) return true;
+    if (st && SOCIAL[D.id]?.hasNews?.(D, id, this)) return true; // a clue, a party thing, a version of the rumour (social.js)
     return false;
   }
 
@@ -238,6 +245,7 @@ export class Village {
   talk(n, done) {
     const V = this.V, D = V.drama, di = dayIndex(), host = this.host, id = n.id;
     const st = this.stageNow(D, di);
+    if (D && st && SOCIAL[D.id]?.talkFirst?.(D, n) && SOCIAL[D.id].talkOther(D, n, this, done)) return true;
     const keys = st && DRAMAS[D.id].cast.includes(id) && !D.told[`${id}:${st}`] ? this.dramaLines(D, id, st) : null;
     if (keys) {
       D.told[`${id}:${st}`] = true;
@@ -246,7 +254,8 @@ export class Village {
       if (D.id === 'rivalry' && st === 'start' && !D.side) {
         last.choices = [`vd.rivalry.side.${id}`, 'vd.rivalry.side.fair'];
         last.onChoice = (i) => { D.side = i === 0 ? id : 'fair'; host.say([{ who: id, key: i === 0 ? 'vd.rivalry.picked' : 'vd.rivalry.fair' }], done); host.markDirty(); };
-      } else if (D.id === 'cake' && st === 'start' && !D.flavor) {
+      } else if (SOCIAL[D.id]?.choice) SOCIAL[D.id].choice(D, id, st, last, this, done);
+      else if (D.id === 'cake' && st === 'start' && !D.flavor) {
         last.choices = ['vd.cake.pick.strawberry', 'vd.cake.pick.carrot', 'vd.cake.pick.plain'];
         last.onChoice = (i) => {
           const f = ['strawberry', 'carrot', 'plain'][i];
@@ -258,6 +267,8 @@ export class Village {
       host.say(lines, last.choices ? undefined : done);
       return true;
     }
+    // the social happenings: a clue, a party thing, a version of the rumour from someone who is not in the cast
+    if (D && st && SOCIAL[D.id]?.talkOther?.(D, n, this, done)) return true;
     // the builder asks for wood
     const P = V.proj;
     // (while it runs and nobody helped yet; after "Not now" they ask again every third day, not daily)
@@ -319,6 +330,7 @@ export class Village {
 
   interactions(P, out, nm) {
     const D = this.S.village?.drama;
+    if (D && !D.res && SOCIAL[D.id]?.interactions?.(P, out, nm, D, this)) return true; // the ballot box, the club's door and guard (social.js)
     if (!D || D.id !== 'pumpkin' || dayIndex() >= D.climax) return false;
     const a = DRAMAS.pumpkin.at;
     if (Math.hypot(P.x - a.x, P.z - a.z) > 1.6) return false;
@@ -340,14 +352,14 @@ export class Village {
   // ---------- the big moment ----------
 
   /** On the drama's big day you walk up to it: it plays out. */
-  updateClimax() {
+  updateClimax(force = false) {
     const D = this.S.village?.drama, host = this.host, P = host.player, di = dayIndex();
-    if (!D || di !== D.climax || D.res || host.mode !== 'walk' || !P) return;
+    if (!D || di !== D.climax || D.res || (host.mode !== 'walk' && !force) || !P) return;
     const h = hourOf();
     if (h >= 18) { D.res = this.outcome(D); this.reward(D, false); this.V.resNews = { id: D.id, res: D.res, di: di + 1 }; return; }
     if (h < 10) return;
     const a = DRAMAS[D.id].at;
-    if (Math.hypot(P.x - a.x, P.z - a.z) > 4.5) return;
+    if (!force && (Math.hypot(P.x - a.x, P.z - a.z) > 4.5 || SOCIAL[D.id]?.waitClimax?.(D))) return;
     D.res = this.outcome(D);
     const who = DRAMAS[D.id].cast[0], who2 = DRAMAS[D.id].cast[1] || who;
     const lines = [{ who: D.id === 'rivalry' ? 'grumbleton' : who, key: `vd.${D.id}.end.1` }, { who: D.id === 'rivalry' ? who : who2, key: `vd.${D.id}.end.${D.res}`, fx: () => this.cheer(D) }];
@@ -370,6 +382,8 @@ export class Village {
     const host = this.host;
     if (D.rewarded) return;
     D.rewarded = true;
+    const H = SOCIAL[D.id];
+    if (H) { if (H.part(D)) host.addPts(DRAMAS[D.id].cast[0], seen ? 8 : 4); H.reward(D, seen, this); return; }
     const part = D.id === 'rivalry' ? !!D.side : D.id === 'pumpkin' ? D.water.length > 0 : !!D.flavor && D.flavor !== 'plain';
     if (!part) return;
     const who = D.id === 'rivalry' ? (D.side === 'fair' ? 'pip' : D.side) : DRAMAS[D.id].cast[0];
@@ -567,12 +581,18 @@ export class Village {
     let bd = this.props.get('board');
     if (board && !bd) { bd = makeChalkBoard(); const a = DRAMAS.rivalry.at; bd.position.set(a.x - 1.8, heightAt(a.x - 1.8, a.z - 0.4), a.z - 0.4); host.scene.add(bd); this.props.set('board', bd); }
     if (bd) bd.visible = board;
+    for (const H of Object.values(SOCIAL)) H.props?.(this, V); // the social happenings' things (social.js); what the island remembers stays
   }
 
   // ---------- every frame / second ----------
 
+  /** Tasks for the drama going on (a social happening's clues or things to bring: social.js). */
+  tasks() { return socialTasks(this.S.village?.drama); }
+
   tick(at) {
     this.tickChats(at);
+    const D = this.S.village?.drama;
+    if (D && !D.res) SOCIAL[D.id]?.tick?.(D, this);
     // the builder's hammering on site (soft, only when you are close)
     this.refreshProps();
   }

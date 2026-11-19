@@ -814,6 +814,7 @@ export class SoloIslandScene extends BaseScene {
     out.unshift(...this.seasons.tasks());
     out.unshift(...this.surprise.tasks(), ...this.play.tasks()); // (today's surprise and little task)
     out.push(...this.games.tasks()); // (leaf piles in autumn, last)
+    out.push(...this.village.tasks()); // a social happening's clues or things to bring (social.js)
     out.push(...this.odd.tasks()); // the odd-adventure round (odd.js)
     out.unshift(...this.tour.tasks());
     out.unshift(...this.story.tasks());

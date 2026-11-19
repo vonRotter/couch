@@ -73,6 +73,7 @@ export class FriendsBook {
     const out = NPC_IDS.slice();
     if (this.host.crabs) out.push('crabs');
     if (this.S.ranch?.animals?.length) out.push('animals');
+    if (this.host.odd?.folk?.bookOn()) out.push('words'); // the Ollo folk's words (folk.js)
     return out;
   }
 
@@ -195,6 +196,7 @@ export class FriendsBook {
     const dots = `<div class="isl-fbdots">${list.map((_, i) => `<span class="${i === this.page ? 'on' : ''}"></span>`).join('')}</div>`;
     const foot = `<div class="isl-foot">${esc(tFor(host.player?.p, 'isl.fb.hint'))}</div>`;
     if (id === 'crabs') { this.renderCrabs(dots, foot, read); return; }
+    if (id === 'words') { host.hud.setPanel(`<h2>${esc(t('isl.fb.title'))}</h2>${host.odd.folk.bookHtml(read)}${dots}${foot}`); return; }
     if (id === 'animals') {
       const rows = this.S.ranch.animals.map((a) => `<div><b>${esc(a.name)}</b> <small>${esc(t(`isl.fb.kind.${a.kind}`))}${a.baby !== undefined && a.baby !== null ? ' 🍼' : ''}</small>
         ${heartsHtml(a.hearts || 0, 5)}</div>`).join('');

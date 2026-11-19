@@ -178,7 +178,7 @@ export function rv(vars) {
 export const itemText = (it) => t(it.k, rv(it.v));
 const sigOf = (k, v) => `${k}|${JSON.stringify(v || {})}`;
 const wd = (di) => `@td.wd.${new Date(dayMs(di)).getDay()}`;
-const FEST_AT = { derby: { x: 3.4, z: 46 }, fair: { x: 12, z: -5 }, plant: { x: 12, z: -5 }, lanterns: { x: 40, z: 20 }, beach: { x: 14, z: 37.5 } };
+const FEST_AT = { derby: { x: 3.4, z: 46 }, fair: { x: 12, z: -5 }, plant: { x: 12, z: -5 }, lanterns: { x: 40, z: 20 }, beach: { x: 14, z: 37.5 }, pebble: { x: 44.5, z: -27.5 } }; // (pebble: the Ollo folk's Pebble Day, folk.js)
 
 export class TodayBoard {
   constructor(host) {

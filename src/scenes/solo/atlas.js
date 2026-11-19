@@ -310,7 +310,7 @@ export class IslandAtlas {
     const today = dayKey();
     if (region === 'main') {
       const f = host.seasons?.festival;
-      const FEST = { derby: { x: PIER.x, z: PIER.z0 + 6 }, fair: PLAZA, plant: PLAZA, lanterns: { x: 40, z: 20 }, beach: { x: 14, z: 37.5 } };
+      const FEST = { derby: { x: PIER.x, z: PIER.z0 + 6 }, fair: PLAZA, plant: PLAZA, lanterns: { x: 40, z: 20 }, beach: { x: 14, z: 37.5 }, pebble: { x: 44.5, z: -27.5 } };
       if (f && FEST[f]) out.push({ key: `fest:${f}`, icon: '🎉', name: t('map.a.fest', { name: t(`isl.fest.${f}`) }), x: FEST[f].x, z: FEST[f].z });
       const sur = host.surprise;
       if (sur) {

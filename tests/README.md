@@ -73,7 +73,9 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
   the lost things it knocks down), `wizard` (Wendeline's lessons, the rune, the rain and sun spells and their daily
   limits), `inventor` (Tinka's chats, the teleport booths and their misfire spots, the joke robot, the talking lighthouse),
   `creatures` (Old Morel's and the cloud whale's days over two years, the whale's moment and photo, the tea game, the moss
-  creature in Sneaky mode).
+  creature in Sneaky mode), `social` (the five social happenings: the turn order over six months, each one's beats and
+  ending), `folk` (the Ollo folk's weeks of moving in, their corner never traps the bean, their words two a day and the
+  greeting, the word book in English and Norwegian, Pebble Day).
 - `tests/lively/*.test.mjs`: the "livelier island" round (Today board and tomorrow hooks, villagers' own lives,
   rare events and the mystery, music and ambience, Pip's robot, old saves, and the density budget).
 

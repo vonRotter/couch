@@ -1417,6 +1417,37 @@ pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
   tiny tea set). The **shy moss creature** in the grass by the river south of the farm: only seen in Sneaky mode;
   walk up normally (or run) and it hides for the day; tiptoe up and say hello softly (once a day); five visits make
   it your friend (a moss charm). It is a secret: never on the map.
+- **Social happenings** (`social.js`, run by the villagers' dramas in `village.js`): after the first three dramas,
+  five new kinds join the turn order, still **one at a time** with quiet days between, each with a start, a middle
+  and **one big moment** on a free day (4 to 9 days after the start), beats at most one a day, and the island
+  remembers how they ended (`S.village.mem`). **The fence**: Rosa and Coach Bo argue over the fence behind the store
+  (her flower bed, his running lane); each asks you to pick a side, or ask them to share; the fence ends as you
+  helped (flowers, a lane, or a gate with both). **The island vote**: Aunt Hazel's flower clock or Grumbleton's ship's
+  bell for the square; vote once at the ballot box; the villagers' votes come in day by day (the Today board shows the
+  count) and end in a tie, so your vote decides; the winner stands in the square from then on. **The secret club**:
+  Pip and Mumble's club meets at a log door south of the School House; Aunt Hazel, Rosa and Keeper Bram each know one
+  clue to the password (one clue a day), or tiptoe (Sneaky mode) up to the club's sleepy guard and read the note behind
+  him (any noise wakes him: no peeking that day); on club day the guard asks the password (a wrong guess only gets
+  "think about the clues"); members get a club pin. **Hoot's surprise party**: Rosa plans it; Aunt Hazel, Pip and
+  Grumbleton each give you one thing (one a day) to bring her; walk near Hoot while carrying them and he notices
+  (once a day; in Sneaky mode only right next to him); the party ends as a total surprise, almost one, guessed, or a
+  small one. **The rumour**: Grumbleton heard that Hoot saw a sea monster; every villager you ask tells it bigger (one
+  a day: as big as the lighthouse, with a hat, singing, doing cartwheels); on the big day Hoot tells what he really
+  saw (Grumbleton's runaway rubber duck). The other villagers talk about each happening in their conversations (heard
+  once, not again for four weeks).
+- **The Ollo folk** (`folk.js`), a new people who move into the north-east corner under the cliffs over weeks: after
+  Hoot's letter a raft and a tent (Elder Bimsa and Tuko), a week later their first round house (grass roof, round door,
+  painted pebbles) and Wenna, then a second house and a circle of painted pebbles (they have settled), then a third
+  house and drum logs; each step is a line on the Today board. Their customs: tall knitted hats with a bell, greeting
+  by bowing so the bell rings, a painted pebble on the doorstep of someone they like, humming at sunset. **Their
+  language, Ollish**: sixteen words (ollo: hello, bimbom: see you soon, fliffi: thank you, zibbo: friend, tanu: sun,
+  pom: pebble, nunu: tea, wawa: the sea...), **at most two new words a day**; the first four come by plain talk, the
+  rest only when you greet them their way (once you know "ollo", talking to them asks how you say hello: *"Ollo!"*
+  makes them bow and teach more). Learned words go into a **word book**, the Friends tab's last page in the journal
+  (read aloud). **Pebble Day**, their own festival: the fifth Saturday of a month (when a month has one and the day
+  has no daily surprise or rare event), once they have settled; it is that island's festival for the day (no
+  conversations, no drama big moment, nothing new arriving; `calendar.setExtraFestival`): paint a pebble with Elder
+  Bimsa and it joins their pebble tower (a little pebble tower for your yard the first time). About five a year.
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock
