@@ -32,6 +32,7 @@ const STRANDED = [[9, 40.5], [-8, 40.8]];
 // the ghost ship lies close to the west beach, side-on, so the usual view shows it from the sand (about 5 m out);
 // Captain Wisp waits at the water's edge in front of it
 const SHIP = { x: -19.5, z: 46.2, rot: 0 };
+const GLOW = 0.17; // the halo's opacity (it breathes a little around this; steady with "Reduce flashing")
 const WISP = { x: -17.6, z: 41.2 };
 const RAINBOW_ENDS = [{ x: 46, z: 18 }, { x: -16, z: -24 }, { x: 18, z: 8 }, { x: 2, z: -14 }];
 const KEY_SPOTS = [{ x: -16, z: -24, near: 'home' }, { x: 46, z: 18, near: 'garage' }, { x: 2, z: -14, near: 'greenhouse' }, { x: 22, z: -30, near: 'cliff' }];
@@ -123,7 +124,10 @@ addStrings({
   },
 });
 
-const ghostMat = (c) => new THREE.MeshToonMaterial({ color: c, transparent: true, opacity: 0.55, depthWrite: false });
+// The ghost ship and Captain Wisp glow softly (safety round: they used to be half see-through and faded into the
+// fog at night): solid pale colours that light themselves (emissive) and shine through the fog, with the soft halo
+// around the ship. opacity < 1 keeps a hint of the ghost (still solid enough to read).
+const ghostMat = (c, opacity = 1) => new THREE.MeshToonMaterial({ color: new THREE.Color(c).lerp(new THREE.Color(0xe6fff4), 0.35), emissive: new THREE.Color(c).lerp(new THREE.Color(0x58d6b0), 0.7), emissiveIntensity: 0.55, fog: false, transparent: opacity < 1, opacity, depthWrite: true });
 
 export class IslandEvents {
   constructor(host) {
@@ -146,7 +150,7 @@ export class IslandEvents {
     this.wisp.position.set(WISP.x, heightAt(WISP.x, WISP.z) + 0.1, WISP.z);
     // a soft glow around it, seen from far away at night and through the fog (it breathes slowly; steady with
     // "Reduce flashing")
-    this.glow = new THREE.Mesh(new THREE.SphereGeometry(3.4, 20, 14), new THREE.MeshBasicMaterial({ color: 0x9fffe0, transparent: true, opacity: 0.12, depthWrite: false, fog: false }));
+    this.glow = new THREE.Mesh(new THREE.SphereGeometry(3.4, 20, 14), new THREE.MeshBasicMaterial({ color: 0x9fffe0, transparent: true, opacity: GLOW, depthWrite: false, fog: false }));
     this.glow.scale.set(1.35, 0.7, 0.55);
     this.glow.position.set(SHIP.x, 1.6, SHIP.z);
     this.lanterns = [-2.2, 0.4, 2.6].map((x, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), new THREE.MeshBasicMaterial({ color: 0xb8ffd8, fog: false })); m.position.set(SHIP.x + x, 2.2 + (i % 2) * 1.2, SHIP.z); return m; });
@@ -489,7 +493,7 @@ export class IslandEvents {
       const P = host.player;
       if (P) this.wisp.rotation.y = Math.atan2(P.x - WISP.x, P.z - WISP.z);
       this.ship.position.y = SEA_Y - 0.1 + Math.sin(this.t * 0.8) * 0.08;
-      this.glow.material.opacity = calmOn() ? 0.12 : 0.1 + Math.sin(this.t * 0.7) * 0.035; // a slow breath (0.1 Hz), never a flash
+      this.glow.material.opacity = calmOn() ? GLOW : GLOW + Math.sin(this.t * 0.7) * 0.03; // a slow breath (0.1 Hz), never a flash
     }
     if (this.dig.visible) this.dig.rotation.y += dt * 0.5;
     if (this.mound.visible) this.mound.rotation.y += dt * 0.5;
@@ -498,9 +502,9 @@ export class IslandEvents {
 
 function makeWisp() {
   const g = new THREE.Group();
-  const body = mesh(sph(0.45, 14, 10), ghostMat(0xeaf6ff), 0, 0.7, 0, false);
+  const body = mesh(sph(0.45, 14, 10), ghostMat(0xeaf6ff, 0.9), 0, 0.7, 0, false);
   body.scale.set(1, 1.25, 1);
-  const tail = mesh(cone(0.42, 0.6, 12), ghostMat(0xeaf6ff), 0, 0.15, 0, false);
+  const tail = mesh(cone(0.42, 0.6, 12), ghostMat(0xeaf6ff, 0.9), 0, 0.15, 0, false);
   tail.rotation.x = Math.PI;
   g.add(body, tail);
   g.add(mesh(sph(0.07, 8, 6), 0x2b2340, -0.15, 0.85, 0.38, false), mesh(sph(0.07, 8, 6), 0x2b2340, 0.15, 0.85, 0.38, false));

@@ -62,6 +62,30 @@ await test('fog: thick fog, and at night a ghost ship with a friendly captain', 
   assert(Math.abs(onScreen.x) < 0.9 && Math.abs(onScreen.y) < 0.9 && onScreen.glow, JSON.stringify(onScreen));
   // from far away at night: the glow ignores the fog
   assert(await island(page, (I) => I.events.glow.material.fog === false), 'glow through fog');
+  // clearly visible (safety round): the ship is solid (not see-through), lights itself and shines through the fog
+  const mats = await island(page, (I) => { const out = []; I.events.ship.traverse((m) => { if (m.isMesh) out.push({ o: m.material.opacity, t: m.material.transparent, fog: m.material.fog, e: m.material.emissive ? m.material.emissive.getHSL({}).l * (m.material.emissiveIntensity ?? 1) : 0 }); }); return out; });
+  assert(mats.length && mats.every((m) => (!m.t || m.o >= 0.9) && m.fog === false && m.e > 0.1), `ship materials: ${JSON.stringify(mats.slice(0, 4))}`);
+  // and on screen it is bright against the dark foggy sea: the pixels around its middle are much lighter than the water
+  const lum = await page.evaluate(async () => {
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const I = window.game.current, cv = window.game.renderer.domElement;
+    const at = (v) => { const p = v.clone().project(I.camera); return { x: Math.round(((p.x + 1) / 2) * cv.width), y: Math.round(((1 - p.y) / 2) * cv.height) }; };
+    const c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height;
+    I.render(window.game.renderer);
+    const g = c.getContext('2d'); g.drawImage(cv, 0, 0);
+    const L = (q) => { const d = g.getImageData(Math.max(0, q.x - 6), Math.max(0, q.y - 6), 12, 12).data; let s = 0; for (let i = 0; i < d.length; i += 4) s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; return s / (d.length / 4); };
+    const ship = I.events.ship.position.clone().setY(0.9);
+    const sea = I.events.ship.position.clone().setX(I.events.ship.position.x + 9).setY(-0.45);
+    return { ship: Math.round(L(at(ship))), sea: Math.round(L(at(sea))) };
+  });
+  assert(lum.ship > lum.sea + 40, `bright against the sea: ${JSON.stringify(lum)}`);
+  // "Reduce flashing": the halo is steady
+  await page.evaluate(() => { const G = window.game, id = G.solo.profile.id; G.assist.saveSettings(id, { ...G.assist.profileSettings(id), calm: true }); G.applyScreenSettings(); });
+  const g1 = await island(page, (I) => I.events.glow.material.opacity);
+  await sim(page, 2.3);
+  const g2 = await island(page, (I) => I.events.glow.material.opacity);
+  assert(g1 === g2, `steady with Reduce flashing: ${g1} ${g2}`);
+  await page.evaluate(() => { const G = window.game, id = G.solo.profile.id; G.assist.saveSettings(id, { ...G.assist.profileSettings(id), calm: false }); G.applyScreenSettings(); });
   const r = await island(page, (I) => { const ia = I.interactions(); const txt = ia.b?.text; ia.b?.fn(); return { txt, mode: I.mode, speaker: I.dlg?.lines[0].speaker }; });
   assert(/ghost/.test(r.txt) && r.speaker === 'isl.wisp', JSON.stringify(r));
   const coins = await island(page, (I, S) => S.coins);
