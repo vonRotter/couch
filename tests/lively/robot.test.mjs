@@ -85,6 +85,25 @@ await test('rest: told to rest, Bolt stays on its pad (today, or until told)', a
   assert(r.rest === false && r.run, JSON.stringify(r));
 });
 
+await test('Bolt reads on screen (safety round): about a bean\'s size in the usual view, a shadow under it, outlined with Strong outlines', async () => {
+  await island(page, (I) => { I.player.x = I.robot.x + 1.5; I.player.z = I.robot.z + 3.5; I.player.lx = undefined; I.groundCheck(I.player, I.walkState); I.snapCamera(); });
+  await sim(page, 0.3);
+  const r = await island(page, (I) => {
+    const size = (obj) => {
+      obj.updateMatrixWorld(true);
+      const b = new obj.position.constructor(), pts = [];
+      const box = { min: [1e9, 1e9], max: [-1e9, -1e9] };
+      obj.traverse((m) => { if (!m.isMesh || !m.visible) return; m.geometry.computeBoundingBox(); const bb = m.geometry.boundingBox; for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) pts.push(b.clone().set(x, y, z).applyMatrix4(m.matrixWorld)); });
+      for (const p of pts) { const v = p.project(I.camera); const sx = ((v.x + 1) / 2) * innerWidth, sy = ((1 - v.y) / 2) * innerHeight; box.min[0] = Math.min(box.min[0], sx); box.max[0] = Math.max(box.max[0], sx); box.min[1] = Math.min(box.min[1], sy); box.max[1] = Math.max(box.max[1], sy); }
+      return { w: Math.round(box.max[0] - box.min[0]), h: Math.round(box.max[1] - box.min[1]) };
+    };
+    return { bolt: size(I.robot.model), bean: size(I.player.ch.group), shadow: I.robot.shadow.visible, a11y: I.robot.model.userData.a11y };
+  });
+  assert(r.bolt.w >= 0.6 * r.bean.w && r.bolt.w >= 30, `size on screen: ${JSON.stringify(r)}`);
+  assert(r.shadow && r.a11y, JSON.stringify(r));
+  await shot(page, 'lively-robot-size');
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

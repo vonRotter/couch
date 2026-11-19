@@ -6,6 +6,7 @@ import { heightAt } from './map.js';
 import { mesh, box, sph, cyl } from './models.js';
 import { tileCenter, parseKey, stageOf } from './farm.js';
 import { TROUGH, NEST } from './animals.js';
+import { markA11y } from '../../core/outline.js';
 
 // Pip's robot helper, Bolt (the "livelier island" round, part 5). Once the greenhouse is fixed, Pip writes that
 // she is building a helper; the next day Bolt stands on its charging pad by the greenhouse and Pip shows it to
@@ -16,6 +17,7 @@ import { TROUGH, NEST } from './animals.js';
 // Save: S.robot (old saves have none: no robot until the greenhouse is fixed).
 
 const SPEED = 2.4;
+const SCALE = 1.4; // (safety round: bigger, so it reads on screen among the crops, the well and the greenhouse)
 const TROUGH_LOW = 4, TROUGH_FILL = 8;
 
 addStrings({
@@ -57,8 +59,15 @@ export class Robot {
   constructor(host) {
     this.host = host;
     this.model = makeRobot();
+    this.model.scale.setScalar(SCALE);
     this.model.visible = false;
+    markA11y(this.model, 'item'); // "Strong outlines" outline it too
     host.scene.add(this.model);
+    // a soft round shadow on the ground under it: easy to see where Bolt is while it hovers over the crops
+    this.shadow = new THREE.Mesh(new THREE.CircleGeometry(0.42 * SCALE, 20), new THREE.MeshBasicMaterial({ color: 0x1a2030, transparent: true, opacity: 0.28, depthWrite: false }));
+    this.shadow.rotation.x = -Math.PI / 2;
+    this.shadow.visible = false;
+    host.scene.add(this.shadow);
     this.pad = makePad();
     this.pad.visible = false;
     host.scene.add(this.pad);
@@ -108,7 +117,7 @@ export class Robot {
     if (!this.S.robot && this.S.unlocks?.greenhouse) this.newDay(at); // the greenhouse was just fixed: Pip writes
     const R = this.R, host = this.host;
     if (!R) return;
-    if (!this.present(at) || host.isle2?.here()) { this.model.visible = this.pad.visible = false; return; }
+    if (!this.present(at) || host.isle2?.here()) { this.model.visible = this.pad.visible = this.shadow.visible = false; return; }
     const d = this.dock();
     if (!this.pad.visible) { this.pad.position.set(d.x, heightAt(d.x, d.z), d.z); this.pad.visible = true; this.x = d.x; this.z = d.z; }
     this.model.visible = true;
@@ -238,7 +247,10 @@ export class Robot {
     }
     this.hop = Math.max(0, (this.hop || 0) - dt * 2);
     const flying = !!this.run;
-    this.model.position.set(this.x, heightAt(this.x, this.z) + (flying ? 0.55 : 0.18) + Math.sin(this.t * 3) * 0.05 + Math.sin(this.hop * Math.PI) * 0.4, this.z);
+    const gy = heightAt(this.x, this.z);
+    this.model.position.set(this.x, gy + (flying ? 0.55 : 0.18) + Math.sin(this.t * 3) * 0.05 + Math.sin(this.hop * Math.PI) * 0.4, this.z);
+    this.shadow.visible = this.model.visible;
+    this.shadow.position.set(this.x, gy + 0.04, this.z);
     const u = this.model.userData;
     u.light.material.color.setHex(this.resting() ? 0x5a6a8a : flying ? 0x7ff0a0 : (Math.sin(this.t * 2) > 0 ? 0x7fd0ff : 0x3a7aaa)); // a slow charging blink on the pad
     u.prop.rotation.y += dt * (flying ? 18 : 0);
@@ -248,12 +260,13 @@ export class Robot {
 
 function makeRobot() {
   const g = new THREE.Group();
-  const body = mesh(sph(0.3, 14, 10), 0xdfe6f0, 0, 0.3, 0);
+  // a bright white body on a blue base (it stands out on grass, soil, stone and the greenhouse's glass)
+  const body = mesh(sph(0.3, 14, 10), 0xf4f8ff, 0, 0.3, 0);
   body.scale.set(1, 0.9, 1);
-  g.add(body, mesh(cyl(0.3, 0.22, 0.12, 14), 0x9aa6b8, 0, 0.08, 0));
+  g.add(body, mesh(cyl(0.3, 0.22, 0.12, 14), 0x3f7ae0, 0, 0.08, 0));
   g.add(mesh(box(0.34, 0.14, 0.05), 0x2b2340, 0, 0.36, 0.27, false));
   for (const x of [-0.08, 0.08]) g.add(mesh(sph(0.035, 6, 4), new THREE.MeshBasicMaterial({ color: 0x7ff0ff }), x, 0.37, 0.3, false));
-  g.add(mesh(box(0.06, 0.2, 0.06), 0x9aa6b8, -0.33, 0.28, 0), mesh(box(0.06, 0.2, 0.06), 0x9aa6b8, 0.33, 0.28, 0));
+  g.add(mesh(box(0.06, 0.2, 0.06), 0x3f7ae0, -0.33, 0.28, 0), mesh(box(0.06, 0.2, 0.06), 0x3f7ae0, 0.33, 0.28, 0));
   const light = mesh(sph(0.06, 8, 6), new THREE.MeshBasicMaterial({ color: 0x7fd0ff }), 0, 0.72, 0, false);
   g.add(mesh(cyl(0.015, 0.015, 0.16, 5), 0x5a5a6a, 0, 0.62, 0, false), light);
   const prop = new THREE.Group();
@@ -264,6 +277,7 @@ function makeRobot() {
   g.add(mesh(cyl(0.12, 0.09, 0.1, 10), 0xb07a4a, 0, 0.2, -0.3, false));
   g.userData.light = light;
   g.userData.prop = prop;
+  g.userData.body = body; // (the outline's mesh)
   return g;
 }
 
