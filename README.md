@@ -1265,7 +1265,11 @@ three to four weeks; one project (eight over six months) and one hook at a time.
   days after it** (the festival with its stalls, villagers, tasks and rewards; the storm's finds, the fog and the
   ghost ship, the rainbow; Marlo or Skye), and the Today board says "Saved for you: …". That day it is the one
   special thing: the day's own surprise or rare event is skipped, and a drama's big moment moves to the next free
-  day; a festival day of its own waits (the late play goes to the next day in the window). After three days
+  day; a festival day of its own waits (the late play goes to the next day in the window). A rare event played late
+  never lands the day before the next rare event: if that one was not warned about, it moves to the next allowed
+  day of its own week (Tuesday to Saturday, no festival, no surprise; none left: no rare event that week; the
+  same answer every time, `calendar.js rareMoveFor`, saved as `S.rareMove`); a warned one stays (the Today board
+  promised it). After three days
   unplayed it expires with a gentle note. The calendar stays a pure function of the date
   (`setLatePlay` only changes that profile's island on that one day; `festivalNative` / `surpriseNative` /
   `rareNative` are the calendar's own); the time machine works with it. (The story's Lamp Festival is a story
@@ -1309,7 +1313,8 @@ three to four weeks; one project (eight over six months) and one hook at a time.
     glass, wood, a pearl or a starfish) and two stranded crabs to carry back to the water ([B]; they stay friends
     and never count as the day's crab job, which stays one crab a day). In winter the storm brings snow.
   - **Fog:** the view closes in all day (not indoors or on Shell Isle). From 20 to midnight a **ghost ship**
-    lies side-on just off the west beach, where the usual view shows it from the sand, wrapped in a soft green
+    lies side-on just off the west beach, where the usual view shows it from the sand: solid pale colours that
+    light themselves and shine through the fog (not see-through), wrapped in a soft green
     glow that shows through the fog from far away (it breathes slowly; steady with "Reduce flashing"), and **Captain Wisp**, a friendly ghost (sleepy voice type), waits by the water: the
     view swings to his ship while he tells where the fog took him, and he gives 40 coins and a pearl.
   - **Rainbow:** rain until 13, then a rainbow until 19 whose end touches the ground somewhere (four spots around
@@ -1332,7 +1337,8 @@ three to four weeks; one project (eight over six months) and one hook at a time.
   comes through; the dive has an underwater hum with bubbles. The menu has **Island music** and **Island
   sounds** on/off (per profile, `S.sound`); **Sound** still mutes everything.
 - **Pip's robot helper, Bolt** (`robot.js`): once the greenhouse is fixed Pip writes that she is building a
-  helper; the next day Bolt (a small hover robot, robot voice type) stands on its charging pad by the greenhouse
+  helper; the next day Bolt (a little hover robot about a bean's size: a white body on a blue base, a soft shadow
+  on the ground under it, outlined with Strong outlines; robot voice type) stands on its charging pad by the greenhouse
   and Pip pops over to show it when you come near (a short scene). Each day from 7 to 20, while you are on the
   island, Bolt hovers **once** along a visible route: it waters the dry crops on the field and in the greenhouse
   (ripe ones are left for you: **you still harvest**), takes the eggs from the nest (it keeps them in its basket:

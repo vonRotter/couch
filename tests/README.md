@@ -8,7 +8,13 @@ They are plain Node scripts (no test framework) and are not part of the Vite bui
 1. Start the dev server from the repo root: `npx vite --port 5173 --strictPort`
 2. In another terminal, run a file: `node tests/smoke.mjs`, or one part of the solo island:
    `node tests/lively/today.test.mjs`. All of the solo island's "livelier island" tests:
-   `for f in tests/lively/*.test.mjs; do node "$f" || break; done`; the classic games: `for f in tests/arcade/*.test.mjs; do node "$f" || break; done`
+   `for f in tests/lively/*.test.mjs; do node "$f" || break; done`; the classic games: `for f in tests/arcade/*.test.mjs; do node "$f" || break; done`.
+   The same for each suite folder: `tests/island`, `tests/keepsolo`, `tests/games`, `tests/pad`; and the missing-string
+   check: `node tests/strings.mjs`. Everything (about 25 minutes):
+   `node tests/smoke.mjs; node tests/strings.mjs; for f in tests/{island,keepsolo,games,pad,lively,arcade}/*.test.mjs; do node "$f"; done`
+3. Run tests on a tree nobody edits meanwhile: the dev server reloads a page when a source file changes, and the test
+   in that page then fails for no reason. (After a source file changed, a test's own `import('/src/...')` can get a
+   second copy of a module, without the game's state: read state through `window.game`, the scene, or behaviour.)
 
 Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any failed.
 
@@ -32,5 +38,38 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
   and `fixes` (Rock Patrol's clipped wrap-around edge, Echo Bells' first tune and its tutorial, and a fake
   gamepad's Start pausing a hall game, a puzzle lock, a hop trail's run, fishing and the dive); `arcade.mjs` is
   their helper (startArcade, R: the runner and its game, setAssist, answerOffer, screenOf for mouse clicks).
+- `tests/island/*.test.mjs`: the solo island core (the safety round), with `isl.mjs` (hold, tp: stand somewhere,
+  toWalk: close what is open, useText / use: what [E] does, rawKeys: raw text keys on screen). `core`: a new
+  profile's welcome with real key presses, walking, a hop, a wall, the cottage door, and a 2 m grid over the whole
+  island (new and with everything unlocked) where the bean must walk away from every free spot and get out of every
+  prop it is put inside. `farm`: the welcome's farming steps (till, plant, water, ripe, harvest, ship), growth over
+  a night and days and dry soil, weeds, the bag (move, stack, quick move, hotbar keys), a full bag into the cottage
+  chest, Rosa's shop (buy, sell, too few coins), the workbench (craft, missing materials, a sprinkler on the field)
+  and decorating (place, turn, take back; furniture only inside). `life`: villagers asleep at home at night,
+  knocking, the closed store, a locked game door, mornings, friendship (a chat an hour, a loved gift, a heart), the
+  journal's eight tabs and the map (no raw keys), fishing, the café (cook, serve, the summary), a hop trail (the
+  countdown, a fall, the bell), the museum, the trophy shelf, a winter week and the sled. `save`: the round trip over
+  a page reload, a minimal old save, a profile with no island yet, and every panel in English and Norwegian with no
+  raw text keys.
+- `tests/keepsolo/keepsolo.test.mjs`: Pillow Keep Solo from the island's keep door: the hero picker and the starting
+  kit, the gate and the first floor, the tutorial's card and all five steps each at its moment, a fight, the bag
+  (pick up, wear, drag and drop with the mouse, a potion onto the belt, drinking), a locked door and its key,
+  fainting (the bag drops and comes back), Bolster's forge, save and resume over a page reload, and End back to the
+  island at the keep door.
+- `tests/games/*.test.mjs` (with `games.mjs`): every game in main.js `GAMES`, one file per family (`coop1`-`coop4`,
+  `learning`, `story`, `solo`): from the shared island with one and two keyboard players (the games that only live
+  on a profile's island from there, one player), 20 s of random-ish keys with no console errors (tutorial cards
+  answered "I know how to play", the tutorial then off), and the pause menu (Esc opens and closes it, Retry restarts,
+  End goes back). Titles and countdowns run on the real clock, so each game takes a few real seconds.
+- `tests/pad/gamepad.test.mjs`: a fake standard gamepad: Start pauses, A picks and B never picks in the pause menu of
+  a co-op game, a Game Hall game, a puzzle lock, a hop trail's run, the dive and Pillow Keep Solo; on the island
+  Start opens its own menu (B closes it), View opens the map and closes it again.
+- `tests/strings.mjs`: every text key written out in the code has English and Norwegian, and both languages have the
+  same keys (from `window.game.stringKeys()`).
 - `tests/lively/*.test.mjs`: the "livelier island" round (Today board and tomorrow hooks, villagers' own lives,
   rare events and the mystery, music and ambience, Pip's robot, old saves, and the density budget).
+
+## KNOWN
+
+Tests that fail on purpose because what they test is not fixed yet (never skipped or weakened; fix the code, then
+the test passes). None right now.

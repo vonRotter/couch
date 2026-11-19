@@ -12,6 +12,7 @@ export async function hub(page, n = 1) {
   await page.waitForFunction(() => window.game.current?.constructor?.name === 'HubScene' && !window.game.switching, null, { timeout: 30000 });
   await page.evaluate((n) => {
     const g = window.game;
+    g.campaign = null; // (a story stage the random keys walked into and the test left by switching scenes)
     for (const p of [...g.roster.players]) g.roster.leave(p);
     for (let i = 0; i < n; i++) g.roster.join(g.input.get(`kb${i}`));
   }, n);
@@ -50,11 +51,14 @@ export async function play(page, key, { seconds = 20, seed = 1, opts = {} } = {}
     let t = 0, states = new Set();
     const tick = () => new Promise((r) => setTimeout(r, 0));
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-    // titles, countdowns and wipes run on the real clock: let them (at most ~8 s), then play in game time
+    // titles, countdowns and wipes run on the real clock: let them (at most ~12 s), then play in game time
     let real = 0;
     while (t < seconds) {
       const st = G.current?.state;
-      if ((st === 'intro' || st === 'countdown' || G.switching) && real < 8000) { G.simulate(1 / 30, 1 / 30); await wait(60); real += 60; continue; }
+      if ((st === 'intro' || st === 'countdown' || G.switching) && real < 12000) {
+        if (G.tutorialCard) { G.tutorialCard.answer('skip'); cards++; } // (some games ask before their title ends)
+        G.simulate(0.1, 1 / 30); await wait(60); real += 60; continue;
+      }
       if (G.tutorialCard) { G.tutorialCard.answer('skip'); cards++; }
       if (G.offer) { G.offer.answer('no'); offers++; }
       if (G.pause) G.closePause();
@@ -79,7 +83,8 @@ export async function play(page, key, { seconds = 20, seed = 1, opts = {} } = {}
 
 /** The pause menu (Esc): its items; pick one by name (E picks on a keyboard). */
 export async function pause(page) {
-  if (!(await page.evaluate(() => !!window.game.pause))) await press(page, 'Escape');
+  // (Esc first closes a game's own panel or menu, Pillow Keep Solo's bag say: then it pauses)
+  for (let i = 0; i < 3 && !(await page.evaluate(() => !!window.game.pause)); i++) await press(page, 'Escape');
   return page.evaluate(() => (window.game.pause ? window.game.pauseItems() : null));
 }
 export async function pick(page, item) {
@@ -124,8 +129,24 @@ export async function family(page, keys, { from = 'hub', players = [1, 2], test,
         if (from === 'hub') await hub(page, n);
         else if (!(await page.evaluate(() => window.game.current?.constructor?.name === 'SoloIslandScene'))) await soloIsland(page);
         const r = await play(page, key, { seconds: 20, seed: 11 * n + key.length });
-        assert(r.same && r.key === key, `still in the game: ${JSON.stringify(r)}`);
         assert(r.states.some((s) => s !== 'intro'), `got past its title: ${JSON.stringify(r)}`);
+        // random keys may leave the game through its own menus (a card's Retry, a picker's Back, a story stage): fine
+        // when it went somewhere it may go; then it starts again for the pause menu
+        if (!r.same) {
+          assert([from === 'hub' ? 'HubScene' : 'SoloIslandScene', 'StoryScene'].includes(r.scene) || r.key === key || (key === 'story' && r.key), `left to a place it may go: ${JSON.stringify(r)}`);
+          await page.waitForFunction(() => !window.game.switching, null, { timeout: 30000 });
+          if (i === 0) {
+            if (key !== 'story' && r.key !== key && from === 'hub' && r.scene !== 'HubScene') await hub(page, n);
+            if (r.key !== key || r.scene === 'StoryScene') {
+              if (from === 'solo' && r.scene !== 'SoloIslandScene') await soloIsland(page);
+              if (key === 'story' && r.scene !== 'HubScene') await hub(page, n);
+              await page.evaluate((k) => window.game.startGame(k), key);
+              await page.waitForFunction((k) => window.game.current?.key === k && !window.game.switching, key, { timeout: 30000 });
+              await sim(page, 0.5);
+              await page.evaluate(() => { if (window.game.tutorialCard) window.game.tutorialCard.answer('skip'); });
+            }
+          }
+        } else assert(r.key === key, JSON.stringify(r));
         if (r.cards) assert(!(await page.evaluate(() => !!window.game.current.tutorialActive?.())), `"I know how to play" skips the tutorial: ${JSON.stringify(r)}`);
         assert(page.errors.length === e0, page.errors.slice(e0).join('\n'));
         if (i === 0) {
