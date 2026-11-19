@@ -83,13 +83,16 @@ await test('the modes: Sporty is faster and jumps higher and slides a little aft
 await test('Sneaky mode is quiet: a gull on a post stays put; Mumble teaches it (with its own tutorial)', async () => {
   // gulls: the scare radius is smaller when sneaky
   const r = await island(page, (I, S) => {
-    const g = I.life.gulls[0];
-    g.state = 'stand'; g.standT = 9; g.pos.set(0, 0, 0);
-    const P = { x: 1.8, z: 0, y: 0 };
-    const scared = (sneaky) => { const Q = { ...P, sneaky }; return Math.hypot(Q.x - g.pos.x, Q.z - g.pos.z) < (Q.sneaky ? 1.0 : 2.6); };
-    return { normal: scared(false), sneaky: scared(true) };
+    // the gull's own rule (gulls.js): scared within 2.6 m, or 1.0 m when you tiptoe; the bean's sneaky flag follows the mode
+    const g = I.life.gulls[0], P = { x: g.pos.x + 1.8, z: g.pos.z, y: g.pos.y };
+    const src = g.update.toString();
+    const scared = (sneaky) => Math.hypot(P.x - g.pos.x, P.z - g.pos.z) < (sneaky ? 1.0 : 2.6);
+    S.odd.mode = 'sneaky'; S.odd.modes.sneaky = true; I.odd.modes.update(0);
+    const flag = I.player.sneaky;
+    S.odd.mode = 'normal'; I.odd.modes.update(0);
+    return { normal: scared(false), sneaky: scared(true), rule: /P\.sneaky \? 1\.0 : 2\.6/.test(src), flag, after: I.player.sneaky };
   });
-  assert(r.normal && !r.sneaky, JSON.stringify(r));
+  assert(r.normal && !r.sneaky && r.rule && r.flag && !r.after, JSON.stringify(r));
   await island(page, (I, S) => { S.odd.modes.sneaky = false; S.odd.got.sneaky = S.odd.got.sneaky ?? 0; S.npcs.mumble = { ...(S.npcs.mumble || {}), met: true }; });
   const news = await island(page, (I) => I.hasNews('mumble'));
   assert(news, 'Mumble has news');
@@ -152,6 +155,23 @@ await test('[MODE] on a gamepad (RB) and the badge in Norwegian; hints name R / 
   // R can never be taken by a key remap
   const reserved = await page.evaluate(async () => (await import('/src/core/input.js')).RESERVED_KEYS.has('KeyR'));
   assert(reserved, 'R is reserved');
+});
+
+await test('Start pauses the round\'s own island modes (a spell\'s rune, a teleport, the tea, the whale moment)', async () => {
+  await island(page, (I) => { I.hud.setDialog(null); I.hud.setPanel(null); I.dlg = null; I.mode = 'walk'; });
+  const r = await island(page, (I) => ['spell', 'teleport', 'tea', 'watch'].map((m) => { I.mode = m; const f = I.freezePause(); I.mode = 'walk'; return f; }));
+  assert(r.every(Boolean), r.join());
+  // and the magic ball only flies while you walk about (the island's menu freezes it)
+  const fly = await island(page, (I, S) => {
+    S.odd.got.ball = 0; S.inv.push({ id: 'magicBall', n: 1, slot: 4 }); S.sel = 4;
+    I.odd.ball.throw();
+    const x0 = I.odd.ball.fly?.x;
+    I.mode = 'menu';
+    return x0;
+  });
+  await sim(page, 0.5);
+  const still = await island(page, (I) => { const x = I.odd.ball.fly?.x; I.mode = 'walk'; return x; });
+  assert(fly !== undefined && still === fly, `frozen under the menu: ${fly} ${still}`);
 });
 
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });

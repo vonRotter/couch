@@ -58,6 +58,10 @@ time**: Start (`Esc`) freezes every game, the solo island's activities, puzzle l
 | Golden Bean campaign | – | – | big slash, bow, dig, shield (double tap) | lost levels: speed (2), skip (3) | level | [C] tries the level again |
 | Bean Brigade | (turn-based) | – | end turn is also in the battle menu | Easy: lost battles: skip (3) | battle (not the Queen) | Easy: try the battle again, rewind, undo |
 | Space Race | – | – | boost, slide | – | – | – |
+| Your island: the magic ball | – | the aim line shows past the first bounce ("a little") or every bounce ("a lot"), and "a lot" bends the throw a little toward a target in front; the ball also curves toward a target in flight | – | – | – | it always flies back to your hand (out to sea too) |
+| Your island: the tiny elephants' tea | wider line to stop at | – | – | – | – | nothing to fail: a cup a day either way |
+| Your island: spells' runes | no time limit at all | – | – | – | – | a wrong arrow only wobbles; [C] stops |
+| Your island: behaviour modes | – | – | – | – | Normal is always there | [MODE] switches back any time; Sneaky is half speed (useful for careful steering) |
 | Knights & Builders (Castle versus) | – | – | big slash, bow, take down, shield (double tap) | – | – | – |
 | Golf, Splash, Portal Pals | – | – | power and fine aim; throw; reset (hold C) | – | – | Portal: reset room |
 | Story (map and bosses) | – | – | map: back, leave; frost boss: snowball (double tap) | boss time-ups: speed (2), skip (3) | Grumble King fights (he gives up, one star) | stages |
@@ -88,6 +92,21 @@ on its spot); with "Reduce flashing" the bells and lanterns glow and fade softly
 outlines mark the player's worm, piece, bean, paddle or rocket and the targets; the HUD and cards grow with the
 text size; Paddle Pals plays against a gentle computer player who goes easier when you are behind, or with a
 friend. Assists never cost a stamp, a medal, a trial or a high score.
+
+### The odd-adventure round (solo island)
+
+- **Controls:** [MODE] is R on a keyboard (reserved, so a key remap never takes it) and RB / R1 / R on a gamepad
+  (a pad remap moves it like any other button); every hint names it with the button token. The behaviour mode badge
+  by the clock always shows a **symbol and a word** (🙂 Normal, 🏃 Sporty, 🤫 Sneaky), never colour alone.
+- **Pause:** Start pauses the round's own island modes (a spell's rune, a teleport, the tea game, the cloud whale's
+  moment); the magic ball freezes under any panel or menu. **Game speed** slows the tea game and the runes.
+- **Read aloud:** guests speak in their own voice types (Tinka, Wendeline, Old Morel, the tea elephants, the moss
+  creature, the joke robot, the sleepy guard, the Ollo folk) and the talking lighthouse has its own warm voice;
+  the narrator only reads letters, the runes' and the tea game's how-to, the word book and the tutorials.
+- **Strong outlines:** the flying magic ball, the three bells, the switch and the moss creature are outlined.
+- **Reduce flashing:** nothing in the round blinks; the cloud whale, booths and spells move slowly.
+- **Tutorials:** Sporty mode, Sneaky mode and the magic ball each have a step-by-step tutorial (first card,
+  skippable, the Tutorials and tips row turns them off).
 
 ## How help is offered
 

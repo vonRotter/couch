@@ -243,6 +243,16 @@ turn, push, zap, then "the field wraps". The island's puzzle locks use the same 
 a child meeting Tunnel Trek first at the cliff door gets its steps there. Levels grow slowly (Crate Shove one
 crate before two, Sleepy Lanterns 3 x 3 before 4 x 4 before 5 x 5, Tunnel Trek's mazes a room wider at a time).
 
+### The odd-adventure round (built to the rule)
+
+The round's new controls each come with the step-by-step tutorial when they are learned (core/tutorial.js: the first
+card asks, then one action at a time over the bean, read aloud, moving on only when it is done): **Sporty mode**
+(Coach Bo): switch with [MODE], run, a big jump, switch back to Normal; **Sneaky mode** (Mumble): switch to Sneaky,
+tiptoe a few steps, tiptoe right up to Mumble, switch back; **the magic ball** (the first time you hold it): throw
+it at a wall, watch it bounce, catch it as it comes back. The wizard school's lessons teach one spell at a time (a
+rune of four arrows, nothing to fail), and new things arrive one at a time, about a week apart (solo/odd.js), so a
+child never meets two new controls on one day.
+
 ### Not covered
 
 - **Tachyon, Starlite, Foothold and Starhop** (the Game Hall's guest games): other repositories; only their

@@ -4,6 +4,7 @@ import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { timingScale } from '../../core/assist.js';
 import { report } from '../../core/passport.js';
+import { markA11y } from '../../core/outline.js';
 import { now, hourOf } from './save.js';
 import { dayKey, dayIndex, dayRand, surpriseOn, setSurpriseSwap } from './calendar.js';
 import { heightAt } from './map.js';
@@ -148,6 +149,7 @@ export class Creatures {
     map.addKeepOut(TEA.x, TEA.z, 2.6, 'tea stall');
     // the moss creature
     this.moss = makeMossCreature();
+    markA11y(this.moss, 'item');
     this.moss.position.set(MOSS.x, heightAt(MOSS.x, MOSS.z), MOSS.z);
     this.moss.visible = false;
     host.scene.add(this.moss);

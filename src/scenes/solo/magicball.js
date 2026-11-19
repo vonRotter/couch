@@ -4,6 +4,7 @@ import { aimLevel, aimAt, homeToward } from '../../core/assist.js';
 import { StepTeacher } from '../../core/tutorial.js';
 import { report } from '../../core/passport.js';
 import { basic } from '../../core/palette.js';
+import { markA11y } from '../../core/outline.js';
 import { dayKey } from './calendar.js';
 import { count } from './save.js';
 import { heightAt, cliffZ, SEA_Y } from './map.js';
@@ -88,6 +89,7 @@ export class MagicBall {
     this.pathT = 0;
     this.ball = makeBall();
     this.ball.visible = false;
+    markA11y(this.ball, 'item'); // ("Strong outlines": the flying ball, the bells and the switch stand out)
     host.scene.add(this.ball);
     this.handBall = makeBall();
     this.handBall.scale.setScalar(0.7);
@@ -102,6 +104,7 @@ export class MagicBall {
     this.bells = BELLS.map((b, i) => {
       const g = makeBell(i);
       g.position.set(b.x, heightAt(b.x, b.z), b.z);
+      markA11y(g, 'target');
       host.scene.add(g);
       host.map.circObs(b.x, b.z, 0.22);
       return { ...b, i, g, at: -99, swing: 0 };
@@ -112,6 +115,7 @@ export class MagicBall {
     host.scene.add(this.door);
     host.map.boxObs(BALL_DOOR.x, BALL_DOOR.z - 0.2, 1.1, 0.4);
     this.sw = makeSwitch();
+    markA11y(this.sw, 'target');
     this.sw.position.set(BALL_DOOR.sw.x, heightAt(BALL_DOOR.sw.x, BALL_DOOR.sw.z), BALL_DOOR.sw.z);
     host.scene.add(this.sw);
     host.map.circObs(BALL_DOOR.sw.x, BALL_DOOR.sw.z, 0.25);

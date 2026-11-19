@@ -1152,8 +1152,8 @@ night match yours and crops grow while you are away.
   the one use button** (the held tool or seeds, talking, picking up, shipping, mail, doors, shops and
   knocking; a villager you face wins over the field), **B is back** (it closes panels and never uses or
   picks anything; out in the world it does nothing), the **D-pad picks the hotbar slot (left/right)**,
-  **opens the bag (up)** and **the journal (down)** (it does not walk), **Start opens the menu**, and Y
-  is free. The keyboard stays Space / E / Q: Space jumps, E uses, Q opens the menu (and is back in
+  **opens the bag (up)** and **the journal (down)** (it does not walk), **Start opens the menu**, Y opens the
+  emote wheel, and RB switches the behaviour mode once Coach Bo taught you one (R on a keyboard; see *Odd adventures*). The keyboard stays Space / E / Q: Space jumps, E uses, Q opens the menu (and is back in
   panels), Tab the bag, F the journal, 1–9 the hotbar, `Esc` help. A new controller pressing jump takes
   over. The menu has Keep playing, Play together (the shared island, like the ferry), Change player (the profile picker), Read aloud
   on/off, Characters (speak or babble), Sound, Language and Help, so a gamepad reaches every setting. The
