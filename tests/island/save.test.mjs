@@ -117,14 +117,14 @@ async function panelsRaw() {
 await test('English: no raw text keys on the island\'s panels (menu, help, bag, chest, shop, bench, cook, museum, journal tabs, Today board, pause)', async () => {
   await startIsland(page, { time: D0, name: 'Words' });
   await island(page, (I, S) => { S.inv.push({ id: 'carrot', n: 2 }, { id: 'wood', n: 3 }); S.store.fence = 1; });
-  assert((await page.evaluate(async () => (await import('/src/core/i18n.js')).getLang())) === 'en', 'English first');
+  assert((await page.evaluate(() => window.game.roster.progress.lang || 'en')) === 'en', 'English first');
   const found = await panelsRaw();
   assert(!Object.keys(found).length, JSON.stringify(found));
 });
 
 await test('N switches to Norwegian (a toast, the HUD follows), no raw keys there either, and N switches back', async () => {
   await press(page, 'KeyN');
-  const lang = await page.evaluate(async () => (await import('/src/core/i18n.js')).getLang());
+  const lang = await page.evaluate(() => window.game.roster.progress.lang); // (the game's own setting: a fresh import of i18n.js can be a second copy after a hot update)
   assert(lang === 'no', lang);
   await sim(page, 0.5);
   const found = await panelsRaw();
@@ -136,7 +136,7 @@ await test('N switches to Norwegian (a toast, the HUD follows), no raw keys ther
   assert(!Object.keys(found).length, JSON.stringify(found));
   assert(/Oppgaver|oppgave/i.test(txt), `Norwegian text: ${txt.slice(0, 200)}`);
   await press(page, 'KeyN');
-  assert((await page.evaluate(async () => (await import('/src/core/i18n.js')).getLang())) === 'en', 'back to English');
+  assert((await page.evaluate(() => window.game.roster.progress.lang || 'en')) === 'en', 'back to English');
 });
 
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
