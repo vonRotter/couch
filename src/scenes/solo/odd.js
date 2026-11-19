@@ -7,6 +7,8 @@ import { heightAt } from './map.js';
 import { puzzleDay, nextPuzzle, puzzleSave } from './puzzles.js';
 import { Modes } from './modes.js';
 import { MagicBall } from './magicball.js';
+import { Wizard } from './wizard.js';
+import { Inventor } from './inventor.js';
 
 // The odd-adventure round (behaviour modes, a bouncing magic ball, a wizard school, an inventor and her odd machines,
 // strange creatures, social happenings and a new folk). This module is its hub: the PACE at which its new things come
@@ -197,6 +199,15 @@ export class Odd {
     this.modes = new Modes(host, this);
     this.ball = new MagicBall(host, this);
     this.parts = [this.modes, this.ball];
+    this.wizard = this.add(new Wizard(host, this)); // part 2: the little wizard school and its weather spells (wizard.js)
+    this.inventor = this.add(new Inventor(host, this)); // part 2: Tinka's workshop, teleport booths, the joke robot, the lighthouse voice
+  }
+
+  /** The round's own island modes (each runs on its own: Start pauses them, main.js freezePause). */
+  updateMode(mode, inp, panel, dt) {
+    if (mode === 'spell') this.wizard.updateRune(panel, dt);
+    else if (mode === 'teleport') this.inventor.updateTele(dt);
+    else for (const p of this.parts) p.updateMode?.(mode, inp, panel, dt);
   }
 
   /** Add a part (the later modules: wizard, inventor, creatures, social happenings, folk). */
@@ -244,7 +255,7 @@ export class Odd {
   }
 
   /** What [B] does with something you hold (the magic ball), or null. */
-  heldAction(id, nm) { return this.ball.action(id, nm); }
+  heldAction(id, nm) { return this.ball.action(id, nm) || this.wizard.action(id, nm) || null; }
 
   /** Before the usual talk with a villager: a lesson, a clue... True: handled. */
   talk(n, done) {

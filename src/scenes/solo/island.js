@@ -2514,6 +2514,7 @@ export class SoloIslandScene extends BaseScene {
         case 'puzzle': this.puzzles.update(dt); break; // a puzzle lock, played over the island (puzzles.js)
         case 'school': this.school.update(panel, dt); break; // the school house's game picker (school.js)
         case 'pier': this.ferry.updateBoard(inp, dt); break; // the Party Pier's badge board (ferry.js)
+        case 'spell': case 'teleport': case 'tea': case 'oddgame': this.odd.updateMode(this.mode, inp, panel, dt); break; // the odd-adventure round's own modes (odd.js)
         default: {
           this.movePlayer(emo ? NO_INPUT : inp, dt);
           ia = this.interactions();

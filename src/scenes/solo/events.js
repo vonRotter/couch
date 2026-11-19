@@ -477,7 +477,7 @@ export class IslandEvents {
     this.t += dt;
     const host = this.host;
     // fog: the view closes in (indoors and on Shell Isle it is clear)
-    const want = this.kind === 'fog' && !host.indoors && !host.isle2?.here() ? 1 : 0;
+    const want = this.kind === 'fog' && !host.indoors && !host.isle2?.here() && !host.odd?.wizard?.sunny ? 1 : 0; // (the sun spell lifts it for an hour: wizard.js)
     this.fogK += (want - this.fogK) * Math.min(1, dt * 1.5);
     const f = host.scene.fog;
     if (f) { f.near = 60 - this.fogK * 50; f.far = 150 - this.fogK * 105; }

@@ -53,6 +53,8 @@ export const KEEP_CLEAR = [
   { x0: -29.6, x1: -20.6, z0: 0.4, z1: 3.8 }, // the river stepping stones
   // the puzzle doors (PUZZLE_DOORS below): the cliff door, the boulder on the east shore, the stump in the west wood
   { x: 5, z: -32.4, r: 2.6 }, { x: 51.5, z: 16.6, r: 3.4 }, { x: -35, z: 20.2, r: 4.6 },
+  // the odd-adventure round (solo/odd.js): the wizard school, Tinka's workshop and robot, the new folk's corner
+  { x: -20.5, z: 26.5, r: 3.6 }, { x: 52.8, z: 8, r: 4.6 }, { x0: 38.5, x1: 51, z0: -31, z1: -24.5 },
 ];
 
 /**

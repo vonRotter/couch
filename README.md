@@ -1383,6 +1383,26 @@ pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
   knocks it down into your hands) and **Skye's goggles**. The genre passport has a new genre, **Stealth game**
   (Sneaky mode's sneaking), the magic ball is an aim-and-shoot activity (aiming, thinking ahead), and Coach has two
   new trials (all three bells with one throw; tiptoe up to the shy moss creature).
+- **The little wizard school** (`wizard.js`): a round stone tower with a pointed roof on the meadow between the hollow
+  tree and the river. **Wizard Wendeline** teaches weather spells as short lessons: she explains, then you trace the
+  spell's **rune** with the stick, one arrow at a time (a wrong arrow only wobbles: nothing to fail; [C] stops).
+  Lesson one (when the school opens) is the **rain spell** and gives a **wand** (a hotbar thing: [B] picks a spell you
+  know, then you draw its rune): a little cloud rains for a moment and waters every crop under it (at the field, the
+  whole field; in winter it snows). Lesson two, weeks later, is the **sun spell**: a warm ray that lifts rain, snow or
+  fog where you are for an hour (on a clear day it just sparkles). **Daily limits**, so spells never break the
+  calendar's weather or seasons: each spell once a real day; the rain cloud is local (the day's weather stays what the
+  calendar says); the sun spell only lifts the look for an hour (`rainyOn()`, rain watering and the fog's ghost ship
+  stay); no spells indoors or on Shell Isle. Her chats: one a day, none again within four weeks (then she just waves).
+- **Tinka the inventor** (`inventor.js`), whose quests come one step at a time (each step is an arrival: a letter and a
+  Today line, about a week apart): she mails the magic ball, moves into a **workshop** on the east shore (a shed with a
+  big turning gear; her chats, like Wendeline's, come once a day and never again within four weeks), builds three
+  **teleport booths** (by her workshop, on the hill by Aunt Hazel's, on the meadow by the café: [B] in one picks
+  another and pops you there; about one trip in four **misfires** to a funny spot instead, the end of the pier, the
+  fountain, kite hill, Crab Cove, the meadow by the burrow, the picnic, the School House or Aunt Hazel's garden, all
+  open ground, never water, never boxed in; trying all three: 50 coins), a **joke vending robot** by her workshop
+  (once a day it asks for a joke: pick one of three, none told in the last four weeks, and it laughs and drops a
+  little something), gives the **lighthouse a voice** (walk by its door: one short, kind line a day in its own warm
+  voice, never the narrator, none again within four weeks) and sends two **springs** for the magic ball.
 
 **Playtest time machine.** Open the site once with `?dev` in the address (for example
 `https://vonrotter.github.io/couch/?dev`) and press F9 on the solo island: a small panel moves the island clock
