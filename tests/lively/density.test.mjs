@@ -2,7 +2,9 @@
 // visits: at most one special world thing a day, rare events about once a week and never on consecutive days,
 // at most one conversation at a time (1-3 a day), no conversation or reaction text again within four weeks,
 // each reaction said once by one villager, no Today item again within three weeks, at most one project and one
-// tomorrow hook at a time. Prints the measured numbers.
+// tomorrow hook at a time. With the odd-adventure round (solo/odd.js): its new things arrive at most one a day, only on
+// quiet days, at least five days apart, its creatures only take a daily surprise's day, and its places are spread over
+// the island. Prints the measured numbers.
 import { open, close, startIsland, island, sim, at, setTime, test, assert, done, DAY } from './helper.mjs';
 
 const page = await open();
@@ -25,7 +27,9 @@ await test('eight weeks of daily visits: collect what happens', async () => {
     const info = await island(page, (I, S) => {
       if (I.mode === 'today') { I.hud.setPanel(null); I.mode = 'walk'; }
       const V = S.village, di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
-      return { di, keys: S.todayBoard.items.map((i) => i.k), late: S.lockPlay?.di === di ? S.lockPlay.kind : null, items: I.todayBoard.texts(), fest: I.seasons.festival, sur: I.surprise.kind, rare: I.events.kind, climax: V.drama && V.drama.climax === di ? V.drama.id : null, drama: V.drama && { id: V.drama.id, start: V.drama.start, climax: V.drama.climax }, proj: V.proj ? 1 : 0, hooks: S.hook ? 1 : 0, slots: I.village.slots(S.todayBoard.day), projAt: V.proj?.id };
+      return { di, keys: S.todayBoard.items.map((i) => i.k), late: S.lockPlay?.di === di ? S.lockPlay.kind : null, items: I.todayBoard.texts(), fest: I.seasons.festival, sur: I.surprise.kind || I.odd?.creatures?.kind || null, rare: I.events.kind, climax: V.drama && V.drama.climax === di ? V.drama.id : null, drama: V.drama && { id: V.drama.id, start: V.drama.start, climax: V.drama.climax }, proj: V.proj ? 1 : 0, hooks: S.hook ? 1 : 0, slots: I.village.slots(S.todayBoard.day), projAt: V.proj?.id,
+        // the odd-adventure round (solo/odd.js): what arrived today, and a creature that took the day's surprise
+        odd: S.odd?.news?.di === di ? S.odd.news.id : null, creature: I.odd?.creatures?.kind || null };
     });
     Object.assign(day, info);
     // every ten days: save the next thing coming, stay away on its days and come back 1, 2 or 3 days after
@@ -62,6 +66,11 @@ await test('eight weeks of daily visits: collect what happens', async () => {
       const c = await island(page, (I) => I.village.lastChat && { id: I.village.lastChat.tp.id, pair: `${I.village.lastChat.a.id}+${I.village.lastChat.b.id}`, texts: I.village.lastChat.texts, abort: I.village.lastChat.abort });
       if (c) day.chats.push(c);
     }
+    // a puzzle lock that appeared today (puzzles.js), and the odd-adventure round's places that are there now
+    Object.assign(day, await island(page, (I, S, G, di) => ({
+      puzzleNew: Object.values(S.puzzles?.at || {}).some((ms) => { const x = new Date(ms); return Math.round(Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / 86400000) === di; }),
+      places: (I.odd?.markers() || []).map((m) => m.key),
+    }), day.di));
     log.days.push(day);
   }
   log.maxBusy = maxBusy; log.maxChats = maxChats;
@@ -184,6 +193,40 @@ await test('spread across the map: projects, drama places and rare-event spots i
   });
   console.log(`   by quarter: ${JSON.stringify(r)}`);
   assert(Object.keys(r).length === 4 && Object.values(r).every((v) => v.length <= 6), JSON.stringify(r));
+});
+
+await test('the odd-adventure round: at most one new special thing a day (arrivals only on quiet days, creatures only take surprises)', async () => {
+  const visited = log.days.filter((d) => !d.skipped);
+  const arrivals = visited.filter((d) => d.odd);
+  const clash = arrivals.filter((d) => d.fest || d.sur || d.rare || d.climax || d.puzzleNew);
+  const creatures = visited.filter((d) => d.creature);
+  const puzzles = visited.filter((d) => d.puzzleNew).length;
+  let worst = 0;
+  for (const d of visited) worst = Math.max(worst, (d.fest ? 1 : 0) + (d.sur ? 1 : 0) + (d.rare ? 1 : 0) + (d.climax ? 1 : 0) + (d.odd ? 1 : 0));
+  const nothing = visited.filter((d) => !d.fest && !d.sur && !d.rare && !d.climax && !d.odd && !d.puzzleNew).length;
+  const gaps = arrivals.slice(1).map((d, i) => d.d - arrivals[i].d);
+  const socials = [...new Set(visited.filter((d) => d.drama).map((d) => `${d.drama.id}:${d.drama.start}`))].filter((x) => /^(fence|election|club|party|rumour):/.test(x)).length;
+  console.log(`   new things arrived on ${arrivals.length} of ${visited.length} visited days (${arrivals.map((d) => `${d.odd} d${d.d}`).join(', ')}), at least ${Math.min(...gaps)} days apart, on a special day ${clash.length}; creatures took ${creatures.length} surprise days; puzzle locks appeared on ${puzzles} days; social happenings started ${socials}`);
+  console.log(`   counting arrivals as special too: most on one day ${worst}; days with nothing new at all ${nothing} of ${visited.length} (${Math.round((nothing / visited.length) * 100)} %)`);
+  assert(worst <= 1 && !clash.length && arrivals.length >= 4 && arrivals.length <= 10 && Math.min(...gaps) >= 5, JSON.stringify({ worst, clash, n: arrivals.length, gaps }));
+});
+
+await test('spread across the map, with the odd-adventure round\'s places: every quarter has some, none has a third of all', async () => {
+  const r = await page.evaluate(() => {
+    const pts = { gazebo: [30, 24], garden: [-8, 12], lookout: [36, -22], bandstand: [-4, 30], birdhide: [-16, -24], windmill: [22, -30], course: [46, 18], boatshed: [26, 32], rivalry: [2.4, 41.6], pumpkin: [4.6, -23], cake: [15.8, -3.4], storm: [14, 40.5], ghost: [-17.6, 41.2], door: [-12, -31], robot: [4.4, -0.8], hook: [-9, -13],
+      // the odd-adventure round: the ball's bells and switch door, the wizard school, Tinka's workshop, robot and three booths, Old Morel, the tea stall,
+      // the moss creature, the social happenings' places (fence, ballot box, club, party, rumour) and the Ollo folk
+      bells: [-9, -29.6], balldoor: [34, -31.5], school: [-20.5, 26], workshop: [54, 5.5], vendor: [51.2, 9], boothE: [52.4, 11.6], boothHill: [-16, -28], boothBeach: [-14.5, 32],
+      morel: [16, 18.6], tea: [22, 30.6], moss: [-19.5, 20], fence: [18.4, -21], ballot: [16.6, -7.6], club: [-4, 24], party: [23, 4.4], rumour: [31, 36], folk: [44.5, -27.5] };
+    const q = {}, odd = new Set(['bells', 'balldoor', 'school', 'workshop', 'vendor', 'boothE', 'boothHill', 'boothBeach', 'morel', 'tea', 'moss', 'fence', 'ballot', 'club', 'party', 'rumour', 'folk']);
+    for (const [k, [x, z]] of Object.entries(pts)) { const c = `${z < 0 ? 'N' : 'S'}${x < 8 ? 'W' : 'E'}`; (q[c] ||= []).push(k); }
+    return { q, n: Object.keys(pts).length, odd: Object.fromEntries(Object.entries(q).map(([c, v]) => [c, v.filter((k) => odd.has(k)).length])) };
+  });
+  console.log(`   by quarter (all ${r.n}): ${Object.entries(r.q).map(([c, v]) => `${c} ${v.length} (${r.odd[c]} new)`).join(', ')}`);
+  assert(Object.keys(r.q).length === 4 && Object.values(r.q).every((v) => v.length <= r.n / 3) && Object.values(r.odd).every((n) => n >= 2), JSON.stringify(r));
+  // and the places the eight weeks showed on the map
+  const shown = [...new Set(log.days.flatMap((d) => d.places || []))];
+  console.log(`   the round's places on the map after eight weeks: ${shown.join(', ') || 'none'}`);
 });
 
 await close(page);

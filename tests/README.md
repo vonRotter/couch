@@ -75,7 +75,10 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
   `creatures` (Old Morel's and the cloud whale's days over two years, the whale's moment and photo, the tea game, the moss
   creature in Sneaky mode), `social` (the five social happenings: the turn order over six months, each one's beats and
   ending), `folk` (the Ollo folk's weeks of moving in, their corner never traps the bean, their words two a day and the
-  greeting, the word book in English and Norwegian, Pebble Day).
+  greeting, the word book in English and Norwegian, Pebble Day), `pace` (four months of arrivals for an eager child and
+  for one who takes nothing up: one at a time, five days apart, only on quiet days, each after what it builds on) and
+  `oldsave` (saves from before the round, a half-made one, and a page reload). `tests/lively/density.test.mjs` also
+  checks the round: arrivals never on a special day, creatures only take surprises, its places spread over the map.
 - `tests/lively/*.test.mjs`: the "livelier island" round (Today board and tomorrow hooks, villagers' own lives,
   rare events and the mystery, music and ambience, Pip's robot, old saves, and the density budget).
 
