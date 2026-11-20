@@ -280,3 +280,5 @@ The owner answered the six decisions: build all six, as recommended. Tests: `tes
    without the welcome opens; `calendar.js newcomer`): Hoot keeps the torn page (no "!", no rumor on the board),
    no villager's small fun task, no tomorrow hook (egg, pot or a visitor's letter). Festivals and the day's crab
    stay, and the puzzle-lock hold-back during the farming steps stays. Old islands have no `S.born`: unchanged.
+4. **Grumbleton's tournament "!".** Only on Wednesdays and on the first day the 5-heart offer is there
+   (`contest.js newsToday`, `S.tour.five`); on other days he still asks when you talk to him.

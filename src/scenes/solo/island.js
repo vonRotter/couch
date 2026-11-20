@@ -1056,7 +1056,7 @@ export class SoloIslandScene extends BaseScene {
     if (this.play?.hasNews(id)) return true; // today's little task
     if (this.village?.hasNews(id)) return true; // a drama's news (village.js)
     if (this.events?.hasNews(id)) return true; // Hoot's torn page (events.js)
-    if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3) || (count(S, 'seaChart') && !S.isle2?.chart) || this.tour?.available(now()))) return true;
+    if (id === 'grumbleton' && S.intro && (!S.sea.rod || (S.sea.quest === 1 && S.sea.caught - (S.sea.questBase || 0) >= 3) || (count(S, 'seaChart') && !S.isle2?.chart) || this.tour?.newsToday(now()))) return true;
     const ev = def.events[st.ev];
     if (ev && heartsOf(st) >= ev.at) return true;
     const q = S.quests[id];

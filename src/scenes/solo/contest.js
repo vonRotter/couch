@@ -47,6 +47,18 @@ export class Tournament {
     return d.getDay() === 3 || heartsOf(npcState(S, 'grumbleton')) >= 5;
   }
 
+  /**
+   * His "!" for the contest: only on Wednesdays (the tournament day) and on the first day the 5-heart offer comes;
+   * on other days he still asks when you talk to him (the owner's decision after the play-test: a "!" every day with
+   * the same offer was too much).
+   */
+  newsToday(at) {
+    if (!this.available(at)) return false;
+    const S = this.S, today = dayKey(at);
+    if (!S.tour.five && heartsOf(npcState(S, 'grumbleton')) >= 5) { S.tour.five = today; this.host.markDirty(); } // (the first day the 5-heart offer is there)
+    return new Date(at).getDay() === 3 || S.tour.five === today;
+  }
+
   /** Grumbleton's question (a line with a yes/no choice). */
   offer(n, at) {
     if (!this.available(at)) return null;

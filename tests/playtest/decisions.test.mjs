@@ -117,6 +117,18 @@ await test('3. a new profile\'s first three days: no torn page, no little task, 
   assert(old.join() === 'false,true,false', old.join());
 });
 
+await test('4. Grumbleton\'s tournament "!" only on Wednesdays and on the first day of the 5-heart offer; he still asks on other days', async () => {
+  await startIsland(page, { time: at(2026, 11, 19, 10), save: `(S) => { S.sea.rod = true; S.sea.quest = 2; S.npcs.grumbleton = { pts: 60, talkAt: 0, giftAt: 0, ev: 0, q: 0, met: true }; }` });
+  const rows = [];
+  for (let d = 0; d < 8; d++) {
+    const ms = at(2026, 11, 19 + d, 10); // Thursday 19 November on
+    rows.push(await island(page, (I, S, G, ms) => ({ wd: new Date(ms).getDay(), bang: I.tour.newsToday(ms), asks: I.tour.available(ms) }), ms));
+  }
+  const bangs = rows.filter((r) => r.bang).map((r) => r.wd);
+  assert(bangs.length === 2 && bangs[0] === 4 && bangs[1] === 3, `the first day (a Thursday) and the Wednesday: ${JSON.stringify(rows)}`);
+  assert(rows.filter((r) => r.wd !== 0 && r.wd !== 6).every((r) => r.asks), `he still asks on the other days: ${JSON.stringify(rows)}`);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

@@ -1025,7 +1025,7 @@ night match yours and crops grow while you are away.
   they were worth and a big shell; crab cakes become seaweed cakes; crabs given to the museum stay on the
   Crab friends wall.
 - **Polish:** Pip's camera (photos become postcards in the mailbox and an album of the newest 12),
-  a three-minute fishing tournament against Grumbleton (Wednesdays, or any day at 5 hearts), a
+  a three-minute fishing tournament against Grumbleton (Wednesdays, or any day at 5 hearts; his "!" for it only on Wednesdays and the first 5-heart day, though he asks whenever you talk), a
   specials board in the café (up to 4 dishes that sell for more and are ordered more often), and baby
   animals (happy hens hatch chicks, happy cows and goats have a baby; babies grow up in 3 days).
   Pop-up messages wait in a queue (one at a time, shorter while more wait, paused under panels; in the Game Hall they show under the clock, clear of the cabinets' name tags), and decorate mode has
