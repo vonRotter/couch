@@ -46,7 +46,7 @@ import { makeZipZap } from './models8.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, taste, canTalkBonus, canGift, makeNpcModel, PTS_PER_HEART, MAX_HEARTS, TALK_PTS, GIFT_PTS } from './npcs.js';
 import { IslandHud } from './hud.js';
 import { Life } from './life.js';
-import { SEASON_ICON, dayKey, dayRand } from './calendar.js';
+import { SEASON_ICON, dayKey, dayRand, dayIndex } from './calendar.js';
 import { ToastQueue } from './toasts.js';
 import { Greenhouse, greenhouseTask } from './greenhouse.js';
 import { TrophyShelf, isTrophy } from './shelf.js';
@@ -214,6 +214,7 @@ export class SoloIslandScene extends BaseScene {
     this.camera.updateProjectionMatrix();
     this.save = loadIsland(game.roster);
     const S = this.save;
+    if (!S.intro && S.born === undefined) S.born = dayIndex(); // (a new island: its first days are quieter: calendar.js newcomer)
     this.lock = new EventLock(this); // a coming event saved for later (lock.js): first, so today's calendar knows what plays late
     this.lock.prepare(now());
 

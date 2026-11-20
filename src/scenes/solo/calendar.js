@@ -239,6 +239,14 @@ export function rareWarned(ms = now()) {
 }
 
 /** A day with no festival, no daily surprise and no rare event (a drama's big moment waits for one). */
+/**
+ * A new profile's first three days (day 0, 1 and 2 after its island was made; S.born): no seasonal mystery, no daily
+ * little task and no tomorrow hook, so the welcome, the farming steps and meeting everyone come first (the owner's
+ * decision after the play-test). Islands from before have no S.born and are never new.
+ */
+export const NEW_DAYS = 3;
+export const newcomer = (S, di) => Number.isFinite(S?.born) && di - S.born < NEW_DAYS;
+
 export function freeDay(ms = now()) {
   return !festivalOn(ms) && !surpriseOn(ms) && !rareEventOn(ms);
 }

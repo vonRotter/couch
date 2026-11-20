@@ -3,7 +3,7 @@ import { t } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now, hourOf } from './save.js';
-import { dayKey, dayRand, rainyOn } from './calendar.js';
+import { dayKey, dayRand, rainyOn, dayIndex, newcomer } from './calendar.js';
 import { heightAt } from './map.js';
 import { makeLostThing } from './models9.js';
 import { npcState, heartsOf } from './npcs.js';
@@ -130,7 +130,7 @@ export class Play {
   /** Today's task, asked at the end of a chat (when there is no quest or story news to tell first). */
   askLine(n) {
     const D = this.day();
-    if (n.id !== taskOn() || n.sleep || D.task !== 0 || !this.S.intro) return null;
+    if (n.id !== taskOn() || n.sleep || D.task !== 0 || !this.S.intro || newcomer(this.S, dayIndex())) return null;
     return { who: n.id, key: `play.task.${n.id}.ask`, fx: () => { if (D.task === 0) { D.task = 1; this.placeThing(); this.host.markDirty(); } } };
   }
 
@@ -138,6 +138,7 @@ export class Play {
   hasNews(id) {
     const D = this.S.play?.day === dayKey() ? this.S.play : null;
     if (id !== taskOn() || !this.S.intro) return false;
+    if ((!D || D.task === 0) && newcomer(this.S, dayIndex())) return false; // (a new island's first days: no little task)
     return !D || D.task === 0 || (D.task === 2 && !!this.carry);
   }
 

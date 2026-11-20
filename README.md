@@ -1250,6 +1250,11 @@ on 1; counting arrivals as special too, never two on one day, and 14 days (33 %)
   it is left out). Deterministic by date for the same save. [OK], [B] or [C] closes it (read aloud by the
   narrator). The journal's **Tasks** tab starts with **Today** and tomorrow's line; things with a place
   are marked on the map's Today glow.
+- **A new island's first three days** (the day the profile's island was made and the two after it, `S.born`,
+  `calendar.js newcomer`): no seasonal mystery (Hoot keeps the torn page), no villager's small fun task and no
+  tomorrow hook, so the welcome, the farming steps and meeting everyone come first (the owner's decision after the
+  play-test). The calendar's festivals and the day's crab stay, and no puzzle lock comes while the farming steps run.
+  Islands made before this have no `S.born` and are never new.
 - **Tomorrow hooks** (one at a time, a few days apart): a **speckled egg** in a basket by your cottage
   (Aunt Hazel left it) hatches the next day ([B] at the basket: a chick for the barn, or a duckling that
   waddles off to the river and leaves a shell); a **mystery pot** opens the day after tomorrow into a

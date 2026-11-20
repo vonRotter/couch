@@ -276,3 +276,7 @@ The owner answered the six decisions: build all six, as recommended. Tests: `tes
    (`village.js lateVisit`: the first visit's hour is saved as `S.village.firstVisit`). A visit that began before 18
    still sees it end at 18 without them, and a day never visited still ends with the next day's board telling how.
    The earlier play-test fix that left the late big moment off the board is replaced by this.
+3. **A new island's first three days.** Day 0, 1 and 2 after the island was made (`S.born`, set when an island
+   without the welcome opens; `calendar.js newcomer`): Hoot keeps the torn page (no "!", no rumor on the board),
+   no villager's small fun task, no tomorrow hook (egg, pot or a visitor's letter). Festivals and the day's crab
+   stay, and the puzzle-lock hold-back during the farming steps stays. Old islands have no `S.born`: unchanged.

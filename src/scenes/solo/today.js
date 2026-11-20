@@ -3,7 +3,7 @@ import { t, tFor, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now, hourOf, give } from './save.js';
-import { dayKey, dayIndex, dayMs, dayRand, festivalOn, surpriseOn, rareEventOn, seasonOf, birthdayOf, BIRTHDAYS } from './calendar.js';
+import { dayKey, dayIndex, dayMs, dayRand, festivalOn, surpriseOn, rareEventOn, seasonOf, birthdayOf, BIRTHDAYS, newcomer } from './calendar.js';
 import { heightAt } from './map.js';
 import { SURPRISE_HOURS } from './surprise.js';
 import { mesh, box, sph, cyl, cone } from './models.js';
@@ -381,7 +381,7 @@ export class TodayBoard {
   /** Make a new hook now and then (never while one is pending, a few days apart). Returns it (for the board). */
   issueHook(at) {
     const S = this.S, di = dayIndex(at), day = dayKey(at);
-    if (!S.intro || S.hook || di - (S.hookLast ?? -99) < HOOK_GAP || dayRand(`hook:${day}`) > 0.55) return null;
+    if (!S.intro || S.hook || newcomer(S, di) || di - (S.hookLast ?? -99) < HOOK_GAP || dayRand(`hook:${day}`) > 0.55) return null;
     const order = ['egg', 'letter', 'pot'];
     for (let k = 0; k < 3; k++) {
       const kind = order[((S.hookN || 0) + k) % 3];

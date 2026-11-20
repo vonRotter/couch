@@ -90,6 +90,33 @@ await test('2. a drama\'s big moment: a day\'s first visit after 18:00 plays it 
   assert(e.res && e.news && !e.cast, `ended without you: ${JSON.stringify(e)}`);
 });
 
+await test('3. a new profile\'s first three days: no torn page, no little task, no tomorrow hook; from the fourth day they come', async () => {
+  const born = at(2026, 11, 18, 10);
+  await startIsland(page, { time: born, save: `(S) => { S.born = Math.round((new Date(2026, 10, 18, 12).getTime() - new Date(1970, 0, 1, 12).getTime()) / 864e5); }` });
+  const rows = [];
+  for (let d = 0; d < 8; d++) {
+    await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, born + d * DAY);
+    await sim(page, 1.2);
+    rows.push(await page.evaluate(async () => {
+      const P = await import('/src/scenes/solo/play.js');
+      const C = await import('/src/scenes/solo/calendar.js');
+      const I = window.game.current, S = I.save, ms = Date.now() + window.__islandTimeOffset;
+      const keepHook = S.hook, keepLast = S.hookLast;
+      S.hook = null; S.hookLast = -99;
+      const hook = !!I.todayBoard.issueHook(ms);
+      S.hook = keepHook; S.hookLast = keepLast;
+      return { d: C.dayIndex(ms) - S.born, mystery: I.events.hasNews('hoot'), task: I.play.hasNews(P.taskOn(ms)), hook, crab: I.crabs.tasks().length > 0, fest: C.festivalOn(ms) || null };
+    }));
+  }
+  const early = rows.filter((r) => r.d <= 2), later = rows.filter((r) => r.d > 2);
+  assert(early.length === 3 && early.every((r) => !r.mystery && !r.task && !r.hook), JSON.stringify(early));
+  assert(early.every((r) => r.crab), `the day's crab stays: ${JSON.stringify(early)}`);
+  assert(later.some((r) => r.task) && later.some((r) => r.mystery) && later.some((r) => r.hook), JSON.stringify(later));
+  // an island from before (no S.born) is never new
+  const old = await page.evaluate(async () => { const C = await import('/src/scenes/solo/calendar.js'); return [C.newcomer?.({}, 5), C.newcomer?.({ born: 5 }, 7), C.newcomer?.({ born: 5 }, 8)]; });
+  assert(old.join() === 'false,true,false', old.join());
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

@@ -3,7 +3,7 @@ import { t, tFor, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now, hourOf } from './save.js';
-import { dayKey, dayIndex, dayRand, rareEventOn, rareWarned, seasonOf, weekIndex } from './calendar.js';
+import { dayKey, dayIndex, dayRand, rareEventOn, rareWarned, seasonOf, weekIndex, newcomer } from './calendar.js';
 import { heightAt, cliffZ, SEA_Y, PLACES } from './map.js';
 import { mesh, box, sph, cyl, cone } from './models.js';
 import { makeShip } from '../adventure/props.js';
@@ -237,7 +237,7 @@ export class IslandEvents {
     // a warning the day before (then it can be saved for later: lock.js)
     if (tk && rareWarned(at + 86400000)) out.push({ kind: 'rumor', pri: 8.5, icon: { storm: '⛈️', fog: '🌫️', rainbow: '🌦️' }[tk], keys: [`td.ev.r.${tk}`, `td.ev.r.${tk}.2`] });
     const M = this.M;
-    if (this.chapterOpen(at) && M.step === 0 && M.toldW !== weekIndex(at) && this.S.intro) { M.toldW = weekIndex(at); out.push({ kind: 'rumor', pri: 4.5, icon: '📜', keys: [`td.ev.mystery.${seasonOf(at)}`] }); }
+    if (this.chapterOpen(at) && M.step === 0 && M.toldW !== weekIndex(at) && this.S.intro && !newcomer(this.S, dayIndex(at))) { M.toldW = weekIndex(at); out.push({ kind: 'rumor', pri: 4.5, icon: '📜', keys: [`td.ev.mystery.${seasonOf(at)}`] }); }
     void day;
     return out;
   }
@@ -357,7 +357,7 @@ export class IslandEvents {
 
   /** Curator Hoot has the torn page this week (his "!"). */
   hasNews(id) {
-    return id === 'hoot' && !!this.S.intro && this.M.step === 0 && this.chapterOpen() && !this.host.isle2?.here();
+    return id === 'hoot' && !!this.S.intro && this.M.step === 0 && this.chapterOpen() && !this.host.isle2?.here() && !newcomer(this.S, dayIndex());
   }
 
   /** Talking to Hoot: he gives the torn page. True: handled. */
