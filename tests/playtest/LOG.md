@@ -31,3 +31,19 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   - While the farming steps run, the step is the first task.
   - Step 2 says "with [B]" (English and Norwegian).
   - A dialog hides the held thing's name.
+- Later on day 1 (crab family, Pip's Beach Day shells, the first radish to Aunt Hazel, Rosa's store, the first
+  letter, everyone met once, a second field row):
+  - With one toast at a time, a burst (a crab family home: shell, coins, the cove, the museum wall, a crab friend,
+    the passport) trailed on for half a minute: now each toast is shorter while others wait.
+  - Coming back to the island (from a game, a new page) said "Today: Beach Day!" again every time.
+  - The Journal's Tasks tab said "A quiet day: nothing new yet." on Beach Day (a new island's board is made before
+    the welcome, empty).
+  - "Hold your Zip-Zap to till here (Tab)": Tab opens the bag, but the Zip-Zap sits in hotbar slot 1.
+  - Aunt Hazel's second quest wants a lettuce in a summer week, when lettuce does not grow (spring and winter):
+    the task gave no hint why it could not be done.
+- Fixed:
+  - Toasts: shorter while more wait (`toasts.js`).
+  - The day's news toast (festival, rain, birthday) once a day (`seasons.js`, `S.newsDay`).
+  - The Today items of a new island's first day are worked out once the welcome is done (journal and map).
+  - Zip-Zap hints name its hotbar key (1-9, or the pad's hotbar buttons) when it is on the hotbar (`zapKey`).
+  - A quest's crop that does not grow this season (no greenhouse yet) gets "(lettuce grows in spring or winter.)".

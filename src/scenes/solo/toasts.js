@@ -65,9 +65,12 @@ export class ToastQueue {
       const el = document.createElement('div');
       el.className = 'toast';
       el.textContent = q.text;
-      el.style.animationDuration = `${q.ms}ms`;
+      // more waiting behind it: a little shorter each, so a burst (a crab helped: shell, coins, the cove, the
+      // museum...) does not trail on long after the moment
+      const ms = this.waiting.length ? Math.max(1300, q.ms * (this.waiting.length >= 2 ? 0.65 : 0.8)) : q.ms;
+      el.style.animationDuration = `${ms}ms`;
       this.ui.toastEl.appendChild(el);
-      this.shown.push({ el, text: q.text, left: q.ms });
+      this.shown.push({ el, text: q.text, left: ms });
     }
   }
 

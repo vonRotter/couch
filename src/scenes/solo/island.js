@@ -833,7 +833,11 @@ export class SoloIslandScene extends BaseScene {
     const list = q.need.map(([it, k]) => `${k} ${t(`isl.i.${it}`)} (${Math.min(k, count(this.save, it))}/${k})`).join(', ');
     // ready to hand in, but they are at home for the night: say when they come out
     const away = this.questReady(id, n) ? this.homes.awayNote(id, now()) : '';
-    return t('isl.q.bring', { name, list }) + (away ? ` ${away}` : '');
+    // a crop that does not grow this season (and no greenhouse yet): say when it does, so the task is no dead end
+    const S = this.save;
+    const late = S.unlocks.greenhouse ? [] : q.need.filter(([it, k]) => CROPS[it] && count(S, it) < k && !inSeason(it, this.seasons.season));
+    const when = late.map(([it]) => t('isl.q.season', { item: itemName(it), list: CROPS[it].seasons.map((sn) => t(`isl.seasonIn.${sn}`)).join(t('isl.or')) })).join(' ');
+    return t('isl.q.bring', { name, list }) + (away ? ` ${away}` : '') + (when ? ` ${when}` : '');
   }
 
   findActive(id) {
@@ -1361,7 +1365,7 @@ export class SoloIslandScene extends BaseScene {
     if (!S.unlocks.mine && Math.hypot(P.x - ROCKFALL.x, P.z - ROCKFALL.z) < 3.4) {
       const zip = held?.id === 'zipzap';
       out.a = zip && S.unlocks.rockBuster ? { text: nm('isl.h.rocks'), fn: () => this.hitRocks(), ok: true, zz: { kind: 'break', pos: new THREE.Vector3(ROCKFALL.x, heightAt(ROCKFALL.x, ROCKFALL.z) + 1.8, ROCKFALL.z + 1.2) } }
-        : { text: t(S.unlocks.rockBuster ? 'zz.h.holdZipRocks' : 'isl.h.rocksNeed', { bag: this.bagKey() }), fn: () => this.game.audio.play('bump') };
+        : { text: t(S.unlocks.rockBuster ? 'zz.h.holdZipRocks' : 'isl.h.rocksNeed', { bag: this.zapKey() }), fn: () => this.game.audio.play('bump') };
     }
     // ore rocks, big boulders, tall grass and trees (zipzap.js), the winter sled
     if (!out.a) out.a = this.zipzap.gatherAction(P, held?.id, nm);
@@ -1415,14 +1419,14 @@ export class SoloIslandScene extends BaseScene {
     if (stage === 3) a = { text: nm('isl.h.harvest'), fn: () => this.doHarvest(tile), ok: true, zz: zz('harvest') };
     else if (tl0?.obj) a = { text: nm('isl.h.takeObj', { item: itemName(tl0.obj) }), fn: () => this.takeFarmObj(tile), ok: true };
     else if (FARM_OBJS.includes(id) && !weed && !tl?.crop) a = { text: nm('isl.h.placeObj', { item: itemName(id) }), fn: () => this.placeFarmObj(tile, id), ok: true };
-    else if (weed) a = zip ? { text: nm('isl.h.cut'), fn: () => this.doZap('cut', tile), ok: true, zz: zz('cut') } : { text: t('isl.h.weed', { bag: this.bagKey() }), fn: () => this.game.audio.play('bump'), bad: true };
+    else if (weed) a = zip ? { text: nm('isl.h.cut'), fn: () => this.doZap('cut', tile), ok: true, zz: zz('cut') } : { text: t('isl.h.weed', { bag: this.zapKey() }), fn: () => this.game.audio.play('bump'), bad: true };
     else if (zip) {
       if (!tl) a = { text: nm('isl.h.till'), fn: () => this.doZap('till', tile), ok: true, zz: zz('till') };
       else if (!wet) a = { text: nm('isl.h.water'), fn: () => this.doZap('water', tile), ok: true, zz: zz('water') };
       else if (!tl.crop) a = { text: t('zz.h.wetSoil', { bag: this.bagKey() }), fn: () => this.zipzap.fizzle() };
     } else if (it?.kind === 'seed' && tl && !tl.crop && !this.canPlantHere(tile, it.crop)) a = { text: this.offSeasonText(it.crop), fn: () => this.offSeason(it.crop), bad: true };
     else if (it?.kind === 'seed') a = tl && !tl.crop ? { text: nm('isl.h.plant', { item: itemName(id) }), fn: () => this.doPlant(tile, id), ok: true } : !tl ? { text: t('isl.t.tillFirst'), fn: () => this.game.audio.play('bump'), bad: true } : null;
-    else if (!tl) a = { text: t('isl.h.pickTool', { bag: this.bagKey() }), fn: () => this.game.audio.play('bump') };
+    else if (!tl) a = { text: t('isl.h.pickTool', { bag: this.zapKey() }), fn: () => this.game.audio.play('bump') };
     if (tl?.crop && stage < 3) {
       const crop = itemName(tl.crop);
       // outside, crops nearly sleep at night (farm.js); the greenhouse keeps going
@@ -1461,6 +1465,13 @@ export class SoloIslandScene extends BaseScene {
     const p = this.player?.p;
     const pad = p && this.game.input.get(p.deviceId)?.type === 'gamepad';
     return tFor(p, long ? (pad ? 'isl.bagHow.pad' : 'isl.bagHow.kb') : pad ? 'isl.key.bagPad' : 'isl.key.bagKb');
+  }
+
+  /** How to take the Zip-Zap in hand: its hotbar key (1-9, or the pad's hotbar buttons), else how to open the bag. */
+  zapKey() {
+    const it = this.save.inv.find((x) => x.id === 'zipzap');
+    if (!it || !(it.slot >= 0 && it.slot < 9)) return this.bagKey();
+    return this.onPad ? tFor(this.player?.p, '[ITEMS]') : String(it.slot + 1);
   }
 
   get onPad() {

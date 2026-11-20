@@ -296,7 +296,7 @@ export class Isle2 {
     if (!out.a) {
       for (const d of this.digs) {
         if (!d.g.visible || !(near(d, 1.4) || Math.hypot(P.x + P.fx * 0.9 - d.x, P.z + P.fz * 0.9 - d.z) < 1.0)) continue;
-        out.a = held === 'zipzap' ? { text: nm('isl.h.dig'), fn: () => this.dig(d), ok: true, zz: { kind: 'dig', pos: new THREE.Vector3(d.x, heightAt(d.x, d.z) + 0.3, d.z) } } : { text: t('isl.h.digNeed', { bag: this.host.bagKey() }), fn: () => this.host.game.audio.play('bump') };
+        out.a = held === 'zipzap' ? { text: nm('isl.h.dig'), fn: () => this.dig(d), ok: true, zz: { kind: 'dig', pos: new THREE.Vector3(d.x, heightAt(d.x, d.z) + 0.3, d.z) } } : { text: t('isl.h.digNeed', { bag: this.host.zapKey() }), fn: () => this.host.game.audio.play('bump') };
         break;
       }
     }

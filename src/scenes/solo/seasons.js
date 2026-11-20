@@ -126,7 +126,12 @@ export class Seasons {
       else if (this.rainy) news.push(t(this.season === 'winter' ? 'isl.t.snow' : 'isl.t.rain'));
       const bday = Object.keys(NPCS).find((id) => birthdayOf(id, at));
       if (bday) news.push(t('isl.t.bday', { name: t(`isl.npc.${bday}`) }));
-      if (news.length) this.host.later(first ? 2.2 : 0.2, () => { for (const s of news) this.host.dayToast(s); });
+      // once a day: coming back from a game (or the boat) does not say it again (play-test: the same line too often)
+      const S = this.host.save;
+      if (news.length && S.newsDay !== today) {
+        S.newsDay = today;
+        this.host.later(first ? 2.2 : 0.2, () => { for (const s of news) this.host.dayToast(s); });
+      }
     }
     // a rainbow day: the rain stops at 13 (events.js shows the rainbow)
     this.rainy = rainyOn(at) && !(rareEventOn(at) === 'rainbow' && hourOf(at) >= 13);

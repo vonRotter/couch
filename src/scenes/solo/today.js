@@ -211,7 +211,7 @@ export class TodayBoard {
     this.resolveHooks(di);
     const fresh = this.issueHook(at);
     const items = S.intro ? this.compute(at, fresh) : [];
-    S.todayBoard = { day, items, shown: !S.intro || !items.length };
+    S.todayBoard = { day, items, shown: !S.intro || !items.length, ...(S.intro ? {} : { pre: true }) };
     if (items.length) {
       S.todayHist = (S.todayHist || []).filter((h) => di - h.di < HIST_DAYS);
       S.todayHist.push({ di, sigs: items.map((it) => sigOf(it.k, it.v)) });
@@ -284,7 +284,11 @@ export class TodayBoard {
   /** Today's items (for the journal and the map). */
   items() {
     const B = this.S.todayBoard;
-    return B?.day === dayKey() ? B.items : [];
+    if (B?.day !== dayKey()) return [];
+    // made before the welcome (a new island's first day): the board is not shown that day, but the journal and the
+    // map still tell what is on today (play-test: it said "a quiet day" on Beach Day)
+    if (B.pre && this.S.intro) { B.items = this.compute(now()); B.pre = false; }
+    return B.items;
   }
 
   // ---------- the board ----------

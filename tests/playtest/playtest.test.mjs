@@ -70,6 +70,38 @@ await test('a dialog hides the held thing\'s name (it peeked out between the dia
   assert(back === '1', `back: ${back}`);
 });
 
+await test('a burst of toasts goes by quicker (no long trail after the moment)', async () => {
+  await sim(page, 4);
+  await island(page, (I, S, G) => { for (const x of ['one', 'two', 'three', 'four']) G.ui.toast(x, 2600); });
+  await sim(page, 0.2);
+  const left = await island(page, (I) => I.toasts.shown[0].left);
+  assert(left < 2000, `the first of four is shorter: ${left}`);
+  await sim(page, 8.6);
+  const left2 = await island(page, (I) => I.toasts.texts);
+  assert(left2.length === 0, `all four gone in under nine seconds (four full ones took 10.4): ${left2}`);
+});
+
+await test('the Zip-Zap hint names its hotbar key (not the bag key), and the day\'s news toast is said once a day', async () => {
+  await island(page, (I) => { I.mode = 'walk'; });
+  await island(page, (I) => I.selectItem('radishSeed'));
+  // face untilled soil
+  await island(page, (I) => { const P = I.player; P.x = -16.4; P.z = -6.5 - 1.1; P.fx = 0; P.fz = 1; P.ch.face(0, 1); I.groundCheck(P, I.walkState); });
+  await sim(page, 0.2);
+  const u = await island(page, (I) => I.useAction(I.interactions())?.text || '');
+  assert(/\(1\)/.test(u), `names key 1: ${u}`);
+  // the festival's news toast came on arrival; coming back to the island the same day does not say it again
+  await page.evaluate(() => window.game.enterSolo(window.__testProfile, 'kb0'));
+  await page.waitForFunction(() => window.game.current?.constructor?.name === 'SoloIslandScene' && !window.game.switching && window.game.current.player, null, { timeout: 30000 });
+  await sim(page, 3.5);
+  const tx = await island(page, (I) => I.toasts.texts);
+  assert(!tx.some((x) => /Beach Day/.test(x)), `not again: ${tx}`);
+});
+
+await test('a quest for a crop that does not grow this season says when it does', async () => {
+  const r = await island(page, (I, S) => { S.quests.hazel = { n: 1 }; return I.questText('hazel', 1); });
+  assert(/lettuce grows in spring or winter/.test(r), r);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
