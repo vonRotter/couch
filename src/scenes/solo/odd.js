@@ -10,7 +10,7 @@ import { MagicBall } from './magicball.js';
 import { Wizard } from './wizard.js';
 import { Inventor } from './inventor.js';
 import { Creatures } from './creatures.js';
-import { Folk } from './folk.js';
+import { Folk, STAGE_DAYS as FOLK_STEPS } from './folk.js';
 
 // The odd-adventure round (behaviour modes, a bouncing magic ball, a wizard school, an inventor and her odd machines,
 // strange creatures, social happenings and a new folk). This module is its hub: the PACE at which its new things come
@@ -128,6 +128,8 @@ export function arrivalDue(S, at) {
   if (di < O.first + FIRST_AFTER || di - O.last < GAP) return null;
   if (Object.values(O.got).includes(di)) return null;
   if (!quietDay(S, at)) return null;
+  // the folk's next step (a house, the pebble circle, the drums) is that day's new thing: nothing else arrives then
+  if (O.got.folk !== undefined && FOLK_STEPS.includes(di - O.got.folk) && di > O.got.folk) return null;
   return ARRIVALS.find((a) => O.got[a.id] === undefined && (!a.need || a.need(S, O.got)))?.id || null;
 }
 

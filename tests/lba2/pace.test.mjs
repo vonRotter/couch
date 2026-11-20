@@ -1,7 +1,8 @@
 // The odd-adventure round's pace (the owner's rule: new things feel special, never too much at once). Over four months
 // of daily visits by a child who takes up everything the day after it comes (talks to Coach and Mumble, reads every
 // letter, takes the lessons): sixteen arrivals, never two on a day, at least five days apart, never on a day with a
-// festival, a daily surprise, a rare event, a drama's big moment or a new puzzle lock; and the same with a child who
+// festival, a daily surprise, a rare event, a drama's big moment, a new puzzle lock or a step of the Ollo folk's
+// settling (a house, the pebble circle, the drums); and the same with a child who
 // does nothing (arrivals that build on something wait). All from the date and the save (odd.js arrivalDue), with the
 // villagers' dramas and the puzzle locks running alongside as on the island.
 import { open, close, startIsland, island, at, test, assert, done, oddSave } from './lba2.mjs';
@@ -32,7 +33,8 @@ async function simulate(days, eager) {
         if (g.ball !== undefined && di > g.ball) S.odd.ball = { ...(S.odd.ball || { bounces: 2 }), have: true };
         if (g.school !== undefined && di > g.school) S.odd.wiz = { ...(S.odd.wiz || {}), lessons: { ...(S.odd.wiz?.lessons || {}), rain: true } };
       }
-      log.push({ d, di, id, fest: C.festivalOn(at), sur: C.surpriseOn(at), rare: C.rareEventOn(at), climax, puzzle });
+      const fa = S.odd.got.folk, folkStep = fa !== undefined && di > fa && [7, 14, 21].includes(di - fa); // a house, the circle, the drums
+      log.push({ d, di, id, fest: C.festivalOn(at), sur: C.surpriseOn(at), rare: C.rareEventOn(at), climax, puzzle, folkStep });
     }
     return log;
   }, [D0, days, eager]);
@@ -43,7 +45,10 @@ await test('an eager child: sixteen arrivals over four months, one at a time, at
   const log = await simulate(126, true);
   const arr = log.filter((x) => x.id);
   const gaps = arr.slice(1).map((x, i) => x.d - arr[i].d);
-  const clash = arr.filter((x) => x.fest || x.sur || x.rare || x.climax || x.puzzle);
+  const clash = arr.filter((x) => x.fest || x.sur || x.rare || x.climax || x.puzzle || x.folkStep);
+  const steps = log.filter((x) => x.folkStep).map((x) => x.d);
+  console.log(`   the Ollo folk's steps on days ${steps.join(', ')} (nothing else arrives then)`);
+  assert(steps.length === 3, `the folk's three steps: ${steps}`);
   const in8 = arr.filter((x) => x.d < 56).length;
   console.log(`   ${arr.length} arrivals in 18 weeks (${in8} in the first 8): ${arr.map((x) => `${x.id} d${x.d}`).join(', ')}`);
   console.log(`   days between arrivals: min ${Math.min(...gaps)}, max ${Math.max(...gaps)}, average ${(gaps.reduce((a, b) => a + b, 0) / gaps.length).toFixed(1)}; on a special day: ${clash.length}`);

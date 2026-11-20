@@ -36,7 +36,7 @@ const MEMBERS = [
 /** Their words in order (the first four come by plain talk; the rest only after an "Ollo!" greeting). */
 export const WORDS = ['ollo', 'bimbom', 'fliffi', 'zibbo', 'tanu', 'pom', 'nunu', 'wawa', 'pipri', 'mimola', 'dumdi', 'yaya', 'nono', 'hoppa', 'zizzi', 'pompom'];
 export const FREE_WORDS = 4, WORDS_A_DAY = 2;
-const STAGE_DAYS = [0, 7, 14, 21];
+export const STAGE_DAYS = [0, 7, 14, 21]; // (odd.js: no arrival on a step's day)
 const CUSTOMS = ['hats', 'pebbles', 'hum', 'pebbleday'];
 const COLORS = [['red', 0xff5d73], ['blue', 0x4cc9f0], ['yellow', 0xffd23f], ['green', 0x3ddc97]];
 
