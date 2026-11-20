@@ -7,7 +7,12 @@ import { open, close, startIsland, island, sim, at, test, assert, done, shot, st
 
 const page = await open();
 const D0 = at(2026, 11, 18, 11);
-const day = async (d, h = 11) => { await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, D0 + d * DAY + (h - 11) * 3600e3); await sim(page, 1.3); await island(page, (I) => { if (I.mode === 'today') { I.hud.setPanel(null); I.mode = 'walk'; } }); };
+// (the Today board opens 1.2 to 2.2 s into a new day, by when the island's once-a-second tick comes round, and the game
+// also runs on the real clock between steps: wait twice, closing it, so it never opens in the middle of the next step)
+const day = async (d, h = 11) => {
+  await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, D0 + d * DAY + (h - 11) * 3600e3);
+  for (let i = 0; i < 2; i++) { await sim(page, 1.3); await island(page, (I) => { if (I.mode === 'today') { I.hud.setPanel(null); I.mode = 'walk'; } }); }
+};
 const talk = async (id, pick = 0) => {
   await island(page, (I, S, G, id) => { const n = I.npc(id); n.sleep = false; n.inside = false; n.away = false; I.player.x = n.x + 1.2; I.player.z = n.z; I.groundCheck(I.player, I.walkState); I.talkTo(n); }, id);
   const keys = await island(page, (I) => (I.mode === 'dialog' ? I.dlg.lines.map((l) => l.key) : []));
@@ -122,6 +127,7 @@ await test('the secret club: one clue a day; the sleepy guard wakes at noise but
   await sim(page, 1.2);
   const woke = await island(page, (I, S) => S.village.drama.woke);
   assert(woke !== null && woke !== undefined, 'noise wakes him');
+  await standAt(page, 0, 0); // (walk away first: still standing by him in Normal mode when the next day comes would wake him again)
   await day(2);
   await island(page, (I, S) => { S.odd.mode = 'sneaky'; });
   await standAt(page, -5.6, 27.6);
@@ -138,6 +144,8 @@ await test('the secret club: one clue a day; the sleepy guard wakes at noise but
   // club day: the password at the door
   await day(4);
   await standAt(page, -4, 25.4, [0, -1]);
+  // (a villager walking by right then would win [B] over the door: send them along, as tests/island/core does)
+  await island(page, (I) => { for (const n of I.npcs) if (Math.hypot(n.x - I.player.x, n.z - I.player.z) < 4) { n.x += 8; n.route = []; } });
   await island(page, (I) => I.interactions().b.fn());
   const pick = await island(page, (I, S, G, word) => I.dlg.lines[0].choices.indexOf(`cl.word.${word}`), word);
   await talkThrough(page, pick);

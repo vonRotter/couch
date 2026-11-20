@@ -314,6 +314,19 @@ await test('the magic ball in the bag (a full hotbar): a task says how to hold i
   assert(/bag: Tab/.test(r.a || '') && !r.b, JSON.stringify(r));
 });
 
+await test('a partial villager entry in a save (no pts) still gives real chat lines, never a raw key', async () => {
+  const r = await page.evaluate(async () => {
+    const { npcState } = await import('/src/scenes/solo/npcs.js');
+    const I = window.game.current, S = I.save;
+    S.npcs.mumble = { met: true };
+    const n = I.npc('mumble');
+    const keys = [];
+    for (let i = 0; i < 6; i++) keys.push(I.chatLine(n, npcState(S, 'mumble'))?.key);
+    return { keys, pts: S.npcs.mumble.pts };
+  });
+  assert(r.keys.every((k) => k && !/undefined|NaN/.test(k)) && r.pts === 0, JSON.stringify(r));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

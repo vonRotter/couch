@@ -138,7 +138,10 @@ export const NPC_IDS = Object.keys(NPCS);
 
 export function npcState(save, id) {
   if (!save.npcs[id]) save.npcs[id] = { pts: 0, talkAt: 0, giftAt: 0, ev: 0, q: 0, met: false };
-  return save.npcs[id];
+  // a partial entry (an old or hand-made save) gets the missing numbers: without pts a chat line was "isl.mumble.chatundefined"
+  const st = save.npcs[id];
+  for (const k of ['pts', 'talkAt', 'giftAt', 'ev', 'q']) if (!Number.isFinite(st[k])) st[k] = 0;
+  return st;
 }
 
 export const heartsOf = (st) => Math.min(MAX_HEARTS, Math.floor(st.pts / PTS_PER_HEART));

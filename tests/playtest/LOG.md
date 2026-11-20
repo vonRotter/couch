@@ -241,3 +241,15 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
    go weeks without one (here 44 days between the ball and Sneaky mode because every jump landed on a special day).
    Recommendation: keep "never on a special day", but let an overdue arrival (20+ days since the last) come on the
    next visited day that is not a festival.
+
+## Final suite runs
+
+- `tests/lba2/social.test.mjs` failed now and then on the final tree (2 of 3 runs): its own `day()` helper closed
+  the Today board after 1.3 s, but the board opens 1.2 to 2.2 s into a new day (the island's once-a-second tick,
+  and the game also runs on the real clock between steps), so it sometimes opened in the middle of the next step
+  (the surprise party's big moment). The helper now waits twice, like `goTo` in `lba2.mjs`; the club test walks away
+  from the sleepy guard before the next day (standing by him in Normal mode woke him again) and sends a passing
+  villager along before knocking on the club door. No assertion changed.
+- That flake showed a real fault: a villager entry in a save without `pts` (only `met`, as the test makes) gave a chat
+  line "isl.mumble.chatundefined", a raw key on screen. Fixed: `npcState` fills missing numbers (`npcs.js`), with a
+  test.
