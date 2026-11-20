@@ -94,8 +94,19 @@ export class Village {
 
   // ---------- the days: dramas and projects move on ----------
 
+  /**
+   * Did today's first visit start after 18:00? Then a drama's big moment plays on this visit (the cast waits at the
+   * place) instead of being over by then: the owner's decision after the play-test (an after-dinner player missed
+   * every big moment). A day the child never visits still ends without them (the next day's board tells how).
+   */
+  lateVisit(di = dayIndex()) {
+    const F = this.V.firstVisit;
+    return !!F && F.di === di && F.h >= 18;
+  }
+
   newDay(at) {
     const V = this.V, S = this.S, di = dayIndex(at);
+    V.firstVisit = { di, h: hourOf(at) }; // (newDay runs on the day's first visit: today.js)
     if (V.nextDrama === undefined) V.nextDrama = di + 2; // (a new island: a quiet first day)
     if (V.nextProj === undefined) V.nextProj = di + 1;
     // a drama that ended, or whose big day you missed
@@ -172,10 +183,8 @@ export class Village {
   todayNews(at) {
     const V = this.V, di = dayIndex(at), out = [];
     const D = V.drama;
-    const b0 = this.beat(D, di);
-    // (the big moment plays 10-18: a first visit after that is not told "today: ..."; the next day's board says how
-    // it ended. Play-test: "Today: the pumpkin weighing!" at 18:00, when everyone had gone home)
-    const b = b0 === 'climax' && hourOf(at) >= 18 ? null : b0;
+    // (the big moment plays 10-18, or on a first visit after 18 (lateVisit): the board can always announce it)
+    const b = this.beat(D, di);
     if (b) {
       const at2 = DRAMAS[D.id].at;
       const v = D.id === 'rivalry' && b === 'mid' ? this.scores(D) : SOCIAL[D.id]?.newsVars?.(D, b, this);
@@ -213,7 +222,7 @@ export class Village {
     if (!V || this.host.isle2?.here()) return null;
     const di = dayIndex(at), h = hourOf(at);
     const D = V.drama;
-    if (D && di === D.climax && !D.res && h >= 10 && h < 18) {
+    if (D && di === D.climax && !D.res && h >= 10 && (h < 18 || this.lateVisit(di))) {
       const i = DRAMAS[D.id].cast.indexOf(id);
       if (i >= 0) { const a = DRAMAS[D.id].at; return { spot: { x: a.x + (i ? 1.6 : -1.4), z: a.z + 1.2 }, name: `v:drama:${i}`, sleep: false, inside: false }; }
     }
@@ -359,7 +368,7 @@ export class Village {
     const D = this.S.village?.drama, host = this.host, P = host.player, di = dayIndex();
     if (!D || di !== D.climax || D.res || (host.mode !== 'walk' && !force) || !P) return;
     const h = hourOf();
-    if (h >= 18) { D.res = this.outcome(D); this.reward(D, false); this.V.resNews = { id: D.id, res: D.res, di: di + 1 }; return; }
+    if (h >= 18 && !this.lateVisit(di)) { D.res = this.outcome(D); this.reward(D, false); this.V.resNews = { id: D.id, res: D.res, di: di + 1 }; return; }
     if (h < 10) return;
     const a = DRAMAS[D.id].at;
     if (!force && (Math.hypot(P.x - a.x, P.z - a.z) > 4.5 || SOCIAL[D.id]?.waitClimax?.(D))) return;

@@ -1301,7 +1301,9 @@ on 1; counting arrivals as special too, never two on one day, and 14 days (33 %)
     it: bring a strawberry or a carrot, or let her choose). Each has a start (a rumor on the Today board, the
     villagers' "!"), a middle two days later and a **big moment** on the first free day from the fourth day on
     (no festival, surprise or rare event that day): the cast waits at the place 10-18 and it plays out when
-    you walk up (rewards and hearts if you took part). Missed it? The next day's board says how it ended.
+    you walk up (rewards and hearts if you took part); when the day's first visit starts after 18:00 (an after-dinner
+    player), the cast waits there for that visit and it plays the same way (the owner's decision after the play-test).
+    A day you never come: the next day's board says how it ended.
   - **Week-long projects**, one at a time, in different corners: **Keeper Bram's gazebo** (south-east road),
     **Aunt Hazel's new garden** (west meadow), **Pip's star lookout** (north-east, by the pad) and **Rosa's
     bandstand** (south-west, by the school), three days apart; then slowly, about one every three weeks, so the

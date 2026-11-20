@@ -57,6 +57,39 @@ await test('1. the Today board: [OK] and [BACK] only close it; saving for later 
   assert(/Spar den til senere/.test(no[0]) && /av sted/.test(no[1]), no.join(' | '));
 });
 
+/** Start a drama whose big moment is today (an island opened at `ms`, its first visit of the day). */
+async function climaxToday(ms, id = 'pumpkin') {
+  await startIsland(page, { time: ms, settle: 0 });
+  return island(page, (I, S, G, id) => {
+    const di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
+    S.village.drama = { id, start: di - 4, climax: di, told: {}, side: null, fish: 0, water: [di - 3], flavor: null, res: null };
+    S.village.firstVisit = { di, h: new Date(Date.now() + window.__islandTimeOffset).getHours() };
+    I.hud.setPanel(null); I.mode = 'walk';
+    return di;
+  }, id);
+}
+
+await test('2. a drama\'s big moment: a day\'s first visit after 18:00 plays it on that visit; a visit that began earlier still ends at 18', async () => {
+  // the first visit at 19:00 on the big day (a Wednesday, a free day)
+  const day = at(2026, 11, 18, 19);
+  await climaxToday(day);
+  const news = await island(page, (I) => I.village.todayNews(Date.now() + window.__islandTimeOffset).map((x) => x.keys[0]));
+  assert(news.includes('vd.pumpkin.news.climax'), `the board announces it: ${news}`);
+  await sim(page, 4); // the cast walks over
+  const cast = await island(page, (I) => I.village.schedule('hazel', Date.now() + window.__islandTimeOffset));
+  assert(cast && /drama/.test(cast.name), `Aunt Hazel waits at the pumpkin: ${JSON.stringify(cast)}`);
+  await island(page, (I) => { I.hud.setPanel(null); I.mode = 'walk'; const P = I.player; P.x = 4.6; P.z = -21.2; I.groundCheck(P, I.walkState); I.village.updateClimax(); });
+  const r = await island(page, (I, S) => ({ mode: I.mode, res: S.village.drama?.res, keys: I.dlg?.lines?.map((l) => l.key) }));
+  assert(r.mode === 'dialog' && r.res && r.keys.some((k) => /vd\.pumpkin\.end/.test(k)), `it plays: ${JSON.stringify(r)}`);
+  await shot(page, 'decisions-late-climax');
+  // a visit that began at 12 the same day: at 19 it is over without you (the next day's board tells how)
+  await climaxToday(at(2026, 11, 18, 12));
+  await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, at(2026, 11, 18, 19));
+  await island(page, (I) => { I.hud.setPanel(null); I.mode = 'walk'; const P = I.player; P.x = 30; P.z = 10; I.groundCheck(P, I.walkState); I.village.updateClimax(); });
+  const e = await island(page, (I, S) => ({ res: S.village.drama?.res, news: S.village.resNews, cast: I.village.schedule('hazel', Date.now() + window.__islandTimeOffset) }));
+  assert(e.res && e.news && !e.cast, `ended without you: ${JSON.stringify(e)}`);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

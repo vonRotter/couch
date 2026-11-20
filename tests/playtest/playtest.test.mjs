@@ -247,7 +247,7 @@ await test('Norwegian: a title inside a task sentence is small ("Gi tante Hassel
   assert(/^Gi tante Hassel /.test(r.q) && r.tag === 'Tante Hassel' && /^Bring Aunt Hazel /.test(r.en), JSON.stringify(r));
 });
 
-await test('the Today board does not announce what is already over at the first visit (a balloon gone at 17, a big moment over at 18)', async () => {
+await test('the Today board does not announce a surprise that is already over at the first visit (a balloon gone at 17)', async () => {
   const r = await page.evaluate(async () => {
     const C = await import('/src/scenes/solo/calendar.js');
     const I = window.game.current;
@@ -263,7 +263,9 @@ await test('the Today board does not announce what is already over at the first 
   });
   assert(r.sur === 'balloon', JSON.stringify(r));
   assert(r.morning.some((k) => /balloon/.test(k)) && !r.evening.some((k) => /balloon/.test(k)), JSON.stringify(r));
-  assert(r.dm === 1 && r.de === 0, JSON.stringify(r));
+  // (a big moment on a first visit after 18 now plays on that visit, the owner's decision: so the board announces it,
+  // see tests/playtest/decisions.test.mjs)
+  assert(r.dm === 1 && r.de === 1, JSON.stringify(r));
 });
 
 await test('the map\'s arrow never sits on the task list', async () => {

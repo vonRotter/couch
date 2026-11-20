@@ -271,3 +271,8 @@ The owner answered the six decisions: build all six, as recommended. Tests: `tes
    senere, i tilfelle du ikke kan komme") is picked with ▼ and saved with [OK]; ▲ leaves it; the hint line follows
    the row ("[OK]: off we go · ▼: save it for later"). The old path ([OK] on the board saves) is gone (`today.js`,
    `lock.js`; `tests/lively/lock.test.mjs` now checks that [OK] alone never locks and ▼ + [OK] does).
+2. **Late big moments.** A drama's big moment plays on the day's first visit when that visit starts after 18:00:
+   the cast waits at the place, the board announces it (it can be seen now), and it plays as by day
+   (`village.js lateVisit`: the first visit's hour is saved as `S.village.firstVisit`). A visit that began before 18
+   still sees it end at 18 without them, and a day never visited still ends with the next day's board telling how.
+   The earlier play-test fix that left the late big moment off the board is replaced by this.
