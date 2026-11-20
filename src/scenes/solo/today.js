@@ -342,7 +342,8 @@ export class TodayBoard {
 
   /** Map markers for today's things that have a place. */
   mapItems() {
-    const out = this.items().filter((it) => it.x !== undefined).map((it, i) => ({ key: `td:${i}`, icon: it.icon, name: itemText(it), x: it.x, z: it.z }));
+    // (a friend's letter that has been read is no longer anything to go to: play-test, the mailbox kept glowing)
+    const out = this.items().filter((it) => it.x !== undefined && !(it.k?.startsWith('td.mail') && !this.S.mail?.some((m) => m.id?.startsWith('f.')))).map((it, i) => ({ key: `td:${i}`, icon: it.icon, name: itemText(it), x: it.x, z: it.z }));
     const H = this.S.hook;
     if (H && H.kind !== 'letter' && this.spot && H.ready) out.push({ key: 'td:hook', icon: H.kind === 'egg' ? '🥚' : '🌼', name: t(H.kind === 'egg' ? 'map.a.hookEgg' : 'map.a.hookPot'), x: this.spot.x, z: this.spot.z });
     return out;

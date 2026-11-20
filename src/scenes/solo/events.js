@@ -29,9 +29,10 @@ import { settingsFor, calmOn } from '../../core/assist.js';
 
 const BEACH_FINDS = [[-2, 41], [23, 41], [14.5, 40.6]];
 const STRANDED = [[9, 40.5], [-8, 40.8]];
-// the ghost ship lies close to the west beach, side-on, so the usual view shows it from the sand (about 5 m out);
-// Captain Wisp waits at the water's edge in front of it
-const SHIP = { x: -19.5, z: 46.2, rot: 0 };
+// the ghost ship lies side-on off the west beach, out by the river mouth, so the usual view shows it beside you from
+// the sand (play-test: straight out from Captain Wisp it was between the camera and the beach, behind the hotbar at
+// the bottom of the screen); Captain Wisp waits at the water's edge, with his ship to his west
+const SHIP = { x: -26, z: 44.4, rot: 0 };
 const GLOW = 0.17; // the halo's opacity (it breathes a little around this; steady with "Reduce flashing")
 const WISP = { x: -17.6, z: 41.2 };
 const RAINBOW_ENDS = [{ x: 46, z: 18 }, { x: -16, z: -24 }, { x: 18, z: 8 }, { x: 2, z: -14 }];

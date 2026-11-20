@@ -151,7 +151,9 @@ export class EventLock {
     if (di <= L.last) { // you came on the day: no replay needed
       S.lock = null;
       S.lockNote = { di, note: 'used', ...L };
-      this.host.later?.(2.5, () => this.host.game.ui.toast(t('lk.used', { name: lockName(L) }), 3000));
+      // (said a moment later; not if a new lock was made meanwhile, say from the Today board: "free again" would then
+      // come right after "Saved for you" and read as if nothing were saved; play-test)
+      this.host.later?.(2.5, () => { if (!this.S.lock) this.host.game.ui.toast(t('lk.used', { name: lockName(L) }), 3000); });
     } else {
       const late = di - L.last; // 1, 2 or 3 days after: it plays today (a festival day of its own waits a day)
       if (late > LATE_DAYS || (festivalNative(dayMs(di)) && late === LATE_DAYS)) { S.lock = null; S.lockNote = { di, note: 'expired', ...L }; }

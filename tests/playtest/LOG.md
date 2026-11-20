@@ -85,3 +85,27 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
     bridge answers a step further west. Left as is.
 - Fixed:
   - The egg basket (or the mystery pot) is asked before the mailbox and the shipping bin (`island.js`).
+
+## Days 6-11 (Thu 26 Nov - Tue 1 Dec; days 7 and later on a fake Xbox pad at 1920x1080 for day 7)
+
+- Did: a storm morning, Pillow Keep Solo (the keep door, hero picker, town, the first floor, pause, End game back
+  to the keep door), the puzzle lock again, the fishing contest's weigh-in, Brick Bonk in the hall on the pad, the
+  bottle's treasure map, Hoot's book on the hollow tree, a meteor night, winter's first day with Skye's balloon,
+  and the fog night with the ghost ship and Captain Wisp.
+- Saw:
+  - On the pad every prompt named the pad's buttons (X use, A jump, D-pad, View, Start), the island's menu and
+    panels too. Good.
+  - The Today board on a day with a warning or a visitor's letter says "[OK]: save it · [BACK]: off we go". The key
+    a child presses every day to close the board (E / X: the use key, which picks in panels) saves the event: it
+    happened twice without meaning to (Skye's visit, then the fog night). Owner decision (see the end).
+  - Right after that save, "You were here for Skye's visit, so your lock is free again." came 2.5 s later, after
+    "Saved for you: the foggy night": it read as if nothing were saved.
+  - A friend's letter's Today item kept the mailbox glowing on the map after the letter was read.
+  - The ghost ship lay straight out from Captain Wisp, toward the camera: walking down to him it sat behind the
+    hotbar and the prompt at the bottom of the screen, and with any camera shift its mast covered the bean
+    (known issue).
+- Fixed:
+  - The "lock is free again" note is not said when a new lock was made meanwhile (`lock.js`).
+  - A read friend's letter no longer glows on the map (`today.js mapItems`).
+  - The ghost ship lies further west, out by the river mouth (`events.js SHIP`): walking up to Wisp it is in view
+    beside the bean, clear of the hotbar; his talk still swings the view to it.

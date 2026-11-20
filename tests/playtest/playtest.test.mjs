@@ -150,6 +150,61 @@ await test('the speckled egg\'s basket by the shipping bin: walking up to it, th
   assert(r.every((x) => /egg|egget/i.test(x)), r.join(' | '));
 });
 
+await test('a read friend\'s letter no longer glows on the map\'s Today list', async () => {
+  const r = await island(page, (I, S) => {
+    const day = new Date(Date.now() + (window.__islandTimeOffset || 0));
+    const key = `${day.getFullYear()}-${day.getMonth() + 1}-${day.getDate()}`;
+    const B = S.todayBoard;
+    B.items = [...B.items, { kind: 'changed', icon: '📫', k: 'td.mail.1', v: { name: '@isl.npc.rosa' }, x: -15, z: -11.2 }];
+    S.mail = [{ id: 'f.rosa.1', day: key, from: 'rosa', items: [], coins: 0 }];
+    const before = I.todayBoard.mapItems().some((m) => /mail|letter/i.test(m.name));
+    S.mail = [];
+    const after = I.todayBoard.mapItems().some((m) => /mail|letter/i.test(m.name));
+    B.items = B.items.filter((it) => it.k !== 'td.mail.1');
+    return { before, after };
+  });
+  assert(r.before && !r.after, JSON.stringify(r));
+});
+
+await test('the fog night: walking up to Captain Wisp, the ghost ship is in view beside the bean, clear of the hotbar', async () => {
+  await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, at(2026, 12, 1, 20, 30));
+  await sim(page, 2);
+  await island(page, (I) => { I.hud.setPanel(null); I.hud.setDialog(null); I.dlg = null; I.mode = 'walk'; });
+  await sim(page, 1.5);
+  const r = await island(page, (I, S, G) => {
+    I.hud.setPanel(null); I.mode = 'walk';
+    const E = I.events, P = I.player;
+    P.x = -17.6; P.z = 40.0; P.fx = 0; P.fz = 1; I.groundCheck(P, I.walkState); I.snapCamera();
+    I.camera.updateMatrixWorld();
+    const vis = E.ship.visible;
+    // the ship's screen box (its world box's corners)
+    E.ship.updateMatrixWorld(true);
+    const box = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+    const v = E.ship.position.clone();
+    const W = innerWidth, Hh = innerHeight;
+    E.ship.traverse((m) => {
+      if (!m.isMesh) return;
+      m.geometry.computeBoundingBox();
+      const bb = m.geometry.boundingBox;
+      for (const cx of [bb.min.x, bb.max.x]) for (const cy of [bb.min.y, bb.max.y]) for (const cz of [bb.min.z, bb.max.z]) {
+        v.set(cx, cy, cz).applyMatrix4(m.matrixWorld);
+        if (v.y < -0.3) continue; // (under the water: not seen)
+        v.project(I.camera);
+        const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * Hh;
+        box.x0 = Math.min(box.x0, sx); box.x1 = Math.max(box.x1, sx); box.y0 = Math.min(box.y0, sy); box.y1 = Math.max(box.y1, sy);
+      }
+    });
+    const hb = document.querySelector('.isl-hotbar').getBoundingClientRect();
+    return { vis, box, hb: { l: hb.left, r: hb.right, t: hb.top }, W, H: Hh };
+  });
+  assert(r.vis, 'the ship is out tonight');
+  const { box, hb } = r;
+  const overHotbar = box.x1 > hb.l && box.x0 < hb.r && box.y1 > hb.t;
+  assert(!overHotbar, `the ship is clear of the hotbar: ${JSON.stringify(r)}`);
+  assert(box.x1 > 0 && box.y0 < r.H * 0.75, `and on screen: ${JSON.stringify(box)}`);
+  await shot(page, 'playtest-ghost-ship');
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
