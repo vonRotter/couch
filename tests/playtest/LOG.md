@@ -152,3 +152,18 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
     list's text in the top right. Fixed: it goes just below or left of the list (`atlas.js updateCompass`).
 - (Play runs from here on use a copy of the tree on a second dev server, so editing a fix does not reload the page
   under a running play day; two days had to be played again because of that.)
+
+## Days 18-22 (Tue 8 - Sat 12 Dec; spring)
+
+- Did: Tinka's parcel (the magic ball: letter, its tutorial card, "1/3 throw the ball at a wall", throws and
+  catches), Hazel's pumpkin's gold ribbon, the speckled egg (a duckling), Pip's weather gadget warning and the
+  rainbow (dug at its end), a crab in a net (Crab Cove's second level, the museum's 5-piece prize), Grumbleton's
+  fishing tournament, Pip's star lookout, a hermit crab's shell.
+- Saw:
+  - The fishing tournament's pill (and a hop trail's) is centred at the very top: with the mode badge (Sporty mode,
+    learned on day 4) the top-left row is wider, and the pill covered the badge and half of the coins.
+  - The magic ball arrives by letter into the bag when the hotbar is full (slot 17); the letter says "Hold it", but
+    not that it is in the bag (Tab). Small; left for now, noted.
+  - Grumbleton has a "!" every day from 5 hearts (the tournament offer); the line is the same each day.
+- Fixed:
+  - The tournament's and the hop trail's pills sit under the top-left pills (`contest.js`, `hops.js`).

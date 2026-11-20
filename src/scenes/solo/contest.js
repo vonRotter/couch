@@ -14,7 +14,7 @@ import { SPOTS } from './map.js';
 // time) and coins. A draw or a loss still gets a few coins and a friendly word: nothing is ever lost.
 
 const LENGTH = 180;
-const CSS = `.isl-tour { left: 50%; top: 1.2vh; transform: translateX(-50%); background: rgba(255,250,240,.95); border: 3px solid #5a4dc0; border-radius: 999px; padding: 4px 18px;
+const CSS = `.isl-tour { left: 50%; top: calc(2.2vh + clamp(30px, 3.4vw, 50px)); transform: translateX(-50%); background: rgba(255,250,240,.95); border: 3px solid #5a4dc0; border-radius: 999px; padding: 4px 18px;
   font-weight: 700; font-size: clamp(15px, 1.5vw, 24px); white-space: nowrap; box-shadow: 0 3px 0 rgba(43,35,64,.2); }`;
 
 export class Tournament {

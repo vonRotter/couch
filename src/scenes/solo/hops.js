@@ -38,7 +38,7 @@ const RACE = { stumps: { base: 9.5, min: 6.6 }, barrels: { base: 11.5, min: 8.0 
 const FIRST_COINS = { 1: 30, 2: 50, 3: 80 };
 const SIGN_COLOR = { stumps: 0x8ac926, barrels: 0x4cc9f0, cliff: 0xff9f1c };
 const HALL_ROOF = { x: HALL.x, z: HALL.z, hw: 6, hd: 3.1, y: 4.0, ridge: 1.4 };
-const CSS = `.isl-hop { left: 50%; top: 1.2vh; transform: translateX(-50%); background: rgba(255,250,240,.95); border: 3px solid #3f9a32; border-radius: 999px; padding: 4px 18px;
+const CSS = `.isl-hop { left: 50%; top: calc(2.2vh + clamp(30px, 3.4vw, 50px)); transform: translateX(-50%); background: rgba(255,250,240,.95); border: 3px solid #3f9a32; border-radius: 999px; padding: 4px 18px;
   font-weight: 700; font-size: clamp(15px, 1.5vw, 24px); white-space: nowrap; box-shadow: 0 3px 0 rgba(43,35,64,.2); }
 .isl-count { left: 50%; top: 36%; transform: translate(-50%, -50%); font-size: clamp(60px, 10vw, 150px); font-weight: 800; color: #fff; paint-order: stroke fill; -webkit-text-stroke: .12em #2b2340; }`;
 

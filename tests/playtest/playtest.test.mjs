@@ -285,6 +285,21 @@ await test('the map\'s arrow never sits on the task list', async () => {
   assert(!r.length, `on the task list for: ${r.join(', ')}`);
 });
 
+await test('the fishing tournament\'s and a hop trail\'s pills sit under the top-left pills (they covered the mode badge)', async () => {
+  await island(page, (I, S) => { S.odd = S.odd || {}; S.odd.modes = { sporty: true }; S.odd.mode = 'normal'; I.hud.setPanel(null); I.mode = 'walk'; });
+  await sim(page, 0.3);
+  await island(page, (I) => I.tour.start());
+  await sim(page, 0.5);
+  const r = await page.evaluate(() => {
+    const top = [...document.querySelectorAll('.isl-top > *')].map((e) => e.getBoundingClientRect());
+    const tour = document.querySelector('.isl-tour').getBoundingClientRect();
+    const hit = top.some((a) => !(a.right <= tour.left || tour.right <= a.left || a.bottom <= tour.top || tour.bottom <= a.top));
+    return { hit, n: top.length, tour: [tour.left, tour.top, tour.right, tour.bottom] };
+  });
+  assert(r.n >= 3 && !r.hit, JSON.stringify(r));
+  await island(page, (I) => { I.tour.run = null; I.npc('grumbleton').busy = false; I.toasts.clear(); });
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
