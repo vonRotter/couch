@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { t, addStrings } from '../../core/i18n.js';
 import { Character } from '../../core/character.js';
 import { now } from './save.js';
-import { dayIndex, dayKey, freeDay, weekIndex } from './calendar.js';
+import { dayIndex, dayKey, freeDay, weekIndex, festivalOn } from './calendar.js';
 import { heightAt } from './map.js';
 import { puzzleDue } from './puzzles.js';
 import { Modes } from './modes.js';
@@ -121,13 +121,25 @@ export function quietDay(S, at) {
   return !puzzleComes(S, at);
 }
 
+/**
+ * Overdue: 20 days or more since the last arrival (or since the round began, before the first). A child who visits
+ * mostly at weekends or on special days then gets the next one on the next visited day that is not a festival (a
+ * storm, a surprise or a big moment no longer holds it back; the owner's decision after the play-test). Puzzle locks,
+ * the folk's settling steps and a drama's first day still do.
+ */
+export const OVERDUE = 20;
+export function overdue(S, at) {
+  const O = oddSave(S, dayIndex(at)), di = dayIndex(at);
+  return di - (O.last > -1e8 ? O.last : O.first) >= OVERDUE;
+}
+
 /** The arrival due on this day (pure, for tests): the first in order not come yet that is ready, or null. */
 export function arrivalDue(S, at) {
   if (!S.intro) return null;
   const O = oddSave(S, dayIndex(at)), di = dayIndex(at);
   if (di < O.first + FIRST_AFTER || di - O.last < GAP) return null;
   if (Object.values(O.got).includes(di)) return null;
-  if (!quietDay(S, at)) return null;
+  if (overdue(S, at) ? festivalOn(at) || puzzleComes(S, at) : !quietDay(S, at)) return null;
   // the folk's next step (a house, the pebble circle, the drums) is that day's new thing: nothing else arrives then
   if (O.got.folk !== undefined && FOLK_STEPS.includes(di - O.got.folk) && di > O.got.folk) return null;
   // nor on the day a villagers' drama or social happening starts (its first news is that day's new thing; the

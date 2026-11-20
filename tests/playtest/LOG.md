@@ -286,3 +286,11 @@ The owner answered the six decisions: build all six, as recommended. Tests: `tes
    (`events.js liveWeek`, `M.ext`; its key spot, pictures and season gift stay the chapter's own); the next week's
    page waits until it ends, so there is never more than one dig at a time. A chapter started earlier in the week
    still ends with its week.
+6. **Overdue odd-adventure arrivals.** When 20 days or more have passed since the last arrival (or since the round
+   began), the next one comes on the next visited day that is not a festival; storms, surprises and big moments no
+   longer hold it back then, while a puzzle lock's day, a folk settling step and a drama's first day still do
+   (`odd.js overdue`). Daily visitors are unchanged (sixteen arrivals over 30 weeks, 9 to 13 days apart, none on a
+   special day). A weekend-only visitor over 210 simulated days (`tests/lba2/pace.test.mjs`): before, 7 arrivals and
+   a longest wait of 76 days (the first on day 41); after, 10 arrivals and a longest wait of 28 days. On the island
+   itself, twelve weeks of weekend visits (`tests/lively/density.test.mjs`): before, no arrival at all; after, three
+   (days 27, 54, 76), never on a festival, the Today board never over its three things.

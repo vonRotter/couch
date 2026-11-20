@@ -10,14 +10,16 @@ import { open, close, startIsland, island, at, test, assert, done, oddSave } fro
 const page = await open();
 const D0 = at(2026, 11, 16, 10); // a Monday
 
-async function simulate(days, eager) {
-  return page.evaluate(async ([d0, days, eager]) => {
+async function simulate(days, eager, weekendsOnly = false) {
+  return page.evaluate(async ([d0, days, eager, weekendsOnly]) => {
     const O = await import('/src/scenes/solo/odd.js'), C = await import('/src/scenes/solo/calendar.js'), Z = await import('/src/scenes/solo/puzzles.js');
     const I = window.game.current, S = I.save;
     S.odd = undefined; S.village = {}; S.puzzles = {}; S.intro = true;
     const log = [];
     for (let d = 0; d < days; d++) {
       const at = d0 + d * 86400000, di = C.dayIndex(at);
+      const wd = new Date(at).getDay();
+      if (weekendsOnly && wd !== 0 && wd !== 6) continue; // (a child who only comes at weekends: the other days are never visited)
       I.village.newDay(at); // the dramas move on first (as today.js does)
       const id = O.arrivalDue(S, at);
       const D = S.village.drama, climax = !!D && D.climax === di && !D.res, dramaStart = !!D && D.start === di;
@@ -37,7 +39,7 @@ async function simulate(days, eager) {
       log.push({ d, di, id, fest: C.festivalOn(at), sur: C.surpriseOn(at), rare: C.rareEventOn(at), climax, puzzle, folkStep, dramaStart });
     }
     return log;
-  }, [D0, days, eager]);
+  }, [D0, days, eager, weekendsOnly]);
 }
 
 await test('an eager child: sixteen arrivals over about five months, one at a time, at least nine days apart (about one every ten), only on quiet days', async () => {
@@ -65,6 +67,22 @@ await test('a child who takes nothing up: what builds on something waits; the re
   const arr = log.filter((x) => x.id).map((x) => x.id);
   console.log(`   arrived: ${arr.join(', ')}`);
   assert(!arr.includes('sneaky') && !arr.includes('booths') && !arr.includes('moss') && !arr.includes('sun') && arr.includes('folk') && arr.includes('whale'), arr.join());
+});
+
+await test('a child who only comes at weekends: an overdue arrival (20 days and more since the last) comes on the next visited day that is not a festival; never two a day', async () => {
+  const log = await simulate(210, true, true);
+  const arr = log.filter((x) => x.id);
+  const gaps = arr.slice(1).map((x, i) => x.d - arr[i].d);
+  const first = arr.length ? arr[0].d : null;
+  const longest = Math.max(first ?? 210, ...gaps, 210 - (arr.length ? arr[arr.length - 1].d : 0));
+  console.log(`   weekends only: ${arr.length} arrivals in 30 weeks: ${arr.map((x) => `${x.id} d${x.d}${x.sur || x.rare || x.climax ? ' (overdue, on a special day)' : ''}`).join(', ')}`);
+  console.log(`   days between arrivals: ${gaps.join(', ')}; longest wait ${longest}`);
+  assert(arr.every((x) => !x.fest && !x.puzzle && !x.folkStep && !x.dramaStart), `never on a festival, a puzzle day, a folk step or a drama's first day: ${JSON.stringify(arr)}`);
+  assert(new Set(arr.map((x) => x.d)).size === arr.length && Math.min(...gaps) >= 9, `one at a time: ${gaps}`);
+  // on a special day only when overdue
+  const special = arr.filter((x) => x.sur || x.rare || x.climax);
+  assert(special.every((x) => { const i = arr.indexOf(x); return i === 0 ? x.d >= 20 : x.d - arr[i - 1].d >= 20; }), JSON.stringify(special));
+  assert(longest <= 35, `no arrival waits much longer than the first non-festival weekend after 20 days: longest ${longest}`);
 });
 
 await test('an old island (no odd-adventure save): nothing on the first days, then the first arrival', async () => {
