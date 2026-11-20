@@ -129,6 +129,30 @@ await test('4. Grumbleton\'s tournament "!" only on Wednesdays and on the first 
   assert(rows.filter((r) => r.wd !== 0 && r.wd !== 6).every((r) => r.asks), `he still asks on the other days: ${JSON.stringify(rows)}`);
 });
 
+await test('5. a torn page given on the week\'s last two days stays three days more; then the next chapter; never two at once', async () => {
+  const chapter = async (startMs, days) => {
+    await startIsland(page, { time: startMs });
+    await island(page, (I) => { I.hud.setPanel(null); I.mode = 'walk'; });
+    const ok = await island(page, (I) => { const h = I.npc('hoot'); if (!I.events.hasNews('hoot')) return false; I.events.talk(h, () => {}); I.hud.setDialog(null); I.dlg = null; I.hud.setPanel(null); I.mode = 'walk'; return true; });
+    assert(ok, 'Hoot has the page');
+    const out = [];
+    for (const d of days) {
+      await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, startMs + d * DAY);
+      await sim(page, 1.2);
+      out.push(await island(page, (I, S) => ({ d: 0, task: I.events.tasks()[0] || '', mound: I.events.mound.visible, hoot: I.events.hasNews('hoot'), step: S.mystery.step })));
+    }
+    return out.map((r, i) => ({ ...r, d: days[i] }));
+  };
+  // given on a Sunday (22 Nov 2026, the summer week's last day): Monday to Wednesday it stays, Thursday it is gone
+  const sun = await chapter(at(2026, 11, 22, 11), [1, 2, 3, 4]);
+  assert(sun.slice(0, 3).every((r) => /dig at the X/.test(r.task) && r.mound && !r.hoot && r.step === 1), `three more days: ${JSON.stringify(sun)}`);
+  assert(sun[3].step === 0 && !sun[3].task && !sun[3].mound, `then gone: ${JSON.stringify(sun[3])}`);
+  assert(sun[3].hoot, `and the new week's chapter can start: ${JSON.stringify(sun[3])}`);
+  // given on a Wednesday: gone with its week, as before
+  const wed = await chapter(at(2026, 11, 18, 11), [5]);
+  assert(wed[0].step === 0 && !wed[0].task, JSON.stringify(wed));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

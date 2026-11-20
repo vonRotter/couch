@@ -282,3 +282,7 @@ The owner answered the six decisions: build all six, as recommended. Tests: `tes
    stay, and the puzzle-lock hold-back during the farming steps stays. Old islands have no `S.born`: unchanged.
 4. **Grumbleton's tournament "!".** Only on Wednesdays and on the first day the 5-heart offer is there
    (`contest.js newsToday`, `S.tour.five`); on other days he still asks when you talk to him.
+5. **A late torn page lasts longer.** A chapter started on the week's last two days stays open three more days
+   (`events.js liveWeek`, `M.ext`; its key spot, pictures and season gift stay the chapter's own); the next week's
+   page waits until it ends, so there is never more than one dig at a time. A chapter started earlier in the week
+   still ends with its week.

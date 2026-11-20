@@ -333,16 +333,30 @@ export class IslandEvents {
   /** The pictures on this week's page, in order. */
   get code() { return (this.code3 || []).slice(0, this.lockLen()); }
 
+  /**
+   * The chapter's week, while it lasts: its own week, and three days more when it was started on the week's last two
+   * days (M.ext: the owner's decision after the play-test, a torn page given on a Sunday was gone on Monday). Only one
+   * chapter at a time: the next one's page waits until this one ends.
+   */
+  liveWeek(at = now()) {
+    const M = this.M, w = weekIndex(at);
+    if (M.week === null || M.week === undefined) return null;
+    if (M.week === w) return w;
+    if (M.week === w - 1 && M.step > 0 && M.step < 4 && Number.isFinite(M.ext) && dayIndex(at) <= M.ext) return M.week;
+    return null;
+  }
+
   /** Is this week's chapter open (a season whose chapter was not done in the last eight weeks)? */
   chapterOpen(at = now()) {
     const M = this.M, w = weekIndex(at), s = seasonOf(at);
     if (M.week === w) return M.step < 4;
+    if (this.liveWeek(at) !== null) return false; // (last week's chapter still runs: its three extra days)
     return M.done[s] === undefined || w - M.done[s] >= SEASON_GAP;
   }
 
   tickMystery(at) {
-    const M = this.M, w = weekIndex(at);
-    if (M.week !== w && M.week !== null && M.step > 0) { M.week = null; M.step = 0; } // a week ends: a half-done chapter is gone
+    const M = this.M, live = this.liveWeek(at), w = live ?? weekIndex(at);
+    if (live === null && M.week !== null && M.step > 0) { M.week = null; M.step = 0; M.ext = null; } // a week (and its extra days) ends: a half-done chapter is gone
     if (M.week === w || M.week === null) {
       const k = Math.floor(dayRand(`mkey:${w}`) * KEY_SPOTS.length);
       if (!this.keyAt || this.keyW !== w) { this.keyW = w; this.keyAt = { ...this.host.map.findSpot(KEY_SPOTS[k].x, KEY_SPOTS[k].z, 0.5), near: KEY_SPOTS[k].near }; }
@@ -366,6 +380,10 @@ export class IslandEvents {
     const M = this.M;
     M.week = weekIndex();
     M.step = 1;
+    M.season = seasonOf();
+    // started on the week's last two days (weeks start on Monday: weekIndex): it stays open three days more
+    const di = dayIndex(), last = 4 + M.week * 7 + 6;
+    M.ext = di >= last - 1 ? last + 3 : null;
     this.tickMystery(now());
     this.host.say([{ who: 'hoot', key: 'mys.hoot.1', fx: () => { n.hop = 1; } }, { who: 'hoot', key: 'mys.hoot.2' }], () => { done(); this.showPage(); });
     this.host.markDirty();
@@ -450,9 +468,9 @@ export class IslandEvents {
   }
 
   openChest() {
-    const host = this.host, M = this.M, s = seasonOf();
+    const host = this.host, M = this.M, s = M.season || seasonOf();
     M.step = 4;
-    M.done[s] = weekIndex();
+    M.done[s] = M.week ?? weekIndex();
     M.n = (M.n || 0) + 1;
     this.chest.visible = false;
     const pos = this.chest.position.clone().add(new THREE.Vector3(0, 0.8, 0));
@@ -464,8 +482,8 @@ export class IslandEvents {
   }
 
   tasks() {
-    const M = this.M, w = weekIndex();
-    if (M.week !== w) return [];
+    const M = this.M, w = this.liveWeek();
+    if (w === null || M.week !== w) return [];
     if (M.step === 1) return [t('mys.task.dig', { where: t(`mys.where.${this.keyAt?.near || 'home'}`) })];
     if (M.step === 2) return [t('mys.task.door')];
     if (M.step === 3) return [t('mys.task.chest')];

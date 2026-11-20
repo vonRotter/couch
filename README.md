@@ -1340,7 +1340,9 @@ on 1; counting arrivals as special too, never two on one day, and 14 days (33 %)
   setting, which Help me play does not have yet) (a one-screen puzzle: ◀ ▶ choose, [OK] puts one in, [C] takes one back; after a wrong try
   the lock shows the pictures). Behind it, a chest with the season's gift (star fruit seeds, pearls, golden
   acorns or cocoa) and 80 coins. Each season's chapter comes back at most every eight weeks; an unfinished
-  chapter ends with its week. The Tasks list shows the next step.
+  chapter ends with its week, except one started on the week's last two days (Saturday or Sunday): it stays open three
+  days more, and the next chapter's page waits until it ends, so there is never more than one dig at a time (the
+  owner's decision after the play-test). The Tasks list shows the next step.
 - **Calm music and ambience** (`soundscape.js`, `core/audio.js`): the island plays a calm track for the time
   of day (morning 5-11, day 11-17, evening 17-21, night), with a winter version of each in winter weeks
   (slower, higher, soft bells); changes crossfade over a few seconds. Calm tracks have no hi-hats, a half-note
