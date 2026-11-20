@@ -169,3 +169,32 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   - The tournament's and the hop trail's pills sit under the top-left pills (`contest.js`, `hops.js`).
   - Until the first throw, a task says how to hold the magic ball: its hotbar key, or "it is in your bag: Tab"
     (`magicball.js tasks`, English and Norwegian).
+
+## Days 23-26 (Sun 13 - Wed 16 Dec; summer from Monday)
+
+- Did: a bottle's treasure map, Rosa's secret cake (asked what goes in it), a flipped crab, Skye's letter (the board
+  saved her visit again on the use key), the Stump Hop with no falls (a trial, silver in moving and steering, Pip's
+  race), the summer torn page, Pip's star lookout finished, Rosa's 6-heart event, and the lighthouse story's
+  chapter 1 starting (Bram's letter, the read-aloud scene in the square with Grumbleton).
+- Saw:
+  - Name tags of walking villagers sometimes look smudged in screenshots; at rest they are crisp (a capture of the
+    motion, not a rendering fault). Left as is.
+  - Grumbleton's "!" every day since 5 hearts, always the same tournament offer: owner decision (see the end).
+  - Day 26 had no Today board at all (nothing new): fine, the board is never filler.
+  - No raw string keys, no console errors in any of these days.
+
+## Days 27-29 (Thu 17 - Sat 19 Dec; day 29 on the fake pad at 1920x1080)
+
+- Did: Grumbleton's storm warning (the board saved it on the use key, a third time), Skye's goggles on the Stump Hop,
+  the summer chapter's key and the old lock (now two pictures: forgiving timing is on since day 13), the storm's
+  finds and a crab in a net, the lighthouse story's chapter 2 (Lighthouse Caves), Beach Day on the pad, the
+  magic ball, a fishing tournament, Paddle Pals in the hall (its tutorial, pause).
+- Saw:
+  - Paddle Pals paused during its tutorial: the step box ("3/3 Hit the ball with your paddle's edge...") stood
+    over the pause menu's last rows.
+  - The tournament pill now sits under the top-left pills on the pad's 1920x1080 screen too, and the map's arrow
+    stays left of the task list.
+  - The cliff door's puzzle lock has waited since day 3 (never solved): by design no other lock comes meanwhile.
+  - Sneaky mode had not come by day 29 (the ball came on day 18; days 27-29 were special days).
+- Fixed:
+  - A tutorial's step box hides while the pause menu is open (`main.js`, `style.css`).

@@ -519,12 +519,14 @@ class Game {
       // of its own: hidden while paused, back as it was after (play-test: Echo Bells' "Play again" over "Resume")
       this.pause.hid = [...this.ui.center.children].filter((e) => e !== this.pause.el && e.style.display !== 'none').map((e) => [e, e.style.display]);
       for (const [e] of this.pause.hid) e.style.display = 'none';
+      this.ui.root.classList.add('is-paused'); // (a tutorial's step box hides too: style.css)
     } else this.pause.el.innerHTML = html;
   }
 
   closePause() {
     this.pause?.el?.remove();
     for (const [e, d] of this.pause?.hid || []) e.style.display = d;
+    this.ui.root.classList.remove('is-paused');
     this.pause = null;
   }
 

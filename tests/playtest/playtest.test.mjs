@@ -121,17 +121,18 @@ await test('in the Game Hall toasts go up under the clock, clear of the cabinet\
   await sim(page, 3.5);
 });
 
-await test('pausing over a game\'s card hides the card until the pause menu closes', async () => {
+await test('pausing over a game\'s card (or a tutorial step box) hides it until the pause menu closes', async () => {
   const r = await page.evaluate(() => {
     const G = window.game, card = G.ui.panel('<b>Play again</b>', 'panel test-card');
+    const tip = document.createElement('div'); tip.className = 'teach-tip teach-box'; tip.textContent = '3/3 Hit the ball'; G.ui.labels.appendChild(tip);
     G.openPause();
-    const hidden = card.style.display === 'none';
+    const hidden = card.style.display === 'none', tipHidden = getComputedStyle(tip).display === 'none';
     G.closePause();
-    const back = card.style.display !== 'none';
-    card.remove();
-    return { hidden, back };
+    const back = card.style.display !== 'none', tipBack = getComputedStyle(tip).display !== 'none';
+    card.remove(); tip.remove();
+    return { hidden, back, tipHidden, tipBack };
   });
-  assert(r.hidden && r.back, JSON.stringify(r));
+  assert(r.hidden && r.back && r.tipHidden && r.tipBack, JSON.stringify(r));
 });
 
 await test('the speckled egg\'s basket by the shipping bin: walking up to it, the basket answers (not the bin)', async () => {
