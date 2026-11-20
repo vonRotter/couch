@@ -19,6 +19,7 @@ export async function standAt(page, x, z, face = null) {
     P.x = x; P.z = z; P.lx = undefined; P.vx = 0; P.vz = 0;
     I.groundCheck(P, I.walkState);
     if (face) { P.fx = face[0]; P.fz = face[1]; P.ch.face(face[0], face[1]); }
+    I.snapCamera(); // (the view jumps along, as after a teleport: the camera does not glide over from far away)
   }, [x, z, face]);
 }
 

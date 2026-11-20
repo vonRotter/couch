@@ -334,7 +334,12 @@ export class Inventor {
     if (this.lhSay) {
       this.lhT += dt;
       const pos = new THREE.Vector3(LH.say.x, heightAt(LH.say.x, LH.say.z) + LH.say.up, LH.say.z);
-      if (this.lhT > 6 || host.mode !== 'walk') { this.lhSay = null; this.bubble.style.display = 'none'; return; }
+      if (this.lhT > 6 || host.mode !== 'walk') {
+        // cut off at once (the Today board of a new day, a letter...): the day's line was not really heard, so it is
+        // given back and comes the next time you walk by
+        if (this.lhT < 2 && host.mode !== 'walk' && this.lhKey) { V.day = null; V.said = V.said.filter((x) => !(x.k === this.lhKey && x.di === dayIndex())); }
+        this.lhSay = null; this.lhKey = null; this.bubble.style.display = 'none'; return;
+      }
       if (this.bubble.textContent !== this.lhSay) this.bubble.textContent = this.lhSay;
       host.game.ui.place(this.bubble, pos, host.camera);
       return;
@@ -347,6 +352,7 @@ export class Inventor {
     V.day = day;
     V.said = [...V.said.filter((x) => di - x.di < 60), { k, di }];
     this.lhSay = t(k);
+    this.lhKey = k;
     this.lhT = 0;
     speak(this.lhSay, { speaker: 'isl.lighthouse' });
     host.markDirty();

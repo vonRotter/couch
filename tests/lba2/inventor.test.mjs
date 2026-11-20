@@ -98,6 +98,11 @@ await test('the joke robot: three jokes not told in four weeks, once a day, a sm
 });
 
 await test('the talking lighthouse: one short kind line a day by its door, in its own voice', async () => {
+  // a new day: its Today board comes up first and cuts off a line just begun (the line is given back)
+  await standAt(page, 44, 31.4, [0, -1]);
+  await sim(page, 0.5);
+  const cut = await island(page, (I, S) => ({ mode: I.mode, said: S.odd.inv.voice.said.length, day: S.odd.inv.voice.day }));
+  if (cut.mode !== 'walk') assert(cut.said === 0 && !cut.day, `a line cut off by ${cut.mode} is given back: ${JSON.stringify(cut)}`);
   await standAt(page, 44, 31.4, [0, -1]);
   await sim(page, 0.5);
   const r = await island(page, (I, S) => ({ said: S.odd.inv.voice.said.length, bubble: I.odd.inventor.bubble.style.display !== 'none' && I.odd.inventor.bubble.textContent }));
