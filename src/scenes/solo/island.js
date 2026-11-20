@@ -2339,6 +2339,8 @@ export class SoloIslandScene extends BaseScene {
       const inHall = this.mode === 'walk' && Math.abs(P.x - HALL.x) < 5.4 && P.z - HALL.z > -2.4 && P.z - HALL.z < 2.6 && (P.fy ?? P.y) < 1.2;
       const want = inHall ? 1 : 0, was = this.hallCam || 0;
       this.hallCam = dt ? was + (want - was) * Math.min(1, dt * 3) : want;
+      // in the hall the cabinet's name tag floats where toasts show: toasts go up under the clock instead (hud.js)
+      this.game.ui.toastEl?.classList.toggle('isl-toasts-high', this.hallCam > 0.5);
       const h = this.hallCam, up = CAM_UP + (HALL_UP - CAM_UP) * h, back = CAM_BACK + (HALL_BACK - CAM_BACK) * h;
       const roof = this.map.hall?.userData.roof;
       if (roof && roof[0].visible !== h < 0.5) for (const r of roof) r.visible = h < 0.5;

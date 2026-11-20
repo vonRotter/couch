@@ -82,7 +82,7 @@ export class ToastQueue {
 
   dispose() {
     this.clear();
-    this.ui.toastEl?.classList.remove('isl-toasts');
+    this.ui.toastEl?.classList.remove('isl-toasts', 'isl-toasts-high');
     if (Object.prototype.hasOwnProperty.call(this.ui, 'toast')) delete this.ui.toast;
     if (this.ui.toast !== this.orig) this.ui.toast = this.orig;
   }

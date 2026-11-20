@@ -102,6 +102,37 @@ await test('a quest for a crop that does not grow this season says when it does'
   assert(/lettuce grows in spring or winter/.test(r), r);
 });
 
+await test('in the Game Hall toasts go up under the clock, clear of the cabinet\'s name tag', async () => {
+  await island(page, (I) => { I.mode = 'walk'; const P = I.player; P.x = 27 - 4.4 + 4 * 1.1; P.z = -15 - 0.85 + 0.2; P.fx = 0; P.fz = -1; I.groundCheck(P, I.walkState); });
+  await sim(page, 1.5);
+  await island(page, (I, S, G) => G.ui.toast('Coach Bo: Echo Bells trains your memory. Listen, watch, then ring it back!', 3000));
+  await sim(page, 0.4);
+  const r = await page.evaluate(() => {
+    const tag = [...document.querySelectorAll('.label.isl-tag')].find((e) => e.style.display !== 'none' && /Best|not played|new/i.test(e.textContent) || e.style.display !== 'none' && e.textContent.length > 0 && e.getBoundingClientRect().top < 300);
+    const toast = document.querySelector('.ui-toast .toast');
+    const a = tag?.getBoundingClientRect(), b = toast?.getBoundingClientRect();
+    return { tag: tag?.textContent, a: a && { t: a.top, b: a.bottom, l: a.left, r: a.right }, b: b && { t: b.top, b: b.bottom, l: b.left, r: b.right } };
+  });
+  assert(r.a && r.b, JSON.stringify(r));
+  const overlap = !(r.a.b <= r.b.t || r.b.b <= r.a.t || r.a.r <= r.b.l || r.b.r <= r.a.l);
+  assert(!overlap, `the toast and the tag do not overlap: ${JSON.stringify(r)}`);
+  await shot(page, 'playtest-hall-toast');
+  await sim(page, 3.5);
+});
+
+await test('pausing over a game\'s card hides the card until the pause menu closes', async () => {
+  const r = await page.evaluate(() => {
+    const G = window.game, card = G.ui.panel('<b>Play again</b>', 'panel test-card');
+    G.openPause();
+    const hidden = card.style.display === 'none';
+    G.closePause();
+    const back = card.style.display !== 'none';
+    card.remove();
+    return { hidden, back };
+  });
+  assert(r.hidden && r.back, JSON.stringify(r));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

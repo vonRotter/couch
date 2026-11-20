@@ -47,3 +47,21 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   - The Today items of a new island's first day are worked out once the welcome is done (journal and map).
   - Zip-Zap hints name its hotbar key (1-9, or the pad's hotbar buttons) when it is on the hotbar (`zapKey`).
   - A quest's crop that does not grow this season (no greenhouse yet) gets "(lettuce grows in spring or winter.)".
+
+## Day 2 (Sun 22 Nov, Beach Day again)
+
+- Did: the Today board (Beach Day, Bram's planks rumor, the speckled egg), everyone with a "!" (Grumbleton's lost
+  feather, Pip's rocket on the hall roof, Hoot's torn page: the seasonal mystery), harvest and replant, ship,
+  fishing on the pier (three fish, a trial and gold in timing), Echo Bells in the Game Hall (card, play, pause),
+  the menu, the bag, the help card and the emote wheel.
+- Saw:
+  - In the Game Hall the cabinet's name tag sits exactly where toasts show, and Coach's line about the game comes
+    the moment you walk up to it: the tag was hidden behind the toast (known issue).
+  - Esc on Echo Bells' result card: the pause menu ("Resume, Retry, ...") and the result card ("Play again, Back
+    to the Game Hall") on screen together, one over the other.
+  - Day 2 of a new island brings five new things: Beach Day, Pip's daily task, Grumbleton's feather quest,
+    Hoot's torn page (the season's mystery) and the speckled egg. Owner decision (see the end).
+- Fixed:
+  - In the hall (its low camera) toasts go up under the clock pills, clear of the cabinet tag (`island.js`,
+    `hud.js`).
+  - The pause menu hides any other card while it is open and puts it back after (`main.js`).

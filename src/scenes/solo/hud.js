@@ -85,6 +85,7 @@ const CSS = `
 @keyframes isl-bob { 50% { margin-top: -6px; } }
 /* toasts on the island (toasts.js): one at a time, wrapped, and narrow enough to stay clear of the task list */
 .ui-toast.isl-toasts .toast { max-width: calc(36vw / var(--ts, 1)); text-align: center; border-radius: 22px; line-height: 1.25; }
+.ui-toast.isl-toasts.isl-toasts-high { top: calc(2.4vh + clamp(30px, 3.4vw, 50px)); }
 `;
 
 export function injectHudStyle() { injectStyle(); }

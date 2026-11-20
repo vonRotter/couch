@@ -513,12 +513,18 @@ class Game {
     const html = `<div class="results-title">${t('pause.title')}</div>
       <div class="pause-list">${items.map((k, i) => `<div class="pause-item ${i === this.pause.index ? 'on' : ''}">${label(k)}</div>`).join('')}</div>
       <div class="results-footer">${t('pause.hint')}</div>`;
-    if (!this.pause.el) this.pause.el = this.ui.panel(html, 'panel pause');
-    else this.pause.el.innerHTML = html;
+    if (!this.pause.el) {
+      this.pause.el = this.ui.panel(html, 'panel pause');
+      // another card already up (a game's result card, a level card) would stand beside the pause menu with buttons
+      // of its own: hidden while paused, back as it was after (play-test: Echo Bells' "Play again" over "Resume")
+      this.pause.hid = [...this.ui.center.children].filter((e) => e !== this.pause.el && e.style.display !== 'none').map((e) => [e, e.style.display]);
+      for (const [e] of this.pause.hid) e.style.display = 'none';
+    } else this.pause.el.innerHTML = html;
   }
 
   closePause() {
     this.pause?.el?.remove();
+    for (const [e, d] of this.pause?.hid || []) e.style.display = d;
     this.pause = null;
   }
 
