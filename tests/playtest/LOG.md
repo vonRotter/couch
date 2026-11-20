@@ -198,3 +198,46 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   - Sneaky mode had not come by day 29 (the ball came on day 18; days 27-29 were special days).
 - Fixed:
   - A tutorial's step box hides while the pause menu is open (`main.js`, `style.css`).
+
+## Day 30 and a jump ahead (Sun 20 Dec, then 30 Dec, 9 Jan, 19-22 Jan)
+
+- Did: Beach Day at 1920x1080 (a record on the Stump Hop: 3.8 s, Coco the hermit crab still waiting for a shell),
+  then jumps of ten days to see the later odd adventures: Rosa's bandstand finished, a winter torn page, the
+  fence happening (Rosa and Coach Bo: picked the flowers; the next board said "Rosa's flowers won the fence"),
+  Marlo's cart (bought the moon cheese and a rubber duck pond), Hoot's bird hide going up, and on Thu 21 Jan
+  Mumble's letter and Sneaky mode (his lesson, its tutorial card, "You learned Sneaky mode! R switches.").
+- Saw:
+  - The odd-adventure pace held: Sporty mode on day 4, the magic ball on day 18, then nothing until the first quiet
+    day this child visited (each jump happened to land on a storm, a surprise or a festival), Sneaky mode on day 62.
+    One a visit at most, never on a special day. For a child who visits mostly at weekends (festival weekends) the
+    gaps grow long; owner decision below.
+  - No raw string keys and no console errors on any visited day (the only console lines were the second dev
+    server's own 403s for files outside its folder, not the game).
+
+## Owner decisions (not changed: each with a recommendation)
+
+1. **The Today board's [OK] saves an event "for later".** On a day with a warning or a visitor's letter the board
+   says "[OK]: save it · [BACK]: off we go". [OK] is E / A, the key a child presses every day to close every
+   panel, so the event got saved without meaning to on four of the days played (Skye twice, the fog, the storm,
+   the rainbow), followed by "Saved for you: ..." toasts. Recommendation: [OK] (and [B]) close the board as on
+   other days, and saving takes its own row on the board ("🔒 Save it for later", picked with the stick), or [C].
+2. **A new island's first days are crowded.** Day 1 (a Saturday) had the welcome, the farming steps, Beach Day and
+   today's crab; day 2 had five new things (Beach Day again, Pip's little task, Grumbleton's feather quest, Hoot's
+   torn page: the season's mystery, the speckled egg). The puzzle lock is now held back (fixed), but the rest is
+   calendar and design. Recommendation: for a profile's first three days, no seasonal mystery, no daily little
+   task and no tomorrow hook (the calendar's festival and crab stay), so the farming steps and meeting everyone come
+   first.
+3. **The seasonal mystery ends with its week.** The torn page Hoot gave on a Sunday (the week's last day) was gone
+   on Monday with a new season's chapter, before the child could dig. Recommendation: a chapter started on the
+   last two days of its week stays open until the next chapter starts, or for three more days.
+4. **Dramas' big moments are 10-18 only.** A child who plays after dinner misses every big moment (seen on the
+   pumpkin weighing at 18:00). The board no longer announces one that is over (fixed), and the next day's board
+   tells how it ended. Recommendation: keep the cast at the place until 20:00 (the villagers' homes from 20-21 on),
+   or let the big moment play on the first visit of the day when that visit is after 18.
+5. **Grumbleton's tournament "!" every day** from 5 hearts, always the same offer and the same line ("Hee! How about
+   a fishing contest?"). Recommendation: the "!" only on Wednesdays (the tournament day) and the first day it is
+   offered; the offer stays when you talk to him.
+6. **Arrivals of the odd adventures need a quiet day that the child visits.** A weekend or special-day player can
+   go weeks without one (here 44 days between the ball and Sneaky mode because every jump landed on a special day).
+   Recommendation: keep "never on a special day", but let an overdue arrival (20+ days since the last) come on the
+   next visited day that is not a festival.
