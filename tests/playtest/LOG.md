@@ -253,3 +253,10 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
 - That flake showed a real fault: a villager entry in a save without `pts` (only `met`, as the test makes) gave a chat
   line "isl.mumble.chatundefined", a raw key on screen. Fixed: `npcState` fills missing numbers (`npcs.js`), with a
   test.
+
+## Review of the screenshots
+
+- At 1920x1080 on day 29 the map's arrow sat on the fishing tournament's pill ("Grumbleton 0"): the arrow kept off
+  the task list but not off the pills in the top middle. Fixed: it goes just below a tournament or hop trail pill
+  (`atlas.js updateCompass`); the pill test now also points the arrow in 48 directions (it failed in 7 of them before).
+- Every suite passed on c9191b6 (37 files), and the map's suites again after this fix.

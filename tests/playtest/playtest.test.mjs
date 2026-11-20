@@ -298,6 +298,22 @@ await test('the fishing tournament\'s and a hop trail\'s pills sit under the top
     return { hit, n: top.length, tour: [tour.left, tour.top, tour.right, tour.bottom] };
   });
   assert(r.n >= 3 && !r.hit, JSON.stringify(r));
+  // and the map's arrow never sits on the pill (at 1920x1080 it pointed north from on top of "Grumbleton 0"):
+  // a target in 48 directions around the bean
+  const on = await island(page, (I) => {
+    const P = I.player, p = I.tour.el.getBoundingClientRect(), out = [];
+    for (let k = 0; k < 48; k++) {
+      const a = (k / 48) * Math.PI * 2;
+      I.atlas.setTarget({ key: `dir${k}`, name: 'X', icon: '', x: P.x + Math.cos(a) * 60, z: P.z + Math.sin(a) * 60, r: 1 });
+      I.atlas.updateCompass(0.016);
+      if (I.atlas.compass.style.display === 'none') continue;
+      const c = I.atlas.compassAt;
+      if (c.x + 20 > p.left && c.x - 20 < p.right && c.y + 20 > p.top && c.y - 20 < p.bottom) out.push(k);
+    }
+    I.atlas.setTarget(null);
+    return out;
+  });
+  assert(!on.length, `the arrow on the tournament pill for directions ${on.join(', ')}`);
   await island(page, (I) => { I.tour.run = null; I.npc('grumbleton').busy = false; I.toasts.clear(); });
 });
 

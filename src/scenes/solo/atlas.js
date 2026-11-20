@@ -569,6 +569,12 @@ export class IslandAtlas {
         if (r.bottom + pad - y < x - (r.left - pad)) y = Math.min(H - MB, r.bottom + pad); else x = r.left - pad;
       }
     }
+    // nor on the fishing tournament's or a hop trail's pill (top middle): it goes just below the pill
+    for (const pill of [host.tour?.el, host.hops?.el]) {
+      if (!pill || pill.style.display === 'none' || !pill.offsetParent) continue;
+      const r = pill.getBoundingClientRect(), pad = 34;
+      if (x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad) y = Math.min(H - MB, r.bottom + pad);
+    }
     el.style.display = 'block';
     el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
     this.arEl.style.transform = `rotate(${ang.toFixed(3)}rad)`;
