@@ -205,6 +205,46 @@ await test('the fog night: walking up to Captain Wisp, the ghost ship is in view
   await shot(page, 'playtest-ghost-ship');
 });
 
+await test('with big text the island menu fits the screen (1280x720), and the keys hint clears the hotbar', async () => {
+  await page.evaluate(() => {
+    const G = window.game, id = G.solo.profile.id;
+    G.assist.saveSettings(id, { ...G.assist.profileSettings(id), text: 2 });
+    G.applyDeviceSettings(true); G.applyScreenSettings();
+  });
+  await island(page, (I) => { I.hud.setPanel(null); I.mode = 'walk'; });
+  await sim(page, 0.3);
+  const k = await page.evaluate(() => { const a = document.querySelector('.isl-keys').getBoundingClientRect(), b = document.querySelector('.isl-hotbar').getBoundingClientRect(); return { keysRight: a.right, hotbarLeft: b.left }; });
+  assert(k.keysRight <= k.hotbarLeft + 1, `keys hint clear of the hotbar: ${JSON.stringify(k)}`);
+  await press(page, 'KeyQ');
+  await sim(page, 0.4);
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const r = await page.evaluate(() => { const el = document.querySelector('.panel.isl-menu'); const b = el.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: innerHeight, zoom: el.style.zoom }; });
+  assert(r.t >= 0 && r.b <= r.h, `the menu fits: ${JSON.stringify(r)}`);
+  await shot(page, 'playtest-bigtext-menu');
+  await press(page, 'KeyQ');
+  await page.evaluate(() => {
+    const G = window.game, id = G.solo.profile.id;
+    G.assist.saveSettings(id, { ...G.assist.profileSettings(id), text: 0 });
+    G.applyDeviceSettings(true); G.applyScreenSettings();
+  });
+  await sim(page, 0.3);
+});
+
+await test('Norwegian: a title inside a task sentence is small ("Gi tante Hassel ..."), the name tag keeps its capital', async () => {
+  const r = await page.evaluate(async () => {
+    const i = await import('/src/core/i18n.js');
+    const was = i.getLang();
+    i.setLang('no');
+    const I = window.game.current;
+    const q = I.questText('hazel', 1), tag = i.t('isl.npc.hazel');
+    i.setLang('en');
+    const en = I.questText('hazel', 1);
+    i.setLang(was);
+    return { q, tag, en };
+  });
+  assert(/^Gi tante Hassel /.test(r.q) && r.tag === 'Tante Hassel' && /^Bring Aunt Hazel /.test(r.en), JSON.stringify(r));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

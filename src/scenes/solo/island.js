@@ -828,7 +828,8 @@ export class SoloIslandScene extends BaseScene {
 
   questText(id, n) {
     const q = NPCS[id].quests[n];
-    const name = t(`isl.npc.${id}`);
+    // the name inside a sentence: Norwegian titles are small there ("Gi tante Hassel 1 gulrot"; play-test)
+    const kIn = `isl.npcIn.${id}`, name = t(kIn) !== kIn ? t(kIn) : t(`isl.npc.${id}`);
     if (q.find) return `${t('isl.q.find', { item: t(`isl.i.${q.find}`), name })} ${t('isl.q.where', { where: t(`isl.where.${q.find}`) })}`;
     const list = q.need.map(([it, k]) => `${k} ${t(`isl.i.${it}`)} (${Math.min(k, count(this.save, it))}/${k})`).join(', ');
     // ready to hand in, but they are at home for the night: say when they come out

@@ -34,7 +34,8 @@ const CSS = `
   color: #fff; paint-order: stroke fill; -webkit-text-stroke: .2em #2b2340; white-space: nowrap; }
 .isl-prompt { left: 50%; bottom: calc(1.4vh + clamp(84px, 8vw, 118px)); transform: translateX(-50%); background: rgba(255,255,255,.95); border-radius: 999px;
   padding: 4px 16px; font-weight: 700; font-size: clamp(14px, 1.4vw, 22px); box-shadow: 0 3px 0 rgba(43,35,64,.22); white-space: nowrap; }
-.isl-keys { left: 1.2vw; bottom: 1.4vh; max-width: 26vw; font-weight: 600; font-size: clamp(11px, .95vw, 15px); background: rgba(255,255,255,.85); border-radius: 12px; padding: 4px 10px; }
+/* (the keys hint stops short of the hotbar beside it, also with big text, when both are zoomed: play-test) */
+.isl-keys { left: 1.2vw; bottom: 1.4vh; max-width: min(26vw, calc((48.8vw - 10px) / var(--ts, 1) - 4.5 * clamp(42px, 4.2vw, 64px) - 33px)); font-weight: 600; font-size: clamp(11px, .95vw, 15px); background: rgba(255,255,255,.85); border-radius: 12px; padding: 4px 10px; }
 .isl-bagtip { left: 50%; bottom: calc(1.4vh + clamp(84px, 8vw, 118px)); transform: translateX(-50%); background: #ffd84a; border-radius: 999px; padding: 4px 16px; font-weight: 700;
   font-size: clamp(13px, 1.2vw, 19px); white-space: nowrap; box-shadow: 0 3px 0 rgba(43,35,64,.22); }
 .isl-dialog { left: 50%; bottom: calc(1.4vh + clamp(64px, 6vw, 88px)); transform: translateX(-50%); width: min(940px, 90vw); background: rgba(255,250,240,.97); border-radius: 22px;

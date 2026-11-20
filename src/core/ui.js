@@ -104,6 +104,23 @@ export class UI {
     el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
   }
 
+  /**
+   * Keep every centred card on the screen: one taller than the screen (a long menu with big text, a small screen) is
+   * zoomed down until it fits, never past the text size it asked for (play-test: the island's menu with big text ran
+   * off the top and bottom of a 1280x720 screen, its title, Help and the key hints cut off). Called every frame.
+   */
+  fitPanels() {
+    const room = window.innerHeight * 0.96, want = this.textScale || 1;
+    for (const el of this.center.children) {
+      if (el.style.display === 'none' || !el.offsetParent) continue;
+      const cur = parseFloat(el.style.zoom) || want;
+      const natural = el.offsetHeight; // (the height at zoom 1, without the pop-in animation's scale)
+      if (!natural) continue;
+      const z = Math.min(want, room / natural);
+      if (Math.abs(z - cur) > 0.01) el.style.zoom = z < want - 0.005 ? z.toFixed(3) : '';
+    }
+  }
+
   panel(html, className = 'panel') {
     const el = document.createElement('div');
     el.className = className;

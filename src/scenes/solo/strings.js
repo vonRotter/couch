@@ -95,6 +95,7 @@ addStrings({
     'isl.from.lh': 'Keeper Bram', 'isl.from.adv': 'Grumbleton', 'isl.from.duck': 'The fairground', 'isl.from.hop': 'Pip', 'isl.from.castle': 'The knights', 'isl.from.guides': 'Mumble',
 
     // ---------- people ----------
+    'isl.npcIn.hazel': 'Aunt Hazel', 'isl.npcIn.bram': 'Keeper Bram', 'isl.npcIn.hoot': 'Curator Hoot', 'isl.npcIn.coach': 'Coach Bo',
     'isl.npc.hazel': 'Aunt Hazel', 'isl.npc.rosa': 'Rosa', 'isl.npc.bram': 'Keeper Bram', 'isl.npc.grumbleton': 'Grumbleton', 'isl.npc.pip': 'Pip', 'isl.npc.mumble': 'Mumble',
     'isl.sleep': 'Zzz... {name} is fast asleep. Come back in the morning.',
     'isl.giftLater': 'Thank you, but you already gave me something today. Come back a bit later!',
@@ -347,6 +348,7 @@ addStrings({
     'isl.mail.guides1': 'Grumleguidene: du ledet grumlene hjem! Grumlene har laget en statue av deg. Den ser sur ut. Det betyr at de elsker den.',
     'isl.from.lh': 'Fyrvokter Bram', 'isl.from.adv': 'Grumbleton', 'isl.from.duck': 'Tivoliet', 'isl.from.hop': 'Pip', 'isl.from.castle': 'Ridderne', 'isl.from.guides': 'Mumle',
 
+    'isl.npcIn.hazel': 'tante Hassel', 'isl.npcIn.bram': 'fyrvokter Bram', 'isl.npcIn.hoot': 'kurator Hu', 'isl.npcIn.coach': 'trener Bo',
     'isl.npc.hazel': 'Tante Hassel', 'isl.npc.rosa': 'Rosa', 'isl.npc.bram': 'Fyrvokter Bram', 'isl.npc.grumbleton': 'Grumbleton', 'isl.npc.pip': 'Pip', 'isl.npc.mumble': 'Mumle',
     'isl.sleep': 'Zzz ... {name} sover godt. Kom tilbake i morgen tidlig.',
     'isl.giftLater': 'Tusen takk, men du har allerede gitt meg noe i dag. Kom tilbake litt senere!',

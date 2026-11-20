@@ -109,3 +109,25 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   - A read friend's letter no longer glows on the map (`today.js mapItems`).
   - The ghost ship lies further west, out by the river mouth (`events.js SHIP`): walking up to Wisp it is in view
     beside the bean, clear of the hotbar; his talk still swings the view to it.
+
+## Days 12-13 (Wed 2 - Thu 3 Dec; day 12 in Norwegian, day 13 with Help me play)
+
+- Did: day 12 in Norwegian (N on the island): the Today board, letters, Rosa and her shop, Grumbleton's fishing
+  tournament, a crab in seaweed, the menu, the bag, the help card, Echo Bells, the torn page's key and the old
+  lock. Day 13 with Help me play from the island's menu: big text (then huge), strong outlines, reduce flashing,
+  game speed 60 %, forgiving timing; Hazel's prize pumpkin (watered), fishing, Echo Bells, the puzzle lock.
+- Saw:
+  - Norwegian reads well and every key was translated (no raw keys on screen). One oddity: a title inside a
+    sentence kept its capital: "Gi Tante Hassel 1 gulrot", "Gi Fyrvokter Bram ...", while the rest of the
+    Norwegian text writes "tante Hassel" inside sentences.
+  - With big text the island's menu (14 rows) ran off the top and bottom of a 1280x720 screen: the title, the
+    Tomorrow line, Help and the key hints were cut off. The pause menu fits.
+  - With big text the keys hint in the bottom-left corner ran under the hotbar.
+  - Strong outlines: the picked menu row gets the arrow and the dashed ring. Forgiving timing widens the fishing
+    zone (visible). Nothing flashes with reduce flashing on.
+- Fixed:
+  - Quest tasks use the in-sentence form of a villager's title (`isl.npcIn.*`: "Gi tante Hassel ..."); name tags and
+    dialog names keep the capital.
+  - Every centred card (menus, the pause menu, Help me play, offers) is zoomed down to fit the screen when it would
+    be taller, never above the chosen text size (`ui.js fitPanels`, called every frame from `main.js`).
+  - The keys hint stops short of the hotbar at any text size (`hud.js`).

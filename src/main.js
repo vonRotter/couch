@@ -590,6 +590,7 @@ class Game {
     const dt = Math.min((now - this.last) / 1000, 1 / 30);
     this.last = now;
     this.tick(dt);
+    this.ui.fitPanels();
     if (!this.current) return;
     if (this.current.render) this.current.render(this.renderer);
     else this.renderer.render(this.current.scene, this.current.camera);
