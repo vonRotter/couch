@@ -1236,7 +1236,10 @@ events, 2 drama climaxes; 4 of them late plays), never two, and 19 were ordinary
 those eight weeks are 50 % ordinary and a whole year 53 % (festivals 13 % of days, surprises 20 %, rare events
 14 %), before the dramas' big days. Dramas reach their big moment 4-8 days after they start; about 1.1
 conversations heard a day (at most three), none again within four weeks; no reaction or Today text again within
-three to four weeks; one project (eight over six months) and one hook at a time.
+three to four weeks; one project (eight over six months) and one hook at a time. With the odd-adventure round in it
+(*Odd adventures* below): the same 24 special days by those kinds; the round's new things arrived on 7 of the 43 days
+(never on a special day or a new puzzle lock's day, at least 6 days apart), a creature took 1 surprise day, a puzzle
+lock appeared on 1; counting arrivals as special too, never two on one day, and 11 days (26 %) had nothing new at all.
 
 - **The Today board** (`today.js`): the first time you walk about on a new real day a card shows up to
   **three things that are new today**: a rumor (something coming: a festival or a birthday tomorrow, Marlo's
