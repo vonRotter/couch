@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { t, addStrings } from '../../core/i18n.js';
 import { report } from '../../core/passport.js';
 import { dayIndex, dayRand } from './calendar.js';
+import { npcState, heartsOf } from './npcs.js';
 import { heightAt } from './map.js';
 import { mesh, box, sph, cyl, cone } from './models.js';
 import { basic } from '../../core/palette.js';
@@ -15,8 +16,10 @@ import './strings15.js';
 //   - fence:    Rosa and Coach Bo argue over the fence between her flower bed and his running lane. Pick a side or
 //               ask them to share; the fence ends up as you helped (flowers, a lane, or a gate with both).
 //   - election: an island vote for the square's new thing: Aunt Hazel's flower clock or Grumbleton's ship's bell.
-//               Vote at the ballot box; the villagers' votes come in day by day (a tie: yours decides); the winner
-//               stands in the square from then on.
+//               Vote at the ballot box; the villagers' votes come in day by day and are really counted: Aunt
+//               Hazel votes clock, Grumbleton bell, the others lean their own way, and villagers who are your friends
+//               (3 hearts or more) vote like you. So befriending and helping them matters, and a vote can be lost.
+//               The winner stands in the square from then on.
 //   - club:     Pip and Mumble's secret club. Clues from three villagers (one a day), or sneak up on the club's sleepy
 //               guard (Sneaky mode) to read the note behind him; on club day say the password at the club's log door.
 //   - party:    a surprise party for Curator Hoot. Rosa plans it; Hazel, Pip and Grumbleton each give you a thing to
@@ -28,6 +31,9 @@ import './strings15.js';
 
 const CLUB_DOOR = { x: -4, z: 24 }, GUARD = { x: -5.6, z: 25.4 };
 const BALLOT = { x: 16.6, z: -7.6 };
+// the island vote's voters (and yours); a villager with this many hearts or more votes like you
+const VOTERS = ['hazel', 'grumbleton', 'rosa', 'bram', 'pip', 'mumble', 'hoot', 'coach'];
+const ELECTION_FRIEND = 3;
 const PASSWORDS = [
   { word: 'pancake', clues: { hazel: 1, rosa: 2, bram: 3 } },
   { word: 'snowball', clues: { hazel: 1, rosa: 2, bram: 3 } },
@@ -73,7 +79,7 @@ addStrings({
     'vd.election.grumbleton.mid.1': 'Close race! I have been practising my ding-ding.',
     'el.h.vote': '[B] vote at the ballot box', 'el.h.voted': 'You voted. The votes are counted on the big day.', 'el.ask': 'What should the square get?',
     'el.clock': 'A flower clock (Aunt Hazel)', 'el.bell': 'A ship\'s bell (Grumbleton)', 'el.no': 'Not yet',
-    'el.t.voted': 'Your vote is in the box!', 'el.board': 'Flower clock {clock} · Ship\'s bell {bell}',
+    'el.t.voted': 'Your vote is in the box! Your friends on the island may vote like you.', 'el.board': 'Flower clock {clock} · Ship\'s bell {bell}',
     'vd.election.end.1': 'The votes are counted! It was so close...',
     'vd.election.end.clock': 'The flower clock wins! Tick-tock and petals. Thank you all!',
     'vd.election.end.bell': 'The ship\'s bell wins! Ding ding! Well done, everyone, well done.',
@@ -165,7 +171,7 @@ addStrings({
     'vd.election.grumbleton.mid.1': 'Jevnt løp! Jeg har øvd på ding-dingen min.',
     'el.h.vote': '[B] stem ved valgurna', 'el.h.voted': 'Du har stemt. Stemmene telles på den store dagen.', 'el.ask': 'Hva skal torget få?',
     'el.clock': 'En blomsterklokke (tante Hassel)', 'el.bell': 'En skipsklokke (Grumbleton)', 'el.no': 'Ikke ennå',
-    'el.t.voted': 'Stemmen din ligger i urna!', 'el.board': 'Blomsterklokke {clock} · Skipsklokke {bell}',
+    'el.t.voted': 'Stemmen din ligger i urna! Vennene dine på øya stemmer kanskje som deg.', 'el.board': 'Blomsterklokke {clock} · Skipsklokke {bell}',
     'vd.election.end.1': 'Stemmene er talt! Det var så jevnt...',
     'vd.election.end.clock': 'Blomsterklokka vinner! Tikk-takk og kronblader. Takk alle sammen!',
     'vd.election.end.bell': 'Skipsklokka vinner! Ding ding! Godt gjort, alle sammen, godt gjort.',
@@ -256,18 +262,25 @@ export const SOCIAL = {
   election: {
     cast: ['hazel', 'grumbleton'], at: { x: 13.6, z: -8.6 }, icon: '🗳️', mapAlways: true,
     init(D) { D.vote = null; },
-    tally(D, di = dayIndex()) {
-      // the villagers' votes come in day by day; by the big day it is a tie (3 to 3) without yours
-      const days = Math.max(0, Math.min(D.climax, di) - D.start + 1), n = Math.min(6, Math.round((days / Math.max(1, D.climax - D.start + 1)) * 6));
-      const order = [0, 1, 0, 1, 1, 0].map((x) => (dayRand(`vote:${D.start}`) < 0.5 ? x : 1 - x));
+    /** A villager's vote: Hazel and Grumbleton for their own idea, a friend of yours (3 hearts+) like you, the others their own lean. */
+    voteOf(D, id, S) {
+      if (id === 'hazel') return 'clock';
+      if (id === 'grumbleton') return 'bell';
+      if (D.vote && S && heartsOf(npcState(S, id)) >= ELECTION_FRIEND) return D.vote;
+      return dayRand(`lean:${D.start}:${id}`) < 0.5 ? 'clock' : 'bell';
+    },
+    tally(D, di = dayIndex(), S = null) {
+      // the villagers' votes come in day by day (all of them by the big day), and yours
+      const days = Math.max(0, Math.min(D.climax, di) - D.start + 1), n = Math.min(VOTERS.length, Math.round((days / Math.max(1, D.climax - D.start + 1)) * VOTERS.length));
+      const order = [...VOTERS].sort((a, b) => dayRand(`vord:${D.start}:${a}`) - dayRand(`vord:${D.start}:${b}`));
       let clock = 0, bell = 0;
-      for (let i = 0; i < n; i++) if (order[i]) bell++; else clock++;
+      for (let i = 0; i < n; i++) if (SOCIAL.election.voteOf(D, order[i], S) === 'clock') clock++; else bell++;
       if (D.vote === 'clock') clock++;
       if (D.vote === 'bell') bell++;
       return { clock, bell };
     },
-    newsVars: (D, b) => (b === 'mid' ? SOCIAL.election.tally(D) : undefined),
-    outcome(D) { const T = SOCIAL.election.tally(D, D.climax); return T.clock > T.bell ? 'clock' : T.bell > T.clock ? 'bell' : dayRand(`vtie:${D.start}`) < 0.5 ? 'clock' : 'bell'; },
+    newsVars: (D, b, V) => (b === 'mid' ? SOCIAL.election.tally(D, dayIndex(), V?.S) : undefined),
+    outcome(D, V) { const T = SOCIAL.election.tally(D, D.climax, V?.S); return T.clock > T.bell ? 'clock' : T.bell > T.clock ? 'bell' : dayRand(`vtie:${D.start}`) < 0.5 ? 'clock' : 'bell'; },
     part: (D) => !!D.vote,
     reward(D, seen, V) { memOf(V.V).election = D.res; if (seen) V.host.grant({ coins: 20 }); },
     interactions(P, out, nm, D, V) {
@@ -279,7 +292,7 @@ export const SOCIAL = {
       V.host.say([{ name: t('map.a.election'), css: '#4a6fd8', key: 'el.ask', choices: ['el.clock', 'el.bell', 'el.no'], onChoice: (i) => {
         if (i > 1) return;
         D.vote = i === 0 ? 'clock' : 'bell';
-        V.host.game.ui.toast(t('el.t.voted'), 2000);
+        V.host.game.ui.toast(t('el.t.voted'), 3200);
         V.host.game.audio.play('coin');
         V.host.markDirty();
       } }]);

@@ -1,6 +1,6 @@
 // The odd-adventure round's pace (the owner's rule: new things feel special, never too much at once). Over four months
 // of daily visits by a child who takes up everything the day after it comes (talks to Coach and Mumble, reads every
-// letter, takes the lessons): sixteen arrivals, never two on a day, at least five days apart, never on a day with a
+// letter, takes the lessons): sixteen arrivals, never two on a day, at least nine days apart, never on a day with a
 // festival, a daily surprise, a rare event, a drama's big moment, a new puzzle lock or a step of the Ollo folk's
 // settling (a house, the pebble circle, the drums) or a drama's first day; and the same with a child who
 // does nothing (arrivals that build on something wait). All from the date and the save (odd.js arrivalDue), with the
@@ -40,9 +40,9 @@ async function simulate(days, eager) {
   }, [D0, days, eager]);
 }
 
-await test('an eager child: sixteen arrivals over four months, one at a time, at least five days apart, only on quiet days', async () => {
+await test('an eager child: sixteen arrivals over about five months, one at a time, at least nine days apart (about one every ten), only on quiet days', async () => {
   await startIsland(page, { time: D0, save: oddSave({}) });
-  const log = await simulate(126, true);
+  const log = await simulate(210, true);
   const arr = log.filter((x) => x.id);
   const gaps = arr.slice(1).map((x, i) => x.d - arr[i].d);
   const clash = arr.filter((x) => x.fest || x.sur || x.rare || x.climax || x.puzzle || x.folkStep || x.dramaStart);
@@ -50,18 +50,18 @@ await test('an eager child: sixteen arrivals over four months, one at a time, at
   console.log(`   the Ollo folk's steps on days ${steps.join(', ')} (nothing else arrives then)`);
   assert(steps.length === 3, `the folk's three steps: ${steps}`);
   const in8 = arr.filter((x) => x.d < 56).length;
-  console.log(`   ${arr.length} arrivals in 18 weeks (${in8} in the first 8): ${arr.map((x) => `${x.id} d${x.d}`).join(', ')}`);
+  console.log(`   ${arr.length} arrivals in 30 weeks (${in8} in the first 8): ${arr.map((x) => `${x.id} d${x.d}`).join(', ')}`);
   console.log(`   days between arrivals: min ${Math.min(...gaps)}, max ${Math.max(...gaps)}, average ${(gaps.reduce((a, b) => a + b, 0) / gaps.length).toFixed(1)}; on a special day: ${clash.length}`);
   assert(arr.length === 16 && new Set(arr.map((x) => x.d)).size === arr.length, `all sixteen, never two a day: ${arr.length}`);
-  assert(Math.min(...gaps) >= 5 && !clash.length, JSON.stringify({ gaps, clash }));
-  assert(in8 >= 6 && in8 <= 11, `about one a week: ${in8} in 8 weeks`);
+  assert(Math.min(...gaps) >= 9 && !clash.length, JSON.stringify({ gaps, clash }));
+  assert(in8 >= 3 && in8 <= 7, `about one every ten days: ${in8} in 8 weeks`);
   // the order: each after what it builds on
   const day = Object.fromEntries(arr.map((x) => [x.id, x.d]));
   assert(day.sneaky > day.sporty && day.booths > day.ball && day.booths > day.inventor && day.robot > day.booths && day.sun > day.school && day.voice > day.bounce && day.bounce2 > day.voice && day.moss > day.sneaky, JSON.stringify(day));
 });
 
 await test('a child who takes nothing up: what builds on something waits; the rest still comes slowly', async () => {
-  const log = await simulate(126, false);
+  const log = await simulate(210, false);
   const arr = log.filter((x) => x.id).map((x) => x.id);
   console.log(`   arrived: ${arr.join(', ')}`);
   assert(!arr.includes('sneaky') && !arr.includes('booths') && !arr.includes('moss') && !arr.includes('sun') && arr.includes('folk') && arr.includes('whale'), arr.join());

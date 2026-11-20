@@ -1237,9 +1237,9 @@ those eight weeks are 50 % ordinary and a whole year 53 % (festivals 13 % of day
 14 %), before the dramas' big days. Dramas reach their big moment 4-8 days after they start; about 1.1
 conversations heard a day (at most three), none again within four weeks; no reaction or Today text again within
 three to four weeks; one project (eight over six months) and one hook at a time. With the odd-adventure round in it
-(*Odd adventures* below): the same 24 special days by those kinds; the round's new things arrived on 7 of the 43 days
-(never on a special day or a new puzzle lock's day, at least 6 days apart), a creature took 1 surprise day, a puzzle
-lock appeared on 1; counting arrivals as special too, never two on one day, and 11 days (26 %) had nothing new at all.
+(*Odd adventures* below): the same 24 special days by those kinds; the round's new things arrived on 4 of the 43 days
+(never on a special day or a new puzzle lock's day, at least 9 days apart), no creature yet, a puzzle lock appeared
+on 1; counting arrivals as special too, never two on one day, and 14 days (33 %) had nothing new at all.
 
 - **The Today board** (`today.js`): the first time you walk about on a new real day a card shows up to
   **three things that are new today**: a rumor (something coming: a festival or a birthday tomorrow, Marlo's
@@ -1359,11 +1359,11 @@ machines, strange folk); every name, person, place, look and tune is our own. Co
 pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
 
 - **The pace (the owner's rule: special, rare, never too much at once).** Nothing of this round is there on day one.
-  Things **arrive one at a time**: at most one a day, at least five days apart, only on a quiet day (no festival,
+  Things **arrive one at a time**: at most one a day, at least nine days apart (about one every ten days), only on a quiet day (no festival,
   daily surprise, rare event or drama big moment, and not the day a puzzle lock appears, a drama starts or the Ollo folk take
   their next settling step), each with a letter and a
   line on the Today board, in a fixed order where each waits for what it builds on (`ARRIVALS` in `odd.js`;
-  `arrivalDue(S, ms)` is pure, so tests simulate months). Sixteen arrivals over three to four months.
+  `arrivalDue(S, ms)` is pure, so tests simulate months). Sixteen arrivals over about five months.
 - **Behaviour modes** (`modes.js`): **Normal**, **Sporty** (runs about 1.45 times as fast, jumps higher, and is a
   little harder to steer: the run keeps sliding a moment after you let go or turn) and **Sneaky** (tiptoes at half
   speed, crouched a little, quietly: gulls stay put, shy creatures and sleepy guards notice you less). **[MODE]**
@@ -1428,7 +1428,10 @@ pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
   (her flower bed, his running lane); each asks you to pick a side, or ask them to share; the fence ends as you
   helped (flowers, a lane, or a gate with both). **The island vote**: Aunt Hazel's flower clock or Grumbleton's ship's
   bell for the square; vote once at the ballot box; the villagers' votes come in day by day (the Today board shows the
-  count) and end in a tie, so your vote decides; the winner stands in the square from then on. **The secret club**:
+  count) and are really counted (the owner's choice): Aunt Hazel votes clock, Grumbleton bell, the six others lean
+  their own way, and those who are your friends (3 hearts or more) vote like you; so befriending villagers decides it,
+  and a vote can be lost (in 40 test votes for the clock: with no friends it won 30 and lost 10, with six friends it won all 40). The
+  winner stands in the square from then on. **The secret club**:
   Pip and Mumble's club meets at a log door south of the School House; Aunt Hazel, Rosa and Keeper Bram each know one
   clue to the password (one clue a day), or tiptoe (Sneaky mode) up to the club's sleepy guard and read the note behind
   him (any noise wakes him: no peeking that day); on club day the guard asks the password (a wrong guess only gets

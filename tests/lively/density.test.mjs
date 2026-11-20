@@ -208,7 +208,7 @@ await test('the odd-adventure round: at most one new special thing a day (arriva
   const socials = [...new Set(visited.filter((d) => d.drama).map((d) => `${d.drama.id}:${d.drama.start}`))].filter((x) => /^(fence|election|club|party|rumour):/.test(x)).length;
   console.log(`   new things arrived on ${arrivals.length} of ${visited.length} visited days (${arrivals.map((d) => `${d.odd} d${d.d}`).join(', ')}), at least ${Math.min(...gaps)} days apart, on a special day ${clash.length}; creatures took ${creatures.length} surprise days; puzzle locks appeared on ${puzzles} days; social happenings started ${socials}`);
   console.log(`   counting arrivals as special too: most on one day ${worst}; days with nothing new at all ${nothing} of ${visited.length} (${Math.round((nothing / visited.length) * 100)} %)`);
-  assert(worst <= 1 && !clash.length && arrivals.length >= 4 && arrivals.length <= 10 && Math.min(...gaps) >= 5, JSON.stringify({ worst, clash, n: arrivals.length, gaps }));
+  assert(worst <= 1 && !clash.length && arrivals.length >= 3 && arrivals.length <= 7 && Math.min(...gaps) >= 9, JSON.stringify({ worst, clash, n: arrivals.length, gaps }));
 });
 
 await test('spread across the map, with the odd-adventure round\'s places: every quarter has some, none has a third of all', async () => {

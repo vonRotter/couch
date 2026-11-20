@@ -18,7 +18,8 @@ import { Folk, STAGE_DAYS as FOLK_STEPS } from './folk.js';
 //
 // The owner's rule: new things must feel special, never "too much of the same at once". So everything here ARRIVES
 // slowly, one thing at a time, through a letter and the Today board:
-//   - at most one arrival a day, at least GAP days apart (about one a week; sixteen over three to four months);
+//   - at most one arrival a day, at least GAP days apart (about one every ten days, the owner's choice; sixteen
+//     over about five to six months);
 //   - only on a quiet day: no festival, daily surprise, rare event or drama big moment (calendar.freeDay), and not the
 //     day a puzzle lock appears (puzzles.js), so one new special thing a day at most;
 //   - in a fixed order, each after what it builds on (Sneaky mode after Sporty, the booths after the ball...), a step
@@ -27,7 +28,7 @@ import { Folk, STAGE_DAYS as FOLK_STEPS } from './folk.js';
 // Save: S.odd = { first, last, got: { id: dayIndex }, ... } (old saves: made on first use, nothing arrived yet).
 
 /** Days between two arrivals (at least). */
-export const GAP = 5;
+export const GAP = 9;
 /** Days after the first visit of this round before the first arrival. */
 export const FIRST_AFTER = 2;
 

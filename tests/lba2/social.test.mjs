@@ -68,9 +68,29 @@ await test('the fence: Rosa and Coach Bo each ask; make peace; the big moment; t
   assert(lines?.includes('vd.fence.end.peace') && r.res === 'peace' && r.mem === 'peace' && r.gate, JSON.stringify({ lines, r }));
 });
 
-await test('the island vote: your vote breaks the tie; the flower clock stands in the square from then on', async () => {
+await test('the island vote is really counted: friends (3 hearts+) vote like you, the others their own way; it can be lost', async () => {
+  // the rule over many votes (pure: the tally from a vote's start day and the friendships)
+  const r0 = await page.evaluate(async () => {
+    const { SOCIAL } = await import('/src/scenes/solo/social.js');
+    const E = SOCIAL.election, out = { lostAlone: 0, wonAlone: 0, friendsWin: 0, n: 40 };
+    for (let st = 0; st < 40; st++) {
+      const D = { start: 20000 + st * 13, climax: 20000 + st * 13 + 5, vote: 'clock' };
+      const alone = { npcs: {} };
+      const friends = { npcs: Object.fromEntries(['rosa', 'bram', 'pip', 'mumble', 'hoot', 'coach'].map((id) => [id, { pts: 9999, talkAt: 0, giftAt: 0, ev: 0, q: 0, met: true }])) };
+      if (E.outcome(D, { S: alone }) === 'clock') out.wonAlone++; else out.lostAlone++;
+      if (E.outcome(D, { S: friends }) === 'clock') out.friendsWin++;
+      // the count adds up: eight villagers and you
+      const T = E.tally(D, D.climax, alone);
+      if (T.clock + T.bell !== 9) out.bad = T;
+    }
+    return out;
+  });
+  console.log(`   40 votes for the clock: with no friends won ${r0.wonAlone}, lost ${r0.lostAlone}; with six friends won ${r0.friendsWin}`);
+  assert(!r0.bad && r0.lostAlone > 0 && r0.wonAlone > 0 && r0.friendsWin === 40, JSON.stringify(r0));
+  // on the island: vote at the ballot box, the count comes in day by day, the winner stands in the square
   await startIsland(page, { time: D0, save: oddSave({}) });
   await startDrama('election');
+  await island(page, (I, S) => { for (const id of ['rosa', 'bram', 'pip', 'mumble', 'hoot', 'coach']) S.npcs[id] = { ...(S.npcs[id] || {}), pts: 9999, met: true }; });
   await island(page, (I) => I.village.newDay(Date.now() + window.__islandTimeOffset));
   await standAt(page, 16.6, -6.4, [0, -1]);
   const b = await island(page, (I) => I.interactions().b?.text);
@@ -82,7 +102,7 @@ await test('the island vote: your vote breaks the tie; the flower clock stands i
   assert(tally && tally.clock >= 1, JSON.stringify(tally));
   await day(5); // the day after the big moment, never visited: it ended without you
   const r = await island(page, (I, S) => ({ mem: S.village.mem?.election, clock: !!I.village.props.get('s:square') }));
-  assert(r.mem === 'clock' && r.clock, JSON.stringify(r));
+  assert(r.mem === 'clock' && r.clock, `with six friends the clock wins: ${JSON.stringify(r)}`);
 });
 
 await test('the secret club: one clue a day; the sleepy guard wakes at noise but not when you tiptoe; the password', async () => {

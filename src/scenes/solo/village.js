@@ -175,7 +175,7 @@ export class Village {
     const b = this.beat(D, di);
     if (b) {
       const at2 = DRAMAS[D.id].at;
-      const v = D.id === 'rivalry' && b === 'mid' ? this.scores(D) : SOCIAL[D.id]?.newsVars?.(D, b);
+      const v = D.id === 'rivalry' && b === 'mid' ? this.scores(D) : SOCIAL[D.id]?.newsVars?.(D, b, this);
       out.push({ kind: b === 'start' ? 'rumor' : 'changed', pri: b === 'climax' ? 9.5 : 6.5, icon: DRAMAS[D.id].icon, keys: [`vd.${D.id}.news.${b === 'mid' ? 'mid' : b}`], v, x: at2.x, z: at2.z });
     }
     if (V.resNews?.di === di) out.push({ kind: 'changed', pri: 7, icon: DRAMAS[V.resNews.id].icon, keys: [`vd.${V.resNews.id}.news.${V.resNews.res}`] });
