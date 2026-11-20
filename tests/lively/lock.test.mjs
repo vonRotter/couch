@@ -60,7 +60,7 @@ await test('an unwarned rare event is not on the board and cannot be saved', asy
   assert(r2.warn && r2.coming === 1, JSON.stringify(r2));
 });
 
-await test('Today board: a warning about tomorrow\'s rare event (or a visitor\'s letter) can be locked with [OK]', async () => {
+await test('Today board: a warning about tomorrow\'s rare event (or a visitor\'s letter) can be locked on its own row (▼, then [OK])', async () => {
   await startIsland(page, { time: D0, name: 'Board' });
   // walk the days until the board warns about tomorrow's rare event
   let found = null, warned = 0, rares = 0;
@@ -75,7 +75,10 @@ await test('Today board: a warning about tomorrow\'s rare event (or a visitor\'s
   // [C] closes without locking... (a second board for the test: open it again)
   await island(page, (I) => { I.todayBoard.open(); I.todayBoard.t = 1; I.todayBoard.updateBoard({ bPressed: true }); });
   assert(!(await island(page, (I, S) => S.lock)), '[BACK] never locks');
+  // (owner's decision: [OK] alone only closes the board; saving is its own row, picked with ▼ and confirmed with [OK])
   await island(page, (I) => { I.todayBoard.open(); I.todayBoard.t = 1; I.todayBoard.updateBoard({ aPressed: true }); });
+  assert(!(await island(page, (I, S) => S.lock)), '[OK] alone never locks');
+  await island(page, (I) => { I.todayBoard.open(); I.todayBoard.t = 1; I.todayBoard.updateBoard({ stepY: -1 }); I.todayBoard.updateBoard({ aPressed: true }); });
   const lock = await island(page, (I, S) => S.lock);
   assert(lock && lock.kind === 'rare' && lock.what === found.offer.what, JSON.stringify(lock));
   // a visitor's letter on the board is offered too

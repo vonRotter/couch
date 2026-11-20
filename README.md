@@ -1264,8 +1264,10 @@ on 1; counting arrivals as special too, never two on one day, and 14 days (33 %)
   rare events in three are warned the day before (`rareWarned(date)`, by date: 68 % over two years); the rest
   arrive unannounced and cannot be saved and a visitor announced by letter (Marlo, Skye).
   Not the dramas' big moments and not the daily surprises. ▲▼ choose, **[OK] saves it** (🔒), [C] closes and
-  never saves. The Today board offers it too when it shows a warning or a visitor's letter ("[OK]: save it, in
-  case you cannot come"). **One lock at a time**: saving another moves the lock (and says so). If the child
+  never saves. The Today board offers it too when it shows a warning or a visitor's letter, as a row of its own
+  under the news ("🔒 Save it for later, in case you cannot come"): ▼ picks the row and [OK] saves; [OK] alone and
+  [BACK] only close the board, as on every other day, so nothing is ever saved by the key that closes panels (the
+  owner's decision after the play-test). **One lock at a time**: saving another moves the lock (and says so). If the child
   comes on the event's day, the lock is simply used up. If not, the event **plays on the next visit within three
   days after it** (the festival with its stalls, villagers, tasks and rewards; the storm's finds, the fog and the
   ghost ship, the rainbow; Marlo or Skye), and the Today board says "Saved for you: …". That day it is the one

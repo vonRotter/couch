@@ -260,3 +260,14 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   the task list but not off the pills in the top middle. Fixed: it goes just below a tournament or hop trail pill
   (`atlas.js updateCompass`); the pill test now also points the arrow in 48 directions (it failed in 7 of them before).
 - Every suite passed on c9191b6 (37 files), and the map's suites again after this fix.
+
+## Owner decisions built
+
+The owner answered the six decisions: build all six, as recommended. Tests: `tests/playtest/decisions.test.mjs`
+(each fails on the tree before its change), plus the suites named below.
+
+1. **The Today board's save row.** [OK] (E / A / Space) and [BACK] only close the board, every day. With a warning
+   or a visitor's letter on it, a row of its own ("🔒 Save it for later, in case you cannot come" / "Spar den til
+   senere, i tilfelle du ikke kan komme") is picked with ▼ and saved with [OK]; ▲ leaves it; the hint line follows
+   the row ("[OK]: off we go · ▼: save it for later"). The old path ([OK] on the board saves) is gone (`today.js`,
+   `lock.js`; `tests/lively/lock.test.mjs` now checks that [OK] alone never locks and ▼ + [OK] does).

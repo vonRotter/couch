@@ -313,24 +313,42 @@ export class TodayBoard {
   }
 
   open() {
-    const host = this.host, items = this.items();
+    const host = this.host;
     host.mode = 'today';
     this.t = 0;
-    const d = new Date(now());
-    const date = `${t(`td.wd.${d.getDay()}`)} ${d.getDate()}.${d.getMonth() + 1}.`;
-    const cards = items.map((it) => `<div class="isl-row" style="grid-template-columns:auto 1fr;align-items:center"><span style="font-size:1.8em">${it.icon}</span><div><small style="opacity:.7">${KIND_ICON[it.kind]} ${esc(t(`td.kind.${it.kind}`))}</small><br>${esc(itemText(it))}</div></div>`).join('');
-    this.offer = host.lock?.boardOffer() || null; // a warning or a visitor's letter: [OK] saves it for later (lock.js)
-    host.hud.setPanel(`<h2>${esc(t('td.title'))} <small style="font-size:.5em;opacity:.7">${esc(date)}</small></h2><div class="isl-rows">${cards}</div><div class="isl-foot">${esc(tFor(host.player?.p, this.offer ? 'lk.boardHint' : 'td.hint'))}</div>`);
-    speak([t('td.title'), ...items.map(itemText), ...(this.offer ? [tFor(host.player?.p, 'lk.boardHint')] : [])].join('. '), 'narrator');
+    this.sel = -1; // the "save it for later" row: only picked with the stick (owner's decision: [OK] never saves by itself)
+    this.offer = host.lock?.boardOffer() || null; // a warning or a visitor's letter: it can be saved for later (lock.js)
+    this.render(true);
     host.game.audio.play('join');
   }
 
-  /** In 'today' mode: [OK], [B] or [C] closes the board. */
+  render(read = false) {
+    const host = this.host, items = this.items(), P = host.player?.p;
+    const d = new Date(now());
+    const date = `${t(`td.wd.${d.getDay()}`)} ${d.getDate()}.${d.getMonth() + 1}.`;
+    const cards = items.map((it) => `<div class="isl-row" style="grid-template-columns:auto 1fr;align-items:center"><span style="font-size:1.8em">${it.icon}</span><div><small style="opacity:.7">${KIND_ICON[it.kind]} ${esc(t(`td.kind.${it.kind}`))}</small><br>${esc(itemText(it))}</div></div>`).join('');
+    // its own row, picked with the stick (▼) and confirmed with [OK]; [OK] alone and [BACK] only close the board
+    const save = this.offer ? `<div class="isl-row td-save ${this.sel === 0 ? 'on' : ''}" style="grid-template-columns:auto 1fr;align-items:center;margin-top:6px;border:2px dashed #8a5a32"><span style="font-size:1.5em">🔒</span><div>${esc(t('lk.boardRow'))}</div></div>` : '';
+    const hint = this.offer ? (this.sel === 0 ? 'lk.boardHintOn' : 'lk.boardHint') : 'td.hint';
+    host.hud.setPanel(`<h2>${esc(t('td.title'))} <small style="font-size:.5em;opacity:.7">${esc(date)}</small></h2><div class="isl-rows">${cards}${save}</div><div class="isl-foot">${esc(tFor(P, hint))}</div>`);
+    if (read) speak([t('td.title'), ...items.map(itemText), ...(this.offer ? [tFor(P, 'lk.boardHint')] : [])].join('. '), 'narrator');
+  }
+
+  /**
+   * In 'today' mode: [OK] (E / A), [BACK] or [C] close the board, every day. With a warning or a visitor's letter on
+   * it, ▼ picks the "save it for later" row and [OK] on that row saves it (▲ leaves the row); nothing else saves.
+   */
   updateBoard(inp) {
-    if (this.t < 0.5 || !(inp.aPressed || inp.bPressed || inp.cPressed)) return;
-    // [OK] saves the offered event for later; [BACK] only closes (it never locks)
-    if (this.offer && inp.aPressed && !inp.bPressed) this.host.lock.lock(this.offer);
+    if (this.t < 0.5) return;
+    if (this.offer && inp.stepY) {
+      const want = inp.stepY < 0 ? 0 : -1;
+      if (want !== this.sel) { this.sel = want; this.host.game.audio.play('select'); this.render(); }
+      return;
+    }
+    if (!(inp.aPressed || inp.bPressed || inp.cPressed)) return;
+    if (this.offer && this.sel === 0 && inp.aPressed && !inp.bPressed && !inp.cPressed) this.host.lock.lock(this.offer);
     this.offer = null;
+    this.sel = -1;
     this.host.hud.setPanel(null);
     this.host.mode = 'walk';
   }
