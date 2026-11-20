@@ -65,3 +65,23 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   - In the hall (its low camera) toasts go up under the clock pills, clear of the cabinet tag (`island.js`,
     `hud.js`).
   - The pause menu hides any other card while it is open and puts it back after (`main.js`).
+
+## Days 3-5 (Mon 23 - Wed 25 Nov; autumn week)
+
+- Did: the Today boards (the speckled egg wobbling, Pip and Grumbleton's fishing contest starting, autumn, Coach
+  stretching by the hall, Bram's gazebo), Rosa's radish soup and Mitten on the Barrel Run, Grumbleton's contest
+  (picked his side), the first puzzle lock (Tunnel Trek at the cliff door, card and maze), the Stump Hop (sign,
+  3-2-1, a bumpy run), wood from Rosa and the bridge fixed, carrot seeds, more fish, the dive suit and a first
+  dive, Coach's Sporty mode (letter, lesson, tutorial card, R), the torn page (dig the key, the old lock, a wrong
+  try shows the order), five wood to Bram's gazebo.
+- Saw:
+  - The speckled egg's basket stands a step from the shipping bin: walking up to the egg from the front said
+    "Shipping bin: hold a crop and press E" (the bin was asked first). The egg was then left alone and hatched by
+    itself two days later, as designed.
+  - The torn page given on a Sunday (the season's last day) was gone on Monday: a new season's chapter started
+    with another X and other pictures. As designed ("an unfinished chapter ends with its week"), but harsh on a
+    child who got the page late on the last day: owner decision.
+  - At the bridge's east end the workbench can answer [B] instead of the bridge (both reach there). Small; the
+    bridge answers a step further west. Left as is.
+- Fixed:
+  - The egg basket (or the mystery pot) is asked before the mailbox and the shipping bin (`island.js`).

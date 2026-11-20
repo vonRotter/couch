@@ -1300,6 +1300,9 @@ export class SoloIslandScene extends BaseScene {
       out.b = { text: best.sleep ? t('isl.h.asleep', { name }) : nm('isl.h.talk', { name }), fn: () => this.talkTo(best), npc: best };
     }
     const near = (x, z, r = 1.7) => Math.hypot(fx - x, fz - z) < r || Math.hypot(P.x - x, P.z - z) < r;
+    // the egg basket or the mystery pot stands a step from the shipping bin: at the basket, the basket wins
+    // (play-test: walking up to the egg said "Shipping bin: hold a crop")
+    if (!out.b) this.todayBoard.interactions(P, out, nm);
     if (!out.b && near(MAILBOX.x, MAILBOX.z)) out.b = S.mail.length ? { text: nm('isl.h.mail'), fn: () => this.openLetter() } : S.photos?.length ? { text: nm('isl.h.album'), fn: () => this.photo.openAlbum() } : { text: t('isl.h.mailNone'), fn: () => this.game.audio.play('bump') };
     if (!out.b && near(BIN.x, BIN.z, 1.9)) {
       out.b = held && SELLABLE.has(ITEMS[held.id]?.kind) ? { text: nm('isl.h.ship', { item: itemName(held.id) }), fn: () => this.ship(held.id) } : { text: nm('isl.h.shipNone'), fn: () => this.game.audio.play('bump') };

@@ -133,6 +133,23 @@ await test('pausing over a game\'s card hides the card until the pause menu clos
   assert(r.hidden && r.back, JSON.stringify(r));
 });
 
+await test('the speckled egg\'s basket by the shipping bin: walking up to it, the basket answers (not the bin)', async () => {
+  const r = await island(page, (I, S) => {
+    I.mode = 'walk';
+    const sp = I.todayBoard.hookSpot();
+    S.hook = { kind: 'egg', due: 0, made: 0, x: sp.x, z: sp.z, ready: true, readyDi: 0 };
+    I.todayBoard.updateModel?.();
+    const out = [];
+    for (const [dx, dz] of [[0, 1.1], [0.8, 0.8], [-0.9, 0.6]]) {
+      const P = I.player; P.x = sp.x + dx; P.z = sp.z + dz; const d = Math.hypot(dx, dz); P.fx = -dx / d; P.fz = -dz / d; I.groundCheck(P, I.walkState);
+      out.push(I.useAction(I.interactions())?.text || '');
+    }
+    S.hook = null; I.todayBoard.updateModel?.();
+    return out;
+  });
+  assert(r.every((x) => /egg|egget/i.test(x)), r.join(' | '));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
