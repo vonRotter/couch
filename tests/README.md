@@ -11,7 +11,7 @@ They are plain Node scripts (no test framework) and are not part of the Vite bui
    `for f in tests/lively/*.test.mjs; do node "$f" || break; done`; the classic games: `for f in tests/arcade/*.test.mjs; do node "$f" || break; done`.
    The same for each suite folder: `tests/island`, `tests/keepsolo`, `tests/games`, `tests/pad`; and the missing-string
    check: `node tests/strings.mjs`. Everything (about 25 minutes):
-   `node tests/smoke.mjs; node tests/strings.mjs; for f in tests/{island,keepsolo,games,pad,lively,arcade}/*.test.mjs; do node "$f"; done`
+   `node tests/smoke.mjs; node tests/strings.mjs; for f in tests/{island,keepsolo,games,pad,lively,arcade,lba2,playtest}/*.test.mjs; do node "$f"; done`
 3. Run tests on a tree nobody edits meanwhile: the dev server reloads a page when a source file changes, and the test
    in that page then fails for no reason. (After a source file changed, a test's own `import('/src/...')` can get a
    second copy of a module, without the game's state: read state through `window.game`, the scene, or behaviour.)
@@ -79,6 +79,12 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
   for one who takes nothing up: one at a time, five days apart, only on quiet days, each after what it builds on) and
   `oldsave` (saves from before the round, a half-made one, and a page reload). `tests/lively/density.test.mjs` also
   checks the round: arrivals never on a special day, creatures only take surprises, its places spread over the map.
+- `tests/playtest/playtest.test.mjs`: fixes from the play-test pass over a simulated month (its day-by-day log and the
+  owner decisions are in `tests/playtest/LOG.md`): toasts one at a time and clear of the task list and the hall's
+  cabinet tags, no puzzle lock on a new island's festival day, the farming step first, the egg basket before the
+  shipping bin, the ghost ship clear of the hotbar, cards that fit the screen with big text, the map's arrow off the
+  task list, the tournament pill under the top pills, the pause menu hiding a card or a tutorial step under it, and
+  the Today board not announcing what is already over.
 - `tests/lively/*.test.mjs`: the "livelier island" round (Today board and tomorrow hooks, villagers' own lives,
   rare events and the mystery, music and ambience, Pip's robot, old saves, and the density budget).
 

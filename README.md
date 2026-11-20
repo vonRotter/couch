@@ -1028,7 +1028,7 @@ night match yours and crops grow while you are away.
   a three-minute fishing tournament against Grumbleton (Wednesdays, or any day at 5 hearts), a
   specials board in the café (up to 4 dishes that sell for more and are ordered more often), and baby
   animals (happy hens hatch chicks, happy cows and goats have a baby; babies grow up in 3 days).
-  Pop-up messages wait in a queue (at most two at a time, paused under panels), and decorate mode has
+  Pop-up messages wait in a queue (one at a time, shorter while more wait, paused under panels; in the Game Hall they show under the clock, clear of the cabinets' name tags), and decorate mode has
   a free cursor that the stick moves.
 - **The lighthouse story, "Why did the lamp go dark?":** after the tutorial, once Keeper Bram has two
   hearts or you have visited Lighthouse Caves, Bram writes that his lamp went dark (from then on it stays
@@ -1318,7 +1318,7 @@ on 1; counting arrivals as special too, never two on one day, and 14 days (33 %)
     glass, wood, a pearl or a starfish) and two stranded crabs to carry back to the water ([B]; they stay friends
     and never count as the day's crab job, which stays one crab a day). In winter the storm brings snow.
   - **Fog:** the view closes in all day (not indoors or on Shell Isle). From 20 to midnight a **ghost ship**
-    lies side-on just off the west beach, where the usual view shows it from the sand: solid pale colours that
+    lies side-on off the west beach, out by the river mouth, where the usual view shows it beside you from the sand (never behind the hotbar): solid pale colours that
     light themselves and shine through the fog (not see-through), wrapped in a soft green
     glow that shows through the fog from far away (it breathes slowly; steady with "Reduce flashing"), and **Captain Wisp**, a friendly ghost (sleepy voice type), waits by the water: the
     view swings to his ship while he tells where the fog took him, and he gives 40 coins and a pearl.

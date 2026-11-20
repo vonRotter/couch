@@ -218,7 +218,7 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
 
 1. **The Today board's [OK] saves an event "for later".** On a day with a warning or a visitor's letter the board
    says "[OK]: save it · [BACK]: off we go". [OK] is E / A, the key a child presses every day to close every
-   panel, so the event got saved without meaning to on four of the days played (Skye twice, the fog, the storm,
+   panel, so the event got saved without meaning to on five of the days played (Skye twice, the fog, the storm,
    the rainbow), followed by "Saved for you: ..." toasts. Recommendation: [OK] (and [B]) close the board as on
    other days, and saving takes its own row on the board ("🔒 Save it for later", picked with the stick), or [C].
 2. **A new island's first days are crowded.** Day 1 (a Saturday) had the welcome, the farming steps, Beach Day and
