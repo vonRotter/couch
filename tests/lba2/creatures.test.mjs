@@ -3,7 +3,7 @@
 // Marlo promised in a letter); the whale drifts over at dusk, a moment to watch and to photograph; the tiny elephants'
 // tea stall (say when, forgiving timing widens the line, one cup a day); the shy moss creature (only in Sneaky mode,
 // hides from noise, five visits make a friend).
-import { open, close, startIsland, island, sim, at, test, assert, done, press, shot, standAt, talkThrough, hold, oddSave, DAY } from './lba2.mjs';
+import { open, close, startIsland, island, sim, at, test, assert, done, press, shot, standAt, talkThrough, hold, oddSave, DAY, goTo } from './lba2.mjs';
 
 const page = await open();
 const D0 = at(2026, 11, 18, 10);
@@ -127,8 +127,7 @@ await test('the shy moss creature: only seen in Sneaky mode; noise makes it hide
   const visits = [];
   for (let d = 1; d <= 5; d++) {
     await standAt(page, 0, 0);
-    await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, at(2026, 11, 19 + d, 11));
-    await sim(page, 1.2);
+    await goTo(page, at(2026, 11, 19 + d, 11));
     await island(page, (I, S) => { S.odd.mode = 'sneaky'; });
     await standAt(page, -17, 25, [0, -1]);
     await hold(page, 'KeyW', 1.2);

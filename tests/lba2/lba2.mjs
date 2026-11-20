@@ -11,6 +11,20 @@ export async function hold(page, code, s) {
   await sim(page, 1 / 30);
 }
 
+/**
+ * Move the island clock to `ms` (a new day) and let that day's Today board come up and close it: it opens about a
+ * second into the first walk of a new day, which otherwise lands in the middle of whatever the test does next.
+ */
+export async function goTo(page, ms) {
+  await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, ms);
+  const { sim, island } = await import('../lively/helper.mjs');
+  for (let i = 0; i < 2; i++) {
+    await island(page, (I) => { if (I.mode !== 'walk' && I.mode !== 'today') { I.hud.setDialog(null); I.hud.setPanel(null); I.dlg = null; I.mode = 'walk'; } });
+    await sim(page, 1.4);
+    await island(page, (I) => { if (I.mode === 'today') { I.hud.setPanel(null); I.mode = 'walk'; } });
+  }
+}
+
 /** Close whatever is up (a panel, a dialog, the Today board) the quick way, and stand at (x, z). */
 export async function standAt(page, x, z, face = null) {
   await island(page, (I, S, G, [x, z, face]) => {

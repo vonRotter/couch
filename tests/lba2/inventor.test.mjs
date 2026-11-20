@@ -3,7 +3,7 @@
 // every funny spot and every arrival is open ground you can walk away from: never water, never stuck); the joke
 // vending robot (once a day, three jokes not told in four weeks, a small prize); the talking lighthouse (one short line
 // a day in its own voice, not the narrator, none again within four weeks); her quests come one step at a time.
-import { open, close, startIsland, island, sim, at, test, assert, done, shot, standAt, talkThrough, oddSave, DAY } from './lba2.mjs';
+import { open, close, startIsland, island, sim, at, test, assert, done, shot, standAt, talkThrough, oddSave, DAY, goTo } from './lba2.mjs';
 
 const page = await open();
 const D0 = at(2026, 11, 18, 11);
@@ -20,8 +20,7 @@ await test('Tinka at her workshop: hello, then one chat a day, never one again w
   await talkThrough(page);
   const heard = [];
   for (let d = 1; d <= 12; d++) {
-    await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, D0 + d * DAY);
-    await sim(page, 0.2);
+    await goTo(page, D0 + d * DAY);
     await standAt(page, t.x - 1.2, t.z, [1, 0]);
     await island(page, (I) => I.interactions().b.fn());
     heard.push(await island(page, (I) => (I.mode === 'dialog' ? I.dlg.lines[0].key : '(wave)')));
@@ -55,7 +54,9 @@ await test('the teleport booths: pick a booth, pop there; misfires land on open 
   const bad = r.filter((p) => !p.dry || !p.walk || p.away < 3);
   console.log(`   landing spots checked: ${r.length} (${r.map((p) => `${p.id} ${p.away}/8`).join(', ')})`);
   assert(!bad.length, JSON.stringify(bad));
-  // a real trip: from the east booth to the hill booth (or a funny spot)
+  // a real trip: from the east booth to the hill booth (or a funny spot). (The last test moved the clock to a new day:
+  // let its Today board come up and close it first, or it opens on arrival, as it should on a new day's first walk.)
+  await goTo(page, D0 + 13 * DAY);
   await standAt(page, 52.4 - 0.4, 11.6 + 0.9, [0, -1]);
   const use = await island(page, (I) => I.interactions().b?.text);
   assert(/teleport booth/.test(use), use);

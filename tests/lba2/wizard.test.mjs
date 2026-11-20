@@ -2,7 +2,7 @@
 // arrow at a time, nothing to fail) gives the wand; the rain spell waters the crops under its cloud (the whole field
 // when you are at it), once a real day; lesson two (the sun spell) only after the sun's letter; the sun spell lifts the
 // rain's look for an hour, never the calendar's weather; no spells indoors or on Shell Isle.
-import { open, close, startIsland, island, sim, at, test, assert, done, press, shot, standAt, talkThrough, oddSave, DAY } from './lba2.mjs';
+import { open, close, startIsland, island, sim, at, test, assert, done, press, shot, standAt, talkThrough, oddSave, DAY, goTo } from './lba2.mjs';
 
 const page = await open();
 const D0 = at(2026, 11, 18, 11); // a Wednesday
@@ -63,8 +63,7 @@ await test('the rain spell waters every crop under its cloud (the whole field), 
   const again = await island(page, (I) => I.mode);
   assert(again === 'walk', `tired: ${again}`);
   // tomorrow it works again
-  await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, D0 + DAY);
-  await sim(page, 1.5);
+  await goTo(page, D0 + DAY);
   await standAt(page, -12, -5);
   await island(page, (I) => I.odd.wizard.tryCast('rain'));
   assert((await island(page, (I) => I.mode)) === 'spell', 'tomorrow it can be cast again');
@@ -79,8 +78,7 @@ await test('lesson two waits for the sun\'s letter; the sun spell lifts a rainy 
   await island(page, (I, S) => { S.odd.wiz.lessons.sun = true; });
   // a rainy day
   const rainy = await page.evaluate(async (d0) => { const C = await import('/src/scenes/solo/calendar.js'); for (let d = 2; d < 60; d++) { const ms = d0 + d * 86400000; if (C.rainyOn(ms) && !C.rareEventOn(ms)) return ms; } return null; }, D0);
-  await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, rainy);
-  await sim(page, 2);
+  await goTo(page, rainy);
   await standAt(page, 8, 8);
   await island(page, (I) => { I.odd.wizard.tryCast('sun'); });
   await sim(page, 0.4);
