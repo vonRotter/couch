@@ -40,6 +40,7 @@ addStrings({
   en: {
     'isl.i.magicBall': 'Magic ball', 'isl.i.apple': 'Apple',
     'mb.h.throw': '[B] throw the magic ball', 'mb.h.flying': 'Boing...', 'mb.title': 'The magic ball',
+    'mb.task': '🔮 Try Tinka\'s magic ball: hold it ({key}) and press [B]', 'mb.task.bag': 'it is in your bag: {bag}',
     'mb.t.apple': 'An apple fell from the tree!', 'mb.t.appleDone': 'This tree gave you an apple today already.',
     'mb.t.bell': 'Ding! {n} of 3 bells humming...', 'mb.t.bells': 'All three bells ring together! What a sound.',
     'mb.t.bellsOne': 'All three with ONE throw! Amazing aim!',
@@ -60,6 +61,7 @@ addStrings({
   no: {
     'isl.i.magicBall': 'Magisk ball', 'isl.i.apple': 'Eple',
     'mb.h.throw': '[B] kast den magiske ballen', 'mb.h.flying': 'Boing...', 'mb.title': 'Den magiske ballen',
+    'mb.task': '🔮 Prøv den magiske ballen til Tinka: hold den ({key}) og trykk [B]', 'mb.task.bag': 'den ligger i sekken: {bag}',
     'mb.t.apple': 'Et eple falt ned fra treet!', 'mb.t.appleDone': 'Dette treet har allerede gitt deg et eple i dag.',
     'mb.t.bell': 'Ding! {n} av 3 bjeller nynner...', 'mb.t.bells': 'Alle tre bjellene ringer sammen! For en lyd.',
     'mb.t.bellsOne': 'Alle tre med ETT kast! For et sikte!',
@@ -147,6 +149,18 @@ export class MagicBall {
   }
 
   todayNews() { return []; }
+
+  /**
+   * Until the first throw: how to hold it. The parcel lands in the bag when the hotbar is full, and the letter only
+   * says "hold it" (play-test): the task names the hotbar key, or how to open the bag.
+   */
+  tasks() {
+    const B = this.B, S = this.S;
+    if (!B || B.throws || !count(S, 'magicBall') || this.host.held?.id === 'magicBall') return [];
+    const it = S.inv.find((x) => x.id === 'magicBall');
+    const key = it && it.slot >= 0 && it.slot < 9 ? (this.host.onPad ? t('[ITEMS]') : String(it.slot + 1)) : t('mb.task.bag', { bag: this.host.bagKey() });
+    return [t('mb.task', { key })];
+  }
 
   tick() {
     const B = this.B;

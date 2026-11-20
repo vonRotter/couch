@@ -163,7 +163,9 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   - The fishing tournament's pill (and a hop trail's) is centred at the very top: with the mode badge (Sporty mode,
     learned on day 4) the top-left row is wider, and the pill covered the badge and half of the coins.
   - The magic ball arrives by letter into the bag when the hotbar is full (slot 17); the letter says "Hold it", but
-    not that it is in the bag (Tab). Small; left for now, noted.
+    not that it is in the bag (Tab).
   - Grumbleton has a "!" every day from 5 hearts (the tournament offer); the line is the same each day.
 - Fixed:
   - The tournament's and the hop trail's pills sit under the top-left pills (`contest.js`, `hops.js`).
+  - Until the first throw, a task says how to hold the magic ball: its hotbar key, or "it is in your bag: Tab"
+    (`magicball.js tasks`, English and Norwegian).

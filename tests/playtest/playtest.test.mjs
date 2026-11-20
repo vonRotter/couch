@@ -300,6 +300,19 @@ await test('the fishing tournament\'s and a hop trail\'s pills sit under the top
   await island(page, (I) => { I.tour.run = null; I.npc('grumbleton').busy = false; I.toasts.clear(); });
 });
 
+await test('the magic ball in the bag (a full hotbar): a task says how to hold it, until the first throw', async () => {
+  const r = await island(page, (I, S) => {
+    S.odd.got = { ...(S.odd.got || {}), ball: 0 };
+    for (let i = 0; i < 9; i++) if (!S.inv.some((x) => x.slot === i)) S.inv.push({ id: 'wood', n: 1, slot: i });
+    S.inv.push({ id: 'magicBall', n: 1, slot: 15 });
+    const a = I.allTasks().find((x) => x.includes('🔮'));
+    S.odd.ball.throws = 1;
+    const b = I.allTasks().find((x) => x.includes('🔮'));
+    return { a, b };
+  });
+  assert(/bag: Tab/.test(r.a || '') && !r.b, JSON.stringify(r));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
