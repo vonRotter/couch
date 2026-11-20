@@ -4,7 +4,7 @@ import { Character } from '../../core/character.js';
 import { now } from './save.js';
 import { dayIndex, dayKey, freeDay, weekIndex } from './calendar.js';
 import { heightAt } from './map.js';
-import { puzzleDay, nextPuzzle, puzzleSave } from './puzzles.js';
+import { puzzleDue } from './puzzles.js';
 import { Modes } from './modes.js';
 import { MagicBall } from './magicball.js';
 import { Wizard } from './wizard.js';
@@ -107,8 +107,7 @@ export function oddSave(S, di = dayIndex()) {
 
 /** Does a puzzle lock appear on this day (puzzles.js: then nothing new arrives that day)? */
 export function puzzleComes(S, at) {
-  const Z = puzzleSave(S), w = weekIndex(at);
-  return !!S.intro && !Z.cur && Z.week < w && dayIndex(at) >= puzzleDay(w) && !!nextPuzzle(S);
+  return !!puzzleDue(S, at);
 }
 
 /**

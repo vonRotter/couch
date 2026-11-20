@@ -83,6 +83,8 @@ const CSS = `
 .label.isl-mark { font-size: clamp(22px, 2.4vw, 36px); font-weight: 700; color: #ffd84a; paint-order: stroke fill; -webkit-text-stroke: .16em #2b2340; animation: isl-bob 1s infinite; }
 .label.isl-zzz { font-size: clamp(16px, 1.6vw, 24px); font-weight: 700; color: #fff; paint-order: stroke fill; -webkit-text-stroke: .16em #5a4d7a; animation: isl-bob 2s infinite; }
 @keyframes isl-bob { 50% { margin-top: -6px; } }
+/* toasts on the island (toasts.js): one at a time, wrapped, and narrow enough to stay clear of the task list */
+.ui-toast.isl-toasts .toast { max-width: calc(36vw / var(--ts, 1)); text-align: center; border-radius: 22px; line-height: 1.25; }
 `;
 
 export function injectHudStyle() { injectStyle(); }
@@ -192,6 +194,7 @@ export class IslandHud {
 
   setDialog(d) {
     this.show(this.dialog, !!d);
+    this.selname.style.opacity = d ? '0' : ''; // (the held thing's name would peek out between the dialog and the hotbar)
     if (!d) { this.cache.dialog = null; return; }
     const choices = d.choices ? `<div class="choices">${d.choices.map((c, i) => `<span class="${i === d.index ? 'on' : ''}">${esc(c)}</span>`).join('')}</div>` : '';
     this.dialog.style.setProperty('--c', d.css || '#2b2340');

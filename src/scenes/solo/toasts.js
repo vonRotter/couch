@@ -1,11 +1,12 @@
 // A toast queue for the solo island (milestone B3). While an island scene is running it stands in for
-// game.ui.toast: at most two pop-ups are visible at a time, each for its own duration, and the queue
+// game.ui.toast: one pop-up is visible at a time (play-test: two stacked read as too much at once and a long
+// one ran under the task list), each for its own duration, and the queue
 // pauses (and hides what is showing) while a full panel is open. Exact duplicates are dropped, and toasts
 // with the same group merge into one ("3 letters in the mailbox", "+60 coins", "You got: a, b").
 // Timers run on game time (update(dt) from the scene), so they also follow window.game.simulate().
 // The shared UI's own toast (used by every co-op game) is put back untouched on dispose().
 
-const MAX_SHOWN = 2;
+const MAX_SHOWN = 1;
 const MAX_WAITING = 5;
 
 export class ToastQueue {
@@ -18,6 +19,8 @@ export class ToastQueue {
     // toast(text, ms, { group, add, fmt }): with a group, `add` joins the group's values and fmt(values)
     // makes the text (e.g. sums coins or lists items).
     ui.toast = (text, ms, opts) => this.push(text, ms, opts);
+    // (narrower and wrapped on the island, so a long one stays clear of the task list: hud.js)
+    ui.toastEl?.classList.add('isl-toasts');
   }
 
   push(text, ms = 1600, opts = {}) {
@@ -76,6 +79,7 @@ export class ToastQueue {
 
   dispose() {
     this.clear();
+    this.ui.toastEl?.classList.remove('isl-toasts');
     if (Object.prototype.hasOwnProperty.call(this.ui, 'toast')) delete this.ui.toast;
     if (this.ui.toast !== this.orig) this.ui.toast = this.orig;
   }

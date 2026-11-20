@@ -821,6 +821,8 @@ export class SoloIslandScene extends BaseScene {
     out.unshift(...this.events.tasks()); // the seasonal mystery's next step
     if (this.isle2.here()) out.unshift(t('isl.task.isle'));
     if (count(S, 'seaChart') && !S.isle2.chart) out.unshift(t('isl.task.chart'));
+    // while the farming steps run, the step comes first (a new child follows the top line)
+    if (S.intro && S.tut >= 1 && S.tut <= 7) { const k = out.indexOf(t(`isl.tut.${S.tut}`)); if (k > 0) out.unshift(...out.splice(k, 1)); }
     return out;
   }
 

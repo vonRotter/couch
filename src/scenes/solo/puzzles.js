@@ -120,20 +120,30 @@ export function nextPuzzle(S) {
 }
 
 /**
- * Bring a new puzzle if one is due at this time: none waiting, not one this week yet, and this week's puzzle day
- * has come. Returns the new puzzle's id or null. (Idempotent for the same time and save.)
+ * The puzzle that is due at this time, or null (pure: nothing changes): none waiting, not one this week yet, and this
+ * week's puzzle day has come. The odd-adventure round asks it too (odd.js puzzleComes: nothing else arrives that day).
  */
-export function schedule(S, at = now()) {
+export function puzzleDue(S, at = now()) {
   if (!S.intro) return null; // (after the welcome)
+  if (S.tut >= 1 && S.tut <= 7) return null; // (nor while Aunt Hazel's farming steps run: one new thing at a time)
   const Z = puzzleSave(S);
   if (Z.cur) return null; // one is waiting: never more than one
   const w = weekIndex(at);
   if (Z.week >= w) return null; // this week's already came
   if (dayIndex(at) < puzzleDay(w)) return null;
-  const id = nextPuzzle(S);
+  // a puzzle day that passed while the child was away (or before the island was made) comes on a later quiet day
+  // only, never on top of a festival, a surprise or a rare event (play-test: it came on a new island's Beach Day)
+  if (dayIndex(at) > puzzleDay(w) && !freeDay(at)) return null;
+  return nextPuzzle(S);
+}
+
+/** Bring a new puzzle if one is due at this time (puzzleDue). Returns the new puzzle's id or null. (Idempotent for the same time and save.) */
+export function schedule(S, at = now()) {
+  const id = puzzleDue(S, at);
   if (!id) return null;
+  const Z = puzzleSave(S);
   Z.cur = id;
-  Z.week = w;
+  Z.week = weekIndex(at);
   Z.at[id] = at;
   return id;
 }
