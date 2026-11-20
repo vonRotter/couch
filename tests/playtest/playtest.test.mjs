@@ -265,6 +265,26 @@ await test('the Today board does not announce what is already over at the first 
   assert(r.dm === 1 && r.de === 0, JSON.stringify(r));
 });
 
+await test('the map\'s arrow never sits on the task list', async () => {
+  const r = await island(page, (I) => {
+    I.hud.setPanel(null); I.mode = 'walk';
+    const P = I.player; P.x = -9; P.z = -10; I.groundCheck(P, I.walkState); I.snapCamera();
+    const out = [];
+    for (const m of I.atlas.markers('main').filter((m) => m.x !== undefined)) {
+      I.atlas.setTarget(m);
+      I.atlas.updateCompass(0.1);
+      const c = I.atlas.compass, t = I.hud.tasks.getBoundingClientRect();
+      if (c.style.display === 'none') continue;
+      const a = I.atlas.compassAt;
+      const hit = a.x + 26 > t.left && a.x - 26 < t.right && a.y + 26 > t.top && a.y - 26 < t.bottom;
+      if (hit) out.push(m.key);
+    }
+    I.atlas.setTarget(null);
+    return out;
+  });
+  assert(!r.length, `on the task list for: ${r.join(', ')}`);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

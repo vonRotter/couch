@@ -560,6 +560,15 @@ export class IslandAtlas {
       x = cx + dx * k; y = cy + dy * k;
       ang = Math.atan2(dx, -dy);
     }
+    // never on the task list (top right; it is taller than MT with a few tasks or big text): play-test, the arrow
+    // sat on the tasks' text. It goes just below the list or just left of it, whichever is nearer.
+    const tk = host.hud.tasks;
+    if (tk && tk.style.display !== 'none' && tk.offsetParent) {
+      const r = tk.getBoundingClientRect(), pad = 34;
+      if (x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad) {
+        if (r.bottom + pad - y < x - (r.left - pad)) y = Math.min(H - MB, r.bottom + pad); else x = r.left - pad;
+      }
+    }
     el.style.display = 'block';
     el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
     this.arEl.style.transform = `rotate(${ang.toFixed(3)}rad)`;

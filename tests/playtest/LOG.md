@@ -148,3 +148,7 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
 - Fixed:
   - The Today board leaves out a daily surprise that is already over by the first visit (`today.js`), and a drama's
     big moment after 18 (`village.js`); the next day's board still tells how it ended.
+  - The map's arrow (a target Coach set two weeks earlier, still pointing at Sky Hop's balloon) sat on the task
+    list's text in the top right. Fixed: it goes just below or left of the list (`atlas.js updateCompass`).
+- (Play runs from here on use a copy of the tree on a second dev server, so editing a fix does not reload the page
+  under a running play day; two days had to be played again because of that.)
