@@ -130,6 +130,9 @@ export function arrivalDue(S, at) {
   if (!quietDay(S, at)) return null;
   // the folk's next step (a house, the pebble circle, the drums) is that day's new thing: nothing else arrives then
   if (O.got.folk !== undefined && FOLK_STEPS.includes(di - O.got.folk) && di > O.got.folk) return null;
+  // nor on the day a villagers' drama or social happening starts (its first news is that day's new thing; the
+  // villagers' day is decided first: today.js newDay)
+  if (S.village?.drama && S.village.drama.start === di) return null;
   return ARRIVALS.find((a) => O.got[a.id] === undefined && (!a.need || a.need(S, O.got)))?.id || null;
 }
 

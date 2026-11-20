@@ -26,6 +26,7 @@ await test('lesson one: Wendeline at her tower, the rain rune (wrong arrows only
   const m = await island(page, (I) => ({ mode: I.mode, html: I.hud.panel.innerText }));
   assert(m.mode === 'spell' && /Rain spell/.test(m.html), JSON.stringify(m));
   await shot(page, 'lba2-wizard-rune');
+  await sim(page, 0.4); // (the rune takes no arrows for its first moment: the press that closed the talk never counts)
   // a wrong arrow does nothing bad; then up, down, down, right
   await stick('left');
   assert((await island(page, (I) => I.odd.wizard.rune.i)) === 0, 'a wrong arrow only wobbles');

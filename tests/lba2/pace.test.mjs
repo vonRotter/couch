@@ -2,7 +2,7 @@
 // of daily visits by a child who takes up everything the day after it comes (talks to Coach and Mumble, reads every
 // letter, takes the lessons): sixteen arrivals, never two on a day, at least five days apart, never on a day with a
 // festival, a daily surprise, a rare event, a drama's big moment, a new puzzle lock or a step of the Ollo folk's
-// settling (a house, the pebble circle, the drums); and the same with a child who
+// settling (a house, the pebble circle, the drums) or a drama's first day; and the same with a child who
 // does nothing (arrivals that build on something wait). All from the date and the save (odd.js arrivalDue), with the
 // villagers' dramas and the puzzle locks running alongside as on the island.
 import { open, close, startIsland, island, at, test, assert, done, oddSave } from './lba2.mjs';
@@ -20,7 +20,7 @@ async function simulate(days, eager) {
       const at = d0 + d * 86400000, di = C.dayIndex(at);
       I.village.newDay(at); // the dramas move on first (as today.js does)
       const id = O.arrivalDue(S, at);
-      const D = S.village.drama, climax = !!D && D.climax === di && !D.res;
+      const D = S.village.drama, climax = !!D && D.climax === di && !D.res, dramaStart = !!D && D.start === di;
       const puzzle = O.puzzleComes(S, at);
       if (id) { S.odd.got[id] = di; S.odd.last = di; }
       Z.schedule(S, at);
@@ -34,7 +34,7 @@ async function simulate(days, eager) {
         if (g.school !== undefined && di > g.school) S.odd.wiz = { ...(S.odd.wiz || {}), lessons: { ...(S.odd.wiz?.lessons || {}), rain: true } };
       }
       const fa = S.odd.got.folk, folkStep = fa !== undefined && di > fa && [7, 14, 21].includes(di - fa); // a house, the circle, the drums
-      log.push({ d, di, id, fest: C.festivalOn(at), sur: C.surpriseOn(at), rare: C.rareEventOn(at), climax, puzzle, folkStep });
+      log.push({ d, di, id, fest: C.festivalOn(at), sur: C.surpriseOn(at), rare: C.rareEventOn(at), climax, puzzle, folkStep, dramaStart });
     }
     return log;
   }, [D0, days, eager]);
@@ -45,7 +45,7 @@ await test('an eager child: sixteen arrivals over four months, one at a time, at
   const log = await simulate(126, true);
   const arr = log.filter((x) => x.id);
   const gaps = arr.slice(1).map((x, i) => x.d - arr[i].d);
-  const clash = arr.filter((x) => x.fest || x.sur || x.rare || x.climax || x.puzzle || x.folkStep);
+  const clash = arr.filter((x) => x.fest || x.sur || x.rare || x.climax || x.puzzle || x.folkStep || x.dramaStart);
   const steps = log.filter((x) => x.folkStep).map((x) => x.d);
   console.log(`   the Ollo folk's steps on days ${steps.join(', ')} (nothing else arrives then)`);
   assert(steps.length === 3, `the folk's three steps: ${steps}`);

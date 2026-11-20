@@ -1360,8 +1360,8 @@ pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
 
 - **The pace (the owner's rule: special, rare, never too much at once).** Nothing of this round is there on day one.
   Things **arrive one at a time**: at most one a day, at least five days apart, only on a quiet day (no festival,
-  daily surprise, rare event or drama big moment, and not the day a puzzle lock appears or the Ollo folk take their
-  next settling step), each with a letter and a
+  daily surprise, rare event or drama big moment, and not the day a puzzle lock appears, a drama starts or the Ollo folk take
+  their next settling step), each with a letter and a
   line on the Today board, in a fixed order where each waits for what it builds on (`ARRIVALS` in `odd.js`;
   `arrivalDue(S, ms)` is pure, so tests simulate months). Sixteen arrivals over three to four months.
 - **Behaviour modes** (`modes.js`): **Normal**, **Sporty** (runs about 1.45 times as fast, jumps higher, and is a
