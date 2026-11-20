@@ -41,8 +41,9 @@ await test('the first farming step tops the task list while the steps run; every
 
 await test('toasts: one at a time, wrapped and clear of the task list', async () => {
   await island(page, (I, S, G) => {
+    I.toasts.clear();
     G.ui.toast('🧩 Something new on the island: an old door in the cliff behind Aunt Hazel\'s! It is on your map.', 3000);
-    G.ui.toast('Today: Beach Day!', 2000);
+    G.ui.toast('A second toast (Beach Day)', 2000);
   });
   await sim(page, 0.3);
   const r = await page.evaluate(() => {
@@ -243,6 +244,25 @@ await test('Norwegian: a title inside a task sentence is small ("Gi tante Hassel
     return { q, tag, en };
   });
   assert(/^Gi tante Hassel /.test(r.q) && r.tag === 'Tante Hassel' && /^Bring Aunt Hazel /.test(r.en), JSON.stringify(r));
+});
+
+await test('the Today board does not announce what is already over at the first visit (a balloon gone at 17, a big moment over at 18)', async () => {
+  const r = await page.evaluate(async () => {
+    const C = await import('/src/scenes/solo/calendar.js');
+    const I = window.game.current;
+    // a balloon day: 4 December 2026
+    const mk = (h) => new Date(2026, 11, 4, h).getTime();
+    const morning = I.todayBoard.compute(mk(10)).map((x) => x.k), evening = I.todayBoard.compute(mk(19)).map((x) => x.k);
+    // a drama's big moment today
+    const S = I.save, keep = S.village.drama, di = C.dayIndex(mk(10));
+    S.village.drama = { id: 'pumpkin', start: di - 4, climax: di, told: {}, side: null, fish: 0, water: [], flavor: null, res: null };
+    const dm = I.village.todayNews(mk(12)).length, de = I.village.todayNews(mk(18)).length;
+    S.village.drama = keep;
+    return { sur: C.surpriseOn(mk(10)), morning, evening, dm, de };
+  });
+  assert(r.sur === 'balloon', JSON.stringify(r));
+  assert(r.morning.some((k) => /balloon/.test(k)) && !r.evening.some((k) => /balloon/.test(k)), JSON.stringify(r));
+  assert(r.dm === 1 && r.de === 0, JSON.stringify(r));
 });
 
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });

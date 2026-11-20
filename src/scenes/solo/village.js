@@ -172,7 +172,10 @@ export class Village {
   todayNews(at) {
     const V = this.V, di = dayIndex(at), out = [];
     const D = V.drama;
-    const b = this.beat(D, di);
+    const b0 = this.beat(D, di);
+    // (the big moment plays 10-18: a first visit after that is not told "today: ..."; the next day's board says how
+    // it ended. Play-test: "Today: the pumpkin weighing!" at 18:00, when everyone had gone home)
+    const b = b0 === 'climax' && hourOf(at) >= 18 ? null : b0;
     if (b) {
       const at2 = DRAMAS[D.id].at;
       const v = D.id === 'rivalry' && b === 'mid' ? this.scores(D) : SOCIAL[D.id]?.newsVars?.(D, b, this);

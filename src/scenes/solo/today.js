@@ -5,6 +5,7 @@ import { say as speak } from '../../core/voice.js';
 import { now, hourOf, give } from './save.js';
 import { dayKey, dayIndex, dayMs, dayRand, festivalOn, surpriseOn, rareEventOn, seasonOf, birthdayOf, BIRTHDAYS } from './calendar.js';
 import { heightAt } from './map.js';
+import { SURPRISE_HOURS } from './surprise.js';
 import { mesh, box, sph, cyl, cone } from './models.js';
 
 // The Today board and tomorrow hooks (the "livelier island" round, part 1).
@@ -227,7 +228,9 @@ export class TodayBoard {
     const C = []; // { kind, pri, icon, keys: [...], v, x, z }
     const fest = festivalOn(at);
     if (fest) C.push({ kind: 'changed', pri: 9, icon: '🎉', keys: [1, 2, 3].map((i) => `td.fest.${fest}.${i}`), ...FEST_AT[fest] });
-    const sur = surpriseOn(at);
+    // (a surprise that is already over by the first visit is not news: play-test, "Skye is flying in today. Look up!"
+    // at 19:00, two hours after her balloon left)
+    const sur0 = surpriseOn(at), sur = sur0 && SURPRISE_HOURS[sur0] && hourOf(at) >= SURPRISE_HOURS[sur0][1] ? null : sur0;
     const letter = S.hookDone?.kind === 'letter' && S.hookDone.di === di ? S.hookDone.who : null;
     if (sur === 'merchant') {
       const list = (host.surprise?.pickWares(day) || []).map(([id]) => `@${host.surprise.itemKey(id)}`);

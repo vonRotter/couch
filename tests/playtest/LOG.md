@@ -131,3 +131,20 @@ The month starts on Saturday 21 November 2026, 09:30 (a new profile, Mia, from t
   - Every centred card (menus, the pause menu, Help me play, offers) is zoomed down to fit the screen when it would
     be taller, never above the chosen text size (`ui.js fitPanels`, called every frame from `main.js`).
   - The keys hint stops short of the hotbar at any text size (`hud.js`).
+
+## Days 14-17 (Fri 4 - Mon 7 Dec; Fishing Derby weekend, then spring)
+
+- Did: each day the Today board, letters, everyone with a "!", today's things on the map one by one (Skye's second
+  visit, the Derby, Hazel's prize pumpkin watered daily, a hermit crab's new shell, a flipped crab, the mystery
+  pot), Hazel's 4- and 6-heart events, Rosa's secret, farming and shipping.
+- Saw:
+  - First visit at 19:00 on a balloon day: the board said "Skye the explorer is flying in today. Look up!", two hours
+    after her balloon had left (10-17); the map's Today glow pointed at the empty meadow.
+  - First visit at 18:00 on the pumpkin weighing's day: "Today: the pumpkin weighing at Aunt Hazel's cottage!", but
+    the cast is only there 10-18, so it could not be seen. A child who plays only after dinner misses every drama's
+    big moment: owner decision (see the end).
+  - The pumpkin's big moment came on a Monday right after the Derby weekend with spring's first day and a new torn
+    page rumor: three things on one board, within the budget.
+- Fixed:
+  - The Today board leaves out a daily surprise that is already over by the first visit (`today.js`), and a drama's
+    big moment after 18 (`village.js`); the next day's board still tells how it ended.
