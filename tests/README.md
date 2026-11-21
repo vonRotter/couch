@@ -83,6 +83,9 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
 - `tests/playtest/decisions.test.mjs`: the owner's six decisions after the play-test (the Today board's save row, late
   big moments, a new island's quiet first three days, Grumbleton's tournament "!", a late torn page's three extra days,
   overdue odd-adventure arrivals for weekend visitors).
+- `tests/playtest/pass2.test.mjs`: fixes from the second play-test pass (months 2 to 5: the vote's marker at the
+  ballot box, the language kept between visits, Tinka's lines only about what is there, Shelby's weekend visits named
+  in tasks, Norwegian in-sentence names on the Today board).
 - `tests/playtest/playtest.test.mjs`: fixes from the play-test pass over a simulated month (its day-by-day log and the
   owner decisions are in `tests/playtest/LOG.md`): toasts one at a time and clear of the task list and the hall's
   cabinet tags, no puzzle lock on a new island's festival day, the farming step first, the egg basket before the
