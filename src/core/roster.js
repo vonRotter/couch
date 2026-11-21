@@ -17,6 +17,7 @@ export const HATS = [
 ];
 
 const STORE_KEY = 'couch-party.v1';
+export const DEVICE_KEY = STORE_KEY; // (the shared slot: the device's own settings, such as the language, live here too)
 
 function load(key = STORE_KEY) {
   try {

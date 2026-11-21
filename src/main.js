@@ -6,7 +6,7 @@ import './style.css';
 
 import { Input, buttonLabel, setPadLayout, KEYBOARD_SCHEMES } from './core/input.js';
 import { PLAYER_COLORS } from './core/palette.js';
-import { Roster } from './core/roster.js';
+import { Roster, DEVICE_KEY } from './core/roster.js';
 import { AudioEngine } from './core/audio.js';
 import { UI } from './core/ui.js';
 import { t, tFor, setLang, getLang, setButtonSource, stringKeys } from './core/i18n.js';
@@ -486,6 +486,9 @@ class Game {
     setLang(getLang() === 'en' ? 'no' : 'en');
     this.roster.progress.lang = getLang();
     this.roster.save();
+    // the language is the device's: kept in the shared slot too, which the game loads first (play-test pass 2: a child
+    // who chose Norwegian on their island got English again on every new visit, the shared slot's choice)
+    this.roster.editSave(DEVICE_KEY, (p) => { p.lang = getLang(); });
     this.ui.toast(t('lang.switched'));
     this.current?.onLanguage?.();
   }

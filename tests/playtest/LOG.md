@@ -318,3 +318,7 @@ between visits (their saves say so). Screenshots `play-mia*`, `play-ola*`, `play
 
 - The island vote (Mia, 24 Jan): the map's marker and the Today line pointed at the square's middle, 3 m from the
   ballot box, where nothing answered [B]. Fixed: until the count they point at the ballot box (`social.js mapAt`).
+- Ola (Norwegian, weekends): every visit began in English. The island's language switch (N, or the menu's Language)
+  was saved only in the profile's slot, while the game loads the shared slot's language first and carries it into the
+  profile: a child who chose Norwegian on their island got English again on every new visit. Fixed: the choice is the
+  device's and is kept in the shared slot too (`main.js toggleLanguage`, `roster.js DEVICE_KEY`).

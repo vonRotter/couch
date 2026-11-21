@@ -23,6 +23,19 @@ await test('the island vote: the map marker (and the Today line) point at the ba
   assert(r.news && Math.hypot(r.news.x - r.m.x, r.news.z - r.m.z) < 0.1, JSON.stringify(r));
 });
 
+await test('a language chosen on the island (N) is still chosen on the next visit (after a page reload)', async () => {
+  await island(page, (I) => { I.hud.setPanel(null); I.mode = 'walk'; });
+  const was = await page.evaluate(() => document.documentElement.lang);
+  await press(page, 'KeyN');
+  const now = await page.evaluate(() => document.documentElement.lang);
+  assert(was !== now, `switched: ${was} -> ${now}`);
+  await page.reload();
+  await page.waitForFunction(() => !!window.game && !!window.game.current, null, { timeout: 30000 });
+  const after = await page.evaluate(() => document.documentElement.lang);
+  assert(after === now, `kept after a reload: ${after}, chosen ${now}`);
+  await page.evaluate(() => window.game.toggleLanguage()); // (back, for the tests after this one)
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
