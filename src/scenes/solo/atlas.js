@@ -67,7 +67,7 @@ addStrings({
     'map.new': 'ikke prøvd ennå', 'map.talk': 'vil snakke med deg', 'map.asleep': 'sover hjemme', 'map.atHome': 'er hjemme',
     'map.a.fest': 'I dag: {name}', 'map.a.merchant': 'Kjøpmann Marlo er her', 'map.a.balloon': 'Ballongen til Skye har landet',
     'map.a.bottle': 'En flaske på stranda', 'map.a.dig': 'Grav etter skatten her', 'map.a.crab': 'En krabbe trenger hjelp',
-    'map.a.dance': 'Krabbedans i Krabbevika', 'map.a.leaves': 'En løvhaug å hoppe i', 'map.a.crops': 'Modne planter: {n}',
+    'map.a.dance': 'Krabbedans i Krabbebukta', 'map.a.leaves': 'En løvhaug å hoppe i', 'map.a.crops': 'Modne planter: {n}',
     'map.a.animals': 'Dyrene venter på deg', 'map.a.mail': 'Brev til deg', 'map.a.meteor': 'Stjerneskudd i kveld! Fang dem hvor som helst',
     'map.a.chests': 'En skattekiste du har funnet, er full igjen', 'map.a.palm': 'Kokosnøtter å riste ned', 'map.a.berries': 'Bær å plukke',
     'map.a.pool': 'Noe i fjærepytten', 'map.a.digIsle': 'Skattested: grav med Zipp-Zappen',

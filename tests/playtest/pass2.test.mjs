@@ -58,6 +58,20 @@ await test('Tinka never talks about the teleport booths (or Wendeline) before th
   assert(!keys.includes('iv.chat.5') && !keys.includes('iv.chat.10'), keys.join());
 });
 
+await test('a task that sends you to Shelby says she visits Crab Cove on a weekend (10-18); Norwegian calls the cove one name', async () => {
+  // Saturday 20 March 2027, 11:00, the story's chapter 3 (coconuts for Shelby's moon lens)
+  await startIsland(page, { time: at(2027, 3, 20, 11), save: `(S) => { S.npcs.shelby = { pts: 10, talkAt: 0, giftAt: 0, ev: 0, q: 0, met: true }; S.story = { ch: 3, phase: 'quest', stage: 0, goals: {}, asked: {}, crumbs: [], stairs: false, festDay: '', stars: {}, filterTold: false, topVisits: 0 }; }` });
+  const sat = await island(page, (I) => I.story.tasks().join(' | '));
+  assert(/Shelby/.test(sat) && /Crab Cove/.test(sat), sat);
+  await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, at(2027, 3, 22, 11)); // a Monday
+  await sim(page, 1.2);
+  const mon = await island(page, (I) => I.story.tasks().join(' | '));
+  assert(/Shelby/.test(mon) && !/Crab Cove/.test(mon), mon);
+  const no = await page.evaluate(async () => { const i = await import('/src/core/i18n.js'); return i.stringKeys().no.length; });
+  const cove = await page.evaluate(async () => { const i = await import('/src/core/i18n.js'), w = i.getLang(); i.setLang('no'); const k = i.stringKeys().no.map((k) => i.t(k)).filter((x) => /Krabbevika/.test(x)); i.setLang(w); return k; });
+  assert(no > 0 && !cove.length, cove.join(' | '));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

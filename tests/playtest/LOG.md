@@ -325,3 +325,19 @@ between visits (their saves say so). Screenshots `play-mia*`, `play-ola*`, `play
 - Tinka (Mia, 5 Feb): "If a booth sends you somewhere funny, just wave." weeks before the teleport booths came. Fixed:
   her chat lines about the booths and about Wendeline only come once those are on the island (`inventor.js`, an
   optional filter in `wizard.js freshLine`).
+- Evening-only (Eli, 19:30): the late big moments now play on the visit. Rosa's cake party (6 Jan) played in the
+  square the moment Eli walked up (screenshot `play-eli047-002`); the pumpkin weighing (21 Dec) played when he came
+  near the pumpkin. Days that start before 18 are unchanged.
+- Evening-only: Tinka stands at her workshop only 8-19, so an evening child never meets her. Her chats, the joke
+  robot's and the booths' introductions all wait for a daytime visit. Owner decision (below).
+- Weekend-only (Ola): the decision-6 overdue arrivals work as measured. Sporty came on 13 Dec (day 23), Sneaky on
+  24 Jan, Tinka on 14 Feb, all on weekend visits; Norwegian reads well throughout (no raw keys, no English lines).
+- Daily-ish (Mia, every third day): the vote was counted (the flower clock won, her friends voted with her), Tinka
+  moved in (30 Jan), the wizard school opened (8 Feb), the teleport booths (23 Feb), the tea stall (16 Mar). The
+  spring and autumn torn pages came (with the late-week extension), the rumour ended with the rubber duck, Hoot's
+  surprise party ended "small and sweet". Wendeline's lesson repeats in full on every visit until the rune is drawn
+  (the script did not draw it at first); that is by design (the lesson waits for you).
+- Shell Isle on a Saturday (Mia, 20 Mar): the story's chapter 3 says "Bring Shelby on Shell Isle 2 coconuts", but on
+  weekends 10-18 Shelby visits Crab Cove on the main island; a weekend child sails over and she is not there. Fixed:
+  a task that needs her says "(🦀 today she visits Crab Cove, until 18:00)" then (`homes.js awayNote`). Also fixed:
+  Norwegian called the cove "Krabbevika" once (the map's crab dance) and "Krabbebukta" everywhere else.

@@ -4,7 +4,7 @@ import { toon } from '../../core/palette.js';
 import { mesh, box, cyl, sph, WOOD_DARK } from './models.js';
 import { heightAt, HAZEL_HOME, STORE, MUSEUM, PAD, PLACES, HOME_DOORS, DEN, HALL } from './map.js';
 import { HUT } from './isle2geo.js';
-import { wakeHour } from './npcs.js';
+import { wakeHour, NPCS } from './npcs.js';
 
 // Everyone has a home (milestone C). At bedtime a villager walks to their doorstep, the door swings open,
 // they step in and it closes; in the morning they come out the same way. Each home has its own window
@@ -251,6 +251,9 @@ export class Homes {
   /** "asleep until 7:00" for task lines, or '' if this villager is up. */
   awayNote(id, at) {
     const n = this.host.npc(id);
+    // Shelby visits Crab Cove on weekends (10-18): a task that sends you to her on Shell Isle says where she is today
+    // (play-test pass 2: a weekend child sailed over and she was not there)
+    if (n && id === 'shelby' && NPCS.shelby.visit?.(at, this.host.save)) return t('isl.task.shelbyCove');
     if (!n || !(n.inside || n.sleep)) return '';
     const hr = wakeHour(id, at);
     const hh = Math.floor(hr), mm = Math.round((hr - hh) * 60);
