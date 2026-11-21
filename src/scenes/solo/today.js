@@ -170,13 +170,16 @@ export function rv(vars) {
   if (!vars) return vars;
   const out = {};
   for (const [k, v] of Object.entries(vars)) {
-    const one = (x) => (typeof x === 'string' && x.startsWith('@') ? t(x.slice(1)) : x);
+    // a villager's name inside a sentence takes its in-sentence form where it has one (Norwegian "tante Hassel":
+    // play-test pass 2); itemText gives the line a capital first letter again
+    const inS = (k) => { const m = k.match(/^isl\.npc\.(\w+)$/); const k2 = m && `isl.npcIn.${m[1]}`; return k2 && t(k2) !== k2 ? t(k2) : t(k); };
+    const one = (x) => (typeof x === 'string' && x.startsWith('@') ? inS(x.slice(1)) : x);
     out[k] = Array.isArray(v) ? v.map(one).join(', ') : one(v);
   }
   return out;
 }
 /** The text of a board item (or any { k, v }). */
-export const itemText = (it) => t(it.k, rv(it.v));
+export const itemText = (it) => { const s = t(it.k, rv(it.v)); return s.charAt(0).toUpperCase() + s.slice(1); };
 const sigOf = (k, v) => `${k}|${JSON.stringify(v || {})}`;
 const wd = (di) => `@td.wd.${new Date(dayMs(di)).getDay()}`;
 const FEST_AT = { derby: { x: 3.4, z: 46 }, fair: { x: 12, z: -5 }, plant: { x: 12, z: -5 }, lanterns: { x: 40, z: 20 }, beach: { x: 14, z: 37.5 }, pebble: { x: 44.5, z: -27.5 } }; // (pebble: the Ollo folk's Pebble Day, folk.js)

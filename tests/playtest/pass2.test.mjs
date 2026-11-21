@@ -72,6 +72,19 @@ await test('a task that sends you to Shelby says she visits Crab Cove on a weeke
   assert(no > 0 && !cove.length, cove.join(' | '));
 });
 
+await test('Norwegian Today lines write a title small inside a sentence ("i morgen har tante Hassel bursdag") and keep a capital first letter', async () => {
+  const r = await page.evaluate(async () => {
+    const i = await import('/src/core/i18n.js'), T = await import('/src/scenes/solo/today.js');
+    const w = i.getLang(); i.setLang('no');
+    const a = T.itemText({ k: 'td.r.bday', v: { name: '@isl.npc.hazel' } }), b = T.itemText({ k: 'td.mail.2', v: { name: '@isl.npc.hazel' } }), c = T.itemText({ k: 'td.mail.1', v: { name: '@isl.npc.rosa' } });
+    i.setLang('en');
+    const e = T.itemText({ k: 'td.mail.2', v: { name: '@isl.npc.hazel' } });
+    i.setLang(w);
+    return { a, b, c, e };
+  });
+  assert(/i morgen har tante Hassel bursdag/.test(r.a) && /^Tante Hassel har skrevet/.test(r.b) && /fra Rosa/.test(r.c) && /^Aunt Hazel wrote/.test(r.e), JSON.stringify(r));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

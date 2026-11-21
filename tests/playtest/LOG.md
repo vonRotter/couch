@@ -341,3 +341,42 @@ between visits (their saves say so). Screenshots `play-mia*`, `play-ola*`, `play
   weekends 10-18 Shelby visits Crab Cove on the main island; a weekend child sails over and she is not there. Fixed:
   a task that needs her says "(🦀 today she visits Crab Cove, until 18:00)" then (`homes.js awayNote`). Also fixed:
   Norwegian called the cove "Krabbevika" once (the map's crab dance) and "Krabbebukta" everywhere else.
+- Norwegian Today lines with a villager's name inside a sentence: "Psst: i morgen har Tante Hassel bursdag.",
+  "et brev fra Tante Hassel". Fixed: the board uses the in-sentence form ("tante Hassel") and gives the line a capital
+  first letter ("Tante Hassel har skrevet et brev til deg."); English is unchanged (`today.js`).
+
+## Second pass: what the three children reached by mid-April 2027 (about five months)
+
+| | Mia (every 3rd day, 11:00) | Ola (weekends, 10:30, Norwegian) | Eli (evenings, 19:30, every 4th day) |
+|---|---|---|---|
+| visits in the pass | 29 | 33 | 36 |
+| odd adventures arrived | sporty, ball, sneaky, Tinka (30 Jan), school (8 Feb), booths (23 Feb), tea (16 Mar), moss (9 Apr) | sporty (13 Dec), ball, sneaky (24 Jan), Tinka (14 Feb), school (14 Mar), booths (17 Apr) | sporty, ball, sneaky, Tinka, school, booths (3 Mar), tea, moss |
+| social happenings seen | vote (flower clock won), club, party, rumour, fence (twice) | vote, party ("small and sweet"), fence | cake, pumpkin, club, party (all four big moments after 18, played on the visit) |
+| save size | 11 KB, bag 28/27 (things to the chest), 953 coins | 7 KB, 190 coins | 8 KB, 705 coins |
+
+The decision-6 overdue arrivals kept the weekend child going (6 arrivals in five months; before the decision, the
+first pass's weekend simulation had 7 in 30 weeks with a 76-day wait). Nothing came twice; no day had two special
+things; no raw keys or console errors on any visit (the only console lines were the second dev server's 403s for
+files outside its folder).
+
+Not reached: the lighthouse story beyond chapter 3 (the script never sailed to Shelby with coconuts on a weekday),
+the Ollo folk, the joke robot, the sun spell, the cloud whale and Old Morel (they come later in the arrival order or
+on rarer days). The arrival order is tested by `tests/lba2/pace.test.mjs`.
+
+## Owner decisions from the second pass (not changed: each with a recommendation)
+
+7. **Evening children never meet Tinka or the tea stall.** Tinka stands at her workshop 8-19 and the tiny
+   elephants' tea stall is open 10-17; Eli (19:30) found an empty workshop and "The tea stall is closed. Open 10 to
+   17." on every visit for two months. Wendeline (8-20) and the late big moments reach him. Recommendation: Tinka at
+   her workshop until 20:30 and the tea stall open until 20:00 (both close before the villagers' bedtimes).
+8. **The dramas start their round again after the eighth.** From the ninth drama on (about four months in), the
+   first ones come back with the same lines: "Pip says she can catch a bigger fish than Grumbleton. Grumbleton just
+   said "Ha!"" returned word for word (the Today board only avoids repeats within three weeks). Recommendation: a
+   second wording for each drama's lines on its second round, or skip a drama the child already saw within six months.
+9. **A lesson's tool can go to the cottage chest.** With a full bag (Mia by month 3), Wendeline's wand went to the
+   cottage chest ("Your bag is full: Wand went to the chest"), while she says "Hold it and press E". Recommendation: a
+   task line while a tool from a lesson or a letter waits in the chest ("🪄 Your wand is in the cottage chest"), or let
+   such a tool take the hotbar's first empty slot or swap with the last bag stack.
+10. **Grumbleton's tournament still starts at a "yes" every visit for a child who says yes.** Not a fault, but the
+    "Fishing tournament" task and pill then sit on top of every visit while the child does other things.
+    Recommendation: none needed now; noted for the owner.
