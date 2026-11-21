@@ -68,7 +68,7 @@ addStrings({
     'isl.h.closed': '{place} er stengt for natta',
     'isl.home.store': 'Butikken', 'isl.home.museum': 'Museet',
     'isl.task.asleep': '(💤 sover til {time})', 'isl.task.home': '(🏠 hjemme til {time})', 'isl.task.shelbyCove': '(🦀 i dag er hun på besøk i Krabbebukta, til 18.00)',
-    'isl.knock.hazel.1': 'Zzz ... mmm, hvem er det? Reddikene sover, og det gjør Tante Hassel også. Kom tilbake når hanen galer, vennen!',
+    'isl.knock.hazel.1': 'Zzz ... mmm, hvem er det? Reddikene sover, og det gjør tante Hassel også. Kom tilbake når hanen galer, vennen!',
     'isl.knock.hazel.2': 'Snork ... gulrøtter ... flere gulrøtter ... Å! Hysj, vennen. I morgen!',
     'isl.knock.rosa.1': 'Zzz ... vi har stengt, vennen ... frøene har tatt på seg pysjamasen ... kom tilbake klokka sju!',
     'isl.knock.rosa.2': 'Mmm ... én bukett, to buketter, tre ... zzz ... Butikken åpner i morgen tidlig!',

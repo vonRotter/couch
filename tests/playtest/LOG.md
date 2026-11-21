@@ -380,3 +380,10 @@ on rarer days). The arrival order is tested by `tests/lba2/pace.test.mjs`.
 10. **Grumbleton's tournament still starts at a "yes" every visit for a child who says yes.** Not a fault, but the
     "Fishing tournament" task and pill then sit on top of every visit while the child does other things.
     Recommendation: none needed now; noted for the owner.
+
+## Review of pass 2's screenshots
+
+- Ola's autumn fair task read "Høstmarked: vis Tante Hassel 3 forskjellige avlinger" under "Gi tante Hassel 1 reddik":
+  18 Norwegian lines still wrote a title with a capital inside a sentence (tasks, the stump-hop pets, the lighthouse
+  story, Coach Bo's and Hazel's own hellos). Fixed in the strings; `tests/strings.mjs` now checks the source for it.
+- Every suite passed on 7d74926 (39 files, tests/games included).

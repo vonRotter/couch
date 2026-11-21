@@ -44,7 +44,7 @@ addStrings({
     'isl.i.zipzap': 'Zipp-Zapp', 'isl.i.backpack1': 'Større ryggsekk', 'isl.i.backpack2': 'Kjempestor ryggsekk', 'isl.i.chest': 'Kiste',
     'zz.pip.intro': 'Hei hei! Jeg er Pip, astronaut! Jeg har bygd en dings til deg av ekstra rakettdeler: Zipp-Zappen! Pek den mot noe og trykk [B]. Den vet hva den skal gjøre, og et lite bilde viser hva!',
     'isl.mail.zipzap': 'Hei hei {name}! Jeg tok med hakka, vannkanna og ljåen din til raketten og bygde dem om til én dings: Zipp-Zappen! Pek den mot noe og trykk på bruk-knappen. Den graver, vanner, kutter, knuser stein og hogger trær helt av seg selv. Zipp zapp!',
-    'zz.h.needBuster': 'Zipp-Zappen trenger en steinknuser til dette. Spør Fyrvokter Bram!',
+    'zz.h.needBuster': 'Zipp-Zappen trenger en steinknuser til dette. Spør fyrvokter Bram!',
     'zz.h.needPower': 'For stor! Pip kan gi Zipp-Zappen mer kraft på dingsbenken sin.',
     'zz.h.big': '[B] zapp den store steinblokka', 'zz.h.chop': '[B] hogg treet',
     'zz.h.holdZipRocks': 'Hold Zipp-Zappen for å knuse steinene ({bag})',

@@ -130,7 +130,7 @@ addStrings({
     'isl.fair.rules': 'Velkommen til høstmarkedet! Ta med tre forskjellige avlinger, så skal jeg bedømme dem.',
     'isl.fair.win': 'Tre nydelige avlinger! Førstepremie: en blå rosett og frø!',
     'isl.fair.done': 'Rosetten er vel fortjent, vennen min. Kos deg på markedet!',
-    'isl.task.fair': 'Høstmarked: vis Tante Hassel 3 forskjellige avlinger',
+    'isl.task.fair': 'Høstmarked: vis tante Hassel 3 forskjellige avlinger',
     'isl.lantern.talk': 'Lyktekveld! Hver lykt er et lite ønske for skipene på havet. Her, denne er til deg.',
     'isl.lantern.done': 'Se på alle lyktene. Havet er aldri helt mørkt.',
     'isl.bday.today': 'I dag har jeg bursdag! For en fin dag.', 'isl.bday.thanks': 'En bursdagsgave! Å, tusen hjertelig takk!',

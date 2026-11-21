@@ -47,6 +47,18 @@ await test(`English and Norwegian have the same keys (${en.size} / ${no.size})`,
   assert(!onlyEn.length && !onlyNo.length, `only English: ${onlyEn.length}\n  ${onlyEn.join('\n  ')}\nonly Norwegian: ${onlyNo.length}\n  ${onlyNo.join('\n  ')}`);
 });
 
+// Norwegian writes a villager's title small inside a sentence ("Gi tante Hassel ...", "Spør fyrvokter Bram!"); only at
+// the start of a sentence (or in a name tag) is it capital. (Play-test pass 2: "vis Tante Hassel" was left in 18 lines.)
+await test('Norwegian: no capital title inside a sentence (tante Hassel, fyrvokter Bram, kurator Hu, trener Bo)', async () => {
+  const bad = [];
+  for (const f of files) {
+    fs.readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+      if (/[a-zæøå,:] (Tante Hassel|Fyrvokter Bram|Kurator Hu|Trener Bo)/.test(line)) bad.push(`${path.relative(root, f)}:${i + 1}`);
+    });
+  }
+  assert(!bad.length, bad.join('\n  '));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

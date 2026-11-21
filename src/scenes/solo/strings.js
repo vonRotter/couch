@@ -320,7 +320,7 @@ addStrings({
     'isl.tut.3': 'Vann frøene: pek Zipp-Zappen mot dem og trykk [B]',
     'isl.tut.4': 'Reddiker vokser på omtrent 4 minutter (saktere om natta). Se deg rundt mens du venter!',
     'isl.tut.5': 'Høst reddiken med [B]',
-    'isl.tut.6': 'Vis Tante Hassel reddiken, eller send avlinger i kassa ved huset',
+    'isl.tut.6': 'Vis tante Hassel reddiken, eller send avlinger i kassa ved huset',
     'isl.tut.7': 'Besøk butikken til Rosa i landsbyen og kjøp flere frø',
 
     'isl.i.hoe': 'Hakke', 'isl.i.can': 'Vannkanne', 'isl.i.scythe': 'Ljå', 'isl.i.pickaxe': 'Steinhakke', 'isl.i.wood': 'Ved', 'isl.i.bouquet': 'Blomsterbukett',
@@ -353,7 +353,7 @@ addStrings({
     'isl.sleep': 'Zzz ... {name} sover godt. Kom tilbake i morgen tidlig.',
     'isl.giftLater': 'Tusen takk, men du har allerede gitt meg noe i dag. Kom tilbake litt senere!',
 
-    'isl.hazel.intro1': 'Å, hei {name}! Velkommen til din helt egen øy! Jeg er Tante Hassel. Jeg bor oppe i bakken.',
+    'isl.hazel.intro1': 'Å, hei {name}! Velkommen til din helt egen øy! Jeg er tante Hassel. Jeg bor oppe i bakken.',
     'isl.hazel.intro2': 'Den lille hytta og åkeren er dine nå. Zipp-Zappen til Pip hjelper deg med arbeidet.',
     'isl.hazel.intro3': 'Den lille hytta og åkeren er dine nå! Her er reddikfrø og gulrotfrø. Zapp jorda for å grave den opp, plant frøene og zapp dem med vann.',
     'isl.hazel.intro4': 'Plantene vokser selv når du er borte, så lenge jorda er våt. Om natta sover de, akkurat som oss. {bagHow}. Kos deg!',

@@ -52,7 +52,7 @@ addStrings({
   },
   no: {
     'isl.npc.coach': 'Trener Bo',
-    'isl.coach.meet': 'Hei, {name}! Jeg er Trener Bo. Jeg hjelper barn med å bli gode i spill: alle slags spill.',
+    'isl.coach.meet': 'Hei, {name}! Jeg er trener Bo. Jeg hjelper barn med å bli gode i spill: alle slags spill.',
     'isl.coach.chat1': 'Hvert spill lærer deg noe. Skyhopp lærer deg timing, Bønnebrigaden lærer deg å tenke framover.',
     'isl.coach.chat2': 'Å tape et forsøk er sånn du lærer brettet. Selv de beste faller av mange ganger!',
     'isl.coach.chat3': 'Prøv én ny ting om gangen. Når det føles lett, legger du til den neste.',
