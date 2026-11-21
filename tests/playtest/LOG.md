@@ -302,3 +302,7 @@ A. **A moved rare event is never skipped.** A rare event moved off the day after
    the child visits, even after its week (`lock.js quietFor`, `S.rareMove.to` set on that visit): no festival,
    surprise, rare event, saved late play or drama big moment that day, and no rare event the day before or after, so
    still one special thing a day. Given up after two months with no quiet visit.
+B. **The board's letter lines only tell the news.** "Skye's letter: she lands on Thursday." (and Marlo's) without
+   "Can't come then? Save it in the journal (Coming up)." in English and Norwegian: the board's own "Save it for later"
+   row says how. No warning line told how to save; a test checks every letter and warning line in both languages.
+C. **View outside the island** stays as it is (it opens the pause menu in games); no change, as the owner decided.

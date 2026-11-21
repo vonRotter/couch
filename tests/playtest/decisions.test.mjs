@@ -171,6 +171,18 @@ await test('A. a rare event moved off a busy week with no free day left is not s
   assert(log.every((x) => !(x.rare && x.day === 3 && x.move?.kind !== 'fog')), 'one special thing that day');
 });
 
+await test('B. the board\'s letter and warning lines only tell the news: the save row tells how to save (en and no)', async () => {
+  const r = await page.evaluate(async () => {
+    const i = await import('/src/core/i18n.js'), w = i.getLang(), out = [];
+    for (const l of ['en', 'no']) { i.setLang(l); const k = i.stringKeys()[l].filter((k) => /^td\.(lk\.letter|ev\.r)\./.test(k)); for (const key of k) out.push(i.t(key, { day: 'x' })); }
+    i.setLang(w);
+    return out;
+  });
+  assert(r.length >= 4, r.join(' | '));
+  const bad = r.filter((x) => /journal|Coming up|dagbok|Snart|Save it|Spar det|save it|spar den/i.test(x));
+  assert(!bad.length, `no "how to save" in the news lines: ${bad.join(' | ')}`);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

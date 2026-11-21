@@ -43,8 +43,9 @@ addStrings({
     'lk.today': 'today', 'lk.tomorrow': 'tomorrow', 'lk.days': '{a} and {b}',
     'lk.rare.storm': 'the storm (treasure on the beach)', 'lk.rare.fog': 'the foggy night (the ghost ship)', 'lk.rare.rainbow': 'the rainbow',
     'lk.vis.merchant': 'Marlo\'s visit', 'lk.vis.balloon': 'Skye\'s visit',
-    'td.lk.letter.merchant': 'Marlo\'s letter: he comes on {day}. Can\'t come then? Save it in the journal (Coming up).',
-    'td.lk.letter.balloon': 'Skye\'s letter: she lands on {day}. Can\'t come then? Save it in the journal (Coming up).',
+    // (the board's own "Save it for later" row tells how to save: the line only says the news)
+    'td.lk.letter.merchant': 'Marlo\'s letter: he comes on {day}.',
+    'td.lk.letter.balloon': 'Skye\'s letter: she lands on {day}.',
   },
   no: {
     'isl.jn.coming': 'Snart',
@@ -63,8 +64,8 @@ addStrings({
     'lk.today': 'i dag', 'lk.tomorrow': 'i morgen', 'lk.days': '{a} og {b}',
     'lk.rare.storm': 'stormen (skatter på stranda)', 'lk.rare.fog': 'tåkenatta (spøkelsesskipet)', 'lk.rare.rainbow': 'regnbuen',
     'lk.vis.merchant': 'besøket til Marlo', 'lk.vis.balloon': 'besøket til Skye',
-    'td.lk.letter.merchant': 'Brev fra Marlo: han kommer på {day}. Kan du ikke da? Spar det i dagboka (Snart).',
-    'td.lk.letter.balloon': 'Brev fra Skye: hun lander på {day}. Kan du ikke da? Spar det i dagboka (Snart).',
+    'td.lk.letter.merchant': 'Brev fra Marlo: han kommer på {day}.',
+    'td.lk.letter.balloon': 'Brev fra Skye: hun lander på {day}.',
   },
 });
 
