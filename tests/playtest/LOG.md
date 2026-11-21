@@ -294,3 +294,11 @@ The owner answered the six decisions: build all six, as recommended. Tests: `tes
    a longest wait of 76 days (the first on day 41); after, 10 arrivals and a longest wait of 28 days. On the island
    itself, twelve weeks of weekend visits (`tests/lively/density.test.mjs`): before, no arrival at all; after, three
    (days 27, 54, 76), never on a festival, the Today board never over its three things.
+
+## Owner decisions built (second set)
+
+A. **A moved rare event is never skipped.** A rare event moved off the day after a late rare play (the fog night with
+   Captain Wisp's ghost ship, or any other kind) that had no free day left in its week now comes on the first quiet day
+   the child visits, even after its week (`lock.js quietFor`, `S.rareMove.to` set on that visit): no festival,
+   surprise, rare event, saved late play or drama big moment that day, and no rare event the day before or after, so
+   still one special thing a day. Given up after two months with no quiet visit.

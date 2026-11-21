@@ -174,6 +174,8 @@ export function rareEventOn(ms = now()) {
  * not warned about (rareWarned: no promise on the Today board), it moves to the next allowed day of its own week
  * (Tuesday to Saturday, no festival, no daily surprise), or skips that week when there is none; a warned one stays
  * (a promise to the player). Deterministic: { from, to (null: none this week), kind } or null (nothing moves).
+ * With no free day left in its week it is not skipped: lock.js gives it the first quiet day the child visits, even
+ * after its week (the owner's decision after the play-test).
  */
 export function rareMoveFor(lateDi) {
   const from = lateDi + 1, kind = rareNative(dayMs(from));

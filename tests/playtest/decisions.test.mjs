@@ -153,6 +153,24 @@ await test('5. a torn page given on the week\'s last two days stays three days m
   assert(wed[0].step === 0 && !wed[0].task, JSON.stringify(wed));
 });
 
+await test('A. a rare event moved off a busy week with no free day left is not skipped: it comes on the first quiet day visited', async () => {
+  // the fog moved off Tue 24 Nov 2026 with nowhere to go that week; the child visits every day from Wed 25 Nov
+  const di = (y, m, d) => Math.round((new Date(y, m - 1, d, 12).getTime() - new Date(1970, 0, 1, 12).getTime()) / 864e5);
+  await startIsland(page, { time: at(2026, 11, 25, 10), save: `(S) => { S.rareMove = { from: ${di(2026, 11, 24)}, to: null, kind: 'fog' }; }` });
+  const log = [];
+  for (let d = 25; d <= 34; d++) {
+    const ms = at(2026, 11, d, 10);
+    await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, ms);
+    await sim(page, 1.3);
+    log.push(await island(page, (I, S, G, ms) => ({ day: new Date(ms).getDate(), rare: I.events.kind, move: S.rareMove && { ...S.rareMove } }), ms));
+  }
+  const fogs = log.filter((x) => x.rare === 'fog');
+  // Dec 3 (day 33 here) is the first quiet day: Nov 25 meteor, 26 storm, 27 the day after a storm, 28-30 surprises,
+  // Dec 1 a fog of its own, Dec 2 the day after it
+  assert(fogs.length === 2 && fogs[1].day === 3, `the moved fog came on Thursday 3 December: ${JSON.stringify(log.map((x) => [x.day, x.rare]))}`);
+  assert(log.every((x) => !(x.rare && x.day === 3 && x.move?.kind !== 'fog')), 'one special thing that day');
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

@@ -2,7 +2,7 @@ import { t, tFor, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { now } from './save.js';
-import { dayKey, dayIndex, dayMs, festivalNative, rareNative, setLatePlay, rareMoveFor, setRareMove } from './calendar.js';
+import { dayKey, dayIndex, dayMs, festivalNative, surpriseNative, rareNative, setLatePlay, rareMoveFor, setRareMove } from './calendar.js';
 
 // Saving a coming event for later (the owner's "can't play that day" item). A child who cannot come on a festival
 // weekend, a rare event's day or a visitor's day can lock it: if they miss it, it plays on their next visit within
@@ -19,7 +19,8 @@ import { dayKey, dayIndex, dayMs, festivalNative, rareNative, setLatePlay, rareM
 // board when it shows a warning or a visitor's letter ([OK] locks it). One lock at a time: locking another moves
 // it. Save: S.lock { kind, what, day, last } and S.lockPlay { di, kind, what } (old saves have neither).
 // A rare event played late never lands the day before the next rare event: an unwarned next one moves to the next
-// allowed day of its week (S.rareMove { from, to, kind }, calendar.js rareMoveFor); a warned one stays (a promise).
+// allowed day of its week (S.rareMove { from, to, kind }, calendar.js rareMoveFor), or with none left the first quiet day
+// visited after it (to: null until then: quietFor); a warned one stays (a promise).
 
 export const LATE_DAYS = 3;
 const AHEAD = 14;
@@ -142,13 +143,28 @@ export class EventLock {
     setLatePlay(L && L.di === di ? { di, fest: L.kind === 'fest' ? L.what : null, rare: L.kind === 'rare' ? L.what : null, sur: L.kind === 'vis' ? L.what : null } : null);
     // the next rare event moved off the day after a late rare play (calendar.js rareMoveFor), until it is over
     const R = S.rareMove;
-    setRareMove(R && di <= Math.max(R.from, R.to ?? R.from) ? R : null);
+    setRareMove(R && (R.to === null || di <= Math.max(R.from, R.to)) ? R : null);
+  }
+
+  /** A day a moved rare event may come on: nothing else special (one special thing a day), never two rare days in a row. */
+  quietFor(di) {
+    const S = this.S, ms = dayMs(di), D = S.village?.drama;
+    if (festivalNative(ms) || surpriseNative(ms) || rareNative(ms) || rareNative(dayMs(di - 1)) || rareNative(dayMs(di + 1))) return false;
+    if (S.lockPlay?.di === di || (S.lock && di >= S.lock.day && di <= S.lock.last + LATE_DAYS)) return false;
+    return !(D && D.climax === di && !D.res);
   }
 
   resolve(di) {
     const S = this.S, L = S.lock;
     if (S.lockPlay && S.lockPlay.di !== di) S.lockPlay = null;
-    if (S.rareMove && di > Math.max(S.rareMove.from, S.rareMove.to ?? S.rareMove.from)) S.rareMove = null;
+    const R = S.rareMove;
+    if (R && R.to === null && di > R.from) {
+      // no free day was left in its week: it is not skipped (the owner's decision), it comes on the first quiet day you
+      // visit (no festival, surprise, rare event or drama big moment, and not next to another rare event), even after
+      // its week; given up only if nothing fits for two months
+      if (di - R.from > 60) S.rareMove = null;
+      else if (this.quietFor(di)) R.to = di;
+    } else if (R && di > Math.max(R.from, R.to ?? R.from)) S.rareMove = null;
     if (!L || !Number.isFinite(L.day)) { if (L) S.lock = null; return; }
     if (di < L.day - AHEAD * 2) { S.lock = null; return; } // (the clock went far back)
     if (di < L.day) return;

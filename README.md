@@ -1279,8 +1279,9 @@ on 1; counting arrivals as special too, never two on one day, and 14 days (33 %)
   special thing: the day's own surprise or rare event is skipped, and a drama's big moment moves to the next free
   day; a festival day of its own waits (the late play goes to the next day in the window). A rare event played late
   never lands the day before the next rare event: if that one was not warned about, it moves to the next allowed
-  day of its own week (Tuesday to Saturday, no festival, no surprise; none left: no rare event that week; the
-  same answer every time, `calendar.js rareMoveFor`, saved as `S.rareMove`); a warned one stays (the Today board
+  day of its own week (Tuesday to Saturday, no festival, no surprise; none left: it is not skipped but comes on the first quiet
+  day the child visits, even after its week: no festival, surprise, rare event or big moment that day and none the
+  day before or after, the owner's decision; the same answer every time, `calendar.js rareMoveFor`, saved as `S.rareMove`); a warned one stays (the Today board
   promised it). After three days
   unplayed it expires with a gentle note. The calendar stays a pure function of the date
   (`setLatePlay` only changes that profile's island on that one day; `festivalNative` / `surpriseNative` /
