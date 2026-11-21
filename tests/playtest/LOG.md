@@ -322,3 +322,6 @@ between visits (their saves say so). Screenshots `play-mia*`, `play-ola*`, `play
   was saved only in the profile's slot, while the game loads the shared slot's language first and carries it into the
   profile: a child who chose Norwegian on their island got English again on every new visit. Fixed: the choice is the
   device's and is kept in the shared slot too (`main.js toggleLanguage`, `roster.js DEVICE_KEY`).
+- Tinka (Mia, 5 Feb): "If a booth sends you somewhere funny, just wave." weeks before the teleport booths came. Fixed:
+  her chat lines about the booths and about Wendeline only come once those are on the island (`inventor.js`, an
+  optional filter in `wizard.js freshLine`).

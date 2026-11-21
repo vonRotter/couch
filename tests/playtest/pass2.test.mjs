@@ -36,6 +36,28 @@ await test('a language chosen on the island (N) is still chosen on the next visi
   await page.evaluate(() => window.game.toggleLanguage()); // (back, for the tests after this one)
 });
 
+await test('Tinka never talks about the teleport booths (or Wendeline) before they are on the island', async () => {
+  await startIsland(page, { time: D0, save: `(S) => { S.odd = { first: 0, last: -1e9, got: { sporty: 0, ball: 0, inventor: 0 }, modes: {}, mode: 'normal' }; }` });
+  const keys = [];
+  for (let d = 0; d < 40; d++) {
+    const k = await island(page, (I, S, G, d) => {
+      const inv = I.odd.parts.find((p) => p.talkTinka);
+      const di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000) + d;
+      const real = Date.now; const base = window.__islandTimeOffset;
+      window.__islandTimeOffset = base + d * 864e5;
+      inv.I.met = true; inv.I.said = (inv.I.said || []).filter((x) => x.di !== di);
+      inv.talkTinka();
+      const key = I.dlg?.lines?.[0]?.key || null;
+      I.hud.setDialog(null); I.dlg = null; I.mode = 'walk';
+      window.__islandTimeOffset = base;
+      return key;
+    }, d);
+    if (k) keys.push(k);
+  }
+  assert(keys.length > 10, keys.join());
+  assert(!keys.includes('iv.chat.5') && !keys.includes('iv.chat.10'), keys.join());
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

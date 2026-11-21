@@ -235,7 +235,10 @@ export class Inventor {
     P.ch.face(g.x - P.x, g.z - P.z);
     if (!I.met) { I.met = true; host.say([g.line('iv.t.hello1'), g.line('iv.t.hello2')]); host.markDirty(); return; }
     // one chat a day, never one heard in the last four weeks; else she just waves
-    const k = I.said.some((x) => x.di === di) ? null : freshLine('iv.chat', TINKA_LINES, I.said, di, 7.7);
+    // (a line about the booths or Wendeline only once they are there: play-test pass 2, Tinka told how the booths
+    // misfire weeks before she built them)
+    const NEEDS = { 'iv.chat.5': 'booths', 'iv.chat.10': 'school' };
+    const k = I.said.some((x) => x.di === di) ? null : freshLine('iv.chat', TINKA_LINES, I.said, di, 7.7, (k) => !NEEDS[k] || this.has(NEEDS[k]));
     if (!k) { waveHello(host, g); return; }
     I.said = [...I.said.filter((x) => di - x.di < 60), { k, di }];
     g.hop = 1;

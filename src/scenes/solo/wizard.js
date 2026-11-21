@@ -108,10 +108,10 @@ addStrings({
 });
 
 /** A chat line for a date that was not said in the last four weeks (said: [{ k, di }]). */
-export function freshLine(prefix, n, said, di, seed) {
+export function freshLine(prefix, n, said, di, seed, ok = null) {
   const recent = new Set((said || []).filter((x) => di - x.di < 28).map((x) => x.k));
   const s = Math.abs(Math.floor(Math.sin(di * 12.9898 + seed) * 43758.5453)) % n;
-  for (let i = 0; i < n; i++) { const k = `${prefix}.${((s + i) % n) + 1}`; if (!recent.has(k)) return k; }
+  for (let i = 0; i < n; i++) { const k = `${prefix}.${((s + i) % n) + 1}`; if (!recent.has(k) && (!ok || ok(k))) return k; }
   return null;
 }
 
