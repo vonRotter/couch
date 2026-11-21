@@ -9,7 +9,8 @@ const page = await open();
 const D0 = at(2026, 11, 18, 11);
 
 await test('Tinka at her workshop: hello, then one chat a day, never one again within four weeks', async () => {
-  await startIsland(page, { time: D0, save: oddSave({ ball: 0, inventor: 0, booths: 0, robot: 0, voice: 0 }) });
+  // (the wizard school has come too: Tinka's line about Wendeline only comes once she is on the island, play-test pass 2)
+  await startIsland(page, { time: D0, save: oddSave({ ball: 0, inventor: 0, booths: 0, robot: 0, voice: 0, school: 0 }) });
   await sim(page, 1.2);
   const t = await island(page, (I) => ({ shop: I.odd.inventor.shop.visible, tinka: I.odd.inventor.tinka.shown, x: I.odd.inventor.tinka.x, z: I.odd.inventor.tinka.z }));
   assert(t.shop && t.tinka, JSON.stringify(t));
