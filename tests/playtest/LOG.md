@@ -306,3 +306,15 @@ B. **The board's letter lines only tell the news.** "Skye's letter: she lands on
    "Can't come then? Save it in the journal (Coming up)." in English and Norwegian: the board's own "Save it for later"
    row says how. No warning line told how to save; a test checks every letter and warning line in both languages.
 C. **View outside the island** stays as it is (it opens the pause menu in games); no change, as the owner decided.
+
+# Second pass: months 2 to 5
+
+Three children, played by script on a copy of the tree (a second dev server, so fixes do not reload a running day):
+**Mia** (from the first pass) every third day from 24 January 2027 at 11:00; **Ola**, a new profile on Sat 21 Nov
+2026 in Norwegian, who only comes at weekends (10:30); **Eli**, a new profile on Mon 23 Nov 2026, who only comes in
+the evening (19:30) about every fourth day. Each visit: letters, everyone with a "!", today's things on the map, the
+odd adventure's places, a social happening's place, stats of the save; the story's games are counted as played
+between visits (their saves say so). Screenshots `play-mia*`, `play-ola*`, `play-eli*`.
+
+- The island vote (Mia, 24 Jan): the map's marker and the Today line pointed at the square's middle, 3 m from the
+  ballot box, where nothing answered [B]. Fixed: until the count they point at the ballot box (`social.js mapAt`).

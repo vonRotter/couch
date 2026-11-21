@@ -261,6 +261,9 @@ export const SOCIAL = {
   },
   election: {
     cast: ['hazel', 'grumbleton'], at: { x: 13.6, z: -8.6 }, icon: '🗳️', mapAlways: true,
+    // (until the count the map and the Today board point at the ballot box, where you vote: play-test, the marker stood
+    // 3 m off it, where nothing answered [B])
+    mapAt: (D, di) => (di < D.climax ? BALLOT : null),
     init(D) { D.vote = null; },
     /** A villager's vote: Hazel and Grumbleton for their own idea, a friend of yours (3 hearts+) like you, the others their own lean. */
     voteOf(D, id, S) {

@@ -186,7 +186,7 @@ export class Village {
     // (the big moment plays 10-18, or on a first visit after 18 (lateVisit): the board can always announce it)
     const b = this.beat(D, di);
     if (b) {
-      const at2 = DRAMAS[D.id].at;
+      const at2 = SOCIAL[D.id]?.mapAt?.(D, di) || DRAMAS[D.id].at;
       const v = D.id === 'rivalry' && b === 'mid' ? this.scores(D) : SOCIAL[D.id]?.newsVars?.(D, b, this);
       out.push({ kind: b === 'start' ? 'rumor' : 'changed', pri: b === 'climax' ? 9.5 : 6.5, icon: DRAMAS[D.id].icon, keys: [`vd.${D.id}.news.${b === 'mid' ? 'mid' : b}`], v, x: at2.x, z: at2.z });
     }
@@ -210,7 +210,8 @@ export class Village {
     const V = this.V, di = dayIndex(), out = [];
     if (V.proj) { const P = PROJECTS[V.proj.id]; out.push({ key: 'proj', icon: '🔨', name: t('map.a.proj', { name: t(`vp.${V.proj.id}.name`) }), x: P.x, z: P.z }); }
     const D = V.drama;
-    if (D && (D.id === 'pumpkin' || di === D.climax || (SOCIAL[D.id]?.mapAlways && di < D.climax))) out.push({ key: 'drama', icon: DRAMAS[D.id].icon, name: t(`map.a.${D.id}`), x: DRAMAS[D.id].at.x, z: DRAMAS[D.id].at.z });
+    const at = D && (SOCIAL[D.id]?.mapAt?.(D, di) || DRAMAS[D.id].at);
+    if (D && (D.id === 'pumpkin' || di === D.climax || (SOCIAL[D.id]?.mapAlways && di < D.climax))) out.push({ key: 'drama', icon: DRAMAS[D.id].icon, name: t(`map.a.${D.id}`), x: at.x, z: at.z });
     return out;
   }
 

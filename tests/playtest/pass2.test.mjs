@@ -1,0 +1,28 @@
+// Fixes from the second play-test pass (months 2 to 5, daily, weekend-only and evening-only children;
+// tests/playtest/LOG.md "Second pass"): each test is one thing a child ran into, checked so it stays fixed.
+import { open, close, startIsland, island, sim, at, test, assert, done, press, shot, DAY } from '../lively/helper.mjs';
+
+const page = await open();
+const D0 = at(2026, 11, 18, 11); // a Wednesday
+const dayOf = (I, S) => Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
+
+await test('the island vote: the map marker (and the Today line) point at the ballot box, where [B] votes', async () => {
+  await startIsland(page, { time: D0 });
+  const r = await page.evaluate(async () => {
+    const { SOCIAL } = await import('/src/scenes/solo/social.js');
+    const I = window.game.current, S = I.save, di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
+    S.village.drama = { id: 'election', start: di, climax: di + 4, told: {}, side: null, fish: 0, water: [], flavor: null, res: null };
+    SOCIAL.election.init?.(S.village.drama);
+    I.hud.setPanel(null); I.mode = 'walk';
+    const m = I.village.mapItems().find((x) => x.key === 'drama');
+    const P = I.player; P.x = m.x; P.z = m.z + 0.6; P.fx = 0; P.fz = -1; I.groundCheck(P, I.walkState);
+    const news = I.village.todayNews(Date.now() + window.__islandTimeOffset).find((x) => x.icon === '🗳️');
+    return { m, use: I.useAction(I.interactions())?.text || '', news: news && { x: news.x, z: news.z } };
+  });
+  assert(/vote/i.test(r.use), `standing at the marker, [B] votes: ${JSON.stringify(r)}`);
+  assert(r.news && Math.hypot(r.news.x - r.m.x, r.news.z - r.m.z) < 0.1, JSON.stringify(r));
+});
+
+await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
+await close(page);
+done();
