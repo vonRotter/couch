@@ -387,3 +387,12 @@ on rarer days). The arrival order is tested by `tests/lba2/pace.test.mjs`.
   18 Norwegian lines still wrote a title with a capital inside a sentence (tasks, the stump-hop pets, the lighthouse
   story, Coach Bo's and Hazel's own hellos). Fixed in the strings; `tests/strings.mjs` now checks the source for it.
 - Every suite passed on 7d74926 (39 files, tests/games included).
+
+## Owner decisions taken, not built yet (paused)
+
+- 7. Evening hours: Tinka at her workshop until 20:30, the tea stall open until 20:00.
+- 8. Dramas: a drama the child saw within the last six months does not come again.
+- 9. A lesson's tool always goes to the hotbar; with a full hotbar, the last slot's item moves to the chest.
+- 10. The tournament on "yes": no change.
+- Next after these: a short play-test of what pass 2 did not reach (the lighthouse story after chapter 3, the Ollo
+  folk, the joke robot, the sun spell, the cloud whale, Old Morel).
