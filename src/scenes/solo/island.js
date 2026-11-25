@@ -2456,6 +2456,7 @@ export class SoloIslandScene extends BaseScene {
     this.hud.hotbar.style.visibility = hide;
     this.hud.selname.style.visibility = hide;
     // things that went to the cottage chest because the bag was full
+    if (S.madeRoom && this.mode === 'walk') { this.game.ui.toast(t('zb.t.madeRoom', { item: itemName(S.madeRoom) }), 3200); S.madeRoom = null; }
     if (S.toChest && this.mode === 'walk') {
       const one = S.toChest === 1 && S.toChestId;
       const txt = one ? t('zb.t.toChest1', { item: itemName(S.toChestId) }) : t('zb.t.toChest');

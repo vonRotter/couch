@@ -402,3 +402,9 @@ Tests: `tests/playtest/decisions2.test.mjs` (each fails on the tree before its c
    on days 2 to 80, then none until day 188, when the round starts again (`tests/playtest/decisions2.test.mjs`).
    `tests/lively/villagers.test.mjs`'s free-day test starts forty dramas in a row; it now clears the memory each time
    (it tests the big moment's day, not repetition). Density, social and old-save tests still pass.
+9. **Tools to hold go to the hotbar.** Wendeline's wand, Grumbleton's rod and Tinka's magic ball (`save.js
+   HAND_TOOLS`) always go to a hotbar slot: the first empty one, else the last slot's stack moves to the cottage chest
+   and a toast says why ("To make room on your hotbar, ... went to the chest in your cottage." / "For å få plass på
+   verktøylinja havnet ... i kista i hytta di."). The pass-1 magic-ball task (how to hold it when it is in the bag)
+   stays for old saves where it already sits in the bag.
+10. **The tournament on "yes"**: no change, as the owner decided.

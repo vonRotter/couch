@@ -51,6 +51,37 @@ await test('8. a drama the child saw within six months does not come again; with
   assert(r.length >= 10 && r.slice(0, 8).map((x) => x.id).join() === 'rivalry,pumpkin,cake,fence,election,club,party,rumour', JSON.stringify(r));
 });
 
+await test('9. a tool the child is told to hold goes to the hotbar: an empty slot, else the last slot moves to the chest', async () => {
+  await startIsland(page, { time: at(2026, 11, 18, 11) });
+  const r = await page.evaluate(async () => {
+    const SV = await import('/src/scenes/solo/save.js');
+    const mk = (hotbarFull, bagFull) => {
+      const S = { inv: [], chest: [], bagRows: 2, unlocks: {} };
+      for (let i = 0; i < (hotbarFull ? 9 : 5); i++) S.inv.push({ id: `seed${i}`, n: 1, slot: i });
+      if (bagFull) for (let i = 9; i < 27; i++) S.inv.push({ id: `x${i}`, n: 1, slot: i });
+      return S;
+    };
+    const out = {};
+    for (const [k, hf, bf] of [['room', false, false], ['fullHotbar', true, false], ['fullBag', true, true]]) {
+      const S = mk(hf, bf);
+      SV.give(S, 'wand', 1);
+      const w = S.inv.find((x) => x.id === 'wand');
+      out[k] = { slot: w?.slot, chest: S.chest.map((x) => x.id), made: S.madeRoom || null };
+    }
+    const B = mk(true, true); SV.give(B, 'magicBall', 1); out.ball = B.inv.find((x) => x.id === 'magicBall')?.slot;
+    const R = mk(true, true); SV.give(R, 'rod', 1); out.rod = R.inv.find((x) => x.id === 'rod')?.slot;
+    return out;
+  });
+  assert(r.room.slot === 5 && !r.room.chest.length, JSON.stringify(r));
+  assert(r.fullHotbar.slot === 8 && r.fullHotbar.chest.join() === 'seed8' && r.fullHotbar.made === 'seed8', JSON.stringify(r));
+  assert(r.fullBag.slot === 8 && r.ball === 8 && r.rod === 8, JSON.stringify(r));
+  // on the island: the toast says why
+  await island(page, (I, S) => { I.hud.setPanel(null); I.mode = 'walk'; I.toasts.clear(); for (let i = 0; i < 9; i++) if (!S.inv.some((x) => x.slot === i)) S.inv.push({ id: 'wood', n: 1, slot: i }); I.giveItems([['wand', 1]], true); });
+  await sim(page, 1.5);
+  const tx = await island(page, (I) => I.toasts.texts.join(' | '));
+  assert(/make room on your hotbar/.test(tx), tx);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

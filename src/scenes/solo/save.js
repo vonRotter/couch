@@ -183,6 +183,9 @@ export function owns(save, id) {
  * Add n of an item: onto a stack already in the bag, else into the first free slot (hotbar first). A full
  * bag sends it to the cottage chest (S.toChest counts these for a toast). The old tools become the Zip-Zap.
  */
+/** Tools the child is told to hold as soon as they get them: they always go to the hotbar (give). */
+export const HAND_TOOLS = new Set(['wand', 'rod', 'magicBall']);
+
 export function give(save, id, n = 1) {
   if (OLD_TOOLS.includes(id)) {
     if (id === 'pickaxe') save.unlocks.rockBuster = true;
@@ -191,6 +194,19 @@ export function give(save, id, n = 1) {
   }
   const it = save.inv.find((x) => x.id === id);
   if (it) { it.n += n; return 'bag'; }
+  // a tool the child is told to hold right away (a lesson's wand, Grumbleton's rod, Tinka's magic ball) always goes to
+  // the hotbar: the first empty slot, else the last slot's stack moves to the cottage chest (the owner's decision after
+  // the play-test: with a full bag the wand went to the chest while Wendeline said "hold it")
+  if (HAND_TOOLS.has(id)) {
+    let hs = freeSlot(save.inv, 9);
+    if (hs < 0) {
+      hs = 8;
+      const old = save.inv.find((x) => x.slot === 8);
+      if (old) { save.inv.splice(save.inv.indexOf(old), 1); toChest(save, old.id, old.n); save.madeRoom = old.id; }
+    }
+    save.inv.push({ id, n, slot: hs });
+    return 'bag';
+  }
   const slot = freeSlot(save.inv, bagSize(save));
   if (slot >= 0) { save.inv.push({ id, n, slot }); return 'bag'; }
   toChest(save, id, n);

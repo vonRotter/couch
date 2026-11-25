@@ -1180,7 +1180,9 @@ night match yours and crops grow while you are away.
   above the hotbar; it starts with the hotbar and 2 bag rows (27 slots), and Rosa sells a Bigger backpack
   (250 coins, a 3rd row) and then a Huge backpack (750 coins, a 4th row). New things go onto the same thing
   already in the bag, else into the first free slot (hotbar first); a full bag sends them to the cottage
-  chest with a toast, so nothing is ever lost. The **storage chest** stands in the back right corner of
+  chest with a toast, so nothing is ever lost. A tool you are told to hold right away (Wendeline's wand, Grumbleton's
+  rod, Tinka's magic ball: `save.js HAND_TOOLS`) always goes to the hotbar: its first empty slot, else the last slot's
+  stack moves to the cottage chest to make room (a toast says so; the owner's decision after the play-test). The **storage chest** stands in the back right corner of
   the cottage (36 slots, it grows a row if it ever overflows): use it to open the same panel with
   the chest above the bag. The name and sell price of the thing under the cursor or mouse is shown.
   Shops, the shipping bin, gifts, the café, the museum, crafting and quests use what is in

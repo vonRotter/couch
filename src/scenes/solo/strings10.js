@@ -38,6 +38,7 @@ addStrings({
     'zb.hint.padChest': 'Stick: move · [B] pick up / put down · [A] to the other side · [C] close',
     'zb.pack.sub': 'room for {n} things', 'zb.t.pack': 'A bigger backpack! Room for {n} things now.',
     'zb.t.toChest1': 'Your bag is full: {item} went to the chest in your cottage.',
+    'zb.t.madeRoom': 'To make room on your hotbar, {item} went to the chest in your cottage.',
     'zb.t.toChest': 'Your bag is full: some things went to the chest in your cottage.',
   },
   no: {
@@ -69,6 +70,7 @@ addStrings({
     'zb.hint.padChest': 'Pinnen: flytt · [B] ta opp / legg ned · [A] til den andre siden · [C] lukk',
     'zb.pack.sub': 'plass til {n} ting', 'zb.t.pack': 'En større ryggsekk! Plass til {n} ting nå.',
     'zb.t.toChest1': 'Sekken din er full: {item} havnet i kista i hytta di.',
+    'zb.t.madeRoom': 'For å få plass på verktøylinja havnet {item} i kista i hytta di.',
     'zb.t.toChest': 'Sekken din er full: noen ting havnet i kista i hytta di.',
   },
 });
