@@ -31,6 +31,26 @@ await test('7. an evening child (19:45) meets Tinka at her workshop and gets tea
   assert(/closed.*10 to 20/.test(closed), closed);
 });
 
+await test('8. a drama the child saw within six months does not come again; with every one blocked, no drama that week', async () => {
+  await startIsland(page, { time: at(2026, 11, 16, 10) });
+  const r = await island(page, (I, S) => {
+    S.village = {}; S.intro = true;
+    const d0 = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
+    const seen = [];
+    for (let di = d0; di < d0 + 365; di++) {
+      I.village.newDay(new Date(1970, 0, 1 + di, 12).getTime());
+      const D = S.village.drama;
+      if (D && D.start === di) seen.push({ id: D.id, d: di - d0 });
+    }
+    return seen;
+  });
+  const again = [];
+  for (let i = 0; i < r.length; i++) for (let j = 0; j < i; j++) if (r[j].id === r[i].id && r[i].d - r[j].d < 183) again.push([r[j], r[i]]);
+  console.log(`   a year: ${r.map((x) => `${x.id} d${x.d}`).join(', ')}`);
+  assert(!again.length, `again within six months: ${JSON.stringify(again)}`);
+  assert(r.length >= 10 && r.slice(0, 8).map((x) => x.id).join() === 'rivalry,pumpkin,cake,fence,election,club,party,rumour', JSON.stringify(r));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

@@ -1300,7 +1300,9 @@ on 1; counting arrivals as special too, never two on one day, and 14 days (33 %)
   - **Reactions:** things you did are noticed once, by one villager (the first you talk to who would know;
     each kind at most once a week): standing on the game hall roof, a new hop trail record, a crab you
     helped, a new trophy, a new kind of fish, a big harvest (10 crops in a day).
-  - **Running dramas**, one at a time with five quiet days between: **Pip and Grumbleton's fishing contest**
+  - **Running dramas**, one at a time with five quiet days between, and none again within six months of its last
+    time (`DRAMA_AGAIN`: when every one has come lately there is no drama for a while; the owner's decision after the
+    play-test, the first ones came back word for word about four months in): **Pip and Grumbleton's fishing contest**
     (each asks whose side you are on; every fish you catch until the weigh-in counts for that side, the
     chalk board at the pier shows the score), **Aunt Hazel's prize pumpkin** by her cottage (water it, once
     a day, with [B]: it grows, and the ribbon depends on it), **Rosa's secret cake** (she asks what goes in

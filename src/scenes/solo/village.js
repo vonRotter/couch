@@ -53,6 +53,7 @@ const DRAMAS = {
 // the first three, then the social happenings join the turn order (one every week and a half or so)
 const DRAMA_ORDER = ['rivalry', 'pumpkin', 'cake', 'fence', 'election', 'club', 'party', 'rumour'];
 const DRAMA_GAP = 5;
+export const DRAMA_AGAIN = 183; // days before a drama the child saw may come again (about six months)
 const REACT = {
   roof: ['pip', 'coach', 'rosa', 'hoot'], hopRecord: ['hazel', 'pip', 'coach', 'bram'], crab: ['shelby', 'grumbleton', 'bram', 'hazel'],
   trophy: ['coach', 'rosa', 'hoot', 'pip'], newFish: ['grumbleton', 'hoot', 'bram'], harvest: ['hazel', 'rosa', 'mumble'],
@@ -122,11 +123,21 @@ export class Village {
     // a locked event plays late today (lock.js): the big moment waits for the next free day (one special thing a day)
     if (V.drama && V.drama.climax === di && !V.drama.res && latePlay(at)) { let c = di + 1; while (c < di + 30 && !freeDay(dayMs(c))) c++; V.drama.climax = c; }
     if (!V.drama && S.intro && di >= V.nextDrama) {
-      const id = DRAMA_ORDER[V.dramaN % DRAMA_ORDER.length];
-      let climax = di + 4;
-      while (climax < di + 60 && !freeDay(dayMs(climax))) climax++;
-      V.drama = { id, start: di, climax, told: {}, side: null, fish: 0, water: [], flavor: null, res: null };
-      SOCIAL[id]?.init?.(V.drama);
+      // a drama seen within the last six months does not come again (the owner's decision after the play-test: the
+      // first ones came back word for word about four months in); every one blocked: no drama, look again next week
+      const seen = V.seen || (V.seen = Object.fromEntries((V.past || []).map((p) => [p.id, p.di])));
+      let k = -1;
+      for (let i = 0; i < DRAMA_ORDER.length && k < 0; i++) { const id = DRAMA_ORDER[(V.dramaN + i) % DRAMA_ORDER.length]; if (!(di - (seen[id] ?? -1e9) < DRAMA_AGAIN)) k = (V.dramaN + i) % DRAMA_ORDER.length; }
+      if (k < 0) V.nextDrama = di + 7;
+      else {
+        V.dramaN += (k - (V.dramaN % DRAMA_ORDER.length) + DRAMA_ORDER.length) % DRAMA_ORDER.length;
+        const id = DRAMA_ORDER[k];
+        seen[id] = di;
+        let climax = di + 4;
+        while (climax < di + 60 && !freeDay(dayMs(climax))) climax++;
+        V.drama = { id, start: di, climax, told: {}, side: null, fish: 0, water: [], flavor: null, res: null };
+        SOCIAL[id]?.init?.(V.drama);
+      }
     }
     // the project
     const P = V.proj;

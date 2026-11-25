@@ -396,3 +396,9 @@ Tests: `tests/playtest/decisions2.test.mjs` (each fails on the tree before its c
    to 20 (was 10-17; "Open 10 to 20." / "Åpen 10 til 20."). Nothing else used her old hours: the joke robot and the
    booths are always there, the lighthouse voice has no hours, and she simply goes in when her time ends
    (`inventor.js TINKA_UNTIL`, `creatures.js TEA_UNTIL`).
+8. **No drama again within six months.** The drama picker skips any drama the child saw (it started on their
+   island) within the last 183 days (`village.js DRAMA_AGAIN`, `S.village.seen`, filled from `S.village.past` for
+   old saves); when all are blocked there is no drama and it looks again a week later. Over a year: the eight dramas
+   on days 2 to 80, then none until day 188, when the round starts again (`tests/playtest/decisions2.test.mjs`).
+   `tests/lively/villagers.test.mjs`'s free-day test starts forty dramas in a row; it now clears the memory each time
+   (it tests the big moment's day, not repetition). Density, social and old-save tests still pass.

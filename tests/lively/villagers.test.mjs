@@ -96,7 +96,8 @@ await test('drama: the big moment is always on a free day (no festival, surprise
     const I = window.game.current, out = [];
     for (let k = 0; k < 40; k++) {
       const di = C.dayIndex(Date.now()) + k * 3;
-      I.save.village.drama = null; I.save.village.nextDrama = di; I.save.intro = true;
+      // (a fresh drama each time: forget which ones were seen, or after eight they would wait six months: decision 8)
+      I.save.village.drama = null; I.save.village.nextDrama = di; I.save.intro = true; I.save.village.seen = {};
       I.village.newDay(C.dayMs(di));
       const D = I.save.village.drama;
       if (!C.freeDay(C.dayMs(D.climax)) || D.climax < di + 4) out.push(D);
