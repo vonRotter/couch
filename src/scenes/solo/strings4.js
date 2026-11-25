@@ -126,7 +126,7 @@ addStrings({
     'isl.tour.ask': 'Hee! How about a fishing contest? Three minutes, most fish wins! Ready, matey?',
     'isl.tour.later': 'Another time then. My hook is always ready! Hee!',
     'isl.tour.go': 'The tournament starts! Three minutes: catch more fish than Grumbleton!',
-    'isl.tour.you': 'Your fish: {n}! (Grumbleton: {m})', 'isl.tour.him': 'Grumbleton caught a {item}! ({n})',
+    'isl.tour.you': 'Your fish: {n}! (Grumbleton: {m})', 'isl.tour.him': 'Grumbleton caught {a} {item}! ({n})',
     'isl.tour.score': 'You {n} · Grumbleton {m}', 'isl.task.tour': 'Fishing tournament: you {n}, Grumbleton {m}',
     'isl.tour.title': 'Fishing tournament', 'isl.tour.final': 'You caught {n} fish. Grumbleton caught {m}.',
     'isl.tour.win': 'You win! Hee hee, you are the best fisher on the island! Here is your prize!',

@@ -421,3 +421,10 @@ every second day following the story's steps (`mst*`), one every fourth day for 
   counted as never seen, and Mia's island vote came back after about a hundred days. Fixed: for such a save the dates
   of the earlier dramas are estimated back from the oldest one it remembers, about eleven days a drama
   (`village.js seenFrom`); the save then keeps its own `S.village.seen` from there.
+- The lighthouse story to its end (Mia, 19-23 April 2027): chapter 3 (coconuts to Shelby, the moon lens), 4 (the
+  pudding gear: already played, so it closed at once), 5 (Sky Hop, then the glowing crumbs to Mumble) and 6 (wood and
+  stone for the stairs, four invitations, the Lamp Festival at night with everyone: `play-mst154-021`). Chapters 3 to 5
+  can follow each other in one visit when the games were played before (by design: game steps count at once).
+- Right after the festival everyone still stands in a knot at the lighthouse door, and their name tags overlap
+  (`play-mst154-022`); they walk off on their routines within a minute. Left as is.
+- "Grumbleton caught a icefish!" Fixed: "an icefish", "an octopus" (`contest.js`; Norwegian "en" fits every fish).

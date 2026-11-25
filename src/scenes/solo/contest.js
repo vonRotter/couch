@@ -104,7 +104,8 @@ export class Tournament {
         r.next = 22 + Math.random() * 16;
         r.him++;
         const f = pickFish('pier', hourOf()) || 'mackerel';
-        host.game.ui.toast(t('isl.tour.him', { item: t(`isl.i.${f}`), n: r.him }), 1800, { group: 'tour' });
+        const item = t(`isl.i.${f}`); // ("an icefish", "an octopus": play-test)
+        host.game.ui.toast(t('isl.tour.him', { item, a: /^[aeiou]/i.test(item) ? 'an' : 'a', n: r.him }), 1800, { group: 'tour' });
         const g = host.npc('grumbleton');
         g.hop = 1;
         host.puffs.burst(new THREE.Vector3(g.x, 1.5, g.z + 1.2), FISH[f]?.color || 0xffffff, { count: 8, speed: 3, size: 0.25, life: 0.6 });

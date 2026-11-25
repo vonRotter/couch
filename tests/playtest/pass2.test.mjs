@@ -96,6 +96,23 @@ await test('a task to bring things says how many wait in the cottage chest (a fu
   assert(/10 stone \(0\/10\) · 4 in your cottage chest/.test(r), r);
 });
 
+await test('Grumbleton caught an icefish (not "a icefish")', async () => {
+  await page.evaluate((ms) => { window.__islandTimeOffset = ms - Date.now(); }, at(2026, 12, 2, 10)); // a winter week
+  await sim(page, 1.2);
+  const r = await page.evaluate(async () => {
+    const I = window.game.current, T = I.tour;
+    I.toasts.clear();
+    T.run = { t: 100, me: 0, him: 0, next: 0, grace: 0, done: false };
+    const sea = await import('/src/scenes/solo/sea.js');
+    // force the fish: winter at the pier gives icefish now and then; try until one is an icefish or octopus
+    let txt = '';
+    for (let i = 0; i < 400 && !/icefish|octopus/.test(txt); i++) { T.run.next = 0; I.toasts.clear(); T.update(0.01); txt = I.toasts.texts.join(' '); }
+    T.run = null;
+    return txt;
+  });
+  assert(/icefish|octopus/.test(r) && !/ a (icefish|octopus)/.test(r) && / an (icefish|octopus)/.test(r), r);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
