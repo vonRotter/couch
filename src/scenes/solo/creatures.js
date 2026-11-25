@@ -20,7 +20,7 @@ import { makeCloudWhale, makeTeaStall, makeMossCreature, makeMushroomCart, makeG
 //   - The CLOUD WHALE: once it has been seen, some meteor-shower nights are its instead (the same swap): at dusk (18 to
 //     20:30) it drifts slowly over the island, singing softly. Stand still a moment to watch it (the view looks up), and
 //     take a photo of it with Pip's camera.
-//   - The TINY ELEPHANTS' tea stall (south of the pond): a place to visit, 10 to 17. Order a tea and say when: press
+//   - The TINY ELEPHANTS' tea stall (south of the pond): a place to visit, 10 to 20. Order a tea and say when: press
 //     [B] when the cup is full to the line (forgiving timing widens the line; nothing to fail: a cup a day either way).
 //   - The SHY MOSS CREATURE (in the grass by the river, south of the farm): only seen in Sneaky mode. Walk up normally
 //     and it hides for the day; tiptoe up and say hello softly. Five visits (one a day) and it is your friend.
@@ -32,6 +32,7 @@ export const MOREL = { x: 16.0, z: 18.6, cart: { x: 17.6, z: 19.4 } };
 export const TEA = { x: 22.0, z: 30.6, stand: { x: 22.0, z: 32.2 } };
 export const MOSS = { x: -19.5, z: 20.0 };
 export const WHALE_HOURS = [18, 20.5];
+export const TEA_UNTIL = 20; // the tea stall is open 10 to 20 (the owner's decision after the play-test)
 export const SHROOM_SHARE = 0.45, WHALE_SHARE = 0.5;
 const WARES = [['starfruitSeed', 60], ['mysterySeed', 20], ['puffball', 15], ['sporeLamp', 80]];
 const TEAS = ['mint', 'berry', 'honey'];
@@ -67,7 +68,7 @@ addStrings({
     'cr.h.shroom': '[B] talk to Old Morel', 'cr.s.hello': 'Spores and sprouts, little one. Spores and sprouts. What catches your eye?',
     'cr.s.ware': '{item} ({n} coins)', 'cr.s.no': 'Just looking', 'cr.s.bought': 'A fine choice. It will grow on you.', 'cr.s.poor': 'Ah, not enough coins. Next time, little one.',
     'cr.s.bye': 'The wind is turning. I wander on at six.',
-    'cr.h.tea': '[B] order a cup of tea', 'cr.h.teaDone': 'The elephants bow. One cup a day, they say. Come back tomorrow!', 'cr.h.teaClosed': 'The tea stall is closed. Open 10 to 17.',
+    'cr.h.tea': '[B] order a cup of tea', 'cr.h.teaDone': 'The elephants bow. One cup a day, they say. Come back tomorrow!', 'cr.h.teaClosed': 'The tea stall is closed. Open 10 to 20.',
     'cr.e.ask': 'Toot! Welcome, welcome. Which tea would you like?', 'cr.e.mint': 'Mint', 'cr.e.berry': 'Berry', 'cr.e.honey': 'Honey', 'cr.e.no': 'Not now',
     'cr.tea.title': 'Say when!', 'cr.tea.hint': 'Press [B] when the tea reaches the line. [C]: stop',
     'cr.tea.perfect': 'Just right! The elephants trumpet softly. Toot toot!', 'cr.tea.low': 'A little low, but lovely. The elephants nod.', 'cr.tea.high': 'Oops, a tiny puddle! They giggle and wipe it up.',
@@ -99,7 +100,7 @@ addStrings({
     'cr.h.shroom': '[B] snakk med gamle Morkel', 'cr.s.hello': 'Sporer og spirer, lille venn. Sporer og spirer. Hva fanger blikket ditt?',
     'cr.s.ware': '{item} ({n} mynter)', 'cr.s.no': 'Bare ser', 'cr.s.bought': 'Et godt valg. Det vokser på deg.', 'cr.s.poor': 'Å, ikke nok mynter. Neste gang, lille venn.',
     'cr.s.bye': 'Vinden snur. Jeg vandrer videre klokka seks.',
-    'cr.h.tea': '[B] bestill en kopp te', 'cr.h.teaDone': 'Elefantene bukker. Én kopp om dagen, sier de. Kom tilbake i morgen!', 'cr.h.teaClosed': 'Teboden er stengt. Åpen 10 til 17.',
+    'cr.h.tea': '[B] bestill en kopp te', 'cr.h.teaDone': 'Elefantene bukker. Én kopp om dagen, sier de. Kom tilbake i morgen!', 'cr.h.teaClosed': 'Teboden er stengt. Åpen 10 til 20.',
     'cr.e.ask': 'Tuut! Velkommen, velkommen. Hvilken te vil du ha?', 'cr.e.mint': 'Mynte', 'cr.e.berry': 'Bær', 'cr.e.honey': 'Honning', 'cr.e.no': 'Ikke nå',
     'cr.tea.title': 'Si stopp!', 'cr.tea.hint': 'Trykk [B] når teen når streken. [C]: stopp',
     'cr.tea.perfect': 'Akkurat passe! Elefantene trompeterer lavt. Tuut tuut!', 'cr.tea.low': 'Litt lite, men deilig. Elefantene nikker.', 'cr.tea.high': 'Oi, en bitteliten dam! De fniser og tørker opp.',
@@ -198,11 +199,12 @@ export class Creatures {
     this.morel.place(MOREL.x, MOREL.z, morel, { x: -0.3, z: 1 });
     this.cart.visible = morel;
     this.cartObs.x = morel ? MOREL.cart.x : 1e5;
-    // the tea stall: there once it came (the elephants only 10 to 17)
+    // the tea stall: there once it came (the elephants only 10 to 20: until 17 before the owner's decision, so an
+    // evening child never had tea)
     const stall = this.has('tea') && main;
     this.stall.visible = stall;
     this.stallObs.x = stall ? TEA.x : 1e5;
-    for (const e of this.stall.userData.elephants) e.visible = stall && h >= 10 && h < 17;
+    for (const e of this.stall.userData.elephants) e.visible = stall && h >= 10 && h < TEA_UNTIL;
   }
 
   // ---------- [B] ----------
@@ -211,7 +213,7 @@ export class Creatures {
     if (this.morel.near(P, 1.9)) { out.b = { text: nm('cr.h.shroom'), fn: () => this.shroomTalk() }; return true; }
     if (this.stall.visible && Math.hypot(P.x - TEA.stand.x, P.z - TEA.stand.z) < 1.4) {
       const h = hourOf(), C = this.C;
-      out.b = h < 10 || h >= 17 ? { text: t('cr.h.teaClosed'), fn: () => this.host.game.audio.play('bump') }
+      out.b = h < 10 || h >= TEA_UNTIL ? { text: t('cr.h.teaClosed'), fn: () => this.host.game.audio.play('bump') }
         : C.tea.day === dayKey() ? { text: t('cr.h.teaDone'), fn: () => this.host.game.audio.play('bump') }
           : { text: nm('cr.h.tea'), fn: () => this.teaAsk() };
       return true;

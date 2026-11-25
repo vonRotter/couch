@@ -38,6 +38,7 @@ export const FUNNY = [
 const MISFIRE = 0.25;
 const LH = { x: 44, z: 30.2, say: { x: 44, up: 3.4, z: 28.6 } }; // the bubble shows over the door (the lamp is off screen from down here)
 const JOKES = 15, LH_LINES = 14, TINKA_LINES = 10;
+export const TINKA_UNTIL = 20.5; // Tinka at her workshop 8 to 20:30
 const PRIZES = [[['radishSeed', 3]], [['carrotSeed', 2]], [['goldenAcorn', 1]], [['bouquet', 1]], [['oddSock', 1]], [['mysterySeed', 1]], [['apple', 2]], [['wood', 3]]];
 
 addStrings({
@@ -205,7 +206,8 @@ export class Inventor {
     const shop = this.has('inventor') && main;
     this.shop.visible = shop;
     this.shopObs.x = shop ? WORKSHOP.x : 1e5;
-    this.tinka.place(WORKSHOP.tinka.x, WORKSHOP.tinka.z, shop && h >= 8 && h < 19, { x: -1, z: 0.3 });
+    // 8 to 20:30, so a child who plays after dinner meets her too (the owner's decision after the play-test)
+    this.tinka.place(WORKSHOP.tinka.x, WORKSHOP.tinka.z, shop && h >= 8 && h < TINKA_UNTIL, { x: -1, z: 0.3 });
     const booths = this.has('booths') && main;
     for (const b of this.booths) { b.g.visible = booths; b.obs.x = booths ? b.x : 1e5; }
     const robot = this.has('robot') && main;

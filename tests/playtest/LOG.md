@@ -388,11 +388,11 @@ on rarer days). The arrival order is tested by `tests/lba2/pace.test.mjs`.
   story, Coach Bo's and Hazel's own hellos). Fixed in the strings; `tests/strings.mjs` now checks the source for it.
 - Every suite passed on 7d74926 (39 files, tests/games included).
 
-## Owner decisions taken, not built yet (paused)
+## Owner decisions built (third set)
 
-- 7. Evening hours: Tinka at her workshop until 20:30, the tea stall open until 20:00.
-- 8. Dramas: a drama the child saw within the last six months does not come again.
-- 9. A lesson's tool always goes to the hotbar; with a full hotbar, the last slot's item moves to the chest.
-- 10. The tournament on "yes": no change.
-- Next after these: a short play-test of what pass 2 did not reach (the lighthouse story after chapter 3, the Ollo
-  folk, the joke robot, the sun spell, the cloud whale, Old Morel).
+Tests: `tests/playtest/decisions2.test.mjs` (each fails on the tree before its change).
+
+7. **Evening hours.** Tinka stands at her workshop 8 to 20:30 (was 8-19) and the tiny elephants' tea stall is open 10
+   to 20 (was 10-17; "Open 10 to 20." / "Åpen 10 til 20."). Nothing else used her old hours: the joke robot and the
+   booths are always there, the lighthouse voice has no hours, and she simply goes in when her time ends
+   (`inventor.js TINKA_UNTIL`, `creatures.js TEA_UNTIL`).

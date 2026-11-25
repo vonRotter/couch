@@ -1414,7 +1414,7 @@ pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
   stay); no spells indoors or on Shell Isle. Her chats: one a day, none again within four weeks (then she just waves).
 - **Tinka the inventor** (`inventor.js`), whose quests come one step at a time (each step is an arrival: a letter and a
   Today line, about a week apart): she mails the magic ball, moves into a **workshop** on the east shore (a shed with a
-  big turning gear; her chats, like Wendeline's, come once a day and never again within four weeks), builds three
+  big turning gear; she is there 8 to 20:30, so an evening child meets her too; her chats, like Wendeline's, come once a day and never again within four weeks), builds three
   **teleport booths** (by her workshop, on the hill by Aunt Hazel's, on the meadow by the café: [B] in one picks
   another and pops you there; about one trip in four **misfires** to a funny spot instead, the end of the pier, the
   fountain, kite hill, Crab Cove, the meadow by the burrow, the picnic, the School House or Aunt Hazel's garden, all
@@ -1431,7 +1431,7 @@ pace) and its parts (`modes.js`, `magicball.js`, ...). Tests: `tests/lba2/`.
   a daily surprise's day (`calendar.setSurpriseSwap`: the day keeps exactly one surprise, the calendar is unchanged
   for everyone), so they never add a special day, never meet on one day, and never take a day Marlo promised by
   letter (two years: Old Morel 15 days, the whale 20, out of 151 surprise days). The **tiny elephants' tea stall**
-  south of the pond (open 10 to 17): pick mint, berry or honey tea and *say when*: [B] when the cup is full to the
+  south of the pond (open 10 to 20, so an evening child gets tea too): pick mint, berry or honey tea and *say when*: [B] when the cup is full to the
   line (forgiving timing widens the line; nothing to fail, a cup a day either way; the first perfect pour brings a
   tiny tea set). The **shy moss creature** in the grass by the river south of the farm: only seen in Sneaky mode;
   walk up normally (or run) and it hides for the day; tiptoe up and say hello softly (once a day); five visits make
