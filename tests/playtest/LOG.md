@@ -428,3 +428,23 @@ every second day following the story's steps (`mst*`), one every fourth day for 
 - Right after the festival everyone still stands in a knot at the lighthouse door, and their name tags overlap
   (`play-mst154-022`); they walk off on their routines within a minute. Left as is.
 - "Grumbleton caught a icefish!" Fixed: "an icefish", "an octopus" (`contest.js`; Norwegian "en" fits every fish).
+- The later odd adventures (Mia, May to September 2027; their arrival dates set back, as the pace is tested in
+  `tests/lba2/pace.test.mjs`): Wendeline's lesson two (the sun rune, then the wand offers "Rain spell / Sun spell"),
+  the joke vending robot (a joke picked from three, "HA. HA. HA. ERROR: TOO FUNNY.", a golden acorn), Old Morel on his
+  day by the fairy ring (the Today board, his stock, a purchase), the Ollo folk (two new words a day, then the "Ollo!"
+  greeting and the bow with the bell, their customs), and the cloud whale's evening (the board's "look up at dusk",
+  standing still turns the view up to it). All read well in English; nothing came twice; no console errors.
+- Decisions 7-9 in action: Eli (evenings) met Tinka for the first time at 19:45 on 20 April ("You must be Eli!") and
+  got tea; Wendeline's wand, given again with a full bag, landed on the hotbar's last slot with the "To make room"
+  toast; an old save's vote no longer comes back within six months (fixed above).
+- Holding the wand or the magic ball next to Elder Bimsa: talking still wins over casting or throwing. Good.
+- Not fixed, noted: item names keep their own capitals inside sentences in English ("5 Wood (5/5), 3 stone (0/3)",
+  "I really, really love Flower bouquet."): tools and furniture are written with a capital, crops and materials
+  without. Owner decision 11 below.
+
+## Owner decisions from the targeted play-test (not changed: with a recommendation)
+
+11. **Item names inside sentences.** About forty item names start with a capital (Wood, Flower bouquet, Fishing rod,
+    Magic ball...) and the rest do not (stone, carrot, radish seeds), so task lists and lines mix them. Recommendation:
+    write every item name in lower case (except names such as Zip-Zap) and let labels that stand alone (the hotbar's
+    name, shop rows) capitalise the first letter when they show it.
