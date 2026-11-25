@@ -174,6 +174,19 @@ export function count(save, id) {
   return n;
 }
 
+/**
+ * A list of things to bring, for a task: "5 wood (5/5), 3 stone (0/3)", and for one still missing from the bag but
+ * waiting in the cottage chest, " · in your chest: 3" (play-test: gifts with a full bag went to the chest, and the task
+ * said 0/3 with no hint where they were). tr(key, vars) is the caller's t().
+ */
+export function needList(save, need, tr) {
+  return need.map(([it, k]) => {
+    const have = count(save, it), inChest = (save.chest || []).filter((x) => x.id === it).reduce((a, b) => a + b.n, 0);
+    const note = have < k && inChest ? tr('isl.q.inChest', { n: Math.min(inChest, k - have) }) : '';
+    return `${k} ${tr(`isl.i.${it}`)} (${Math.min(k, have)}/${k})${note}`;
+  }).join(', ');
+}
+
 /** In the bag or in the cottage chest? (For "have you found it already" checks.) */
 export function owns(save, id) {
   return count(save, id) > 0 || !!save.chest?.some((it) => it.id === id && it.n > 0);

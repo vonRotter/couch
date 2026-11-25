@@ -15,6 +15,7 @@ addStrings({
     'isl.h.offSeason': '{item} grows in {list}. Keep the seeds for then!',
     'isl.h.offSeasonGh': '{item} grows in {list}, or any time in the greenhouse!',
     'isl.q.season': '({item} grows in {list}.)',
+    'isl.q.inChest': ' · {n} in your cottage chest',
     'isl.seasonIn.spring': 'spring', 'isl.seasonIn.summer': 'summer', 'isl.seasonIn.autumn': 'autumn', 'isl.seasonIn.winter': 'winter',
     // new crops
     'isl.i.pea': 'peas', 'isl.i.blueberry': 'blueberries', 'isl.i.beet': 'beet', 'isl.i.sunflower': 'sunflower', 'isl.i.cabbage': 'cabbage', 'isl.i.snowberry': 'snowberries',
@@ -159,6 +160,7 @@ addStrings({
     'isl.h.offSeason': '{item} vokser om {list}. Spar frøene til da!',
     'isl.h.offSeasonGh': '{item} vokser om {list}, eller når som helst i drivhuset!',
     'isl.q.season': '({item} vokser om {list}.)',
+    'isl.q.inChest': ' · {n} i kista i hytta',
     'isl.seasonIn.spring': 'våren', 'isl.seasonIn.summer': 'sommeren', 'isl.seasonIn.autumn': 'høsten', 'isl.seasonIn.winter': 'vinteren',
     // nye avlinger
     'isl.i.pea': 'erter', 'isl.i.blueberry': 'blåbær', 'isl.i.beet': 'rødbete', 'isl.i.sunflower': 'solsikke', 'isl.i.cabbage': 'kål', 'isl.i.snowberry': 'snøbær',

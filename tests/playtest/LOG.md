@@ -408,3 +408,12 @@ Tests: `tests/playtest/decisions2.test.mjs` (each fails on the tree before its c
    verktøylinja havnet ... i kista i hytta di."). The pass-1 magic-ball task (how to hold it when it is in the bag)
    stays for old saves where it already sits in the bag.
 10. **The tournament on "yes"**: no change, as the owner decided.
+
+## Targeted play-test after decisions 7-9 (what pass 2 did not reach)
+
+Mia's save from pass 2 (mid-April 2027, lighthouse story at chapter 3), on the second dev server: one chain of visits
+every second day following the story's steps (`mst*`), one every fourth day for the odd adventures (`mod*`).
+
+- A task to bring things said "3 stone (0/3)" while the child's stone sat in the cottage chest (a gift with a full
+  bag goes there). Fixed: the list says " · 3 in your cottage chest" for what is missing from the bag but in the
+  chest (`save.js needList`, used by villagers' quests and the lighthouse story; English and Norwegian).

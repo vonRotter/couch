@@ -24,7 +24,7 @@ import { BATTLE_COUNT, ISLANDS as BREACH_ISLANDS } from '../breach/levels.js';
 import { Ranch } from './animals.js';
 import { Builder } from './build.js';
 import { Seasons } from './seasons.js';
-import { now, hourOf, since, loadIsland, count, owns, give, take, held as heldOf, freeSlot, fixSlots, HOTBAR, MIN, HOUR } from './save.js';
+import { now, hourOf, since, loadIsland, count, owns, give, take, held as heldOf, freeSlot, fixSlots, HOTBAR, MIN, HOUR, needList } from './save.js';
 import { ITEMS, CROPS, TOOLS, isGift, shopStock, icon, setPictures, inSeason } from './items.js';
 import { FISH, FISH_IDS, RECIPES, SEA, NIGHT_FINDS, seaModel, makeDish, hasSeaModel } from './sea.js';
 import { thumb } from './thumbs.js';
@@ -832,7 +832,7 @@ export class SoloIslandScene extends BaseScene {
     // the name inside a sentence: Norwegian titles are small there ("Gi tante Hassel 1 gulrot"; play-test)
     const kIn = `isl.npcIn.${id}`, name = t(kIn) !== kIn ? t(kIn) : t(`isl.npc.${id}`);
     if (q.find) return `${t('isl.q.find', { item: t(`isl.i.${q.find}`), name })} ${t('isl.q.where', { where: t(`isl.where.${q.find}`) })}`;
-    const list = q.need.map(([it, k]) => `${k} ${t(`isl.i.${it}`)} (${Math.min(k, count(this.save, it))}/${k})`).join(', ');
+    const list = needList(this.save, q.need, t);
     // ready to hand in, but they are at home for the night: say when they come out
     const away = this.questReady(id, n) ? this.homes.awayNote(id, now()) : '';
     // a crop that does not grow this season (and no greenhouse yet): say when it does, so the task is no dead end

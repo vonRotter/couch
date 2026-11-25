@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { t } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
-import { count, take, give, now } from './save.js';
+import { count, take, give, now, needList } from './save.js';
 import { dayKey } from './calendar.js';
 import { NPCS, npcState, heartsOf } from './npcs.js';
 import { PLACES, heightAt } from './map.js';
@@ -481,7 +481,7 @@ export class Story {
       if (S.goals[g.id]) continue;
       const vars = {};
       if (g.need) {
-        vars.list = g.need.map(([it, k]) => `${k} ${t(`isl.i.${it}`)} (${Math.min(k, count(this.host.save, it))}/${k})`).join(', ');
+        vars.list = needList(this.host.save, g.need, t);
         vars.n = Math.min(g.need[0][1], count(this.host.save, g.need[0][0]));
       }
       if (g.find) vars.n = S.crumbs.filter(Boolean).length;

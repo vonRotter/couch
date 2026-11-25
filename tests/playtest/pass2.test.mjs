@@ -85,6 +85,17 @@ await test('Norwegian Today lines write a title small inside a sentence ("i morg
   assert(/i morgen har tante Hassel bursdag/.test(r.a) && /^Tante Hassel har skrevet/.test(r.b) && /fra Rosa/.test(r.c) && /^Aunt Hazel wrote/.test(r.e), JSON.stringify(r));
 });
 
+await test('a task to bring things says how many wait in the cottage chest (a full bag sends gifts there)', async () => {
+  await startIsland(page, { time: at(2026, 11, 18, 11) });
+  const r = await island(page, (I, S) => {
+    S.quests.hazel = { n: 2 };
+    S.chest = [{ id: 'stone', n: 4, slot: 0 }];
+    S.inv = S.inv.filter((x) => x.id !== 'stone');
+    return I.questText('hazel', 2);
+  });
+  assert(/10 stone \(0\/10\) · 4 in your cottage chest/.test(r), r);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
