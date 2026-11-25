@@ -53,7 +53,25 @@ const DRAMAS = {
 // the first three, then the social happenings join the turn order (one every week and a half or so)
 const DRAMA_ORDER = ['rivalry', 'pumpkin', 'cake', 'fence', 'election', 'club', 'party', 'rumour'];
 const DRAMA_GAP = 5;
-export const DRAMA_AGAIN = 183; // days before a drama the child saw may come again (about six months)
+export const DRAMA_AGAIN = 183;
+/**
+ * When each drama was last seen, for a save from before decision 8 (no V.seen): the dates in V.past (its last six),
+ * and for a drama that came before those (V.dramaN counts every drama so far, in DRAMA_ORDER) a date estimated back from
+ * the oldest one known, about eleven days a drama, so it is not taken for never seen (play-test: an old save's island
+ * vote came back after a hundred days).
+ */
+function seenFrom(V) {
+  const out = {}, past = V.past || [];
+  for (const p of past) out[p.id] = Math.max(out[p.id] ?? -1e9, p.di);
+  const n = V.dramaN || 0;
+  if (!past.length || n <= past.length) return out;
+  const oldest = Math.min(...past.map((p) => p.di));
+  for (let k = n - past.length - 1, back = 1; k >= Math.max(0, n - DRAMA_ORDER.length); k--, back++) {
+    const id = DRAMA_ORDER[k % DRAMA_ORDER.length];
+    if (out[id] === undefined) out[id] = oldest - back * 11;
+  }
+  return out;
+} // days before a drama the child saw may come again (about six months)
 const REACT = {
   roof: ['pip', 'coach', 'rosa', 'hoot'], hopRecord: ['hazel', 'pip', 'coach', 'bram'], crab: ['shelby', 'grumbleton', 'bram', 'hazel'],
   trophy: ['coach', 'rosa', 'hoot', 'pip'], newFish: ['grumbleton', 'hoot', 'bram'], harvest: ['hazel', 'rosa', 'mumble'],
@@ -125,7 +143,7 @@ export class Village {
     if (!V.drama && S.intro && di >= V.nextDrama) {
       // a drama seen within the last six months does not come again (the owner's decision after the play-test: the
       // first ones came back word for word about four months in); every one blocked: no drama, look again next week
-      const seen = V.seen || (V.seen = Object.fromEntries((V.past || []).map((p) => [p.id, p.di])));
+      const seen = V.seen || (V.seen = seenFrom(V));
       let k = -1;
       for (let i = 0; i < DRAMA_ORDER.length && k < 0; i++) { const id = DRAMA_ORDER[(V.dramaN + i) % DRAMA_ORDER.length]; if (!(di - (seen[id] ?? -1e9) < DRAMA_AGAIN)) k = (V.dramaN + i) % DRAMA_ORDER.length; }
       if (k < 0) V.nextDrama = di + 7;

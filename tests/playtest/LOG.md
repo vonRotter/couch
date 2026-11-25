@@ -417,3 +417,7 @@ every second day following the story's steps (`mst*`), one every fourth day for 
 - A task to bring things said "3 stone (0/3)" while the child's stone sat in the cottage chest (a gift with a full
   bag goes there). Fixed: the list says " · 3 in your cottage chest" for what is missing from the bag but in the
   chest (`save.js needList`, used by villagers' quests and the lighthouse story; English and Norwegian).
+- An old save (from before decision 8) remembers only its last six dramas (`S.village.past`): the two before them
+  counted as never seen, and Mia's island vote came back after about a hundred days. Fixed: for such a save the dates
+  of the earlier dramas are estimated back from the oldest one it remembers, about eleven days a drama
+  (`village.js seenFrom`); the save then keeps its own `S.village.seen` from there.

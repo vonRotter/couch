@@ -82,6 +82,19 @@ await test('9. a tool the child is told to hold goes to the hotbar: an empty slo
   assert(/make room on your hotbar/.test(tx), tx);
 });
 
+await test('8b. an old save (no memory of when each drama came, only the last six): the two before them do not come back at once', async () => {
+  const r = await island(page, (I, S) => {
+    const di = Math.round((new Date(S.todayBoard.day + 'T12:00').getTime() - new Date(1970, 0, 1, 12).getTime()) / 86400000);
+    // eight dramas so far: rivalry .. rumour; the save remembers only the last six (cake .. rumour)
+    const ids = ['cake', 'fence', 'election', 'club', 'party', 'rumour'];
+    S.village = { dramaN: 8, nextDrama: di, past: ids.map((id, i) => ({ id, res: 'x', di: di - 70 + i * 11 })), heard: [], built: [], projN: 99, nextProj: 1e9 };
+    S.intro = true;
+    I.village.newDay(new Date(1970, 0, 1 + di, 12).getTime());
+    return { drama: S.village.drama?.id || null, seen: S.village.seen };
+  });
+  assert(r.drama === null, `rivalry and pumpkin (about three months ago) wait too: ${JSON.stringify(r)}`);
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();
