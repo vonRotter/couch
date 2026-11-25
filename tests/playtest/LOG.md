@@ -435,8 +435,9 @@ every second day following the story's steps (`mst*`), one every fourth day for 
   greeting and the bow with the bell, their customs), and the cloud whale's evening (the board's "look up at dusk",
   standing still turns the view up to it). All read well in English; nothing came twice; no console errors.
 - Decisions 7-9 in action: Eli (evenings) met Tinka for the first time at 19:45 on 20 April ("You must be Eli!") and
-  got tea; Wendeline's wand, given again with a full bag, landed on the hotbar's last slot with the "To make room"
-  toast; an old save's vote no longer comes back within six months (fixed above).
+  got tea; an old save's vote no longer comes back within six months (fixed above). Decision 9 was not met in play
+  (Mia's wand had gone to the chest before it was built; the script fetched it): its full-bag case is checked by
+  `tests/playtest/decisions2.test.mjs` instead.
 - Holding the wand or the magic ball next to Elder Bimsa: talking still wins over casting or throwing. Good.
 - Not fixed, noted: item names keep their own capitals inside sentences in English ("5 Wood (5/5), 3 stone (0/3)",
   "I really, really love Flower bouquet."): tools and furniture are written with a capital, crops and materials
