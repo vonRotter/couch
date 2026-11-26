@@ -362,6 +362,7 @@ export class IslandLook {
     const H = this.host;
     const want = on.mini && H.mode === 'walk' && !H.indoors && (H.hallCam || 0) < 0.5 && !H.game.contrastOn ? 1 : 0;
     this.tilt = dt ? (this.tilt ?? want) + (want - (this.tilt ?? want)) * Math.min(1, dt * 6) : want;
+    if (!on.mini) this.tilt = 0; // (switched off: at once)
     // the slow breath of the glow (0.2 Hz, a few percent): none with "Reduce flashing"
     this.pulse = calmOn() ? 0 : Math.sin(this.t * Math.PI * 0.4) * 0.08;
   }

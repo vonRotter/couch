@@ -265,6 +265,11 @@ class Game {
     this.assistMenu = new AssistMenu(this, { targets, onClose: () => { this.assistMenu = null; this.applyDeviceSettings(true); onClose?.(); } });
   }
 
+  /** The graphics stepped down by themselves (core/gfx.js: the first seconds on the island ran slowly): say so. */
+  onGfxStepDown() {
+    this.ui.toast(t('gfx.stepped'), 6000);
+  }
+
   /** A game noticed repeated tries (assist.js struggle()): offer the matching help, unless a menu is up. */
   offerAssist({ kind, player, skip = null }) {
     if (this.offer || this.assistMenu || this.pause || this.switching || this.parentPage) return false;

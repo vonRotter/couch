@@ -58,3 +58,14 @@ scale 1: relative only).
    fireflies glow up and fade one by one (steady with Reduce flashing) and leaves and petals tumble a little more.
    Seen: the beach (a white foam line along the sand, a few glints: the first try had too many, cut to about a
    third), the lighthouse (foam along the curve of the beach).
+6. Settings: Help me play has a "Graphics…" row (its value: "2 of 4 on" or "simple") that opens a page for this
+   device: Simple graphics, Glow and colour, Living world, Softer light, Miniature look, Back (en + no strings,
+   read aloud like the other rows). The looks are the device's (localStorage `couch.gfx`), not the profile's: a slow
+   device is slow for every child on it. A choice made there wins over `?gfx=`. Automatic step-down (core/gfx.js
+   measure / judge): only while looks are on from `DEFAULT_LOOK` (never after a choice, never with `?gfx=`), once
+   per page: after 2.5 s on the island, 90 frames of the real loop; a median slower than 40 ms (25 fps) saves simple
+   graphics (marked `auto`) and shows a toast saying so and where to change it. With `DEFAULT_LOOK` all off (the
+   trial) it never runs.
+7. Tests: tests/graphics/switches.test.mjs (7 tests). Note for test writers: in SwiftShader a 1280x720 frame with
+   the looks on takes about a second of GPU time, the rAF loop queues frames faster than that, and a screenshot then
+   waits for the queue: the test pauses the loop for its screenshots (and gives a panel over the island 120 s).

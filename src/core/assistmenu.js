@@ -11,6 +11,7 @@ import { SPEEDS, TEXT_SIZES, profileSettings, saveSettings, effectiveAim, sceneA
 import { KEYBOARD_SCHEMES, PAD_LABELS, REMAP_PAD, RESERVED_KEYS, schemeKeyOwner } from './input.js';
 import { deviceLabel } from './roster.js';
 import './tutorial.js'; // (its strings: the Tutorials and tips row)
+import { EFFECTS } from './gfx.js';
 
 addStrings({
   en: {
@@ -29,6 +30,16 @@ addStrings({
     'assist.offers': 'Offer help when it is hard', 'assist.offers.d': 'After a few tries at the same part, the game asks if you want help. (Turning it on again also brings back every "don\'t ask again".)',
     'assist.buttons': 'Buttons…', 'assist.buttons.d': 'Choose which key or button does what, for the controller you hold.',
     'assist.done': 'Done', 'assist.done.d': 'Back to the game.',
+    'assist.gfx': 'Graphics…', 'assist.gfx.d': 'Glow, wind, softer light and a miniature look, on your own island. For this device: simple graphics runs best on a slow one.',
+    'assist.gfx.simple': 'simple', 'assist.gfx.n': '{n} of 4 on',
+    'gfx.title': 'Graphics on this device', 'gfx.hint': 'Stick up/down: choose · left/right or [OK]: change · [BACK]: back',
+    'gfx.simple': 'Simple graphics', 'gfx.simple.d': 'Everything below off: the fastest, for a slow device.',
+    'gfx.glow': 'Glow and colour', 'gfx.glow.d': 'Lamps, windows and lanterns glow softly at night, and the colours follow the time of day.',
+    'gfx.life': 'Living world', 'gfx.life.d': 'Trees and grass sway in the wind, foam along the shore, fireflies glow on and off.',
+    'gfx.light': 'Softer light', 'gfx.light.d': 'Softer shadows, a little light on the edges of the characters, and things stand firmly on the ground.',
+    'gfx.mini': 'Miniature look', 'gfx.mini.d': 'The top and bottom of the screen a little blurred, like a tiny model. Never in menus or near text.',
+    'gfx.back': 'Back', 'gfx.back.d': 'Back to Help me play.',
+    'gfx.stepped': 'Simple graphics is on: this device seemed slow. You can change it in Help me play, Graphics.',
     'assist.on': 'on', 'assist.off': 'off', 'assist.held': '{name}: {b} held · tap to let go',
     'assist.tapHold': '{name}: tap {b} twice quickly to hold it',
     'assist.saved.profile': 'Saved for {name}', 'assist.saved.device': 'Saved for everyone on this device',
@@ -65,6 +76,16 @@ addStrings({
     'assist.offers': 'Tilby hjelp når det er vanskelig', 'assist.offers.d': 'Etter noen forsøk på samme sted spør spillet om du vil ha hjelp. (Slår du det på igjen, kommer alle «ikke spør igjen» tilbake.)',
     'assist.buttons': 'Knapper…', 'assist.buttons.d': 'Velg hvilken tast eller knapp som gjør hva, for kontrollen du holder.',
     'assist.done': 'Ferdig', 'assist.done.d': 'Tilbake til spillet.',
+    'assist.gfx': 'Grafikk…', 'assist.gfx.d': 'Glød, vind, mykere lys og et miniatyrpreg, på din egen øy. For denne maskinen: enkel grafikk går best på en treg en.',
+    'assist.gfx.simple': 'enkel', 'assist.gfx.n': '{n} av 4 på',
+    'gfx.title': 'Grafikk på denne maskinen', 'gfx.hint': 'Pinne opp/ned: velg · venstre/høyre eller [OK]: endre · [BACK]: tilbake',
+    'gfx.simple': 'Enkel grafikk', 'gfx.simple.d': 'Alt under er av: raskest, for en treg maskin.',
+    'gfx.glow': 'Glød og farger', 'gfx.glow.d': 'Lamper, vinduer og lykter gløder mykt om kvelden, og fargene følger tiden på døgnet.',
+    'gfx.life': 'Levende verden', 'gfx.life.d': 'Trær og gress svaier i vinden, skum langs stranda, ildfluer som lyser opp og slukner.',
+    'gfx.light': 'Mykere lys', 'gfx.light.d': 'Mykere skygger, litt lys langs kantene på figurene, og ting står støtt på bakken.',
+    'gfx.mini': 'Miniatyrpreg', 'gfx.mini.d': 'Toppen og bunnen av skjermen litt uskarpe, som en liten modell. Aldri i menyer eller nær tekst.',
+    'gfx.back': 'Tilbake', 'gfx.back.d': 'Tilbake til Hjelp meg å spille.',
+    'gfx.stepped': 'Enkel grafikk er på: denne maskinen virket treg. Du kan endre det i Hjelp meg å spille, Grafikk.',
     'assist.on': 'på', 'assist.off': 'av', 'assist.held': '{name}: {b} holdes · trykk for å slippe',
     'assist.tapHold': '{name}: trykk {b} to ganger fort for å holde den',
     'assist.saved.profile': 'Lagret for {name}', 'assist.saved.device': 'Lagret for alle på denne maskinen',
@@ -87,7 +108,10 @@ addStrings({
   },
 });
 
-const ROWS = ['speed', 'timing', 'aim', 'toggle', 'text', 'contrast', 'calm', 'offers', 'tutorials', 'buttons', 'done'];
+const ROWS = ['speed', 'timing', 'aim', 'toggle', 'text', 'contrast', 'calm', 'offers', 'tutorials', 'gfx', 'buttons', 'done'];
+// the Graphics page (core/gfx.js): this device's looks, not the profile's (a slow device is slow for everyone)
+const GFX_ROWS = ['simple', ...EFFECTS, 'back'];
+const PAGE_ROWS = new Set(['gfx', 'buttons', 'done']); // rows that open a page or close: no ◀ ▶
 
 /** The devices that steer a shared menu: the joined players', or every device when nobody has joined. */
 export function menuDevices(game) {
@@ -139,6 +163,7 @@ export class AssistMenu {
       case 'aim': return s.aimChosen ? t(`assist.aim.${s.aim}`) : `${t(`assist.aim.${this.aimNow}`)} ${t(sceneAimDefault(this.game) ? 'assist.aim.here' : 'assist.aim.dflt')}`;
       case 'text': return t(`assist.text.${s.text}`);
       case 'timing': case 'toggle': case 'contrast': case 'calm': case 'offers': case 'tutorials': return t(s[k] ? 'assist.on' : 'assist.off');
+      case 'gfx': { const g = this.game.gfx; if (!g) return ''; const n = EFFECTS.filter((e) => g.on[e]).length; return n ? t('assist.gfx.n', { n }) : t('assist.gfx.simple'); }
       default: return '';
     }
   }
@@ -152,11 +177,12 @@ export class AssistMenu {
 
   render() {
     if (!this.el) return;
+    if (this.page === 'gfx') { this.renderGfx(); return; }
     if (this.page !== 'main') { this.renderKeys(); return; }
     const items = this.rows.map((k, i) => {
       const v = this.value(k);
       const on = i === this.index ? 'on' : '';
-      const val = v ? `<span class="assist-val">${k === 'buttons' || k === 'done' ? '' : '◀ '}${v}${k === 'buttons' || k === 'done' ? '' : ' ▶'}</span>` : '';
+      const val = v ? `<span class="assist-val">${PAGE_ROWS.has(k) ? '' : '◀ '}${v}${PAGE_ROWS.has(k) ? '' : ' ▶'}</span>` : '';
       return `<div class="pause-item assist-row ${on} ${k}"><span>${esc(this.label(k))}</span>${val}</div>`;
     }).join('');
     const k = this.rows[this.index];
@@ -169,6 +195,7 @@ export class AssistMenu {
 
   readRow() {
     if (!voiceOn()) return;
+    if (this.page === 'gfx') { const k = GFX_ROWS[this.gIndex]; const v = this.gfxValue(k); say(`${t(`gfx.${k}`)}${v ? `: ${v}` : ''}. ${t(`gfx.${k}.d`)}`, 'narrator'); return; }
     const k = this.page === 'main' ? this.rows[this.index] : null;
     if (!k) return;
     const v = this.value(k).replace(/<[^>]+>/g, '');
@@ -197,20 +224,68 @@ export class AssistMenu {
     for (const d of menuDevices(this.game)) {
       const back = d.backPressed || this.game.input.escPressed || (d.type === 'keyboard' && d.cPressed);
       if (this.page === 'keys') { if (this.updateKeys(d, back)) return; continue; }
+      if (this.page === 'gfx') { if (this.updateGfx(d, back)) return; continue; }
       const n = this.rows.length;
       if (d.stepY) { this.index = (this.index - d.stepY + n) % n; this.game.audio.play('select'); this.render(); this.readRow(); }
       if (this.t < 0.2) continue;
       const k = this.rows[this.index];
       if (back) { this.close(); return; }
-      if (d.stepX && k !== 'buttons' && k !== 'done') { this.change(k, d.stepX); this.game.audio.play('select'); this.render(); this.readRow(); continue; }
+      if (d.stepX && !PAGE_ROWS.has(k)) { this.change(k, d.stepX); this.game.audio.play('select'); this.render(); this.readRow(); continue; }
       if (!d.okPressed) continue;
       this.game.audio.play('select');
       if (k === 'done') { this.close(); return; }
       if (k === 'buttons') { this.openKeys(d); return; }
+      if (k === 'gfx') { this.openGfx(); return; }
       this.change(k, 1);
       this.render();
       this.readRow();
     }
+  }
+
+  // ---------- the graphics page (core/gfx.js: this device's looks) ----------
+
+  openGfx() {
+    this.page = 'gfx';
+    this.gIndex = 0;
+    this.t = 0;
+    this.render();
+    this.readRow();
+  }
+
+  gfxValue(k) {
+    const g = this.game.gfx;
+    if (!g || k === 'back') return '';
+    return t((k === 'simple' ? g.simple : g.on[k]) ? 'assist.on' : 'assist.off');
+  }
+
+  renderGfx() {
+    const items = GFX_ROWS.map((k, i) => {
+      const v = this.gfxValue(k);
+      return `<div class="pause-item assist-row ${i === this.gIndex ? 'on' : ''} gfx-${k}"><span>${esc(t(`gfx.${k}`))}</span>${v ? `<span class="assist-val">◀ ${v} ▶</span>` : ''}</div>`;
+    }).join('');
+    this.el.innerHTML = `<div class="results-title">${esc(t('gfx.title'))}</div>
+      <div class="pause-list assist-list">${items}</div>
+      <div class="assist-desc">${esc(t(`gfx.${GFX_ROWS[this.gIndex]}.d`))}</div>
+      <div class="results-footer">${esc(t('gfx.hint'))}</div>`;
+  }
+
+  /** Switch a graphics row (simple graphics, or one look). */
+  changeGfx(k) {
+    const g = this.game.gfx;
+    if (!g || k === 'back') return;
+    if (k === 'simple') g.set({ simple: !g.simple });
+    else g.set({ [k]: !g.on[k] });
+  }
+
+  /** Returns true when it handled this frame for every device. */
+  updateGfx(d, back) {
+    const n = GFX_ROWS.length;
+    if (d.stepY) { this.gIndex = (this.gIndex - d.stepY + n) % n; this.game.audio.play('select'); this.render(); this.readRow(); }
+    if (this.t < 0.2) return false;
+    const k = GFX_ROWS[this.gIndex];
+    if (back || (d.okPressed && k === 'back')) { this.game.audio.play('select'); this.page = 'main'; this.t = 0; this.render(); this.readRow(); return true; }
+    if (d.stepX || d.okPressed) { this.changeGfx(k); this.game.audio.play('select'); this.render(); this.readRow(); }
+    return false;
   }
 
   // ---------- the buttons page (remapping, for the device that opened it) ----------
