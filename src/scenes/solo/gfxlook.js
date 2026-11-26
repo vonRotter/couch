@@ -386,8 +386,8 @@ export class IslandLook {
       if (!this.marked) { this.marked = true; for (const m of G.night) markGlow(m, 'night'); for (const m of G.always) markGlow(m, 'always'); }
       for (const m of G.always) markGlow(m, 'always'); // (the ghost ship's lanterns come with a rare event)
       for (const m of G.blend) glowBlend(m, true);
-      GLOW.night.value = this.lit > 0 ? 1 + this.lit : 0;
-      GLOW.always.value = 2;
+      GLOW.night.value = Math.min(1, this.lit * 1.5);
+      GLOW.always.value = 1;
       this.saved = this.boostList();
       for (const s of this.saved) { const c = s[0][s[1]]; s.push(c.r, c.g, c.b); c.multiplyScalar(s[2]); }
     }

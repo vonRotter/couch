@@ -67,11 +67,13 @@ const TiltShader = {
     }`,
 };
 
-// What glows (the bloom picks up nothing else): a glowing material writes a mark into the picture's alpha channel
-// (the island's picture is drawn into a half-float target, so alpha can go above 1; every other material writes 1 or
-// less). markGlow() gives an opaque material the mark (GLOW.night: lamps and windows, GLOW.always: the magic ball),
-// glowBlend() lets a see-through one add its alpha on top (the beam, fireflies). The scene sets the values while it
-// draws (solo/gfxlook.js) and puts them back to 0 after, so the materials draw exactly as before elsewhere.
+// What glows (the bloom picks up nothing else): a glowing thing leaves a mark in the picture's alpha channel. Every
+// other pixel of the island's picture has alpha exactly 1 (opaque things write 1; see-through things blended the
+// usual way keep what is behind at 1; additive ones add to it), so alpha below 1 can only be a mark: mark = 1 - alpha.
+// markGlow() makes an opaque material write 1 - mark (GLOW.night: lamps and windows, GLOW.always: the magic ball);
+// glowBlend() makes a see-through one take its own alpha off what is behind (the beam, fireflies). The scene sets the
+// values while it draws (solo/gfxlook.js) and puts them back to 0 after, so the materials draw as before elsewhere.
+// (A first version marked with alpha above 1, and every additive sparkle, a chest's halo or the Zip-Zap's tip, bloomed.)
 export const GLOW = { night: { value: 0 }, always: { value: 0 } };
 const marked = new WeakSet();
 export function markGlow(m, kind = 'night') {
@@ -82,30 +84,30 @@ export function markGlow(m, kind = 'night') {
   m.onBeforeCompile = (sh, r) => {
     if (prev && prev !== THREE.Material.prototype.onBeforeCompile) prev.call(m, sh, r);
     sh.uniforms.uGlowMark = U;
-    sh.fragmentShader = 'uniform float uGlowMark;\n' + sh.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  gl_FragColor.a = max( gl_FragColor.a, uGlowMark );');
+    sh.fragmentShader = 'uniform float uGlowMark;\n' + sh.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  gl_FragColor.a = min( gl_FragColor.a, 1.0 - uGlowMark );');
   };
   m.customProgramCacheKey = () => (prevKey && prevKey !== THREE.Material.prototype.customProgramCacheKey ? prevKey.call(m) : '') + '|glow';
   m.needsUpdate = true;
 }
-/** A see-through glowing material: its colour blends as usual, its alpha adds up over what is behind it (a mark). */
+/** A see-through glowing material: its colour blends as usual, its alpha is taken off what is behind it (a mark). */
 export function glowBlend(m, on) {
   if (!m) return;
   if (on) {
     if (m.userData.glowWas === undefined) m.userData.glowWas = m.blending;
-    Object.assign(m, { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor });
+    Object.assign(m, { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendEquationAlpha: THREE.ReverseSubtractEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor });
   } else if (m.userData.glowWas !== undefined) {
     m.blending = m.userData.glowWas;
     delete m.userData.glowWas;
   }
 }
 
-// the bloom's first step: only what carries the glow mark (alpha above 1), not whatever is bright
+// the bloom's first step: only what carries the glow mark (alpha below 1), not whatever is bright
 const MARK_FRAG = `
   uniform sampler2D tDiffuse; uniform vec3 defaultColor; uniform float defaultOpacity; uniform float luminosityThreshold; uniform float smoothWidth;
   varying vec2 vUv;
   void main() {
     vec4 texel = texture2D( tDiffuse, vUv );
-    float mark = smoothstep( 1.0 + luminosityThreshold, 1.0 + luminosityThreshold + smoothWidth, texel.a );
+    float mark = smoothstep( luminosityThreshold, luminosityThreshold + smoothWidth, 1.0 - texel.a );
     gl_FragColor = vec4( texel.rgb * mark, 1.0 );
   }`;
 

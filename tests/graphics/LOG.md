@@ -25,7 +25,9 @@ scale 1: relative only).
 2. Glow and colour (`glow`). Bloom: UnrealBloomPass (quarter-size first mip) that picks up only what carries a glow
    mark in the picture's alpha channel (core/gfx.js markGlow / glowBlend): a first try with a brightness threshold
    bloomed the lamp-lit snowy cottage wall into a white blob (that wall is 3.8x white in linear light at night;
-   by day a few pixels reach 1.6), so brightness alone cannot pick the lamps. Marked: lamps and lanterns (M.lamp,
+   by day a few pixels reach 1.6), so brightness alone cannot pick the lamps. The mark is alpha below 1 (every other
+   pixel is exactly 1): a second try marked with alpha above 1, and additive sparkles (a hidden chest's halo, the
+   Zip-Zap's tip) bloomed by day too. Marked: lamps and lanterns (M.lamp,
    the lighthouse lamp, the greenhouse lamps), lit windows (M.win, every villager's own), the arcade screens, the
    lighthouse beam and fireflies at night; the magic ball (its own copy of its star material), its aim dots and the
    ghost ship's lanterns always. Colour grade (ShaderPass, linear, before OutputPass): a tint and a little saturation

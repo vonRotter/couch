@@ -22,6 +22,13 @@ const LOOKS = [
   ['all', ['glow', 'life', 'light', 'mini']],
 ].filter(([k]) => !process.env.LOOKS || process.env.LOOKS.split(',').includes(k));
 const LOOK_NAME = { now: 'Now (all off)', glow: 'Glow and colour', life: 'Living world', light: 'Softer light', mini: 'Miniature look', all: 'All four' };
+// what to look for in each picture (a still cannot show the wind)
+const LOOK_NOTE = {
+  now: 'today\'s look', glow: 'lamps, windows and the beam glow at night; the tint by hour and season',
+  life: 'foam along the shore, glints on the sea; the sway of leaves and grass only shows in motion',
+  light: 'softer shadow edges, a light rim on the characters, dark patches where things meet the ground',
+  mini: 'top and bottom softly blurred, the bean\'s band sharp', all: 'all four together',
+};
 
 // Seasons are one real week each (calendar.js): the week of 2026-11-09 is spring, 11-16 summer, 11-23 autumn,
 // 11-30 winter. Weekdays (no festival); a day that turns out rainy moves on a day (tryDays).
@@ -186,14 +193,14 @@ h1 { margin: 0 0 4px; } h2 { margin: 28px 0 8px; } p { color: var(--muted); marg
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
 figure { margin: 0; background: var(--card); border-radius: 10px; overflow: hidden; }
 figure img { display: block; width: 100%; height: auto; cursor: zoom-in; }
-figcaption { padding: 6px 10px; font-weight: 600; }
+figcaption { padding: 6px 10px; font-weight: 600; } figcaption small { font-weight: 400; color: var(--muted); }
 a { color: inherit; }
 </style></head><body>
 <h1>Graphics trial: the solo island</h1>
 <p>The same frozen moment and camera per spot: now (every look off), each look alone, and all four. 1280×720 at device scale 2. Click a picture for full size.</p>
 ${costs ? `<p>Relative cost (software rendering, 1280×720, ms per frame; only the ratios mean anything): ${Object.entries(costs).map(([s, c]) => `${esc(s)}: ${Object.entries(c).map(([k, v]) => `${esc(LOOK_NAME[k])} ${v.toFixed(0)}`).join(', ')}`).join(' · ')}</p>` : ''}
 ${meta.map(({ spot, info, shots }) => `<h2>${esc(spot.name)}</h2><p>${esc(info.day.join('-'))} ${String(Math.floor(info.hour)).padStart(2, '0')}:${String(Math.round((info.hour % 1) * 60)).padStart(2, '0')} · ${esc(info.season)}${info.rainy ? ' · rainy' : ''}</p>
-<div class="grid">${shots.map((s) => `<figure><a href="${s.file}"><img src="${s.file}" alt="${esc(spot.name)}: ${esc(LOOK_NAME[s.k])}" loading="lazy"></a><figcaption>${esc(LOOK_NAME[s.k])}</figcaption></figure>`).join('')}</div>`).join('\n')}
+<div class="grid">${shots.map((s) => `<figure><a href="${s.file}"><img src="${s.file}" alt="${esc(spot.name)}: ${esc(LOOK_NAME[s.k])}" loading="lazy"></a><figcaption>${esc(LOOK_NAME[s.k])}<br><small>${esc(LOOK_NOTE[s.k])}</small></figcaption></figure>`).join('')}</div>`).join('\n')}
 </body></html>`;
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
 console.log(`\n${path.join(OUT, 'index.html')}`);
