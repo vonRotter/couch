@@ -10,8 +10,8 @@ They are plain Node scripts (no test framework) and are not part of the Vite bui
    `node tests/lively/today.test.mjs`. All of the solo island's "livelier island" tests:
    `for f in tests/lively/*.test.mjs; do node "$f" || break; done`; the classic games: `for f in tests/arcade/*.test.mjs; do node "$f" || break; done`.
    The same for each suite folder: `tests/island`, `tests/keepsolo`, `tests/games`, `tests/pad`; and the missing-string
-   check: `node tests/strings.mjs`. Everything (about 25 minutes):
-   `node tests/smoke.mjs; node tests/strings.mjs; for f in tests/{island,keepsolo,games,pad,lively,arcade,lba2,playtest}/*.test.mjs; do node "$f"; done`
+   check: `node tests/strings.mjs`. Everything (about 40 minutes):
+   `node tests/smoke.mjs; node tests/strings.mjs; for f in tests/{island,keepsolo,pad,lively,arcade,lba2,playtest,graphics,games}/*.test.mjs; do node "$f"; done`
 3. Run tests on a tree nobody edits meanwhile: the dev server reloads a page when a source file changes, and the test
    in that page then fails for no reason. (After a source file changed, a test's own `import('/src/...')` can get a
    second copy of a module, without the game's state: read state through `window.game`, the scene, or behaviour.)
@@ -92,6 +92,14 @@ Each file prints `PASS name` / `FAIL name: why` per test and exits with 1 if any
   shipping bin, the ghost ship clear of the hotbar, cards that fit the screen with big text, the map's arrow off the
   task list, the tournament pill under the top pills, the pause menu hiding a card or a tutorial step under it, and
   the Today board not announcing what is already over.
+- `tests/graphics/switches.test.mjs`: the graphics trial (core/gfx.js, solo/gfxlook.js): each look on and off on the
+  island with no console errors (and drawn as before when off), simple graphics turns every one off and back, Reduce
+  flashing stops the glow's breath and the fireflies' twinkle, name tags stay page text and the tilt-shift is off in a
+  dialog and with Strong outlines, the Help me play Graphics page in English and Norwegian, the automatic step-down
+  (only from the defaults, with a toast), and with every look on a puzzle lock, Rock Patrol (clipping), a game and the
+  shared island still draw. Its screenshots pause the game loop (a frame with the looks on takes about a second in
+  software rendering). `tests/graphics/compare.mjs` is not a test: the before/after screenshots for the owner
+  (`GFX_DIR`, `--cost`, `ONLY`, `LOOKS`; see tests/graphics/LOG.md).
 - `tests/lively/*.test.mjs`: the "livelier island" round (Today board and tomorrow hooks, villagers' own lives,
   rare events and the mystery, music and ambience, Pip's robot, old saves, and the density budget, with a weekend-only
   visitor's overdue arrivals).

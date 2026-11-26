@@ -374,6 +374,29 @@ tokens, so they name what each player presses (their device, their remapping) an
   Pilots' stall tip and Rooftop Rush's signs. The farming steps and Bean Brigade's tips are once per save:
   turning tutorials on again does not replay them (Bean Brigade's battle menu has "Tips").
 
+### Graphics (a trial)
+
+Four looks that can each be switched on, on the solo island first (the other scenes draw as before); all four
+are off until the owner picks (`DEFAULT_LOOK` in `src/core/gfx.js`):
+
+- **Glow and colour**: lamps, lanterns, lit windows, the lighthouse lamp and beam, arcade screens and fireflies
+  glow softly at night (the magic ball always), and a gentle colour grade follows the hour (warm morning, neutral
+  day, golden evening, cool blue night) and the season. Only marked glowing things bloom, never a bright wall.
+- **Living world**: trees, bushes and grass sway in the wind (more on rainy days and after a storm), foam along the
+  shore and a few slow glints on the sea, fireflies glow on and off. The seasons' own petals, leaves and snow stay
+  as they are: nothing is added.
+- **Softer light**: softer shadow edges, a faint rim of light on the beans and villagers, and a soft dark patch
+  under trees, bushes, rocks, houses, lamps, the bean and the villagers, so things stand on the ground.
+- **Miniature look**: tilt-shift, the top and bottom of the screen a little blurred and the band around the bean
+  sharp. Off in menus, panels and dialogs, in the Game Hall and the cottage, and with Strong outlines.
+
+Switches: Help me play > **Graphics…** (this device's choice: Simple graphics turns every look off), or the
+address for the trial: `?gfx=glow,life,light,mini` (any of them), `?gfx=all`, `?gfx=none`. A device that starts
+with looks on from the defaults and runs slowly in its first seconds on the island steps down to simple graphics
+by itself (once, with a toast). Reduce flashing stops the glow's slow breath and the fireflies' twinkle; name tags,
+the HUD and every panel are page text and never blurred or tinted. `node tests/graphics/compare.mjs` takes the
+before/after screenshots (tests/graphics/LOG.md has what each look does and costs).
+
 ### Colors
 
 Walk into (or jump into) a paint pot near the plaza to take that color, if nobody has it.
@@ -1523,7 +1546,7 @@ its own save keys and show a button back to the `return` link.
 
 ```
 src/
-  main.js            renderer, game loop, scene switching; the start flow (enterSolo, goTogether, goHome,
+  main.js            renderer, game loop, scene switching (game.gfx: the graphics looks, core/gfx.js); the start flow (enterSolo, goTogether, goHome,
                      openStart) and co-op rewards (coopFinished)
   core/
     profiles.js      solo profiles (storage, picker incl. the start screen's cards), the shared island's
@@ -1551,6 +1574,8 @@ src/
     passport-strings.js  its text (skills, genres, the read-aloud genre cards, trials), English and Norwegian
     parentpage.js    the parent page behind a hold (play time, genres, skills, help taken, skips)
     outline.js       strong outlines: markA11y(model, kind), refreshOutlines(scene, on)
+    gfx.js           the graphics trial's switches (?gfx=, Help me play > Graphics, simple graphics, the automatic
+                     step-down) and post-processing (bloom on marked glowing things, colour grade, tilt-shift)
     roster.js        joined players, colors, hats, saved star count
     character.js     the shared bean buddy (squash/stretch, blink, hats)
     palette.js       colors, cached toon materials and geometry, player and team symbols (symbolOf)
@@ -1572,7 +1597,8 @@ src/
                      school.js: the School House and its picker; atlas.js: the island map and its arrow;
                      journal.js: the journal's tabs; passport.js: its Passport tab; coach.js: Coach Bo;
                      arcade.js: the Game Hall's board, sign and Coach's lines; puzzles.js: the puzzle locks
-                     and doors and their pace; models10.js: the doors, the lock, the prizes)
+                     and doors and their pace; models10.js: the doors, the lock, the prizes; gfxlook.js: the
+                     graphics looks on the island: glow marks, grade, wind, foam, rim light, contact shading)
     arcade/          the Game Hall's classic games: defs.js (the nine), runner.js (one game in its own board
                      view: tutorial, assists, cards, high scores, passport; a scene or over the island),
                      scene.js (a cabinet's scene), scores.js (per child), emblems.js, strings.js, and
