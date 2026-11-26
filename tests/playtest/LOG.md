@@ -449,3 +449,9 @@ every second day following the story's steps (`mst*`), one every fourth day for 
     Magic ball...) and the rest do not (stone, carrot, radish seeds), so task lists and lines mix them. Recommendation:
     write every item name in lower case (except names such as Zip-Zap) and let labels that stand alone (the hotbar's
     name, shop rows) capitalise the first letter when they show it.
+
+## Review of the targeted play-test
+
+- The tea stall's cup shows two dashed lines (the band to stop in), but the hint said "when the tea reaches the line".
+  Now: "Press [B] when the tea is between the lines." / "Trykk [B] når teen er mellom strekene."
+- Every suite passed on 9e26b2f (40 files, tests/games included).
