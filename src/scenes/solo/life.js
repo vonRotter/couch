@@ -51,7 +51,10 @@ export class Life {
     }
     this.flyGeo = new THREE.BufferGeometry();
     this.flyGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.flyMat = new THREE.PointsMaterial({ color: 0xfff27a, size: 0.28, transparent: true, opacity: 0, depthWrite: false });
+    // each fly's own brightness (1: as bright as the material; the graphics trial's living world twinkles them: gfxlook.js)
+    this.flyGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3).fill(1), 3));
+    this.twinkle = false;
+    this.flyMat = new THREE.PointsMaterial({ color: 0xfff27a, size: 0.28, transparent: true, opacity: 0, depthWrite: false, vertexColors: true });
     this.flyPts = new THREE.Points(this.flyGeo, this.flyMat);
     this.flyPts.frustumCulled = false;
     scene.add(this.flyPts);
@@ -121,6 +124,13 @@ export class Life {
         arr[i * 3 + 2] = f.z + Math.cos(t * 0.5 + f.ph) * 1.2;
       });
       this.flyGeo.attributes.position.needsUpdate = true;
+      // twinkling (the living world look): each fly glows up and fades slowly, on its own (never a flash)
+      const col = this.flyGeo.attributes.color;
+      if (this.twinkle || this.twinkled) {
+        this.flies.forEach((f, i) => { const k = this.twinkle ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 0.9 + f.ph * 3)) : 1; col.array[i * 3] = col.array[i * 3 + 1] = col.array[i * 3 + 2] = k; });
+        col.needsUpdate = true;
+        this.twinkled = this.twinkle;
+      }
     }
     for (const d of this.ducks) {
       d.u += d.dir * dt * 0.004;

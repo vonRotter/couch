@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { calmOn } from '../../core/assist.js';
 import { GLOW, markGlow, glowBlend } from '../../core/gfx.js';
+import { heightAt } from './map.js';
 
 // The solo island's side of the graphics trial (core/gfx.js has the switches and the post-processing chain).
 // Each look is switched on and off here every frame from game.gfx.on, so a change in the settings shows at once.
@@ -14,6 +15,14 @@ import { GLOW, markGlow, glowBlend } from '../../core/gfx.js';
 // rim of sky light on their edges (their toon materials swapped for copies with a fresnel term, put back when off),
 // and contact shading: a soft dark patch on the ground under each tree, bush, rock, house and lamp (one instanced
 // mesh, from the map's footprints) and under the bean and every villager, so things stand on the ground.
+
+// A living world: the trees', bushes' and grass tufts' baked meshes sway a little in the wind (copies of their
+// materials with a few vertex lines, one shared wind clock; twice as strong on rainy days, more after a storm), and
+// the water gets foam along the shore and slow moving glints further out (the island's own water material, a small
+// depth map baked from the ground's height once). The seasons' own particles stay as they are (seasonlook.js:
+// petals in spring, falling leaves in autumn, snow and snowy roofs in winter; life.js: fireflies at night): nothing
+// is added, the owner's "never too many"; with this look the fireflies glow on and off softly, one by one (steady
+// with Reduce flashing), and the autumn leaves and the petals tumble a little more as they fall (seasonlook.js).
 
 // A miniature look: tilt-shift (core/gfx.js), sharp in a band around the bean, softly blurred toward the top and
 // the bottom. Only out walking: it fades out in menus, panels and dialogs, inside the Game Hall and the cottage
@@ -57,6 +66,32 @@ function rimOf(m) {
   return c;
 }
 
+const WIND = { uWindT: { value: 0 }, uWind: { value: 0 } };
+const swayCopies = new WeakMap();
+/** A copy of a (baked, world-space) leaf or grass material that sways in the wind. */
+function swayOf(m) {
+  let c = swayCopies.get(m);
+  if (c) return c;
+  c = m.clone();
+  c.userData = { swayOf: m, ...(m.userData?.shared ? { shared: true } : {}) };
+  c.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, WIND);
+    sh.vertexShader = 'uniform float uWindT;\nuniform float uWind;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      {
+        vec3 wp = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;
+        float ph = uWindT * 1.7 + wp.x * 0.31 + wp.z * 0.23;
+        float s = sin( ph ) * 0.7 + sin( ph * 2.3 + wp.y * 1.7 ) * 0.3;
+        float f = sin( uWindT * 5.1 + wp.x * 2.1 + wp.y * 3.3 + wp.z * 1.7 ); // a little flutter, leaf by leaf
+        transformed += vec3( 0.9, 0.0, 0.45 ) * s * uWind + vec3( 0.3, 0.25, -0.3 ) * f * uWind * 0.35;
+      }`);
+  };
+  c.customProgramCacheKey = () => 'sway';
+  swayCopies.set(m, c);
+  return c;
+}
+
+const WATER = { uFoam: { value: 0 }, uWaterT: { value: 0 }, uFoamColor: { value: new THREE.Color(1, 1, 1) }, uShore: { value: null }, uShoreMin: { value: new THREE.Vector2() }, uShoreSize: { value: new THREE.Vector2(1, 1) } };
+
 /** A soft round dark patch (the contact shading), white in the middle fading out: used as alpha. */
 function blobTexture() {
   const cv = document.createElement('canvas');
@@ -84,6 +119,91 @@ export class IslandLook {
     this.rimmed = []; // [mesh, its own material] while the rim light is on
     this.sweepT = 0;
     this.blobs = null;
+  }
+
+  // ---------- a living world ----------
+
+  /** The water's depth near the shore, as a small texture: 0 at the waterline, 1 a metre and more below it. */
+  shoreMap() {
+    const H = this.host, N = 192;
+    const x0 = -85, z0 = -74, W = 170, D = 160;
+    const data = new Uint8Array(N * N);
+    const sea = H.map.water.position.y;
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const h = heightAt(x0 + (i + 0.5) / N * W, z0 + (j + 0.5) / N * D);
+      data[j * N + i] = Math.round(THREE.MathUtils.clamp((sea - h) / 1.2, 0, 1) * 255);
+    }
+    for (let k = 0; k < N; k++) data[k] = data[(N - 1) * N + k] = data[k * N] = data[k * N + N - 1] = 255; // the open sea round it
+    const tex = new THREE.DataTexture(data, N, N, THREE.RedFormat);
+    tex.magFilter = tex.minFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    WATER.uShore.value = tex;
+    WATER.uShoreMin.value.set(x0, z0);
+    WATER.uShoreSize.value.set(W, D);
+    this.shoreTex = tex;
+  }
+
+  /** The foam and glints, added to the island's own water material once (off while uFoam is 0). */
+  patchWater() {
+    const m = this.host.map.water.material;
+    if (this.waterPatched) return;
+    this.waterPatched = true;
+    this.shoreMap();
+    const prev = m.onBeforeCompile, prevKey = m.customProgramCacheKey;
+    m.onBeforeCompile = (sh, r) => {
+      if (prev && prev !== THREE.Material.prototype.onBeforeCompile) prev.call(m, sh, r);
+      Object.assign(sh.uniforms, WATER);
+      sh.vertexShader = 'varying vec2 vWaterXZ;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vWaterXZ = ( modelMatrix * vec4( transformed, 1.0 ) ).xz;');
+      sh.fragmentShader = 'varying vec2 vWaterXZ;\nuniform float uFoam;\nuniform float uWaterT;\nuniform vec3 uFoamColor;\nuniform sampler2D uShore;\nuniform vec2 uShoreMin;\nuniform vec2 uShoreSize;\n'
+        + sh.fragmentShader.replace('#include <opaque_fragment>', `
+        if ( uFoam > 0.0 ) {
+          float depth = texture2D( uShore, ( vWaterXZ - uShoreMin ) / uShoreSize ).r;
+          float wob = sin( uWaterT * 1.1 + vWaterXZ.x * 0.45 + vWaterXZ.y * 0.3 ) * 0.035;
+          float edge = 1.0 - smoothstep( 0.05, 0.13 + wob, depth );
+          float ring = fract( uWaterT * 0.09 + vWaterXZ.x * 0.004 );
+          float line = ( 1.0 - smoothstep( 0.0, 0.025, abs( depth - 0.1 - ring * 0.25 ) ) ) * ( 1.0 - ring ) * 0.6;
+          float foam = clamp( max( edge, line ), 0.0, 1.0 ) * uFoam;
+          float g = sin( vWaterXZ.x * 0.8 + uWaterT * 0.7 + sin( vWaterXZ.y * 0.35 ) * 1.5 ) * sin( vWaterXZ.y * 0.62 - uWaterT * 0.5 );
+          float glint = smoothstep( 0.93, 0.995, g ) * smoothstep( 0.3, 0.6, depth ) * uFoam;
+          outgoingLight = mix( outgoingLight, uFoamColor, foam * 0.8 ) + uFoamColor * glint * 0.13;
+          diffuseColor.a = mix( diffuseColor.a, 1.0, foam * 0.8 );
+        }
+        #include <opaque_fragment>`);
+    };
+    m.customProgramCacheKey = () => (prevKey && prevKey !== THREE.Material.prototype.customProgramCacheKey ? prevKey.call(m) : '') + '|foam';
+    m.needsUpdate = true;
+  }
+
+  /** The baked meshes that sway: the leaves (seasonlook.js keeps them) and the grass tufts. */
+  swayMeshes() {
+    if (this.sways) return this.sways;
+    const H = this.host;
+    const leaves = (H.seasons?.look?.leaves || []).map((L) => L.m);
+    const tufts = (H.map.baked?.children || []).filter((m) => (m.material?.userData?.swayOf || m.material)?.color?.getHex?.() === 0x6fbf4a);
+    this.sways = [...new Set([...leaves, ...tufts])];
+    return this.sways;
+  }
+
+  updateLife(dt, on) {
+    const H = this.host;
+    // the wind: a breeze, twice as strong on a rainy day, three times after a storm (events.js)
+    const want = !on ? 0 : 0.045 * (H.events?.kind === 'storm' ? 3 : H.seasons?.rainy ? 2 : 1);
+    this.wind = (this.wind ?? want) + (want - (this.wind ?? want)) * Math.min(1, dt * 0.5);
+    WIND.uWind.value = this.wind;
+    WIND.uWindT.value = this.t;
+    for (const m of this.swayMeshes()) {
+      const cur = m.material;
+      if (on && !cur.userData?.swayOf) m.material = swayOf(cur);
+      else if (!on && cur.userData?.swayOf) m.material = cur.userData.swayOf;
+    }
+    if (on) this.patchWater();
+    WATER.uFoam.value = on ? 1 : 0;
+    WATER.uWaterT.value = this.t;
+    const n = H.night || 0;
+    WATER.uFoamColor.value.setRGB(1 - 0.55 * n, 1 - 0.5 * n, 1 - 0.4 * n);
+    // fireflies: each glows on and off slowly (life.js draws them; steady with "Reduce flashing")
+    H.life && (H.life.twinkle = on && !calmOn());
+    H.seasons?.look && (H.seasons.look.tumble = on);
   }
 
   // ---------- softer light ----------
@@ -237,6 +357,7 @@ export class IslandLook {
     this.t += dt;
     const on = this.gfx.on;
     this.updateLight(dt, on.light);
+    this.updateLife(dt, on.life);
     // the miniature look: eased in and out (0.3 s)
     const H = this.host;
     const want = on.mini && H.mode === 'walk' && !H.indoors && (H.hallCam || 0) < 0.5 && !H.game.contrastOn ? 1 : 0;
@@ -281,6 +402,9 @@ export class IslandLook {
 
   dispose() {
     this.setRim(false);
+    WATER.uFoam.value = 0;
+    WIND.uWind.value = 0;
+    this.shoreTex?.dispose();
     this.blobTex?.dispose();
     this.feetMat?.dispose();
   }

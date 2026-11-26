@@ -237,7 +237,9 @@ export class SeasonLook {
       d.y -= dt * fall;
       d.ph += dt;
       if (d.y < 0) { d.y = 14 + Math.random() * 4; d.x = (Math.random() - 0.5) * 50; d.z = (Math.random() - 0.5) * 40; }
-      a[i * 3] = c.x + d.x + Math.sin(d.ph * 0.9 + i) * P.sway;
+      // (the graphics trial's living world: leaves and petals tumble a little more on the way down; snow falls as before)
+      const tb = this.tumble && this.season !== 'winter' ? Math.sin(d.ph * 2.3 + i * 1.7) * 0.45 : 0;
+      a[i * 3] = c.x + d.x + Math.sin(d.ph * 0.9 + i) * P.sway + tb;
       a[i * 3 + 1] = d.y;
       a[i * 3 + 2] = c.z + d.z + Math.cos(d.ph * 0.7 + i) * P.sway * 0.5;
     }

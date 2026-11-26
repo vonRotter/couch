@@ -42,3 +42,19 @@ scale 1: relative only).
    and each villager (smaller in the air). Single flowers and tufts got one at first and looked spotty: left out.
    Seen: close shot (a light edge on the bean and Aunt Hazel, softer shadow edges), cottage at night and the square
    (trees, lamps, benches and fences sit on the ground).
+4. Miniature look (`mini`, went in with step 3's commit). Two ShaderPasses (horizontal, vertical; a 9-tap Gaussian
+   on linear filtering, widest step 2.4 px x pixel ratio): sharp in a band of 0.16 (screen heights) around the
+   bean's height on screen, blur growing over the next 0.32, a touch more saturation (7 %). Eased (0.3 s) to off in
+   menus, panels and dialogs (mode not 'walk'), inside the Game Hall (its boards and signs have text) and the cottage,
+   and with Strong outlines on. Name tags, the HUD and toasts are page text and never blurred. Seen: the square
+   (top and bottom soft, the bean and the square sharp) and the lighthouse (its top soft, the bean sharp).
+5. Living world (`life`). Wind: the baked leaf meshes (seasonlook.js keeps them: trees and bushes, every season's
+   colours) and the grass tufts get material copies with a vertex sway (world space: a slow sway plus a small
+   per-leaf flutter, 4.5 cm; twice on rainy days, three times the day after a storm); stills cannot show it.
+   Water: the island's own water material gets foam where the water is shallow (a 192x192 depth map from
+   heightAt, made once when first switched on), a second faint line running out from the shore, and rare slow
+   glints further out (dimmer at night). Particles: already there and kept as they are (seasonlook.js petals,
+   autumn leaves, snow and snowy roofs; life.js fireflies at night): nothing new is added. With this look the
+   fireflies glow up and fade one by one (steady with Reduce flashing) and leaves and petals tumble a little more.
+   Seen: the beach (a white foam line along the sand, a few glints: the first try had too many, cut to about a
+   third), the lighthouse (foam along the curve of the beach).
