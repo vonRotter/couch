@@ -5,10 +5,14 @@ import { island, sim, press } from '../lively/helper.mjs';
 
 /** Hold a key for s seconds of game time (then let go). */
 export async function hold(page, code, s) {
-  await page.evaluate((code) => window.dispatchEvent(new KeyboardEvent('keydown', { code, key: code, bubbles: true })), code);
-  await sim(page, s);
-  await page.evaluate((code) => window.dispatchEvent(new KeyboardEvent('keyup', { code, key: code, bubbles: true })), code);
-  await sim(page, 1 / 30);
+  // press, simulate and let go in one step: with separate calls the game's own frames ran in between (more of them on
+  // a busy machine), so a held key moved the bean a varying extra distance (modes test: Sporty 1.19x Normal, once)
+  await page.evaluate(([code, s]) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { code, key: code, bubbles: true }));
+    window.game.simulate(s, 1 / 30);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code, key: code, bubbles: true }));
+    window.game.simulate(1 / 30, 1 / 30);
+  }, [code, s]);
 }
 
 /**
