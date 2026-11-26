@@ -22,3 +22,14 @@ scale 1: relative only).
 1. Plumbing: `game.gfx` (core/gfx.js), the island draws through `IslandLook.render()`; with no look on it draws
    straight to the screen exactly as before. The comparison script; "now" shots taken and looked at (square, beach,
    lighthouse, cottage, close: the name tag reads, the island HUD as usual).
+2. Glow and colour (`glow`). Bloom: UnrealBloomPass (quarter-size first mip) that picks up only what carries a glow
+   mark in the picture's alpha channel (core/gfx.js markGlow / glowBlend): a first try with a brightness threshold
+   bloomed the lamp-lit snowy cottage wall into a white blob (that wall is 3.8x white in linear light at night;
+   by day a few pixels reach 1.6), so brightness alone cannot pick the lamps. Marked: lamps and lanterns (M.lamp,
+   the lighthouse lamp, the greenhouse lamps), lit windows (M.win, every villager's own), the arcade screens, the
+   lighthouse beam and fireflies at night; the magic ball (its own copy of its star material), its aim dots and the
+   ghost ship's lanterns always. Colour grade (ShaderPass, linear, before OutputPass): a tint and a little saturation
+   by hour (warm morning, neutral day, golden evening, cool blue night) and season (winter cooler, autumn warmer); it
+   multiplies, so black outlines stay black. A slow 0.2 Hz breath of the bloom (8 %), none with Reduce flashing.
+   Seen: cottage at night (windows and lamps glow softly, the lit wall does not), lighthouse in the evening (lamp
+   and beam glow, golden grade), square in the morning (no glow by day, a faint warm tint; the Zip-Zap's tip glows).
