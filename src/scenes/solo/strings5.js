@@ -148,7 +148,7 @@ addStrings({
     'story.fest.9': 'Good night, light! Light says good night to Mumble!',
     'story.fest.10': '{name}, thank you! Climb up to the top any time and look through my old telescope.',
     'story.fest.coach': 'Now THAT is teamwork! Wood, stone, good friends and one big light. Gold medal, {name}!',
-    'isl.d.miniLighthouse': 'Mini lighthouse', 'isl.d.starGlobe': 'Star globe',
+    'isl.d.miniLighthouse': 'mini lighthouse', 'isl.d.starGlobe': 'star globe',
 
     // the lighthouse top and the telescope
     'story.top.title': 'Lighthouse top',
@@ -317,7 +317,7 @@ addStrings({
     'story.fest.9': 'God natt, lys! Lyset sier god natt til Mumle!',
     'story.fest.10': '{name}, tusen takk! Klatre opp til toppen når du vil, og se gjennom den gamle kikkerten min.',
     'story.fest.coach': 'DET kaller jeg lagarbeid! Ved, stein, gode venner og ett stort lys. Gullmedalje, {name}!',
-    'isl.d.miniLighthouse': 'Minifyr', 'isl.d.starGlobe': 'Stjerneglobus',
+    'isl.d.miniLighthouse': 'minifyr', 'isl.d.starGlobe': 'stjerneglobus',
 
     'story.top.title': 'Fyrtoppen',
     'story.top.hint': 'Spak: se deg rundt · [B] stjernekikkert · [C] klatre ned',

@@ -40,7 +40,7 @@ addIcons({ wand: '<path d="M5 20 L16 9" stroke="#5a3a8a" stroke-width="3" stroke
 
 addStrings({
   en: {
-    'isl.i.wand': 'Wand', 'wz.school': 'The Little Wizard School', 'map.a.school': 'The Little Wizard School',
+    'isl.i.wand': 'wand', 'wz.school': 'The Little Wizard School', 'map.a.school': 'The Little Wizard School',
     'isl.mail.od.school': 'Dear {name}, a little wizard school has opened on your island, between the hollow tree and the river! I teach weather spells, just small ones. Come for your first lesson: the rain spell. Wizard Wendeline',
     'isl.mail.od.sun': 'Dear {name}, you are ready for lesson two: the sun spell! Come to the school when you can. Wendeline',
     'od.td.school': 'A little tower with a pointy roof stands by the river now. A wizard school!',
@@ -73,7 +73,7 @@ addStrings({
     'wz.task.try': '🪄 Try the {spell} with your wand',
   },
   no: {
-    'isl.i.wand': 'Tryllestav', 'wz.school': 'Den lille trollmannsskolen', 'map.a.school': 'Den lille trollmannsskolen',
+    'isl.i.wand': 'tryllestav', 'wz.school': 'Den lille trollmannsskolen', 'map.a.school': 'Den lille trollmannsskolen',
     'isl.mail.od.school': 'Kjære {name}, en liten trollmannsskole har åpnet på øya di, mellom det hule treet og elva! Jeg lærer bort værtrylleformler, bare små. Kom til den første timen: regntrylleformelen. Trollkvinnen Wendeline',
     'isl.mail.od.sun': 'Kjære {name}, nå er du klar for time to: soltrylleformelen! Kom til skolen når du kan. Wendeline',
     'od.td.school': 'Et lite tårn med spisst tak står ved elva nå. En trollmannsskole!',

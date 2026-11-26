@@ -43,9 +43,9 @@ addStrings({
     'hop.hint.roof': 'I lost my toolbox on the game hall roof! There are crates by the east wall... hop hop hop!',
     'hop.hint.islet': 'Stepping stones go out into the sea west of the dock, to a tiny islet with a palm.',
     // decorations
-    'isl.d.glowShroom': 'Glowing mushroom', 'isl.d.gullVane': 'Gull weathervane', 'isl.d.robotToy': 'Wind-up robot', 'isl.d.owlHouse': 'Owl house',
-    'isl.d.shellChime': 'Shell wind chime', 'isl.d.goldBell': 'Golden bell', 'isl.d.rubberDuck': 'Rubber duck pond', 'isl.d.cloudJar': 'Cloud in a jar',
-    'isl.d.musicBox': 'Music box', 'isl.d.balloonModel': 'Little balloon', 'isl.d.starJar': 'Jar of star bits',
+    'isl.d.glowShroom': 'glowing mushroom', 'isl.d.gullVane': 'gull weathervane', 'isl.d.robotToy': 'wind-up robot', 'isl.d.owlHouse': 'owl house',
+    'isl.d.shellChime': 'shell wind chime', 'isl.d.goldBell': 'golden bell', 'isl.d.rubberDuck': 'rubber duck pond', 'isl.d.cloudJar': 'cloud in a jar',
+    'isl.d.musicBox': 'music box', 'isl.d.balloonModel': 'little balloon', 'isl.d.starJar': 'jar of star bits',
 
     // items
     'isl.i.starBit': 'star bit', 'isl.i.oddSock': 'single striped sock', 'isl.i.goldenAcorn': 'golden acorn', 'isl.i.moonCheese': 'moon cheese', 'isl.i.mysterySeed': 'mystery seeds',
@@ -196,9 +196,9 @@ addStrings({
     'hop.hint.ledge': 'Arr, Måkesteinen utenfor stranda! Små steiner i sjøen, opp og opp. Bare en god hopper kommer seg til toppen.',
     'hop.hint.roof': 'Jeg mistet verktøykassa mi på taket av spillhallen! Det står kasser ved østveggen... hopp hopp hopp!',
     'hop.hint.islet': 'Tråkksteiner går ut i sjøen vest for brygga, til en bitte liten holme med en palme.',
-    'isl.d.glowShroom': 'Lysende sopp', 'isl.d.gullVane': 'Måke-værhane', 'isl.d.robotToy': 'Opptrekksrobot', 'isl.d.owlHouse': 'Uglekasse',
-    'isl.d.shellChime': 'Vindspill av skjell', 'isl.d.goldBell': 'Gullbjelle', 'isl.d.rubberDuck': 'Badeanddam', 'isl.d.cloudJar': 'Sky i en krukke',
-    'isl.d.musicBox': 'Spilledåse', 'isl.d.balloonModel': 'Liten ballong', 'isl.d.starJar': 'Krukke med stjernebiter',
+    'isl.d.glowShroom': 'lysende sopp', 'isl.d.gullVane': 'måke-værhane', 'isl.d.robotToy': 'opptrekksrobot', 'isl.d.owlHouse': 'uglekasse',
+    'isl.d.shellChime': 'vindspill av skjell', 'isl.d.goldBell': 'gullbjelle', 'isl.d.rubberDuck': 'badeanddam', 'isl.d.cloudJar': 'sky i en krukke',
+    'isl.d.musicBox': 'spilledåse', 'isl.d.balloonModel': 'liten ballong', 'isl.d.starJar': 'krukke med stjernebiter',
 
     'isl.i.starBit': 'stjernebit', 'isl.i.oddSock': 'enslig stripete sokk', 'isl.i.goldenAcorn': 'gulleikenøtt', 'isl.i.moonCheese': 'måneost', 'isl.i.mysterySeed': 'mysteriefrø',
     'sur.name.merchant': 'Marlo kremmeren', 'sur.name.skye': 'Skye oppdageren',

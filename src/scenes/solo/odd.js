@@ -73,8 +73,8 @@ addStrings({
     'od.td.sneaky': 'Mumble tiptoed past the square this morning. Nobody heard a thing!',
     'od.task.sporty': '🏃 Coach Bo has a new move for you (the Game Hall)',
     'od.task.sneaky': '🤫 Mumble wants to show you something (the meadow)',
-    'isl.d.sporeLamp': 'Spore lamp', 'isl.d.mossCharm': 'Moss charm', 'isl.d.teaSet': 'Tiny tea set', 'isl.d.pebbleTower': 'Pebble tower',
-    'isl.d.wizardHat': 'Wizard hat on a stand', 'isl.d.whaleKite': 'Cloud-whale kite', 'isl.d.clubPin': 'Secret club pin', 'isl.d.ballotBox': 'Little ballot box',
+    'isl.d.sporeLamp': 'spore lamp', 'isl.d.mossCharm': 'moss charm', 'isl.d.teaSet': 'tiny tea set', 'isl.d.pebbleTower': 'pebble tower',
+    'isl.d.wizardHat': 'wizard hat on a stand', 'isl.d.whaleKite': 'cloud-whale kite', 'isl.d.clubPin': 'secret club pin', 'isl.d.ballotBox': 'little ballot box',
   },
   no: {
     'isl.from.tinka': 'oppfinneren Tinka', 'isl.from.wendeline': 'trollkvinnen Wendeline', 'isl.from.shroom': 'gamle Morkel, sopphandleren',
@@ -88,8 +88,8 @@ addStrings({
     'od.td.sneaky': 'Mumle listet seg forbi torget i morges. Ingen hørte en lyd!',
     'od.task.sporty': '🏃 Trener Bo har et nytt triks til deg (Spillhallen)',
     'od.task.sneaky': '🤫 Mumle vil vise deg noe (enga)',
-    'isl.d.sporeLamp': 'Sopplampe', 'isl.d.mossCharm': 'Mosemaskot', 'isl.d.teaSet': 'Bitteliten teservise', 'isl.d.pebbleTower': 'Steintårn',
-    'isl.d.wizardHat': 'Trollmannshatt på stativ', 'isl.d.whaleKite': 'Skyhvaldrage', 'isl.d.clubPin': 'Hemmelig klubbmerke', 'isl.d.ballotBox': 'Liten valgurne',
+    'isl.d.sporeLamp': 'sopplampe', 'isl.d.mossCharm': 'mosemaskot', 'isl.d.teaSet': 'bitteliten teservise', 'isl.d.pebbleTower': 'steintårn',
+    'isl.d.wizardHat': 'trollmannshatt på stativ', 'isl.d.whaleKite': 'skyhvaldrage', 'isl.d.clubPin': 'hemmelig klubbmerke', 'isl.d.ballotBox': 'liten valgurne',
   },
 });
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { toon } from '../../core/palette.js';
-import { t, tFor, addStrings } from '../../core/i18n.js';
+import { t, tFor, cap, addStrings } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { ITEMS, icon } from './items.js';
 import { count, give, take } from './save.js';
@@ -396,7 +396,7 @@ export class Builder {
       const on = start + k === Pn.i ? 'on' : '';
       if (r.id === 'decorate') return `<div class="isl-row ${on}">${icon('deco')}<div>${esc(t('isl.bench.decorateRow'))}<div><small>${esc(t('isl.bench.decorateSub'))}</small></div></div><small></small><div></div></div>`;
       const ings = (r.need || []).map(([n, k2]) => `<span class="isl-cook-ing ${this.have(n) < k2 ? 'no' : ''}">${icon(n === 'coin' ? 'coin' : n)}<small>${esc(n === 'coin' ? '' : t(`isl.i.${n}`))} ${Math.min(this.have(n), k2)}/${k2}</small></span>`).join('');
-      const nm = r.id === 'upgrade' ? t(r.done ? 'isl.bench.upgraded' : 'isl.bench.upgradeRow') : t(`isl.i.${r.id}`);
+      const nm = r.id === 'upgrade' ? t(r.done ? 'isl.bench.upgraded' : 'isl.bench.upgradeRow') : cap(t(`isl.i.${r.id}`));
       const placed = CRAFTS[r.id]?.bag ? count(this.S, r.id) + Object.values(this.S.tiles).filter((tl) => tl.obj === r.id).length : (this.S.store[r.id] || 0) + this.S.yard.filter((p) => p.id === r.id).length;
       const owned = CRAFTS[r.id] ? esc(t('isl.shop.owned', { n: placed })) : '';
       return `<div class="isl-row ${on}">${r.id === 'upgrade' ? icon('deco') : this.icon3d(r.id)}<div>${esc(nm)}<div>${ings}</div></div><small>${owned}</small><div></div></div>`;

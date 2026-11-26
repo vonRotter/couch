@@ -455,3 +455,19 @@ every second day following the story's steps (`mst*`), one every fourth day for 
 - The tea stall's cup shows two dashed lines (the band to stop in), but the hint said "when the tea reaches the line".
   Now: "Press [B] when the tea is between the lines." / "Trykk [B] når teen er mellom strekene."
 - Every suite passed on 9e26b2f (40 files, tests/games included).
+
+## Owner decision 11 built: item names
+
+- Item names (`isl.i.*`, `isl.d.*`) are written small in both languages (228 names); 14 that start with a proper
+  name keep their capital (Zip-Zap, Hazel's quilt, Rosa's painting, Bram's ship lantern, the Sky Hop, Golden Bean and
+  Grumble Guides trophies, the Grumble statue). Labels that stand alone get a capital first letter (`i18n.js cap`):
+  the hotbar's name, shop, café and workbench rows, the bag's tip, the fish log and museum cells, gift lists, dialog
+  choices. A line whose text starts with the item ("{item}: thirsty!") gets a capital too (`t()`).
+  Test: `tests/strings.mjs`.
+
+## Next (paused until the owner says go)
+
+- The owner picked a graphics trial: candidate effects behind a switch (glow and colour grade by time of day and
+  season; wind sway, shore foam and seasonal particles; softer shadows, rim light and contact shading; a tilt-shift
+  miniature look), shown as before/after screenshots from the same spots (morning, evening, night, winter) for the
+  owner to choose from, each with its own off switch plus a "simple graphics" setting.

@@ -4,7 +4,7 @@ import { setPadLayout } from '../../core/input.js';
 import { Character } from '../../core/character.js';
 import { toon, basic } from '../../core/palette.js';
 import { seeded } from '../../core/world.js';
-import { t, tFor } from '../../core/i18n.js';
+import { t, tFor, cap } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import './strings.js';
 import './strings2.js';
@@ -708,7 +708,7 @@ export class DiveScene extends BaseScene {
     S.sea.dives++;
     S.sea.haul = { items, coins: this.coins, why: this.why || 'early' };
     this.game.roster.save();
-    const gifts = items.map(([id, n]) => `<div>${icon(id)}${n > 1 ? `${n} ` : ''}${esc(t(`isl.i.${id}`))}</div>`).join('');
+    const gifts = items.map(([id, n]) => `<div>${icon(id)}${esc(cap((n > 1 ? `${n} ` : '') + t(`isl.i.${id}`)))}</div>`).join('');
     const coins = (this.coins ? `<div>${icon('coin')}${esc(t('dive.coins', { n: this.coins }))}</div>` : '') + (this.crabsHelped ? `<div>💛 ${esc(t('crab.dive.helped', { n: this.crabsHelped }))}</div>` : '');
     this.hud.panel.style.display = '';
     this.hud.panel.innerHTML = `<h2>${esc(t('dive.haul'))}</h2>${gifts || coins ? `<div class="isl-gifts">${gifts}${coins}</div>` : `<div class="isl-letter">${esc(t('dive.haulNone'))}</div>`}

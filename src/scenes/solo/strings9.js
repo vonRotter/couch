@@ -10,7 +10,7 @@ addStrings({
     'isl.i.hermitCrab': 'hermit crab', 'isl.i.babyCrab': 'baby crab',
     'isl.i.spiralShell': 'spiral shell', 'isl.i.conchShell': 'conch shell', 'isl.i.castleShell': 'castle shell',
     'isl.i.teapotShell': 'teapot shell', 'isl.i.lanternShell': 'lantern shell', 'isl.i.flowerShell': 'flower shell',
-    'isl.d.crabStatue': 'Golden crab statue', 'isl.d.crabPlush': 'Big crab plushie',
+    'isl.d.crabStatue': 'golden crab statue', 'isl.d.crabPlush': 'big crab plushie',
     // the fish log and the museum
     'isl.log.nightOnly': 'only at night (night dives, 20:00 to 5:00)',
     'isl.museum.crabs': 'Crab friends', 'isl.museum.night': 'only at night',
@@ -91,7 +91,7 @@ addStrings({
     'isl.i.hermitCrab': 'eremittkreps', 'isl.i.babyCrab': 'krabbeunge',
     'isl.i.spiralShell': 'spiralskjell', 'isl.i.conchShell': 'konkylie', 'isl.i.castleShell': 'slottskjell',
     'isl.i.teapotShell': 'tekanneskjell', 'isl.i.lanternShell': 'lykteskjell', 'isl.i.flowerShell': 'blomsterskjell',
-    'isl.d.crabStatue': 'Gyllen krabbestatue', 'isl.d.crabPlush': 'Stor kosekrabbe',
+    'isl.d.crabStatue': 'gyllen krabbestatue', 'isl.d.crabPlush': 'stor kosekrabbe',
     'isl.log.nightOnly': 'bare om natta (nattdykk, 20:00 til 5:00)',
     'isl.museum.crabs': 'Krabbevenner', 'isl.museum.night': 'bare om natta',
     'isl.museum.crabWall': 'Denne veggen fyller seg selv når du hjelper krabber. Krabber er venner: vi fanger dem aldri!',

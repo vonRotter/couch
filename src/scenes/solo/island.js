@@ -5,7 +5,7 @@ import { BaseScene } from '../../core/scene.js';
 import { Character } from '../../core/character.js';
 import { toon, basic } from '../../core/palette.js';
 import { addLights } from '../../core/world.js';
-import { t, tFor } from '../../core/i18n.js';
+import { t, tFor, cap } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak, voiceOn, babbleMode } from '../../core/voice.js';
 import { ProfilePicker } from '../../core/profiles.js';
@@ -642,7 +642,7 @@ export class SoloIslandScene extends BaseScene {
   }
 
   renderLine(L, text, v, st) {
-    this.hud.setDialog({ who: L.name ?? (L.who ? t(`isl.npc.${L.who}`) : ''), text, css: v.css, hearts: st && L.who !== 'mumble' ? heartsOf(st) : undefined, choices: L.choices?.map((k) => t(k)), index: this.dlg.choice });
+    this.hud.setDialog({ who: L.name ?? (L.who ? t(`isl.npc.${L.who}`) : ''), text, css: v.css, hearts: st && L.who !== 'mumble' ? heartsOf(st) : undefined, choices: L.choices?.map((k) => cap(t(k))), index: this.dlg.choice });
   }
 
   updateDialog(inp, dt) {
@@ -1885,7 +1885,7 @@ export class SoloIslandScene extends BaseScene {
     const rows = this.shopRows();
     sh.i = Math.min(sh.i, Math.max(0, rows.length - 1));
     const start = Math.max(0, Math.min(sh.i - 4, rows.length - 8));
-    const list = rows.slice(start, start + 8).map((r, k) => `<div class="isl-row ${start + k === sh.i ? 'on' : ''}">${icon(r.id)}<div>${esc(itemName(r.id))} ${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</div>
+    const list = rows.slice(start, start + 8).map((r, k) => `<div class="isl-row ${start + k === sh.i ? 'on' : ''}">${icon(r.id)}<div>${esc(cap(itemName(r.id)))} ${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</div>
       <small>${esc(t('isl.shop.owned', { n: count(S, r.id) }))}</small><div class="p">${icon('coin')}${r.price}</div></div>`).join('');
     this.hud.setPanel(`<h2>${esc(t('isl.shop.title'))}</h2>
       <div class="isl-tabs"><span class="${sh.tab === 0 ? 'on' : ''}">${esc(t('isl.shop.buy'))}</span><span class="${sh.tab === 1 ? 'on' : ''}">${esc(t('isl.shop.sell'))}</span>
@@ -1933,7 +1933,7 @@ export class SoloIslandScene extends BaseScene {
     if (!r) return;
     this.mode = 'letter';
     this.letterT = 0;
-    const gifts = [...(r.items || []).map(([id, n]) => `<div>${icon(id)}${n > 1 ? `${n} ` : ''}${esc(itemName(id))}</div>`),
+    const gifts = [...(r.items || []).map(([id, n]) => `<div>${icon(id)}${esc(cap((n > 1 ? `${n} ` : '') + itemName(id)))}</div>`),
       ...(r.deco ? [`<div>${icon('deco')}${esc(t(`isl.d.${r.deco}`))}</div>`] : []), ...(r.coins ? [`<div>${icon('coin')}${r.coins}</div>`] : [])].join('') + coopBadgeGifts(r);
     const body = t(`isl.mail.${r.id}`, { name: this.playerName, ...(r.games || r.badges ? coopMailVars(r) : {}), ...(rv(r.vars) || {}) });
     const card = r.id === 'postcard' ? this.photo.letterHtml(r) : '';
@@ -2047,17 +2047,17 @@ export class SoloIslandScene extends BaseScene {
       const f = FISH[id];
       const marks = `${f?.seasons ? f.seasons.map((sn) => SEASON_ICON[sn]).join('') : ''}${nightOnly(id) ? '🌙' : ''}`;
       const sea = marks ? `<i style="position:absolute;right:4px;top:2px;font-style:normal">${marks}</i>` : '';
-      return `<div class="isl-logcell ${i === this.log.i ? 'on' : ''}" style="position:relative">${sea}${img}<span>${esc(got ? t(`isl.i.${id}`) : t('isl.log.unknown'))}</span></div>`;
+      return `<div class="isl-logcell ${i === this.log.i ? 'on' : ''}" style="position:relative">${sea}${img}<span>${esc(got ? cap(t(`isl.i.${id}`)) : t('isl.log.unknown'))}</span></div>`;
     }).join('');
     const id = ids[this.log.i], f = FISH[id], got = !!L[id];
     let info;
     if (f) {
       const when = f.hours[0] === 0 && f.hours[1] === 24 ? t('isl.when.any') : t('isl.when.hours', { a: f.hours[0], b: f.hours[1] });
       const seasons = f.seasons ? ` · ${f.seasons.map((sn) => SEASON_ICON[sn]).join('')} ${esc(t('isl.log.seasons', { list: f.seasons.map((sn) => t(`isl.seasonIn.${sn}`)).join(t('isl.or')) }))}` : '';
-      info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t(`isl.where.${f.where}`))} · ${esc(when)}${nightOnly(id) ? ' 🌙' : ''}${seasons}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}${f.rare === 2 ? ' · ★' : ''}`;
+      info = `${got ? esc(cap(t(`isl.i.${id}`))) : esc(t('isl.log.unknown'))} · ${esc(t(`isl.where.${f.where}`))} · ${esc(when)}${nightOnly(id) ? ' 🌙' : ''}${seasons}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}${f.rare === 2 ? ' · ★' : ''}`;
     } else {
       // a night-only dive find (sea.js NIGHT_FINDS)
-      info = `${got ? esc(t(`isl.i.${id}`)) : esc(t('isl.log.unknown'))} · ${esc(t('isl.where.reef'))} · 🌙 ${esc(t('isl.log.nightOnly'))}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}`;
+      info = `${got ? esc(cap(t(`isl.i.${id}`))) : esc(t('isl.log.unknown'))} · ${esc(t('isl.where.reef'))} · 🌙 ${esc(t('isl.log.nightOnly'))}${got ? ` · ${esc(t('isl.log.caughtN', { n: L[id] }))}` : ''}`;
     }
     this.hud.setPanel(`<h2>${esc(t('isl.log.title'))} <small style="font-size:.5em;opacity:.7">${esc(t('isl.log.count', { n, m: ids.length }))}</small></h2>
       <div class="isl-loggrid">${cells}</div><div class="isl-foot" style="font-size:clamp(14px,1.4vw,20px);opacity:1">${info}</div>`);
@@ -2450,7 +2450,7 @@ export class SoloIslandScene extends BaseScene {
     this.hud.setTop({ time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: this.night > 0.5, coins: S.coins, phase: [this.phaseName(h), season, weather].filter(Boolean).join(' · '), mode: this.odd?.modes.badge(), modeKey: tFor(this.player?.p, 'md.key') });
     this.hud.setTasks(this.mode === 'walk' ? this.tasks() : []);
     // the hotbar: nine slots (the bag panel shows its own copy)
-    const slots = Array.from({ length: HOTBAR }, (_, i) => { const it = S.inv.find((x) => x.slot === i); return it ? { ...it, kind: ITEMS[it.id]?.kind, name: itemName(it.id) } : null; });
+    const slots = Array.from({ length: HOTBAR }, (_, i) => { const it = S.inv.find((x) => x.slot === i); return it ? { ...it, kind: ITEMS[it.id]?.kind, name: cap(itemName(it.id)) } : null; });
     if (this.mode !== 'service' && this.mode !== 'deco') this.hud.setSlots(slots, S.sel);
     const hide = this.mode === 'bag' || this.hud.cinemaOn ? 'hidden' : ''; // (cut-scenes hide it too)
     this.hud.hotbar.style.visibility = hide;

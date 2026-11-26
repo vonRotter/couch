@@ -338,6 +338,10 @@ export function stringKeys() {
   return { en: Object.keys(en), no: Object.keys(no) };
 }
 
+/** A label that stands alone (a hotbar name, a shop row): its first letter capital. Item names are written small, as
+ * they sit inside sentences ("5 wood, 3 stone"). */
+export const cap = (s) => (s ? s.charAt(0).toLocaleUpperCase() + s.slice(1) : s);
+
 export function getLang() {
   return lang;
 }
@@ -345,6 +349,8 @@ export function getLang() {
 export function t(key, vars) {
   let s = DICTS[lang][key] ?? en[key] ?? key;
   if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
+  // a line that starts with an item's name ("{item}: thirsty!"): item names are written small, so the line's first letter is made capital
+  if (vars && /^\{(item|shell|fish|crop|dish|gift)\}/.test(DICTS[lang][key] ?? en[key] ?? '')) s = cap(s);
   if (s.includes('[')) s = s.replace(BUTTON_TOKEN, (_, b) => buttonText(b.toLowerCase()));
   return s;
 }

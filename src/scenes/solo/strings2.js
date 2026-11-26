@@ -5,7 +5,7 @@ import { addStrings } from '../../core/i18n.js';
 addStrings({
   en: {
     // items
-    'isl.i.rod': 'Fishing rod', 'isl.i.fishlog': 'Fish log', 'isl.i.recipes': 'Recipe book', 'isl.i.flippers': 'Flippers', 'isl.i.tank': 'Big air tank', 'isl.i.suit': 'Dive suit',
+    'isl.i.rod': 'fishing rod', 'isl.i.fishlog': 'fish log', 'isl.i.recipes': 'recipe book', 'isl.i.flippers': 'flippers', 'isl.i.tank': 'big air tank', 'isl.i.suit': 'dive suit',
     'isl.i.minnow': 'minnow', 'isl.i.trout': 'trout', 'isl.i.carp': 'carp', 'isl.i.catfish': 'catfish', 'isl.i.koi': 'golden koi',
     'isl.i.sardine': 'sardine', 'isl.i.mackerel': 'mackerel', 'isl.i.puffer': 'pufferfish', 'isl.i.squid': 'squid', 'isl.i.flounder': 'flounder',
     'isl.i.tuna': 'tuna', 'isl.i.octopus': 'octopus', 'isl.i.sunfish': 'sunfish', 'isl.i.lanternfish': 'lanternfish', 'isl.i.moonfish': 'moonfish', 'isl.i.bream': 'sea bream',
@@ -68,7 +68,7 @@ addStrings({
     'isl.sign.dive2': 'Dive spot: the boat at the end of the pier.',
   },
   no: {
-    'isl.i.rod': 'Fiskestang', 'isl.i.fishlog': 'Fiskebok', 'isl.i.recipes': 'Oppskriftsbok', 'isl.i.flippers': 'Svømmeføtter', 'isl.i.tank': 'Stor lufttank', 'isl.i.suit': 'Dykkerdrakt',
+    'isl.i.rod': 'fiskestang', 'isl.i.fishlog': 'fiskebok', 'isl.i.recipes': 'oppskriftsbok', 'isl.i.flippers': 'svømmeføtter', 'isl.i.tank': 'stor lufttank', 'isl.i.suit': 'dykkerdrakt',
     'isl.i.minnow': 'ørekyt', 'isl.i.trout': 'ørret', 'isl.i.carp': 'karpe', 'isl.i.catfish': 'malle', 'isl.i.koi': 'gullkoi',
     'isl.i.sardine': 'sardin', 'isl.i.mackerel': 'makrell', 'isl.i.puffer': 'kulefisk', 'isl.i.squid': 'blekksprut', 'isl.i.flounder': 'flyndre',
     'isl.i.tuna': 'tunfisk', 'isl.i.octopus': 'åttearmet blekksprut', 'isl.i.sunfish': 'klumpfisk', 'isl.i.lanternfish': 'lysfisk', 'isl.i.moonfish': 'nattglimt', 'isl.i.bream': 'havkaruss',

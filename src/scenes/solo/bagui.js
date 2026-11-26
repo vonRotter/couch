@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { t, tFor } from '../../core/i18n.js';
+import { t, tFor, cap } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { ITEMS, icon } from './items.js';
 import { HOTBAR, ROW, bagSize, chestSize, freeSlot, fixSlots } from './save.js';
@@ -286,10 +286,10 @@ export class BagUi {
     if (p.c === 'deco') {
       const here = fitsHere(it.id, !!this.host.indoors);
       const where = here ? tFor(this.host.player?.p, 'deco.bag.tip') : t(this.host.indoors ? 'deco.t.goesOut' : 'deco.t.goesIn', { item: nameOf(it.id) });
-      return [it.n > 1 ? `${nameOf(it.id)} × ${it.n}` : nameOf(it.id), where].join(' · ');
+      return [it.n > 1 ? `${cap(nameOf(it.id))} × ${it.n}` : cap(nameOf(it.id)), where].join(' · ');
     }
     const def = ITEMS[it.id] || {};
-    const parts = [it.n > 1 ? `${nameOf(it.id)} × ${it.n}` : nameOf(it.id)];
+    const parts = [it.n > 1 ? `${cap(nameOf(it.id))} × ${it.n}` : cap(nameOf(it.id))];
     if (def.sell) parts.push(t('zb.sells', { n: def.sell }));
     else if (it.id === 'zipzap') parts.push(t('zb.tip.zipzap'));
     else if (def.kind === 'tool' || def.kind === 'book' || def.kind === 'gadget' || def.kind === 'key' || def.kind === 'find') parts.push(t('zb.keep'));

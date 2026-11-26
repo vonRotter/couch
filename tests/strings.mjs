@@ -59,6 +59,25 @@ await test('Norwegian: no capital title inside a sentence (tante Hassel, fyrvokt
   assert(!bad.length, bad.join('\n  '));
 });
 
+// Item names are written small, as they sit inside sentences ("5 wood (5/5), 3 stone (0/3)"); only names that start
+// with a proper name keep a capital (Zip-Zap, Hazel's quilt, the Sky Hop trophy). Labels that stand alone (the hotbar,
+// shop rows, the bag) and lines that start with the name ("{item}: thirsty!") get a capital first letter (i18n.js cap).
+await test('item names: small inside sentences, capital where they stand alone or start a line', async () => {
+  const KEEP = /^(Zip-Zap|Zipp-Zapp|Bram\\'|Brams |Hazel\\'|Rosa\\'|Rosas |Golden Bean|Grumble|Grumle|Sky Hop|Skyhopp|Krypefører)/;
+  const bad = [];
+  for (const f of files) {
+    for (const m of fs.readFileSync(f, 'utf8').matchAll(/'(isl\.[id]\.[A-Za-z0-9_]+)': '((?:[^'\\]|\\.)*)'/g)) {
+      if (/^[A-ZÆØÅ]/.test(m[2]) && !KEEP.test(m[2])) bad.push(`${m[1]}: ${m[2]}`);
+    }
+  }
+  assert(!bad.length, bad.join('\n  '));
+  const r = await page.evaluate(async () => {
+    const I = await import('/src/core/i18n.js');
+    return { line: I.t('isl.h.dry', { item: I.t('isl.i.radish') }), cap: I.cap('wood'), keep: I.cap('Zip-Zap') };
+  });
+  assert(/^[A-Z]/.test(r.line) && r.cap === 'Wood' && r.keep === 'Zip-Zap', JSON.stringify(r));
+});
+
 await test('no console errors', async () => { assert(!page.errors.length, page.errors.join('\n')); });
 await close(page);
 done();

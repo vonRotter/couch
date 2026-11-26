@@ -38,7 +38,7 @@ addIcons({
 
 addStrings({
   en: {
-    'isl.i.magicBall': 'Magic ball', 'isl.i.apple': 'Apple',
+    'isl.i.magicBall': 'magic ball', 'isl.i.apple': 'apple',
     'mb.h.throw': '[B] throw the magic ball', 'mb.h.flying': 'Boing...', 'mb.title': 'The magic ball',
     'mb.task': '🔮 Try Tinka\'s magic ball: hold it ({key}) and press [B]', 'mb.task.bag': 'it is in your bag: {bag}',
     'mb.t.apple': 'An apple fell from the tree!', 'mb.t.appleDone': 'This tree gave you an apple today already.',
@@ -52,14 +52,14 @@ addStrings({
     'mb.tut.throw': 'Press [B] to throw the ball at a wall', 'mb.tut.bounce': 'Watch it bounce off the wall', 'mb.tut.catch': 'It always comes back: catch it!',
     'mb.sign.bells': 'Three bells. Can you make them all ring?', 'mb.h.bells': 'Three bells. Throw the magic ball to ring them!',
     'map.a.bells': 'The three bells', 'map.a.ballDoor': 'The old switch door',
-    'isl.d.gearClock': 'Gear clock', 'isl.d.tinyBells': 'Tiny bells',
+    'isl.d.gearClock': 'gear clock', 'isl.d.tinyBells': 'tiny bells',
     'isl.mail.od.bounce': 'Hi {name}! I made a tiny spring for your magic ball. I sent it with the wind (do not ask). Your ball can bounce three times now! Tinka',
     'isl.mail.od.bounce2': 'Hello {name}! Another spring, even springier! Your magic ball bounces four times now. Try a long bank shot! Tinka',
     'od.td.bounce': 'Your magic ball feels extra bouncy today. Tinka must be up to something!',
     'od.td.bounce2': 'Boing, boing, boing, boing: your magic ball can bounce four times now.',
   },
   no: {
-    'isl.i.magicBall': 'Magisk ball', 'isl.i.apple': 'Eple',
+    'isl.i.magicBall': 'magisk ball', 'isl.i.apple': 'eple',
     'mb.h.throw': '[B] kast den magiske ballen', 'mb.h.flying': 'Boing...', 'mb.title': 'Den magiske ballen',
     'mb.task': '🔮 Prøv den magiske ballen til Tinka: hold den ({key}) og trykk [B]', 'mb.task.bag': 'den ligger i sekken: {bag}',
     'mb.t.apple': 'Et eple falt ned fra treet!', 'mb.t.appleDone': 'Dette treet har allerede gitt deg et eple i dag.',
@@ -73,7 +73,7 @@ addStrings({
     'mb.tut.throw': 'Trykk [B] for å kaste ballen mot en vegg', 'mb.tut.bounce': 'Se den sprette fra veggen', 'mb.tut.catch': 'Den kommer alltid tilbake: ta imot!',
     'mb.sign.bells': 'Tre bjeller. Klarer du å få alle til å ringe?', 'mb.h.bells': 'Tre bjeller. Kast den magiske ballen for å ringe dem!',
     'map.a.bells': 'De tre bjellene', 'map.a.ballDoor': 'Den gamle bryterdøra',
-    'isl.d.gearClock': 'Tannhjulsklokke', 'isl.d.tinyBells': 'Små bjeller',
+    'isl.d.gearClock': 'tannhjulsklokke', 'isl.d.tinyBells': 'små bjeller',
     'isl.mail.od.bounce': 'Hei {name}! Jeg har laget en bitteliten fjær til den magiske ballen din. Jeg sendte den med vinden (ikke spør). Nå kan ballen sprette tre ganger! Tinka',
     'isl.mail.od.bounce2': 'Hallo {name}! En fjær til, enda sprettere! Den magiske ballen din spretter fire ganger nå. Prøv et langt vinkelskudd! Tinka',
     'od.td.bounce': 'Den magiske ballen din føles ekstra sprett i dag. Tinka har nok noe fore!',

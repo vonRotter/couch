@@ -6,7 +6,7 @@ import { addStrings } from '../../core/i18n.js';
 
 addStrings({
   en: {
-    'isl.i.zipzap': 'Zip-Zap', 'isl.i.backpack1': 'Bigger backpack', 'isl.i.backpack2': 'Huge backpack', 'isl.i.chest': 'Chest',
+    'isl.i.zipzap': 'Zip-Zap', 'isl.i.backpack1': 'bigger backpack', 'isl.i.backpack2': 'huge backpack', 'isl.i.chest': 'chest',
     // the welcome: Pip gives the Zip-Zap
     'zz.pip.intro': 'Hi hi! I am Pip, astronaut! I built you a gadget from spare rocket parts: the Zip-Zap! Point it at something and press [B]. It knows what to do, and a little picture shows what!',
     'isl.mail.zipzap': 'Hi hi {name}! I took your old hoe, watering can and scythe to my rocket and built them into one gadget: the Zip-Zap! Point it at something and press the use button. It tills, waters, cuts, breaks rocks and chops trees all by itself. Zip zap!',
@@ -42,7 +42,7 @@ addStrings({
     'zb.t.toChest': 'Your bag is full: some things went to the chest in your cottage.',
   },
   no: {
-    'isl.i.zipzap': 'Zipp-Zapp', 'isl.i.backpack1': 'Større ryggsekk', 'isl.i.backpack2': 'Kjempestor ryggsekk', 'isl.i.chest': 'Kiste',
+    'isl.i.zipzap': 'Zipp-Zapp', 'isl.i.backpack1': 'større ryggsekk', 'isl.i.backpack2': 'kjempestor ryggsekk', 'isl.i.chest': 'kiste',
     'zz.pip.intro': 'Hei hei! Jeg er Pip, astronaut! Jeg har bygd en dings til deg av ekstra rakettdeler: Zipp-Zappen! Pek den mot noe og trykk [B]. Den vet hva den skal gjøre, og et lite bilde viser hva!',
     'isl.mail.zipzap': 'Hei hei {name}! Jeg tok med hakka, vannkanna og ljåen din til raketten og bygde dem om til én dings: Zipp-Zappen! Pek den mot noe og trykk på bruk-knappen. Den graver, vanner, kutter, knuser stein og hogger trær helt av seg selv. Zipp zapp!',
     'zz.h.needBuster': 'Zipp-Zappen trenger en steinknuser til dette. Spør fyrvokter Bram!',

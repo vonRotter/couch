@@ -68,7 +68,7 @@ addStrings({
     'isl.tut.7': 'Visit Rosa\'s store in the village to buy more seeds',
 
     // ---------- items ----------
-    'isl.i.hoe': 'Hoe', 'isl.i.can': 'Watering can', 'isl.i.scythe': 'Scythe', 'isl.i.pickaxe': 'Pickaxe', 'isl.i.wood': 'Wood', 'isl.i.bouquet': 'Flower bouquet',
+    'isl.i.hoe': 'hoe', 'isl.i.can': 'watering can', 'isl.i.scythe': 'scythe', 'isl.i.pickaxe': 'pickaxe', 'isl.i.wood': 'wood', 'isl.i.bouquet': 'flower bouquet',
     'isl.i.feather': 'the tickle feather', 'isl.i.starmap': 'the star map', 'isl.i.lens': 'the lamp lens',
     'isl.i.radish': 'radish', 'isl.i.carrot': 'carrot', 'isl.i.lettuce': 'lettuce', 'isl.i.strawberry': 'strawberry', 'isl.i.tomato': 'tomato',
     'isl.i.corn': 'corn', 'isl.i.pumpkin': 'pumpkin', 'isl.i.starfruit': 'star fruit',
@@ -76,10 +76,10 @@ addStrings({
     'isl.i.tomatoSeed': 'tomato seeds', 'isl.i.cornSeed': 'corn seeds', 'isl.i.pumpkinSeed': 'pumpkin seeds', 'isl.i.starfruitSeed': 'star fruit seeds',
     'isl.grow.radish': '4 min', 'isl.grow.carrot': '8 min', 'isl.grow.lettuce': '12 min', 'isl.grow.strawberry': '20 min, grows back', 'isl.grow.tomato': '25 min, grows back',
     'isl.grow.corn': '30 min', 'isl.grow.pumpkin': '2 hours', 'isl.grow.starfruit': '8 hours',
-    'isl.d.lhLamp': 'Lighthouse lamp', 'isl.d.lhTrophy': 'Lighthouse trophy', 'isl.d.flag': 'Pirate flag', 'isl.d.bottle': 'Ship in a bottle',
-    'isl.d.duckTrophy': 'Duck trophy', 'isl.d.duckGold': 'Golden duck trophy', 'isl.d.kite': 'Sky kite', 'isl.d.hopTrophy': 'Sky Hop trophy',
-    'isl.d.banner': 'Castle banner', 'isl.d.castleTrophy': 'Golden Bean trophy', 'isl.d.statue': 'Grumble statue', 'isl.d.lantern': 'Bram\'s ship lantern',
-    'isl.d.spyglass': 'Captain\'s spyglass', 'isl.d.rocket': 'Toy rocket', 'isl.d.pumpkinLamp': 'Pumpkin lantern', 'isl.d.gnome': 'Garden gnome', 'isl.d.moonrock': 'Moon rock',
+    'isl.d.lhLamp': 'lighthouse lamp', 'isl.d.lhTrophy': 'lighthouse trophy', 'isl.d.flag': 'pirate flag', 'isl.d.bottle': 'ship in a bottle',
+    'isl.d.duckTrophy': 'duck trophy', 'isl.d.duckGold': 'golden duck trophy', 'isl.d.kite': 'sky kite', 'isl.d.hopTrophy': 'Sky Hop trophy',
+    'isl.d.banner': 'castle banner', 'isl.d.castleTrophy': 'Golden Bean trophy', 'isl.d.statue': 'Grumble statue', 'isl.d.lantern': 'Bram\'s ship lantern',
+    'isl.d.spyglass': 'captain\'s spyglass', 'isl.d.rocket': 'toy rocket', 'isl.d.pumpkinLamp': 'pumpkin lantern', 'isl.d.gnome': 'garden gnome', 'isl.d.moonrock': 'moon rock',
 
     // ---------- letters (game rewards) ----------
     'isl.mail.lh1': 'You found a lamp crystal in the caves under my lighthouse! Here is a little lamp for your garden, and pumpkin seeds from my window box.',
@@ -323,7 +323,7 @@ addStrings({
     'isl.tut.6': 'Vis tante Hassel reddiken, eller send avlinger i kassa ved huset',
     'isl.tut.7': 'Besøk butikken til Rosa i landsbyen og kjøp flere frø',
 
-    'isl.i.hoe': 'Hakke', 'isl.i.can': 'Vannkanne', 'isl.i.scythe': 'Ljå', 'isl.i.pickaxe': 'Steinhakke', 'isl.i.wood': 'Ved', 'isl.i.bouquet': 'Blomsterbukett',
+    'isl.i.hoe': 'hakke', 'isl.i.can': 'vannkanne', 'isl.i.scythe': 'ljå', 'isl.i.pickaxe': 'steinhakke', 'isl.i.wood': 'ved', 'isl.i.bouquet': 'blomsterbukett',
     'isl.i.feather': 'kilefjæra', 'isl.i.starmap': 'stjernekartet', 'isl.i.lens': 'lampelinsen',
     'isl.i.radish': 'reddik', 'isl.i.carrot': 'gulrot', 'isl.i.lettuce': 'salat', 'isl.i.strawberry': 'jordbær', 'isl.i.tomato': 'tomat',
     'isl.i.corn': 'mais', 'isl.i.pumpkin': 'gresskar', 'isl.i.starfruit': 'stjernefrukt',
@@ -331,10 +331,10 @@ addStrings({
     'isl.i.tomatoSeed': 'tomatfrø', 'isl.i.cornSeed': 'maisfrø', 'isl.i.pumpkinSeed': 'gresskarfrø', 'isl.i.starfruitSeed': 'stjernefruktfrø',
     'isl.grow.radish': '4 min', 'isl.grow.carrot': '8 min', 'isl.grow.lettuce': '12 min', 'isl.grow.strawberry': '20 min, vokser igjen', 'isl.grow.tomato': '25 min, vokser igjen',
     'isl.grow.corn': '30 min', 'isl.grow.pumpkin': '2 timer', 'isl.grow.starfruit': '8 timer',
-    'isl.d.lhLamp': 'Fyrlykt', 'isl.d.lhTrophy': 'Fyrtårnpokal', 'isl.d.flag': 'Piratflagg', 'isl.d.bottle': 'Skip i flaske',
-    'isl.d.duckTrophy': 'Andepokal', 'isl.d.duckGold': 'Gyllen andepokal', 'isl.d.kite': 'Himmeldrage', 'isl.d.hopTrophy': 'Skyhopp-pokal',
-    'isl.d.banner': 'Slottsbanner', 'isl.d.castleTrophy': 'Gullbønnepokal', 'isl.d.statue': 'Grumlestatue', 'isl.d.lantern': 'Brams skipslykt',
-    'isl.d.spyglass': 'Kapteinens kikkert', 'isl.d.rocket': 'Lekerakett', 'isl.d.pumpkinLamp': 'Gresskarlykt', 'isl.d.gnome': 'Hagenisse', 'isl.d.moonrock': 'Månestein',
+    'isl.d.lhLamp': 'fyrlykt', 'isl.d.lhTrophy': 'fyrtårnpokal', 'isl.d.flag': 'piratflagg', 'isl.d.bottle': 'skip i flaske',
+    'isl.d.duckTrophy': 'andepokal', 'isl.d.duckGold': 'gyllen andepokal', 'isl.d.kite': 'himmeldrage', 'isl.d.hopTrophy': 'Skyhopp-pokal',
+    'isl.d.banner': 'slottsbanner', 'isl.d.castleTrophy': 'gullbønnepokal', 'isl.d.statue': 'Grumlestatue', 'isl.d.lantern': 'Brams skipslykt',
+    'isl.d.spyglass': 'kapteinens kikkert', 'isl.d.rocket': 'lekerakett', 'isl.d.pumpkinLamp': 'gresskarlykt', 'isl.d.gnome': 'hagenisse', 'isl.d.moonrock': 'månestein',
 
     'isl.mail.lh1': 'Du fant en lampekrystall i grottene under fyret mitt! Her er en liten lykt til hagen din, og gresskarfrø fra vinduskassa mi.',
     'isl.mail.lh2': 'Mørket er borte, og den store lampen lyser igjen. Takk, modige bønne! Denne pokalen er din.',

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Character } from '../../core/character.js';
 import { PLAYER_COLORS } from '../../core/palette.js';
-import { t, tFor } from '../../core/i18n.js';
+import { t, tFor, cap } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { ITEMS, icon } from './items.js';
@@ -104,7 +104,7 @@ export class Cafe {
     const start = Math.max(0, Math.min(M.i - 3, RECIPE_IDS.length - 7));
     const rows = RECIPE_IDS.slice(start, start + 7).map((id, k) => {
       const on = this.isSpecial(id);
-      return `<div class="isl-row ${start + k === M.i ? 'on' : ''}">${icon(id)}<div>${on ? '★ ' : ''}${esc(t(`isl.i.${id}`))} <small>${esc(t('isl.shop.owned', { n: count(this.save, id) }))}</small></div>
+      return `<div class="isl-row ${start + k === M.i ? 'on' : ''}">${icon(id)}<div>${on ? '★ ' : ''}${esc(cap(t(`isl.i.${id}`)))} <small>${esc(t('isl.shop.owned', { n: count(this.save, id) }))}</small></div>
         <small>${on ? esc(t('isl.menu.special')) : ''}</small><div class="p">${icon('coin')}${this.priceOf(id)}</div></div>`;
     }).join('');
     const list = this.specials.map((id) => t(`isl.i.${id}`)).join(', ') || '—';
@@ -207,7 +207,7 @@ export class Cafe {
         const ic = ITEMS[n] ? icon(n) : icon(n === 'seafish' ? 'tuna' : 'trout');
         return `<span class="isl-cook-ing ${have < need ? 'no' : ''}">${ic}${need > 1 ? `×${need}` : ''} <small>${esc(t(`isl.i.${n}`))} ${Math.min(have, need)}/${need}</small></span>`;
       }).join('');
-      return `<div class="isl-row ${start + k === C.i ? 'on' : ''}" style="grid-template-columns: clamp(34px,3.2vw,46px) 1fr auto auto">${icon(id)}<div>${this.isSpecial(id) ? '★ ' : ''}${esc(t(`isl.i.${id}`))}<div>${ings}</div></div>
+      return `<div class="isl-row ${start + k === C.i ? 'on' : ''}" style="grid-template-columns: clamp(34px,3.2vw,46px) 1fr auto auto">${icon(id)}<div>${this.isSpecial(id) ? '★ ' : ''}${esc(cap(t(`isl.i.${id}`)))}<div>${ings}</div></div>
         <small>${esc(t('isl.shop.owned', { n: count(this.save, id) }))}</small><div class="p">${icon('coin')}${this.priceOf(id)}</div></div>`;
     }).join('');
     const regs = this.regulars().map((id) => `${t(`isl.npc.${id}`)}: ${t(`isl.i.${FAVORITE[id]}`)}`).join(', ');
@@ -372,7 +372,7 @@ export class Cafe {
     const noMore = sv.guests >= sv.max || sv.closing || !this.dishesInStock().some((id) => count(this.save, id) - this.pendingCount(id) > 0);
     if (empty && noMore && sv.t > 1) this.summary();
     // the tray: dishes you have, on the hotbar
-    host.hud.setHotbar(stock.map((id) => ({ id, n: count(this.save, id), kind: 'dish', name: t(`isl.i.${id}`) })), sv.dish, false);
+    host.hud.setHotbar(stock.map((id) => ({ id, n: count(this.save, id), kind: 'dish', name: cap(t(`isl.i.${id}`)) })), sv.dish, false);
   }
 
   updateGuest(g, dt) {

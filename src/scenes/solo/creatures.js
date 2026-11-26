@@ -49,7 +49,7 @@ addIcons({
 
 addStrings({
   en: {
-    'od.npc.shroom': 'Old Morel', 'isl.i.puffball': 'Puffball', 'isl.i.tea_mint': 'Cup of mint tea', 'isl.i.tea_berry': 'Cup of berry tea', 'isl.i.tea_honey': 'Cup of honey tea',
+    'od.npc.shroom': 'Old Morel', 'isl.i.puffball': 'puffball', 'isl.i.tea_mint': 'cup of mint tea', 'isl.i.tea_berry': 'cup of berry tea', 'isl.i.tea_honey': 'cup of honey tea',
     'isl.mail.od.tea': 'Hello {name}! Have you heard? Three TINY elephants opened a tea stall south of the pond. They are very polite. Go and have a cup! Rosa',
     'isl.mail.od.moss': 'psst... {name}... in the grass by the river, south of the farm, lives a moss creature. Very shy. Only tiptoe! Then maybe it says hello. Mumble',
     'isl.mail.od.mushroom': 'Greetings, little one. I am Old Morel. I wander from island to island with spores and sprouts. Some days, when the wind smells of rain, I may stop by your fairy ring. Morel',
@@ -81,7 +81,7 @@ addStrings({
     'cr.task.moss': '🌿 Tiptoe up to the shy moss creature (by the river; Sneaky mode)', 'cr.task.tea': '🫖 Visit the tiny elephants\' tea stall (south of the pond)',
   },
   no: {
-    'od.npc.shroom': 'Gamle Morkel', 'isl.i.puffball': 'Røyksopp', 'isl.i.tea_mint': 'Kopp myntete', 'isl.i.tea_berry': 'Kopp bærte', 'isl.i.tea_honey': 'Kopp honningte',
+    'od.npc.shroom': 'Gamle Morkel', 'isl.i.puffball': 'røyksopp', 'isl.i.tea_mint': 'kopp myntete', 'isl.i.tea_berry': 'kopp bærte', 'isl.i.tea_honey': 'kopp honningte',
     'isl.mail.od.tea': 'Hei {name}! Har du hørt det? Tre BITTESMÅ elefanter har åpnet en tebod sør for dammen. De er veldig høflige. Gå og ta en kopp! Rosa',
     'isl.mail.od.moss': 'psst... {name}... i gresset ved elva, sør for åkeren, bor et mosedyr. Veldig sjenert. Bare på tærne! Da sier det kanskje hei. Mumle',
     'isl.mail.od.mushroom': 'Hilsen, lille venn. Jeg er gamle Morkel. Jeg vandrer fra øy til øy med sporer og spirer. Noen dager, når vinden lukter regn, stikker jeg kanskje innom alvesirkelen din. Morkel',

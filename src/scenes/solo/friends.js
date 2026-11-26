@@ -1,4 +1,4 @@
-import { t, tFor } from '../../core/i18n.js';
+import { t, tFor, cap } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { NPCS, NPC_IDS, npcState, heartsOf, scheduleNow, makeNpcModel, MAX_HEARTS } from './npcs.js';
@@ -184,7 +184,7 @@ export class FriendsBook {
     const k = this.known[id] || {};
     const all = { love: NPCS[id].loves, like: NPCS[id].likes, dislike: NPCS[id].dislikes }[taste];
     const got = all.filter((it) => k[it] === taste);
-    const items = got.map((it) => `<span class="gift">${ITEMS[it] ? icon(it) : ''}${esc(t(`isl.i.${it}`))}</span>`).join('');
+    const items = got.map((it) => `<span class="gift">${ITEMS[it] ? icon(it) : ''}${esc(cap(t(`isl.i.${it}`)))}</span>`).join('');
     const rest = all.length - got.length;
     return `<div class="gifts">${items}${rest ? `<span class="unk">${esc(t(got.length ? 'isl.fb.more' : 'isl.fb.unknown', { n: rest }))}</span>` : ''}</div>`;
   }

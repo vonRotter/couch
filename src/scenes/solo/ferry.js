@@ -21,7 +21,7 @@ addStrings({
     'isl.mail.coop': 'Ahoy {name}! The ferry brought word from the Party Island: you played {games} together with friends. Here is a little something for your island. Toot toot!',
     'isl.mail.coopB': 'Ahoy {name}! You played {games} together on the Party Island, and you got new badges for the board on the Party Pier: {badges}. Here is a little something for your island too. Toot toot!',
     'isl.mail.coopDeco': 'Ahoy {name}! So many games played together! The Party Island sends this for your yard.',
-    'isl.d.coopPennants': 'Party pennants', 'isl.d.coopTrophy': 'Play-together trophy',
+    'isl.d.coopPennants': 'party pennants', 'isl.d.coopTrophy': 'play-together trophy',
   },
   no: {
     'ferry.name': 'Festbrygga-ferja', 'ferry.tag': 'Festbrygga', 'ferry.tagSub': 'ferje for å spille sammen',
@@ -33,7 +33,7 @@ addStrings({
     'isl.mail.coop': 'Ohoi {name}! Ferja kom med hilsen fra Festøya: du spilte {games} sammen med venner. Her er en liten ting til øya di. Tuut tuut!',
     'isl.mail.coopB': 'Ohoi {name}! Du spilte {games} sammen på Festøya, og du fikk nye merker til tavla på Festbrygga: {badges}. Her er en liten ting til øya di også. Tuut tuut!',
     'isl.mail.coopDeco': 'Ohoi {name}! Så mange spill sammen! Festøya sender deg dette til hagen.',
-    'isl.d.coopPennants': 'Festvimpler', 'isl.d.coopTrophy': 'Spill-sammen-pokal',
+    'isl.d.coopPennants': 'festvimpler', 'isl.d.coopTrophy': 'spill-sammen-pokal',
   },
 });
 

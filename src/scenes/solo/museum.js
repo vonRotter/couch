@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { t, tFor } from '../../core/i18n.js';
+import { t, tFor, cap } from '../../core/i18n.js';
 import { esc } from '../../core/ui.js';
 import { say as speak } from '../../core/voice.js';
 import { count, take, now } from './save.js';
@@ -120,7 +120,7 @@ export class Museum {
       const img = `<img src="${host.picture(id)}" alt="" style="${have ? '' : `filter:brightness(0) opacity(${carry ? 0.55 : 0.25})`}">`;
       const badge = carry ? '<i style="position:absolute;right:2px;top:2px;background:#ff5d73;color:#fff;border-radius:999px;padding:0 6px;font-style:normal;font-size:.85em">+</i>' : '';
       const moon = NIGHT(id) ? '<i style="position:absolute;left:4px;top:2px;font-style:normal">🌙</i>' : '';
-      return `<div class="isl-logcell ${i === B.i ? 'on' : ''}" style="position:relative">${badge}${moon}${img}<span>${esc(have || carry ? t(`isl.i.${id}`) : '?')}</span></div>`;
+      return `<div class="isl-logcell ${i === B.i ? 'on' : ''}" style="position:relative">${badge}${moon}${img}<span>${esc(have || carry ? cap(t(`isl.i.${id}`)) : '?')}</span></div>`;
     }).join('');
     const id = room.ids[B.i];
     const have = !!this.got[id], carry = !have && count(this.S, id) > 0;
