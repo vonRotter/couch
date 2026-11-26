@@ -10,6 +10,16 @@ import { GLOW, markGlow, glowBlend } from '../../core/gfx.js';
 // ball and its aim dots and the ghost ship's lanterns always. While the island is drawn they are also a little
 // brighter (and put back after). The colour grade follows the hour and the season (GRADE below).
 
+// Softer light: the sun's shadows get softer edges (a wider PCF filter: shadow.radius), the beans and villagers a faint
+// rim of sky light on their edges (their toon materials swapped for copies with a fresnel term, put back when off),
+// and contact shading: a soft dark patch on the ground under each tree, bush, rock, house and lamp (one instanced
+// mesh, from the map's footprints) and under the bean and every villager, so things stand on the ground.
+
+// A miniature look: tilt-shift (core/gfx.js), sharp in a band around the bean, softly blurred toward the top and
+// the bottom. Only out walking: it fades out in menus, panels and dialogs, inside the Game Hall and the cottage
+// (boards and signs with text), and with Strong outlines on (a blurred outline is a weaker one). Name tags and the
+// HUD are page text over the picture and are never blurred.
+
 // [hour, [r, g, b] tint, saturation]: warm morning, neutral day, golden evening, cool blue night
 const GRADE = [
   [0, [0.9, 0.96, 1.1], 0.95], [4.6, [0.9, 0.96, 1.1], 0.95],
@@ -29,6 +39,40 @@ function gradeAt(h, season) {
   return { tint: [0, 1, 2].map((c) => (a[c] + (b[c] - a[c]) * k) * st[c]), sat: (sa + (sb - sa) * k) * ss };
 }
 
+const RIM = { uRim: { value: 0 }, uRimColor: { value: new THREE.Color() } };
+const rimCopies = new WeakMap();
+/** A copy of a toon material with a faint rim of light on its edges (fresnel; RIM.uRim says how much). */
+function rimOf(m) {
+  let c = rimCopies.get(m);
+  if (c) return c;
+  c = m.clone();
+  c.userData = { rimOf: m, ...(m.userData?.shared ? { shared: true } : {}) }; // (a copy of a shared material is kept like it)
+  c.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, RIM);
+    sh.fragmentShader = 'uniform float uRim;\nuniform vec3 uRimColor;\n' + sh.fragmentShader.replace('#include <opaque_fragment>',
+      'outgoingLight += uRimColor * uRim * pow( 1.0 - clamp( dot( normal, geometryViewDir ), 0.0, 1.0 ), 3.0 );\n#include <opaque_fragment>');
+  };
+  c.customProgramCacheKey = () => 'rim';
+  rimCopies.set(m, c);
+  return c;
+}
+
+/** A soft round dark patch (the contact shading), white in the middle fading out: used as alpha. */
+function blobTexture() {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 64;
+  const g = cv.getContext('2d');
+  const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grd.addColorStop(0, 'rgba(255,255,255,1)');
+  grd.addColorStop(0.45, 'rgba(255,255,255,0.75)');
+  grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(cv);
+}
+
+const _v = new THREE.Vector3();
+
 export class IslandLook {
   constructor(host) {
     this.host = host;
@@ -37,6 +81,110 @@ export class IslandLook {
     this.pulse = 0; // the bloom's slow breath now (0 with "Reduce flashing")
     this.saved = [];
     this.ownBall();
+    this.rimmed = []; // [mesh, its own material] while the rim light is on
+    this.sweepT = 0;
+    this.blobs = null;
+  }
+
+  // ---------- softer light ----------
+
+  /** The contact shading: one instanced mesh for the map's footprints, one small patch per bean and villager. */
+  makeBlobs() {
+    const H = this.host;
+    this.blobTex = blobTexture();
+    const mat = new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: this.blobTex, transparent: true, opacity: 0.32, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    mat.userData = { noCut: true }; // (the see-through around the bean leaves it alone: seethrough.js)
+    const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+    const F = H.map.footprints || [];
+    const inst = new THREE.InstancedMesh(geo, mat, Math.max(1, F.length));
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), n = new THREE.Vector3(), p = new THREE.Vector3(), sc = new THREE.Vector3();
+    const hAt = (x, z) => H.map.floorAt(x, z, true);
+    F.forEach((f, i) => {
+      const e = 0.4;
+      n.set(hAt(f.x - e, f.z) - hAt(f.x + e, f.z), 2 * e, hAt(f.x, f.z - e) - hAt(f.x, f.z + e)).normalize();
+      q.setFromUnitVectors(up, n);
+      p.set(f.x, hAt(f.x, f.z) + 0.04, f.z);
+      sc.set(f.w * 1.25 + 0.3, 1, f.d * 1.25 + 0.3);
+      inst.setMatrixAt(i, m4.compose(p, q, sc));
+    });
+    inst.count = F.length;
+    inst.frustumCulled = false;
+    inst.renderOrder = -2;
+    inst.raycast = () => {};
+    this.blobs = inst;
+    H.scene.add(inst);
+    // the beans and villagers: a patch each, moved every frame
+    this.feetMat = mat.clone();
+    this.feetMat.opacity = 0.38;
+    this.feetMat.userData = { noCut: true };
+    this.feet = new THREE.Group();
+    H.scene.add(this.feet);
+  }
+
+  /** Every frame with the softer light on: the patches under the beans and villagers follow them. */
+  updateFeet() {
+    const H = this.host;
+    const who = [H.player && { x: H.player.x, z: H.player.z, y: H.player.y, vis: H.player.ch.group.visible, air: (H.player.jy || 0) + (H.player.air ? 0.5 : 0) },
+      ...(H.npcs || []).map((n) => ({ x: n.x, z: n.z, y: n.y, vis: n.model.group.visible, air: 0 }))].filter(Boolean);
+    while (this.feet.children.length < who.length) {
+      const m = new THREE.Mesh(this.blobs.geometry, this.feetMat);
+      m.renderOrder = -2;
+      m.scale.set(1.15, 1, 1.15);
+      this.feet.add(m);
+    }
+    this.feet.children.forEach((m, i) => {
+      const w = who[i];
+      m.visible = !!w && w.vis;
+      if (!m.visible) return;
+      const g = H.map.floorAt(w.x, w.z, H.save.unlocks.bridge);
+      m.position.set(w.x, Math.min(w.y ?? g, g + 10) + 0.03, w.z);
+      const k = Math.max(0.4, 1 - w.air * 0.6); // smaller in the air
+      m.scale.set(1.15 * k, 1, 1.15 * k);
+    });
+  }
+
+  /** The meshes that get the rim light: the bean's and every villager's (not their outline hulls, not tiny ones). */
+  rimMeshes() {
+    const H = this.host, out = [];
+    const take = (g) => g?.traverse((o) => {
+      if (!o.isMesh || o.userData.hull || !o.material || Array.isArray(o.material)) return;
+      const m = o.material.userData?.rimOf || o.material;
+      if (!m.isMeshToonMaterial || m.transparent) return;
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      if (o.geometry.boundingSphere.radius * Math.max(o.scale.x, o.scale.y) < 0.12) return; // (eyes, buttons)
+      out.push(o);
+    });
+    take(H.player?.ch.group);
+    for (const n of H.npcs || []) take(n.model.group);
+    return out;
+  }
+
+  setRim(on) {
+    if (!on) {
+      for (const [o, m] of this.rimmed) if (o.material?.userData?.rimOf) o.material = m;
+      this.rimmed = [];
+      return;
+    }
+    for (const o of this.rimMeshes()) {
+      const mat = o.material;
+      if (mat.userData?.rimOf) continue;
+      this.rimmed.push([o, mat]);
+      o.material = rimOf(mat);
+    }
+  }
+
+  updateLight(dt, on) {
+    const H = this.host;
+    const sun = H.lights?.sun;
+    if (sun) sun.shadow.radius = on ? 4 : 1;
+    if (on && !this.blobs) this.makeBlobs();
+    if (this.blobs) { this.blobs.visible = on; this.feet.visible = on; }
+    if (on) this.updateFeet();
+    // the rim: the sky's colour, faint, fainter at night
+    RIM.uRim.value = on ? 0.28 * (1 - 0.5 * (H.night || 0)) : 0;
+    if (H.lights) RIM.uRimColor.value.copy(H.lights.hemi.color);
+    this.sweepT -= dt;
+    if (on !== this.rimOn || (on && this.sweepT <= 0)) { this.sweepT = 1; this.rimOn = on; this.setRim(on); }
   }
 
   /** The magic ball's little stars share a material with other things: give the ball its own, so only it glows. */
@@ -87,6 +235,12 @@ export class IslandLook {
 
   update(dt) {
     this.t += dt;
+    const on = this.gfx.on;
+    this.updateLight(dt, on.light);
+    // the miniature look: eased in and out (0.3 s)
+    const H = this.host;
+    const want = on.mini && H.mode === 'walk' && !H.indoors && (H.hallCam || 0) < 0.5 && !H.game.contrastOn ? 1 : 0;
+    this.tilt = dt ? (this.tilt ?? want) + (want - (this.tilt ?? want)) * Math.min(1, dt * 6) : want;
     // the slow breath of the glow (0.2 Hz, a few percent): none with "Reduce flashing"
     this.pulse = calmOn() ? 0 : Math.sin(this.t * Math.PI * 0.4) * 0.08;
   }
@@ -95,7 +249,10 @@ export class IslandLook {
   frameLook() {
     const H = this.host;
     const g = gradeAt(H.hour ?? 12, H.seasons?.season);
-    return { tint: g.tint, sat: g.sat, bloom: 1 + this.pulse };
+    const P = H.player;
+    let focus = 0.5;
+    if (P) { _v.set(P.x, P.y + (P.jy || 0) + 0.6, P.z).project(H.camera); focus = THREE.MathUtils.clamp((_v.y + 1) / 2, 0.2, 0.8); }
+    return { tint: g.tint, sat: g.sat, bloom: 1 + this.pulse, tilt: this.tilt ?? 0, focus };
   }
 
   render(renderer) {
@@ -122,5 +279,9 @@ export class IslandLook {
     }
   }
 
-  dispose() {}
+  dispose() {
+    this.setRim(false);
+    this.blobTex?.dispose();
+    this.feetMat?.dispose();
+  }
 }

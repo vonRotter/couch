@@ -335,6 +335,25 @@ export function bake(root) {
   return { group: out, keepers };
 }
 
+/**
+ * Where the static props stand on the ground: [{ x, z, w, d }] (centre and size of the footprint) for each thing
+ * on the ground that is at least half a metre tall and not too thin or too big (trees, bushes, rocks, houses, lamps).
+ */
+function footprints(root) {
+  root.updateMatrixWorld(true);
+  const out = [], b = new THREE.Box3();
+  for (const o of root.children) {
+    b.setFromObject(o);
+    if (b.isEmpty()) continue;
+    const w = b.max.x - b.min.x, d = b.max.z - b.min.z, h = b.max.y - b.min.y;
+    const x = (b.min.x + b.max.x) / 2, z = (b.min.z + b.max.z) / 2;
+    if (h < 0.5 || Math.max(w, d) < 0.75 || Math.max(w, d) > 9 || Math.min(w, d) < 0.2) continue; // (not single flowers and tufts)
+    if (b.min.y > heightAt(x, z) + 0.4 || heightAt(x, z) < SEA_Y) continue; // up on something, floating, or in the water
+    out.push({ x, z, w, d });
+  }
+  return out;
+}
+
 // ---------- the world ----------
 
 export class IslandMap {
@@ -361,6 +380,7 @@ export class IslandMap {
     this.roadLamps();
     this.buildNature();
 
+    this.footprints = footprints(this.statics); // where things stand on the ground (the softer light's contact shading: gfxlook.js)
     const { group, keepers } = bake(this.statics);
     this.scene.add(group);
     this.baked = group; // seasons recolor its leaves (see seasonlook.js)

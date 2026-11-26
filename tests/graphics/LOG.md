@@ -33,3 +33,12 @@ scale 1: relative only).
    multiplies, so black outlines stay black. A slow 0.2 Hz breath of the bloom (8 %), none with Reduce flashing.
    Seen: cottage at night (windows and lamps glow softly, the lit wall does not), lighthouse in the evening (lamp
    and beam glow, golden grade), square in the morning (no glow by day, a faint warm tint; the Zip-Zap's tip glows).
+3. Softer light (`light`). PCF shadows (PCFSoftShadowMap is gone in three r186: it falls back to PCF with a
+   warning; PCF's Vogel-disk filter follows `shadow.radius`, a uniform, so no shader changes): radius 4 instead
+   of 1, the bias as before. A faint rim of sky light (fresnel, cube of 1 - N.V, 0.28, half at night) on the bean's
+   and the villagers' toon materials (copies swapped in, the originals put back when off). Contact shading: a soft
+   dark patch (alpha 0.32) under every static prop on the ground that is 0.75 m or wider (trees, bushes, rocks,
+   houses, lamps, benches, fences: map.js footprints(), one InstancedMesh, tilted to the slope) and under the bean
+   and each villager (smaller in the air). Single flowers and tufts got one at first and looked spotty: left out.
+   Seen: close shot (a light edge on the bean and Aunt Hazel, softer shadow edges), cottage at night and the square
+   (trees, lamps, benches and fences sit on the ground).
