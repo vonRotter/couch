@@ -57,6 +57,7 @@ import * as assist from './core/assist.js';
 import { settingsFor, deviceSettings, screenSettings, assistVersion, TEXT_SIZES, setCalm } from './core/assist.js';
 import { AssistMenu, OfferCard, schemeKeys } from './core/assistmenu.js';
 import { refreshOutlines } from './core/outline.js';
+import { Gfx } from './core/gfx.js';
 import * as passport from './core/passport.js';
 import { tickPlayTime, flushPlayTime, logAssist } from './core/passport.js';
 import { ParentPage, HOLD_SECONDS } from './core/parentpage.js';
@@ -115,6 +116,8 @@ class Game {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     document.getElementById('app').appendChild(this.renderer.domElement);
+    // the graphics looks (core/gfx.js): scenes that opt in draw through this.gfx.render()
+    this.gfx = new Gfx(this);
 
     this.input = new Input();
     this.roster = new Roster();
@@ -160,6 +163,7 @@ class Game {
   resize() {
     const w = window.innerWidth, h = window.innerHeight;
     this.renderer.setSize(w, h);
+    this.gfx.resize(w, h);
     this.current?.resize(w, h);
   }
 

@@ -78,6 +78,7 @@ import { IslandAtlas } from './atlas.js';
 import { PassportBook } from './passport.js';
 import { Coach } from './coach.js';
 import { syncProfile } from '../../core/passport.js';
+import { IslandLook } from './gfxlook.js';
 
 // The solo island: a little farming town that is also the menu to the solo games.
 // One player (with the profile's name, color and hat). Games are PLACES you walk to; some open through
@@ -194,9 +195,10 @@ export class SoloIslandScene extends BaseScene {
   // a puzzle lock's held buttons (Rock Patrol's push)
   get holdButtons() { return this.mode === 'puzzle' ? this.puzzles?.holds || null : null; }
 
-  /** A puzzle lock is drawn over the island (puzzles.js). */
+  /** The island draws with the graphics looks that are on (core/gfx.js, gfxlook.js); a puzzle lock over it (puzzles.js). */
   render(renderer) {
-    renderer.render(this.scene, this.camera);
+    if (this.look) this.look.render(renderer);
+    else renderer.render(this.scene, this.camera);
     this.puzzles?.render(renderer);
   }
 
@@ -323,6 +325,7 @@ export class SoloIslandScene extends BaseScene {
     if (!S.intro) this.later(0.9, () => this.startIntro());
     else if (S.mail.length) this.later(1.2, () => this.mailToast());
     this.updateSound(0, true); // calm island music and ambience (soundscape.js)
+    this.look = new IslandLook(this); // the graphics looks that are on (core/gfx.js): glow, wind, softer light, miniature
   }
 
   // ---------- building ----------
@@ -2597,6 +2600,7 @@ export class SoloIslandScene extends BaseScene {
     if (P) this.seeThrough.update(dt, this.camera, _bean.set(P.x, P.y + (P.jy || 0) + 0.6, P.z), P.y + (P.jy || 0), !this.camView);
     this.updateLabels();
     this.updateHud(ia);
+    this.look?.update(dt);
   }
 
   idle(dt) {
@@ -2604,9 +2608,11 @@ export class SoloIslandScene extends BaseScene {
     this.updateNpcs(dt);
     this.updatePlayerLook(dt);
     this.life.update(dt, this.night || 0, this.player || { x: 0, z: 0 });
+    this.look?.update(dt);
   }
 
   dispose() {
+    this.look?.dispose();
     this.seeThrough?.dispose();
     this.emotes?.dispose();
     window.removeEventListener('keydown', this.onTabKey);
